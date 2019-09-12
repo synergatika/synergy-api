@@ -1,0 +1,482 @@
+openapi: "3.0.0"
+
+info:
+  version: Draft
+  title: Synergy API
+  description: ""
+  license:
+    name: MIT
+
+servers:
+  - url: http://synergy.synergatika.com/v1
+  
+paths:
+  /microfund/campaigns:
+    get:
+      summary: "Get all campaigns"
+      operationId: getAllCampaigns
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - microfund
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchants'
+          
+  /microfund/campaign:
+    post:
+      summary: "Create a campaign"
+      operationId: createCampaigns
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - microfund
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchants'
+          
+  /microfund/campaign/{merchant_id}:
+    get:
+      summary: "Get campaing info"
+      operationId: getCampaignInfo
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - microfund
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchants'
+    put:
+      summary: "Edit campaing info"
+      operationId: updateCampaignInfo
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - microfund
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchants'
+  
+  /microfund/campaign/{merchant_id}/verify:
+    get:
+      summary: "Administrator verifies the campaign content"
+      operationId: verifyCampaignInfo
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - microfund
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchants'
+  
+  /loyalty/earn:
+    post:
+      summary: "Store rewards customer' loyalty with points"
+      operationId: earnToken
+      tags:
+        - loyalty
+      requestBody:
+        $ref: '#/components/requestBodies/TransactionRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/EarnResponse'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /loyalty/redeem:
+    post:
+      summary: "Customer redeem points at store"
+      operationId: redeemToken
+      tags:
+        - loyalty
+      requestBody:
+        $ref: '#/components/requestBodies/TransactionRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/RedeemResponse'
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /loyalty/transaction:
+    get:
+      summary: "Returns logged in user's transactions"
+      operationId: getTransactions
+      tags:
+        - loyalty
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transactions"
+
+  /loyalty/balance:
+    get:
+      summary: "Returns logged in user's balance"
+      operationId: getBalance
+      tags:
+        - loyalty
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transactions"
+
+  /loyalty/offers:
+    get:
+      summary: "Returns offers from all the stores"
+      operationId: getOffers
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Offers'
+
+  /loyalty/offers/{store_id}:
+    post:
+      summary: "Add a new offer"
+      operationId: postAnOffer
+      parameters:
+        - $ref: '#/components/parameters/store_id'
+      tags: 
+        - loyalty
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+  
+    get:
+      summary: "Return offers for a specific store"
+      operationId: getOffersByStore
+      parameters:
+        - $ref: '#/components/parameters/store_id'
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Offers'
+
+  /auth/authenticate:
+    post:
+      summary: "Authenticate users"
+      operationId: authAuthenticate
+      tags:
+        - authentication
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /auth/register:
+    post:
+      summary: "Register new user"
+      operationId: authRegister
+      tags:
+        - authentication
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /auth/refreshToken:
+    post:
+      summary: "Refresh token"
+      operationId: authRefreshToken
+      tags:
+        - authentication
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+
+  /merchant:
+    get:
+      summary: "Return merchants"
+      operationId: getMerchants
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - merchant
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchants'
+
+  /merchant/{merchant_id}:
+    get:
+      summary: "Return merchant"
+      operationId: getMerchantInfo
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - merchant
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchant'
+          
+    post:
+      summary: "Update merchant information"
+      operationId: updateMerchantInfo
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - merchant
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchant'
+
+  /profile:
+    get:
+      summary: "Get user info"
+      operationId: getLoggedInUserInfo
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - profile
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchants'
+          
+    post:
+      summary: "Update user info"
+      operationId: updateLoggedInUserInfo
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - profile
+      responses:
+        '200':
+          $ref: '#/components/responses/Merchants'
+
+components:
+  parameters:
+    merchant_id:
+      in: path
+      name: merchant_id
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: ID of the selected store
+
+    store_id:
+      in: path
+      name: store_id
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: ID of the selected store
+
+  requestBodies:
+    TransactionRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/TransactionRequestEmail'
+              - $ref: '#/components/schemas/TransactionRequestAddress'
+              - $ref: '#/components/schemas/TransactionRequestCard'
+          example:
+            email: 'customer@somewhere.io'
+            amount: 130
+            
+  responses:
+    Merchant:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Merchant"
+    Merchants:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Merchants"
+    Offers:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Offers"
+          example: 
+            - id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              cost: 1000
+              description: "Get 10% discount"
+            - id: "a8a85f64-5717-6245-c3fc-2c963f66afa6"
+              cost: 2000
+              description: "Get 25% discount"
+    UnexpectedError:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example: 
+            code: 100
+            message: "Something wrong happes!"
+    EarnResponse:
+      description: 'Earn points'
+      content:
+        application/json:    
+          schema:
+            $ref: "#/components/schemas/EarnResponse"
+          example:
+            points: 
+              balance: 1300
+              earned: 13
+            code: 0
+            message: "Succesfully earn 13 points"
+    RedeemResponse:
+      description: 'Redeem points'
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/RedeemResponse"
+          example:
+            points: 
+              balance: 1287
+              redeemed: 13
+            code: 0
+            message: "Succesfully redeem 13 points"
+
+  schemas:
+    TransactionRequestCard:
+      type: object
+      required:
+        - amount
+        - card_id
+      properties:
+        card_id: 
+          type: string
+        amount:
+          type: number
+          format: float
+          minimum: 0
+    TransactionRequestEmail:
+      type: object
+      required:
+        - amount
+        - email
+      properties:
+        email: 
+          type: string
+          format: email
+        amount:
+          type: number
+          format: float
+          minimum: 0
+    TransactionRequestAddress:
+      type: object
+      required:
+        - amount
+        - address
+      properties:
+        address: 
+          type: string
+        amount:
+          type: number
+          format: float
+          minimum: 0          
+    RedeemResponse:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        points:
+          type: object
+          required:
+            - redeemed
+          properties:
+            redeemed:
+              type: integer
+              format: int32
+            balance:
+              type: integer
+              format: int32
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    EarnResponse:
+      type: object
+      required:
+        - points
+        - code
+        - message      
+      properties:
+        points:
+          type: object
+          required:
+            - earned
+          properties:
+            earned:
+              type: integer
+              format: int32
+            balance:
+              type: integer
+              format: int32
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    Transaction:
+      type: object
+      required:
+        - timestamp
+        - tokens
+        - merchant_id
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        tokens:
+          type: integer
+          minimum: 0
+        merchant_id:
+          type: string
+          format: uuid
+    Transactions:
+      type: array
+      items:
+        $ref: "#/components/schemas/Transaction"
+    Offer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        cost:
+          type: integer
+          minimum: 0
+        description:
+          type: string
+    Merchant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+    Merchants:
+      type: array
+      items:
+        $ref: "#/components/schemas/Merchant"
+    Offers:    
+      type: array
+      items:
+        $ref: "#/components/schemas/Offer"
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
