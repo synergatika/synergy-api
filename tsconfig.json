@@ -1,15 +1,21 @@
 {
-    "compilerOptions": {
-        "experimentalDecorators": true,
-      "sourceMap": true,
-      "target": "es2017",
-      "outDir": "./dist",
-      "baseUrl": "./src"
-    },
-    "include": [
-      "src/**/*.ts"
-    ],
-    "exclude": [
-      "node_modules"
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "strictNullChecks": false,
+    "sourceMap": false,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "es2017",
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "typeRoots": [
+      "node_modules/@types"
     ]
-  }
+  },
+  "include": [
+    "src"
+  ]
+}
