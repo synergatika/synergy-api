@@ -55,6 +55,9 @@ const PARAMS_PER_TARGET: any = {
       libraryTarget: 'commonjs',
       filename: `[name].js`
     },
+    plugins: [
+      new NodemonPlugin(), // Dong
+    ],
     node: {
       console: false,
       global: false,
