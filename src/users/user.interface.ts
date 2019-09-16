@@ -3,21 +3,24 @@ interface User {
   name: string;
   email: string;
   password: string;
-  type: string;
   access: string;
-  verify: boolean;
-  auth: {
+  verified: boolean;
+  restorationToken: string;
+  restorationExpiration: number;
+  verificationToken: string;
+  verificationExpiration: number;
+  /*auth: {
     restorationToken: string;
-    restorationExpiration: Date;
+   restorationExpiration: number;
     verificationToken: string;
-    verificationExpiration: Date;
-  }
+    verificationExpiration: number;
+  }*/
   contact: {
-    phone: Number;
+    phone: number;
     address: {
       street: string;
       city: string;
-      zipCode: Number;
+      zipCode: number;
     }
   }
 }

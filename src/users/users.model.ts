@@ -14,9 +14,9 @@ const contactSchema = new mongoose.Schema({
 
 const authSchema = new mongoose.Schema({
   restorationToken: String,
-  restorationExpiration: Date,
+  restorationExpiration: Number,
   verificationToken: String,
-  vericationEpiration: Date
+  verificationExpiration: Number
 });
 
 const userSchema = new mongoose.Schema({
@@ -24,10 +24,17 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: String,
-  type: String,
-  access: String,
-  auth: authSchema,
-  verify: Boolean
+  access: {
+    type: String,
+    enum: ['customer', 'merchant', 'admin'],
+    default: 'custumer'
+  },
+  restorationToken: String,
+  restorationExpiration: Number,
+  verificationToken: String,
+  verificationExpiration: Number,
+  //auth: authSchema,
+  verified: Boolean,
 }, {
   timestamps: true
 });;

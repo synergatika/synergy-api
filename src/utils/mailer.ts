@@ -1,14 +1,20 @@
 import * as nodemailer from 'nodemailer'
 
+//const transporter: nodemailer.Transporter = nodemailer.createTransport('smtps://dimitris.sec%40gmail.com:6947879557@smtp.gmail.com');
 // create reusable transporter object using SMTP transport
-var transporter: nodemailer.Transporter = nodemailer.createTransport({
-    service: 'Gmail',
+const transporter: nodemailer.Transporter = nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE,
     auth: {
-        user: 'gmail.user@gmail.com',
-        pass: 'userpass'
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    },
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
+export default transporter;
+/*
 // create reusable transporter object using SMTP transport and set default values for mail options.
 transporter = nodemailer.createTransport({
     service: 'Gmail',
@@ -22,8 +28,9 @@ transporter = nodemailer.createTransport({
         'My-Awesome-Header': '123'
     }
 });
-
+*/
 // setup e-mail data with unicode symbols
+/*
 var mailOptions: nodemailer.SendMailOptions = {
     from: 'Fred Foo ✔ <foo@blurdybloop.com>', // sender address
     to: 'bar@blurdybloop.com, baz@blurdybloop.com', // list of receivers
@@ -58,4 +65,4 @@ transporter
 //     username: 'Node Mailer',
 //     reset: 'https://www.example.com/reset?token=<unique-single-use-token>'
 // })
-// .then((info: { messageId: any; }) => info.messageId);
+// .then((info: { messageId: any; }) => info.messageId);*/
