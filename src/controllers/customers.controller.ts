@@ -1,7 +1,7 @@
 import * as express from 'express';
 
 // Exceptions
-import AuthenticationException from '../exceptions/AuthenticationException';
+import UsersException from '../exceptions/UsersException';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import User from '../users/user.interface';
@@ -29,33 +29,30 @@ class CustomersController implements Controller {
     }
 
     private getLoggedInUserInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-
+        const customer = this.user.findOne({ _id: request.user._id })
+        response.send(customer);
     }
 
     private updateLoggedInUserInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: CustomerDto = request.body;
-        if (request.user._id === request.params.merchant_id) {
-            this.user.findOneAndUpdate(
-                {
-                    _id: request.user._id
-                },
-                {
-                    $set: {
-                        name: data.name,
-                        imageURL: data.imageURL
-                    }
-                }, { new: true })
-                .then((user) => {
-                    if (user) {
-                        user.password = undefined;
-                        response.send(user);
-                    } else {
-                        next(new AuthenticationException(404, 'No user'));
-                    }
-                });
-        } else {
-            // Your are not auth!
-        }
+        this.user.findOneAndUpdate(
+            {
+                _id: request.user._id
+            },
+            {
+                $set: {
+                    name: data.name,
+                    imageURL: data.imageURL
+                }
+            }, { new: true })
+            .then((user) => {
+                if (user) {
+                    user.password = undefined;
+                    response.send(user);
+                } else {
+                    next(new UsersException(404, 'No user'));
+                }
+            });
     }
 }
 

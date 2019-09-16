@@ -24,7 +24,10 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   imageURL: String,
-  password: String,
+  password: {
+    type: String,
+    select: true
+  },
   access: {
     type: String,
     enum: ['customer', 'merchant', 'admin'],
