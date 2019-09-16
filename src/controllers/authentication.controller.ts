@@ -3,25 +3,30 @@ import * as express from 'express';
 import * as jwt from 'jsonwebtoken';
 import * as nodemailer from 'nodemailer';
 
+// Exceptions
 import AuthenticationException from '../exceptions/AuthenticationException';
+// Interfaces
 import Controller from '../interfaces/controller.interface';
 import DataStoredInToken from '../interfaces/dataStoredInToken';
 import TokenData from '../interfaces/tokenData.interface';
-import AuthTokenData from '../authDtos/authTokenData.interface';
+import AuthTokenData from '../interfaces/authTokenData.interface';
+import User from '../users/user.interface';
+import RequestWithUser from '../interfaces/requestWithUser.interface';
+// Middleware
 import validationMiddleware from '../middleware/validation.middleware';
 import authMiddleware from '../middleware/auth.middleware';
-import User from '../users/user.interface';
+// Models
 import userModel from '../users/users.model';
+// Dtos
 import AuthenticationDto from '../authDtos/authentication.dto';
 import RegisterWithPasswordDto from '../authDtos/registerWithPassword.dto';
 import RegisterWithOutPasswordDto from '../authDtos/registerWithOutPassword.dto';
+import CheckTokenDto from '../authDtos/checkToken.dto'
 import ChangePassInDto from '../authDtos/changePassIn.dto'
 import ChangePassOutDto from '../authDtos/changePassOut.dto'
 import EmailDto from '../authDtos/email.dto'
-
-import RequestWithUser from '../interfaces/requestWithUser.interface';
+// Email
 import Transporter from '../utils/mailer'
-import SendmailTransport from 'nodemailer/lib/sendmail-transport';
 
 class AuthenticationController implements Controller {
   public path = '/auth';
@@ -36,10 +41,10 @@ class AuthenticationController implements Controller {
     this.router.post(`${this.path}/register`, validationMiddleware(RegisterWithPasswordDto), this.authRegister, this.askVerification, this.emailSender);
     this.router.post(`${this.path}/authenticate`, validationMiddleware(AuthenticationDto), this.authAuthenticate);
     this.router.put(`${this.path}/change_pass`, authMiddleware, validationMiddleware(ChangePassInDto), this.changePassInside);
-    this.router.get(`${this.path}/verify_email`, this.askVerification, this.emailSender);
-    this.router.post(`${this.path}/verify_email`, this.checkVerification);
-    this.router.get(`${this.path}/forgot_pass`, this.askRestoration, this.emailSender);
-    this.router.post(`${this.path}/forgot_pass`, this.checkRestoration);
+    this.router.get(`${this.path}/verify_email`, validationMiddleware(EmailDto), this.askVerification, this.emailSender);
+    this.router.post(`${this.path}/verify_email`, validationMiddleware(CheckTokenDto), this.checkVerification);
+    this.router.get(`${this.path}/forgot_pass`, validationMiddleware(EmailDto), this.askRestoration, this.emailSender);
+    this.router.post(`${this.path}/forgot_pass`, validationMiddleware(CheckTokenDto), this.checkRestoration);
     this.router.put(`${this.path}/forgot_pass`, validationMiddleware(ChangePassOutDto), this.changePassOutside);
     this.router.post(`${this.path}/logout`, this.loggingOut);
 
@@ -266,7 +271,7 @@ class AuthenticationController implements Controller {
   }
 
   private checkRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: TokenData = request.body;
+    const data: CheckTokenDto = request.body;
     const now = new Date()
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
@@ -281,7 +286,7 @@ class AuthenticationController implements Controller {
   }
 
   private checkVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: TokenData = request.body;
+    const data: CheckTokenDto = request.body;
     const now = new Date()
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 

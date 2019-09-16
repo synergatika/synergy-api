@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema({
   contact: contactSchema,
   name: String,
   email: String,
+  imageURL: String,
   password: String,
   access: {
     type: String,
