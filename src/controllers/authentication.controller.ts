@@ -142,7 +142,6 @@ class AuthenticationController implements Controller {
         password: hashedPassword,
       });
       user.password = undefined;
-      response.locals = user;
       next();
       // const tokenData = this.createToken(user);
       // response.setHeader('Set-Cookie', [this.createCookie(tokenData)]);
@@ -171,12 +170,14 @@ class AuthenticationController implements Controller {
 
   private emailSender = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const resData = response.locals;
+    console.log(resData);
     let resEmail = {
-      to: resData.user.email,
+      to: resData.email,
       subject: "",
       text: "",
       html: ""
     };
+    console.log(resEmail);
     if (resData.state === '1') { // Email Verification
       resEmail.subject = "Email Verification" + " " + resData.token.token,
         resEmail.text = "Must Verify",
@@ -200,7 +201,6 @@ class AuthenticationController implements Controller {
     };
 
     console.log(response.locals.token);
-    console.log(response.locals.user);
     console.log(response.locals.state);
     // send mail with defined transport object
     Transporter.sendMail(mailOptions, (error: Error, info: nodemailer.SentMessageInfo): void => {
@@ -228,7 +228,7 @@ class AuthenticationController implements Controller {
         })
         .then((user) => {
           if (user) {
-            response.locals.user.email = data.email;
+            response.locals.email = data.email;
             response.locals = token;
             next();
           } else {
@@ -257,7 +257,7 @@ class AuthenticationController implements Controller {
         .then((user) => {
           if (user) {
             response.locals.token = token;
-            response.locals.user.email = data.email;
+            response.locals.email = data.email;
             response.locals.state = '1';
 
             next();

@@ -30,14 +30,14 @@ class MerchantsController implements Controller {
     }
 
     private getMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        const merchants = await this.user.find({ access: 'merchant' });
+        const merchants = await this.user.find({ access: 'merchant' }, {password: false, verified: false});
         console.log(merchants)
-        //const newArray = merchants.map(({password, ...keepAttrs}) => keepAttrs)
         response.send(merchants);
     }
 
     private getMerchantInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        const merchant = this.user.findOne({ _id: request.user._id })
+        const merchant = await this.user.findOne({ _id: request.user._id })
+        merchant.password = undefined;
         response.send(merchant);
     }
 

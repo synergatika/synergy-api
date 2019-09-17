@@ -4,6 +4,7 @@ import App from './app';
 import AuthenticationController from './controllers/authentication.controller';
 import CustomersController from './controllers/customers.controller';
 import MerchantsController from './controllers/merchants.controller';
+import LoyaltyController from './controllers/loyalty.controller';
 import PostsController from './posts/posts.controller';
 import validateEnv from './utils/validateEnv';
 
@@ -14,7 +15,8 @@ const app = new App(
     new PostsController(),
     new AuthenticationController(),
     new CustomersController(),
-    new MerchantsController()
+    new MerchantsController(),
+    new LoyaltyController()
   ],
 );
 

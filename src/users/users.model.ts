@@ -1,6 +1,12 @@
 import * as mongoose from 'mongoose';
 import User from './user.interface';
 
+const offerSchema = new mongoose.Schema({
+  description: String,
+  cost: Number,
+  expiresAt: String
+}, { timestamps: true });
+
 const addressSchema = new mongoose.Schema({
   street: String,
   zipCode: Number,
@@ -24,10 +30,7 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   imageURL: String,
-  password: {
-    type: String,
-    select: true
-  },
+  password: String,
   access: {
     type: String,
     enum: ['customer', 'merchant', 'admin'],
@@ -39,9 +42,10 @@ const userSchema = new mongoose.Schema({
   verificationExpiration: Number,
   //auth: authSchema,
   verified: Boolean,
+  offers: [offerSchema]
 }, {
   timestamps: true
-});;
+});
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 
