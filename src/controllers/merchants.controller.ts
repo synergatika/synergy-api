@@ -9,6 +9,7 @@ import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';
 import authMiddleware from '../middleware/auth.middleware';
+import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../users/users.model';
 // Dtos
@@ -26,11 +27,11 @@ class MerchantsController implements Controller {
     private initializeRoutes() {
         this.router.get(`${this.path}`, this.getMerchants);
         this.router.get(`${this.path}/:merchant_id`, authMiddleware, this.getMerchantInfo);
-        this.router.put(`${this.path}/:merchant_id`, authMiddleware, this.updateMerchantInfo);
+        this.router.put(`${this.path}/:merchant_id`, authMiddleware, accessMiddleware.onlyAsMerchant, this.updateMerchantInfo);
     }
 
     private getMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        const merchants = await this.user.find({ access: 'merchant' }, {password: false, verified: false});
+        const merchants = await this.user.find({ access: 'merchant' }, { password: false, verified: false });
         console.log(merchants)
         response.send(merchants);
     }

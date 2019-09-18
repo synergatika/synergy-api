@@ -87,7 +87,7 @@ class AuthenticationController implements Controller {
           ...data,
           access: 'customer',
           verified: 'true',
-          password: hashedPassword,
+          password: hashedPassword
         })
         response.locals.user = {
           name: data.name,

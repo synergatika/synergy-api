@@ -9,11 +9,11 @@ import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';
 import authMiddleware from '../middleware/auth.middleware';
+import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../users/users.model';
 // Dtos
 import MerchantDto from '../usersDtos/merchant.dto'
-import { ObjectId } from 'bson';
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
@@ -26,12 +26,14 @@ class LoyaltyController implements Controller {
 
     private initializeRoutes() {
         this.router.get(`${this.path}/offers`, this.getOffers);
-        this.router.post(`${this.path}/offers`, authMiddleware, this.postAnOffer);
-        this.router.get(`${this.path}/offers/:merchant_id`, this.getOffersByStore);
-        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.updateAnOffer);
+        this.router.post(`${this.path}/offers`, authMiddleware, accessMiddleware.onlyAsMerchant, this.postAnOffer);
+        // this.router.get(`${this.path}/offers/:merchant_id`, this.getOffersByStore);
+        // this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.updateAnOffer);
+        this.router.delete(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.deleteAnOffer);
     }
 
-    private getOffers = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private getOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+        console.log(request);
         const offers = await this.user.aggregate([
             { $unwind: '$offers' },
             { $project: { name: '$name', offer_id: 1, cost: '$offers.cost', description: '$offers.description', expiresAt: '$offers.expiresAt' } }
@@ -59,6 +61,7 @@ class LoyaltyController implements Controller {
 
     private getOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
         const offers = await this.user.find({ _id: request.params.merchant_id }, { offers: true })
+        response.send(offers)
     }
 
     private updateAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -67,16 +70,26 @@ class LoyaltyController implements Controller {
         console.log(request.user._id);
 
         this.user.update(
-            { _id: request.user._id, 'offers._id': request.params.offer_id}, 
-            {$set: {'offers.$[]': {_id: request.params.offer_id, description: data.description, cost: data.cost, expiresAt: data.expiresAt}}}, function(error, solve) {
+            { _id: request.user._id, 'offers._id': request.params.offer_id },
+            { $set: { 'offers.$[]': { _id: request.params.offer_id, description: data.description, cost: data.cost, expiresAt: data.expiresAt } } }, function (error, solve) {
                 console.log("S: " + JSON.stringify(solve));
                 console.log("E: " + error);
             }
-          );
+        );
         //return res.send(200);
-      }
-    
-    
+    }
+
+    private deleteAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+        const aek = await this.user.updateOne({ _id: request.user._id },
+            {
+                $pull: {
+                    offers: {
+                        _id: request.params.offer_id
+                    }
+                }
+            });
+        response.send(aek)
+    }
 }
 
 export default LoyaltyController;

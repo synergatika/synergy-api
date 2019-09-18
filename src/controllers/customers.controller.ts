@@ -9,6 +9,7 @@ import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';
 import authMiddleware from '../middleware/auth.middleware';
+import accessMiddleware from '../middleware/access.middleware'
 // Models
 import userModel from '../users/users.model';
 // Dtos
