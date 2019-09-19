@@ -4,14 +4,14 @@ import to from 'await-to-ts'
 import UsersException from '../exceptions/UsersException';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
-import User from '../users/user.interface';
+import User from '../usersInterfaces/user.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware'
 // Models
-import userModel from '../users/users.model';
+import userModel from '../models/user.model';
 // Dtos
 import CustomerDto from '../usersDtos/merchant.dto'
 

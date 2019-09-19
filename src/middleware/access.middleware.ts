@@ -1,6 +1,6 @@
 import { NextFunction, Response } from 'express';
 import AuthenticationException from '../exceptions/AuthenticationException';
-import userModel from '../users/users.model';
+import userModel from '../models/user.model';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 
 

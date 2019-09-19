@@ -7,16 +7,16 @@ import * as nodemailer from 'nodemailer';
 import AuthenticationException from '../exceptions/AuthenticationException';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
-import DataStoredInToken from '../interfaces/dataStoredInToken';
-import TokenData from '../interfaces/tokenData.interface';
-import AuthTokenData from '../interfaces/authTokenData.interface';
-import User from '../users/user.interface';
+import DataStoredInToken from '../authInterfaces/dataStoredInToken';
+import TokenData from '../authInterfaces/tokenData.interface';
+import AuthTokenData from '../authInterfaces/authTokenData.interface';
+import User from '../usersInterfaces/user.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';
 import authMiddleware from '../middleware/auth.middleware';
 // Models
-import userModel from '../users/users.model';
+import userModel from '../models/user.model';
 // Dtos
 import AuthenticationDto from '../authDtos/authentication.dto';
 import RegisterWithPasswordDto from '../authDtos/registerWithPassword.dto';
@@ -27,7 +27,6 @@ import ChangePassOutDto from '../authDtos/changePassOut.dto'
 import EmailDto from '../authDtos/email.dto'
 // Email
 import Transporter from '../utils/mailer'
-import { MongoCallback } from 'mongodb';
 
 class AuthenticationController implements Controller {
   public path = '/auth';
@@ -67,7 +66,7 @@ class AuthenticationController implements Controller {
         access: 'customer',
         verified: 'false',
         password: hashedPassword,
-      }, (error: Error, results: any): void => {
+      }, (error: Error, results: User): void => {
         if (error) next(new AuthenticationException(422, 'DB Error'));
         next();
       });
@@ -113,7 +112,7 @@ class AuthenticationController implements Controller {
         access: 'customer',
         verified: 'true',
         password: hashedPassword
-      }, (error: Error, results: any): void => {
+      }, (error: Error, results: User): void => {
         if (error) next(new AuthenticationException(404, 'DB Error'));
         response.locals = {
           user: {
@@ -139,7 +138,7 @@ class AuthenticationController implements Controller {
         access: 'merchant',
         verified: 'true',
         password: hashedPassword,
-      }, (error: Error, results: any): void => {
+      }, (error: Error, results: User): void => {
         if (error) next(new AuthenticationException(404, 'Something Wrong DB'))
         response.locals = {
           user: {
@@ -179,7 +178,7 @@ class AuthenticationController implements Controller {
   private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: EmailDto = request.body;
     if (await this.user.findOne({ email: data.email })) {
-      const token: AuthTokenData = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
+      const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
       this.user.findOneAndUpdate(
         {
           email: data.email
@@ -187,7 +186,7 @@ class AuthenticationController implements Controller {
         {
           $set: {
             verificationToken: token.token,
-            verificationExpiration: token.expiresIn
+            verificationExpiration: token.expiresAt
           }
         }, (error: Error, results: any): void => {
           if (error) next(new AuthenticationException(422, 'DB ERROR'));
@@ -235,7 +234,7 @@ class AuthenticationController implements Controller {
   private askRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: EmailDto = request.body;
     if (await this.user.findOne({ email: data.email })) {
-      const token: AuthTokenData = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
+      const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
       this.user.findOneAndUpdate(
         {
           email: data.email
@@ -243,7 +242,7 @@ class AuthenticationController implements Controller {
         {
           $set: {
             restorationToken: token.token,
-            restorationExpiration: token.expiresIn
+            restorationExpiration: token.expiresAt
           }
         }, (error: Error, results: any): void => {
           if (error) next(new AuthenticationException(422, 'DB ERROR'));
@@ -319,11 +318,10 @@ class AuthenticationController implements Controller {
     now.setHours(now.getHours() + hours);
     let seconds = Math.round(now.getTime() / 1000);
 
-    let token = {
+    return {
       token: outString,
-      expiresIn: parseInt(seconds.toString())
+      expiresAt: parseInt(seconds.toString())
     }
-    return token;
   }
 
   private emailSender = async (request: express.Request, response: express.Response, next: express.NextFunction) => {

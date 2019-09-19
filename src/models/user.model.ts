@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import User from './user.interface';
+import User from '../usersInterfaces/user.interface';
 
 const offerSchema = new mongoose.Schema({
   description: String,

@@ -5,17 +5,17 @@ import to from 'await-to-ts'
 import UsersException from '../exceptions/UsersException';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
-import Merchant from '../users/merchant.interface';
+import Merchant from '../usersInterfaces/merchant.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 // Models
-import userModel from '../users/users.model';
+import userModel from '../models/user.model';
 // Dtos
 import MerchantDto from '../usersDtos/merchant.dto'
-import DBException from 'exceptions/DBException';
+import DBException from '../exceptions/DBException';
 
 class MerchantsController implements Controller {
     public path = '/merchants';

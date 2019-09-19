@@ -4,19 +4,18 @@ import to from 'await-to-ts'
 // Exceptions
 import OffersException from '../exceptions/OffersException';
 import DBException from '../exceptions/DBException';
-
 // Interfaces
 import Controller from '../interfaces/controller.interface';
-import User from '../users/user.interface';
+import Offer from '../interfaces/offer.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 // Models
-import userModel from '../users/users.model';
+import userModel from '../models/user.model';
 // Dtos
-import MerchantDto from '../usersDtos/merchant.dto'
+import OfferDto from '../loyaltyDtos/offer.dto'
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
@@ -29,15 +28,15 @@ class LoyaltyController implements Controller {
 
     private initializeRoutes() {
         this.router.get(`${this.path}/offers`, this.getOffers);
-        this.router.post(`${this.path}/offers`, authMiddleware, accessMiddleware.onlyAsMerchant, this.postAnOffer);
+        this.router.post(`${this.path}/offers`, authMiddleware, accessMiddleware.onlyAsMerchant, validationMiddleware(OfferDto), this.postAnOffer);
         this.router.get(`${this.path}/offers/:merchant_id`, this.getOffersByStore);
-        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.updateAnOffer);
+        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, validationMiddleware(OfferDto), this.updateAnOffer);
         this.router.delete(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.deleteAnOffer);
     }
 
     private getOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
 
-        let err: Error, results: Object;
+        let err: Error, results: Offer[];
         [err, results] = await to(this.user.aggregate([
             {
                 $unwind: '$offers'
@@ -53,9 +52,9 @@ class LoyaltyController implements Controller {
     }
 
     private postAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        const data = request.body;
+        const data: OfferDto = request.body;
 
-        let err: Error, results: Object;
+        let err: Error, results: Offer;
         [err, results] = await to(this.user.updateOne({ _id: request.user._id },
             {
                 $push: {
@@ -71,7 +70,7 @@ class LoyaltyController implements Controller {
     }
 
     private getOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-        let err: Error, results: Object;
+        let err: Error, results: Offer[];
         [err, results] = await to(this.user.find({
             _id: request.params.merchant_id
         },
@@ -83,9 +82,9 @@ class LoyaltyController implements Controller {
     }
 
     private updateAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        const data = request.body;
+        const data: OfferDto = request.body;
 
-        let err: Error, results: Object;
+        let err: Error, results: Offer;
         [err, results] = await to(this.user.update(
             { _id: request.user._id, 'offers._id': request.params.offer_id },
             { $set: { 'offers.$[]': { _id: request.params.offer_id, description: data.description, cost: data.cost, expiresAt: data.expiresAt } } }, function (error, solve) {

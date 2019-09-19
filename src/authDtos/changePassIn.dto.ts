@@ -1,6 +1,6 @@
 import { IsString } from 'class-validator';
  
-class changePassInDto {
+class ChangePassInDto {
   @IsString()
   public oldPassword: string;
  
@@ -8,4 +8,4 @@ class changePassInDto {
   public newPassword: string;
 }
  
-export default changePassInDto;
+export default ChangePassInDto;

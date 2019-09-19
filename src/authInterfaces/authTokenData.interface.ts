@@ -1,5 +1,5 @@
 interface AuthTokenData {
     token: string;
-    expiresIn: number;
+    expiresAt: number;
 }
 export default AuthTokenData;  
