@@ -6,7 +6,7 @@ import OffersException from '../exceptions/OffersException';
 import DBException from '../exceptions/DBException';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
-import Offer from '../interfaces/offer.interface';
+import Offer from '../loyaltyInterfaces/offer.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';

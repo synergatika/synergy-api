@@ -42,8 +42,10 @@ class AuthenticationController implements Controller {
     this.router.post(`${this.path}/authenticate`, validationMiddleware(AuthenticationDto), this.authAuthenticate);
     this.router.post(`${this.path}/logout`, authMiddleware, this.loggingOut);
 
-    this.router.post(`${this.path}/register/customer`, validationMiddleware(RegisterWithOutPasswordDto), this.registerCustomer, this.emailSender);
-    this.router.post(`${this.path}/register/merchant`, validationMiddleware(RegisterWithOutPasswordDto), this.registerMerchant, this.emailSender);
+    this.router.post(`${this.path}/register/:access`, authMiddleware, validationMiddleware(RegisterWithOutPasswordDto), this.registerInside, this.emailSender);
+
+    //this.router.post(`${this.path}/register/customer`, validationMiddleware(RegisterWithOutPasswordDto), this.registerCustomer, this.emailSender);
+    //this.router.post(`${this.path}/register/merchant`, validationMiddleware(RegisterWithOutPasswordDto), this.registerMerchant, this.emailSender);
 
     this.router.put(`${this.path}/change_pass`, authMiddleware, validationMiddleware(ChangePassInDto), this.changePassInside);
 
@@ -75,7 +77,7 @@ class AuthenticationController implements Controller {
 
   private authAuthenticate = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: AuthenticationDto = request.body;
-    const user = await this.user.findOne({ email: data.email });
+    const user = await this.user.findOne({ email: data.email }, {offers:false});
     if (user) {
       if (user.verified) {
         const isPasswordMatching = await bcrypt.compare(data.password, user.password);
@@ -100,6 +102,32 @@ class AuthenticationController implements Controller {
     response.send(200);
   }
 
+  private registerInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterWithOutPasswordDto = request.body;
+    if (await this.user.findOne({ email: data.email })) {
+      next(new AuthenticationException(404, 'Already Exists!'));
+    } else {
+      const tempPassword = this.generateToken(10, 1).token;
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      this.user.create({
+        ...data,
+        access: request.params.access,
+        verified: 'true',
+        password: hashedPassword
+      }, (error: Error, results: User): void => {
+        if (error) next(new AuthenticationException(404, 'DB Error'));
+        response.locals = {
+          user: {
+            name: data.name,
+            email: data.email,
+            password: tempPassword
+          }, token: null, state: '3'
+        }
+        next();
+      });
+    }
+  }
+/*
   private registerCustomer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RegisterWithOutPasswordDto = request.body;
     if (await this.user.findOne({ email: data.email })) {
@@ -151,7 +179,7 @@ class AuthenticationController implements Controller {
       })
     }
   }
-
+*/
   private changePassInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: ChangePassInDto = request.body;
     const user = await this.user.findOne({ _id: request.user._id });
