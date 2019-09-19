@@ -1,29 +1,15 @@
 interface User {
   _id: string;
+
   name: string;
+  imageURL: String
+
   email: string;
   password: string;
+
   access: string;
   verified: boolean;
-  /*restorationToken: string;
-  restorationExpiration: number;
-  verificationToken: string;
-  verificationExpiration: number;
-  auth: {
-    restorationToken: string;
-   restorationExpiration: number;
-    verificationToken: string;
-    verificationExpiration: number;
-  }*/
-  /*contact: {
-    phone: number;
-    web: string;
-    address: {
-      street: string;
-      city: string;
-      zipCode: number;
-    }
-  }*/
+  createdAt: Date;
 }
 
 export default User;

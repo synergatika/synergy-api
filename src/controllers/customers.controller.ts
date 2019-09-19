@@ -1,5 +1,5 @@
 import * as express from 'express';
-
+import to from 'await-to-ts'
 // Exceptions
 import UsersException from '../exceptions/UsersException';
 // Interfaces
@@ -30,30 +30,30 @@ class CustomersController implements Controller {
     }
 
     private getLoggedInUserInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        const customer = this.user.findOne({ _id: request.user._id })
-        response.send(customer);
+        let error: Error, results: User;
+        [error, results] = await to(this.user.findOne({
+            _id: request.user._id
+        }).catch());
+        if (error) new UsersException(404, 'No user');
+        results.password = undefined;
+        response.send(results);
     }
 
     private updateLoggedInUserInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: CustomerDto = request.body;
-        this.user.findOneAndUpdate(
-            {
-                _id: request.user._id
-            },
-            {
-                $set: {
-                    name: data.name,
-                    imageURL: data.imageURL
-                }
-            }, { new: true })
-            .then((user) => {
-                if (user) {
-                    user.password = undefined;
-                    response.send(user);
-                } else {
-                    next(new UsersException(404, 'No user'));
-                }
-            });
+        let error: Error, results: User;
+        [error, results] = await to(this.user.findOneAndUpdate({
+            _id: request.user._id
+        }, {
+            $set: {
+                name: data.name,
+                imageURL: data.imageURL
+            }
+        }, { new: true }).catch());
+        if (error) next(new UsersException(404, 'No user'));
+
+        results.password = undefined;
+        response.send(results);
     }
 }
 
