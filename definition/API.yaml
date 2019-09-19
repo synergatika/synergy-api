@@ -484,7 +484,7 @@ components:
               - $ref: "#/components/schemas/User"
               - $ref: '#/components/schemas/Access'
     RefreshTokenRes:
-      description: Expectedd response to a valid request
+      description: Expected response to a valid request
       content:
         application/json:
           schema:

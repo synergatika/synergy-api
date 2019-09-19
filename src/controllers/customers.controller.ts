@@ -1,5 +1,6 @@
 import * as express from 'express';
 import to from 'await-to-ts'
+
 // Exceptions
 import UsersException from '../exceptions/UsersException';
 // Interfaces
@@ -9,7 +10,7 @@ import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';
 import authMiddleware from '../middleware/auth.middleware';
-import accessMiddleware from '../middleware/access.middleware'
+// import accessMiddleware from '../middleware/access.middleware'
 // Models
 import userModel from '../models/user.model';
 // Dtos
@@ -26,7 +27,7 @@ class CustomersController implements Controller {
 
     private initializeRoutes() {
         this.router.get(`${this.path}`, authMiddleware, this.getLoggedInUserInfo);
-        this.router.put(`${this.path}`, authMiddleware, this.updateLoggedInUserInfo);
+        this.router.put(`${this.path}`, authMiddleware, validationMiddleware(CustomerDto), this.updateLoggedInUserInfo);
     }
 
     private getLoggedInUserInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

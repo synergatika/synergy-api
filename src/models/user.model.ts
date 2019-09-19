@@ -4,7 +4,7 @@ import User from '../usersInterfaces/user.interface';
 const offerSchema = new mongoose.Schema({
   description: String,
   cost: Number,
-  expiresAt: String
+  expiresAt: Number
 }, { timestamps: true });
 
 const addressSchema = new mongoose.Schema({
@@ -30,8 +30,9 @@ const userSchema = new mongoose.Schema({
   contact: contactSchema,
   name: String,
   email: String,
-  imageURL: String,
   password: String,
+  verified: Boolean,
+  imageURL: String,
   access: {
     type: String,
     enum: ['customer', 'merchant', 'admin'],
@@ -42,7 +43,6 @@ const userSchema = new mongoose.Schema({
   verificationToken: String,
   verificationExpiration: Number,
   //auth: authSchema,
-  verified: Boolean,
   offers: [offerSchema]
 }, {
   timestamps: true

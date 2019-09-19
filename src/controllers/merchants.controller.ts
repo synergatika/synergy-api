@@ -15,7 +15,6 @@ import accessMiddleware from '../middleware/access.middleware';
 import userModel from '../models/user.model';
 // Dtos
 import MerchantDto from '../usersDtos/merchant.dto'
-import DBException from '../exceptions/DBException';
 
 class MerchantsController implements Controller {
     public path = '/merchants';

@@ -1,10 +1,5 @@
-import { IsString, IsEmail, IsEnum } from 'class-validator';
+import { IsString, IsEmail } from 'class-validator';
  
-export enum Access {
-  Customer = 'customer',
-  Merchant = 'merchant',
-}
-
 class RegisterWithOutPasswordDto {
   @IsString()
   public name: string;

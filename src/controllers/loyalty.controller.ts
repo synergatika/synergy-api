@@ -43,7 +43,7 @@ class LoyaltyController implements Controller {
             },
             {
                 $project: {
-                    _id: false, name: '$name', merchant_id: '$_id', offer_id: '$offers._id', cost: '$offers.cost', description: '$offers.description', expiresAt: '$offers.expiresAt'
+                    _id: false, name: '$name', merchant_id: '$_id', offer_id: '$offers._id', cost: '$offers.cost', description: '$offers.description', expiresAt: '$offers.expiresAt', createdAt: '$offers.createdAt'
                 }
             }
         ]).exec().catch());
@@ -54,8 +54,8 @@ class LoyaltyController implements Controller {
     private postAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: OfferDto = request.body;
 
-        let err: Error, results: Offer;
-        [err, results] = await to(this.user.updateOne({ _id: request.user._id },
+        let error: Error, results: Object;
+        [error, results] = await to(this.user.updateOne({ _id: request.user._id },
             {
                 $push: {
                     offers: {
@@ -65,40 +65,47 @@ class LoyaltyController implements Controller {
                     }
                 }
             }).catch());
-        if (err) next(new DBException(422, err.message));
+        if (error) next(new DBException(422, error.message));
         response.send(results);
-    }
+    } // {"n": 1, "nModified": 1, "ok": 1}
 
     private getOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-        let err: Error, results: Offer[];
-        [err, results] = await to(this.user.find({
+        let error: Error, results: Offer[];
+        [error, results] = await to(this.user.find({
             _id: request.params.merchant_id
         },
             {
                 offers: true
             }).catch());
-        if (err) next(new DBException(422, err.message));
+        if (error) next(new DBException(422, error.message));
         response.send(results);
     }
 
     private updateAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: OfferDto = request.body;
 
-        let err: Error, results: Offer;
-        [err, results] = await to(this.user.update(
+        let error: Error, results: Object;
+        [error, results] = await to(this.user.update(
             { _id: request.user._id, 'offers._id': request.params.offer_id },
-            { $set: { 'offers.$[]': { _id: request.params.offer_id, description: data.description, cost: data.cost, expiresAt: data.expiresAt } } }, function (error, solve) {
-                console.log("S: " + JSON.stringify(solve));
-                console.log("E: " + error);
+            {
+                $set:
+                {
+                    'offers.$[]': {
+                        _id: request.params.offer_id,
+                        description: data.description,
+                        cost: data.cost,
+                        expiresAt: data.expiresAt
+                    }
+                }
             }).catch());
-        if (err) next(new DBException(422, err.message));
+        if (error) next(new DBException(422, error.message));
         response.send(results);
-    }
+    } // results = {"n": 1, "nModified": 1, "ok": 1}
 
     private deleteAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
-        let err: Error, results: Object;
-        [err, results] = await to(this.user.updateOne({ _id: request.user._id },
+        let error: Error, results: Object;
+        [error, results] = await to(this.user.updateOne({ _id: request.user._id },
             {
                 $pull: {
                     offers: {
@@ -106,9 +113,9 @@ class LoyaltyController implements Controller {
                     }
                 }
             }).catch());
-        if (err) next(new DBException(422, err.message));
+        if (error) next(new DBException(422, error.message));
         response.send(results);
-    }
+    } // results = {"n": 1, "nModified": 1, "ok": 1}
 }
 
 export default LoyaltyController;
