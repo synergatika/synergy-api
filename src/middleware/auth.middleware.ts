@@ -7,11 +7,7 @@ import userModel from '../models/user.model';
 
 async function authMiddleware(request: RequestWithUser, response: Response, next: NextFunction) {
   const cookies = request.cookies;
-  
-  cookies.Authorization = 
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZDdmYTdmNmYxODExZTJhNzgyZGMyNzEiLCJpYXQiOjE1Njg4OTk2MTAsImV4cCI6MTU2ODkzNTYxMH0.-KpKGcpup3-UCcUm0gj1bgkxBZPoXpz-NSr4bImydls"
- // console.log(request.cookies);
-  
+    
   if (cookies && cookies.Authorization) {
     const secret = process.env.JWT_SECRET;
     try {
