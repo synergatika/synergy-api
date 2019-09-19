@@ -5,24 +5,25 @@ interface User {
   password: string;
   access: string;
   verified: boolean;
-  restorationToken: string;
+  /*restorationToken: string;
   restorationExpiration: number;
   verificationToken: string;
   verificationExpiration: number;
-  /*auth: {
+  auth: {
     restorationToken: string;
    restorationExpiration: number;
     verificationToken: string;
     verificationExpiration: number;
   }*/
-  contact: {
+  /*contact: {
     phone: number;
+    web: string;
     address: {
       street: string;
       city: string;
       zipCode: number;
     }
-  }
+  }*/
 }
 
 export default User;

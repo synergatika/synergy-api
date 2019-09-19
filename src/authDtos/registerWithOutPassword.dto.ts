@@ -11,9 +11,6 @@ class RegisterWithOutPasswordDto {
  
   @IsEmail()
   public email: string;
- 
-  @IsEnum(Access) 
-  public access: Access 
 }
  
 export default RegisterWithOutPasswordDto;

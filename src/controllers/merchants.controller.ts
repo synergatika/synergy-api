@@ -32,7 +32,6 @@ class MerchantsController implements Controller {
 
     private getMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const merchants = await this.user.find({ access: 'merchant' }, { password: false, verified: false });
-        console.log(merchants)
         response.send(merchants);
     }
 
@@ -54,6 +53,7 @@ class MerchantsController implements Controller {
                         name: data.name,
                         imageURL: data.imageURL,
                         contact: {
+                            web: data.contact.web,
                             phone: data.contact.phone,
                             address: {
                                 street: data.contact.address.street,

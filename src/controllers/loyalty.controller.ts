@@ -1,7 +1,10 @@
 import * as express from 'express';
+import to from 'await-to-ts'
 
 // Exceptions
 import OffersException from '../exceptions/OffersException';
+import DBException from '../exceptions/DBException';
+
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import User from '../users/user.interface';
@@ -27,26 +30,33 @@ class LoyaltyController implements Controller {
     private initializeRoutes() {
         this.router.get(`${this.path}/offers`, this.getOffers);
         this.router.post(`${this.path}/offers`, authMiddleware, accessMiddleware.onlyAsMerchant, this.postAnOffer);
-        // this.router.get(`${this.path}/offers/:merchant_id`, this.getOffersByStore);
-        // this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.updateAnOffer);
+        this.router.get(`${this.path}/offers/:merchant_id`, this.getOffersByStore);
+        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.updateAnOffer);
         this.router.delete(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.deleteAnOffer);
     }
 
     private getOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-        console.log(request);
-        const offers = await this.user.aggregate([
-            { $unwind: '$offers' },
-            { $project: { name: '$name', offer_id: 1, cost: '$offers.cost', description: '$offers.description', expiresAt: '$offers.expiresAt' } }
-        ]);
-        response.send(offers);
-        // const merchants = await this.user.find({ access: 'merchant' });
-        // console.log(merchants)
-        // response.send(merchants.map(({password, ...keepAttrs}) => keepAttrs));
+
+        let err: Error, results: Object;
+        [err, results] = await to(this.user.aggregate([
+            {
+                $unwind: '$offers'
+            },
+            {
+                $project: {
+                    _id: false, name: '$name', merchant_id: '$_id', offer_id: '$offers._id', cost: '$offers.cost', description: '$offers.description', expiresAt: '$offers.expiresAt'
+                }
+            }
+        ]).exec().catch());
+        if (err) next(new DBException(422, err.message));
+        response.send(results);
     }
 
     private postAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data = request.body;
-        await this.user.updateOne({ _id: request.user._id },
+
+        let err: Error, results: Object;
+        [err, results] = await to(this.user.updateOne({ _id: request.user._id },
             {
                 $push: {
                     offers: {
@@ -55,40 +65,50 @@ class LoyaltyController implements Controller {
                         "expiresAt": data.expiresAt
                     }
                 }
-            })
-        response.send("ok")
+            }).catch());
+        if (err) next(new DBException(422, err.message));
+        response.send(results);
     }
 
     private getOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-        const offers = await this.user.find({ _id: request.params.merchant_id }, { offers: true })
-        response.send(offers)
+        let err: Error, results: Object;
+        [err, results] = await to(this.user.find({
+            _id: request.params.merchant_id
+        },
+            {
+                offers: true
+            }).catch());
+        if (err) next(new DBException(422, err.message));
+        response.send(results);
     }
 
     private updateAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data = request.body;
-        console.log(request.params);
-        console.log(request.user._id);
 
-        this.user.update(
+        let err: Error, results: Object;
+        [err, results] = await to(this.user.update(
             { _id: request.user._id, 'offers._id': request.params.offer_id },
             { $set: { 'offers.$[]': { _id: request.params.offer_id, description: data.description, cost: data.cost, expiresAt: data.expiresAt } } }, function (error, solve) {
                 console.log("S: " + JSON.stringify(solve));
                 console.log("E: " + error);
-            }
-        );
-        //return res.send(200);
+            }).catch());
+        if (err) next(new DBException(422, err.message));
+        response.send(results);
     }
 
     private deleteAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        const aek = await this.user.updateOne({ _id: request.user._id },
+
+        let err: Error, results: Object;
+        [err, results] = await to(this.user.updateOne({ _id: request.user._id },
             {
                 $pull: {
                     offers: {
                         _id: request.params.offer_id
                     }
                 }
-            });
-        response.send(aek)
+            }).catch());
+        if (err) next(new DBException(422, err.message));
+        response.send(results);
     }
 }
 

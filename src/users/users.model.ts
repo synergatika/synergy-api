@@ -15,7 +15,8 @@ const addressSchema = new mongoose.Schema({
 
 const contactSchema = new mongoose.Schema({
   address: addressSchema,
-  phone: String
+  phone: String,
+  web: String
 });
 
 const authSchema = new mongoose.Schema({

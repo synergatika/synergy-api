@@ -8,8 +8,8 @@ import userModel from '../users/users.model';
 async function authMiddleware(request: RequestWithUser, response: Response, next: NextFunction) {
   const cookies = request.cookies;
   
-  cookies.Authorization = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZDdmYTdmNmYxODExZTJhNzgyZGMyNzEiLCJpYXQiOjE1Njg3OTYxODUsImV4cCI6MTU2ODgzMjE4NX0.hqs10mzYnDIHxqLwdfv1ayBVtBXs3DHhNk67bxQaWAA"
-  console.log(request.cookies);
+ // cookies.Authorization = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI1ZDdmYTc5NzUwMGM5YzFmMmNkMDJjYTQiLCJpYXQiOjE1Njg4MTIxNjAsImV4cCI6MTU2ODg0ODE2MH0.bME4mt7XTl_oL5ocEvQsBmX0NxfxqFjjfD02UNF-_So";
+ // console.log(request.cookies);
   
   if (cookies && cookies.Authorization) {
     const secret = process.env.JWT_SECRET;

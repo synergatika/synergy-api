@@ -19,7 +19,7 @@ class RegisterWithOutPasswordDto {
 export default RegisterWithOutPasswordDto;
 */
 
-export class Address  {
+export class Address {
   @IsString()
   public street: string;
 
@@ -33,6 +33,9 @@ export class Address  {
 export class Contact {
   @IsString()
   public phone: string;
+
+  @IsString()
+  public web: string;
 
   @IsString()
   public address: Address;

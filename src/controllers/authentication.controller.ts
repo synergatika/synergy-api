@@ -27,6 +27,7 @@ import ChangePassOutDto from '../authDtos/changePassOut.dto'
 import EmailDto from '../authDtos/email.dto'
 // Email
 import Transporter from '../utils/mailer'
+import { MongoCallback } from 'mongodb';
 
 class AuthenticationController implements Controller {
   public path = '/auth';
@@ -40,17 +41,37 @@ class AuthenticationController implements Controller {
   private initializeRoutes() {
     this.router.post(`${this.path}/register`, validationMiddleware(RegisterWithPasswordDto), this.authRegister, this.askVerification, this.emailSender);
     this.router.post(`${this.path}/authenticate`, validationMiddleware(AuthenticationDto), this.authAuthenticate);
-    this.router.put(`${this.path}/change_pass`, authMiddleware, validationMiddleware(ChangePassInDto), this.changePassInside);
-    this.router.get(`${this.path}/verify_email`, validationMiddleware(EmailDto), this.askVerification, this.emailSender);
-    this.router.post(`${this.path}/verify_email`, validationMiddleware(CheckTokenDto), this.checkVerification);
-    this.router.get(`${this.path}/forgot_pass`, validationMiddleware(EmailDto), this.askRestoration, this.emailSender);
-    this.router.post(`${this.path}/forgot_pass`, validationMiddleware(CheckTokenDto), this.checkRestoration);
-    this.router.put(`${this.path}/forgot_pass`, validationMiddleware(ChangePassOutDto), this.changePassOutside);
-    this.router.post(`${this.path}/logout`, this.loggingOut);
+    this.router.post(`${this.path}/logout`, authMiddleware, this.loggingOut);
 
     this.router.post(`${this.path}/register/customer`, validationMiddleware(RegisterWithOutPasswordDto), this.registerCustomer, this.emailSender);
     this.router.post(`${this.path}/register/merchant`, validationMiddleware(RegisterWithOutPasswordDto), this.registerMerchant, this.emailSender);
 
+    this.router.put(`${this.path}/change_pass`, authMiddleware, validationMiddleware(ChangePassInDto), this.changePassInside);
+
+    this.router.get(`${this.path}/verify_email`, validationMiddleware(EmailDto), this.askVerification, this.emailSender);
+    this.router.post(`${this.path}/verify_email`, validationMiddleware(CheckTokenDto), this.checkVerification);
+
+    this.router.get(`${this.path}/forgot_pass`, validationMiddleware(EmailDto), this.askRestoration, this.emailSender);
+    this.router.post(`${this.path}/forgot_pass`, validationMiddleware(CheckTokenDto), this.checkRestoration);
+    this.router.put(`${this.path}/forgot_pass`, validationMiddleware(ChangePassOutDto), this.changePassOutside);
+  }
+
+  private authRegister = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterWithPasswordDto = request.body;
+    if (await this.user.findOne({ email: data.email })) {
+      next(new AuthenticationException(404, 'User with that credential already exists'));
+    } else {
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      this.user.create({
+        ...data,
+        access: 'customer',
+        verified: 'false',
+        password: hashedPassword,
+      }, (error: Error, results: any): void => {
+        if (error) next(new AuthenticationException(422, 'DB Error'));
+        next();
+      });
+    }
   }
 
   private authAuthenticate = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -60,7 +81,7 @@ class AuthenticationController implements Controller {
       if (user.verified) {
         const isPasswordMatching = await bcrypt.compare(data.password, user.password);
         if (isPasswordMatching) {
-          user.password = user.restorationExpiration = undefined;
+          user.password = undefined;
           const tokenData = this.createToken(user);
           response.setHeader('Set-Cookie', [this.createCookie(tokenData)]);
           response.send(user);
@@ -68,84 +89,221 @@ class AuthenticationController implements Controller {
           next(new AuthenticationException(404, 'Wrong Credentials'));
         }
       } else {
-        next(new AuthenticationException(404, 'You need to verify email. We send you email'));
+        next(this.askVerification);
       }
     } else {
       next(new AuthenticationException(404, 'No user with this credentials'));
     }
   }
 
+  private loggingOut = (request: express.Request, response: express.Response) => {
+    response.setHeader('Set-Cookie', ['Authorization=;Max-age=0']);
+    response.send(200);
+  }
+
   private registerCustomer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RegisterWithOutPasswordDto = request.body;
-    if ((request.user.access === 'merchant') || (request.user.access === 'admin')) {
-      if (await this.user.findOne({ email: data.email })) {
-        next(new AuthenticationException(404, 'Already Exists!'));
-      } else {
-        const tempPassword = this.generateToken(10, 1).token;
-        const hashedPassword = await bcrypt.hash(tempPassword, 10);
-        const user = await this.user.create({
-          ...data,
-          access: 'customer',
-          verified: 'true',
-          password: hashedPassword
-        })
-        response.locals.user = {
-          name: data.name,
-          email: data.email,
-          password: tempPassword
-        }
-        response.locals.state = 3;
-        next();
-      }
+    if (await this.user.findOne({ email: data.email })) {
+      next(new AuthenticationException(404, 'Already Exists!'));
     } else {
-      next(new AuthenticationException(404, 'Not Authorized'));
+      const tempPassword = this.generateToken(10, 1).token;
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      this.user.create({
+        ...data,
+        access: 'customer',
+        verified: 'true',
+        password: hashedPassword
+      }, (error: Error, results: any): void => {
+        if (error) next(new AuthenticationException(404, 'DB Error'));
+        response.locals = {
+          user: {
+            name: data.name,
+            email: data.email,
+            password: tempPassword
+          }, token: null, state: '3'
+        }
+        next();
+      });
     }
   }
 
   private registerMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RegisterWithOutPasswordDto = request.body;
-    if (request.user.access === "admin") {
-      if (await this.user.findOne({ email: data.email })) {
-        next(new AuthenticationException(404, 'Already Exists!'));
-      } else {
-        const tempPassword = this.generateToken(10, 1).token;
-        const hashedPassword = await bcrypt.hash(tempPassword, 10);
-        const user = await this.user.create({
-          ...data,
-          access: 'merchant',
-          verified: 'true',
-          password: hashedPassword,
-        })
-        response.locals.user = {
-          name: data.name,
-          email: data.email,
-          password: tempPassword
-        }
-        response.locals.state = 3;
-        next();
-      }
+    if (await this.user.findOne({ email: data.email })) {
+      next(new AuthenticationException(404, 'Already Exists!'));
     } else {
-      next(new AuthenticationException(404, 'Not Authorized'));
+      const tempPassword = this.generateToken(10, 1).token;
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      this.user.create({
+        ...data,
+        access: 'merchant',
+        verified: 'true',
+        password: hashedPassword,
+      }, (error: Error, results: any): void => {
+        if (error) next(new AuthenticationException(404, 'Something Wrong DB'))
+        response.locals = {
+          user: {
+            name: data.name,
+            email: data.email,
+            password: tempPassword
+          }, token: null, state: '3'
+        };
+        next();
+      })
     }
   }
 
-  private authRegister = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: RegisterWithPasswordDto = request.body;
+  private changePassInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: ChangePassInDto = request.body;
+    const user = await this.user.findOne({ _id: request.user._id });
+    if (user) {
+      const isPasswordMatching = await bcrypt.compare(data.oldPassword, user.password);
+      if (isPasswordMatching) {
+        user.password = undefined;
+        const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+        this.user.findByIdAndUpdate(
+          {
+            _id: request.user._id
+          },
+          {
+            password: hashedPassword
+          }, (error: Error, results: any): void => {
+            if (error) next(new AuthenticationException(404, 'No User'));
+            user.password = undefined;
+            response.send({ "message": "Your password has been updated!" });
+          });
+      }
+    }
+  }
+
+  private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: EmailDto = request.body;
     if (await this.user.findOne({ email: data.email })) {
-      next(new AuthenticationException(404, 'User with that credential already exists'));
+      const token: AuthTokenData = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
+      this.user.findOneAndUpdate(
+        {
+          email: data.email
+        },
+        {
+          $set: {
+            verificationToken: token.token,
+            verificationExpiration: token.expiresIn
+          }
+        }, (error: Error, results: any): void => {
+          if (error) next(new AuthenticationException(422, 'DB ERROR'));
+          response.locals = {
+            user: {
+              email: data.email
+            }, token: token.token, state: '1'
+          };
+          next();
+        });
     } else {
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-      const user = await this.user.create({
-        ...data,
-        access: 'customer',
-        verified: 'false',
-        password: hashedPassword,
-      });
-      user.password = undefined;
-      next();
-      // const tokenData = this.createToken(user);
-      // response.setHeader('Set-Cookie', [this.createCookie(tokenData)]);
-      // response.send(user);
+      next(new AuthenticationException(404, 'No user'));
+    }
+  }
+
+  private checkVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: CheckTokenDto = request.body;
+    const now = new Date()
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    if (await this.user.findOne({
+      verificationToken: data.token,
+      verificationExpiration: { $gt: seconds },
+      verified: false
+    })) {
+      this.user.findOneAndUpdate(
+        { verificationToken: data.token },
+        {
+          $set: {
+            verified: true,
+          },
+          $unset: {
+            verificationToken: "",
+            verificationExpiration: "",
+          }
+        }, (error: Error, results: any): void => {
+          if (error) next(new AuthenticationException(422, 'DB ERROR'));
+          response.send({ "message": "Now, you can access our app! Just log in!" });
+        });
+    } else {
+      next(new AuthenticationException(404, "wrong or expired link"));
+    }
+  }
+
+  private askRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: EmailDto = request.body;
+    if (await this.user.findOne({ email: data.email })) {
+      const token: AuthTokenData = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
+      this.user.findOneAndUpdate(
+        {
+          email: data.email
+        },
+        {
+          $set: {
+            restorationToken: token.token,
+            restorationExpiration: token.expiresIn
+          }
+        }, (error: Error, results: any): void => {
+          if (error) next(new AuthenticationException(422, 'DB ERROR'));
+          response.locals = {
+            user: {
+              email: data.email
+            }, token: token.token, state: '2'
+          };
+          next();
+        })
+    } else {
+      next(new AuthenticationException(404, 'There is no user registered with that email!'));
+    }
+  }
+
+  private checkRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: CheckTokenDto = request.body;
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    if (await this.user.findOne({
+      restorationToken: data.token,
+      restorationExpiration: { $gt: seconds }
+    })) {
+      response.send({ "message": "Now, please type and verify a new password!" });
+    } else {
+      next(new AuthenticationException(404, "Expired or wrong link"));
+    }
+  }
+
+  private changePassOutside = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: ChangePassOutDto = request.body;
+    const now = new Date()
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    if (data.newPassword === data.varPassword) {
+      if (await this.user.findOne({
+        restorationToken: data.token,
+        restorationExpiration: { $gt: seconds }
+      })) {
+        const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+        this.user.findOneAndUpdate(
+          { restorationToken: data.token },
+          {
+            $set: {
+              password: hashedPassword
+            },
+            $unset: {
+              restorationToken: "",
+              restorationExpiration: ""
+            }
+          }, (error: Error, results: any): void => {
+            if (error) next(new AuthenticationException(422, 'DB ERROR'));
+            response.send({ "message": "Your password has been updated! Please log in using your new credentials" });
+          });
+      } else {
+        next(new AuthenticationException(404, "wrong or expired link"));
+      }
+    } else {
+      next(new AuthenticationException(404, "passwords do not match"));
     }
   }
 
@@ -170,208 +328,40 @@ class AuthenticationController implements Controller {
 
   private emailSender = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const resData = response.locals;
-    console.log(resData);
+
     let resEmail = {
-      to: resData.email,
+      to: resData.user.email,
       subject: "",
       text: "",
       html: ""
     };
-    console.log(resEmail);
     if (resData.state === '1') { // Email Verification
-      resEmail.subject = "Email Verification" + " " + resData.token.token,
+      resEmail.subject = "Email Verification" + " " + resData.token,
         resEmail.text = "Must Verify",
         resEmail.html = '<b>Must Verify ✔</b>';
     } else if (resData.state === '2') { // Password Restore
-      resEmail.subject = "Password Restoration",
+      resEmail.subject = "Password Restoration" + " " + resData.token,
         resEmail.text = "Try Restore",
         resEmail.html = '<b>Try Restore ✔</b>';
     } else if (resData.state === '3') { // Invite an merchant or a customer
       resEmail.subject = "An account has been created for you" + " " + resData.user.password,
         resEmail.text = "Your account",
-        resEmail.html = '<b>Try Restore ✔</b>';
+        resEmail.html = '<b>Password included! Change it for your safety ✔</b>';
     }
 
     var mailOptions: nodemailer.SendMailOptions = {
-      from: 'Fred Foo ✔ <dimitris.sec@gmail.com>', // sender address
+      from: process.env.EMAIL_FROM, //'Fred Foo ✔ <dimitris.sec@gmail.com>', // sender address
       to: 'dmytakis@gmail.com', // list of receivers
       subject: resEmail.subject, // Subject line
       text: resEmail.text, // plaintext body
       html: resEmail.html // html body
     };
 
-    console.log(response.locals.token);
-    console.log(response.locals.state);
     // send mail with defined transport object
     Transporter.sendMail(mailOptions, (error: Error, info: nodemailer.SentMessageInfo): void => {
-      if (error) {
-        next(new AuthenticationException(404, 'Email Fail'));
-      } else {
-        response.send(info);
-      }
+      if (error) next(new AuthenticationException(404, 'Email Fail'));
+      response.send(info);
     });
-  }
-
-  private askRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: EmailDto = request.body;
-    if (await this.user.findOne({ email: data.email })) {
-      const token: AuthTokenData = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
-      this.user.findOneAndUpdate(
-        {
-          email: data.email
-        },
-        {
-          $set: {
-            restorationToken: token.token,
-            restorationExpiration: token.expiresIn
-          }
-        })
-        .then((user) => {
-          if (user) {
-            response.locals.email = data.email;
-            response.locals = token;
-            next();
-          } else {
-            next(new AuthenticationException(404, 'No user'));
-          }
-        });
-    } else {
-      next(new AuthenticationException(404, 'There is no user registered with that email!'));
-    }
-  }
-
-  private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: EmailDto = request.body;
-    if (await this.user.findOne({ email: data.email })) {
-      const token: AuthTokenData = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
-      this.user.findOneAndUpdate(
-        {
-          email: data.email
-        },
-        {
-          $set: {
-            verificationToken: token.token,
-            verificationExpiration: token.expiresIn
-          }
-        })
-        .then((user) => {
-          if (user) {
-            response.locals.token = token;
-            response.locals.email = data.email;
-            response.locals.state = '1';
-
-            next();
-          } else {
-            next(new AuthenticationException(404, 'No user'));
-          }
-        });
-    } else {
-      next(new AuthenticationException(404, 'No user'));
-    }
-  }
-
-  private checkRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: CheckTokenDto = request.body;
-    const now = new Date()
-    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
-
-    if (await this.user.findOne({
-      restorationToken: data.token,
-      restorationExpiration: { $gt: seconds }
-    })) {
-      response.send({ "message": "Now, please type and verify a new password!" });
-    } else {
-      next(new AuthenticationException(404, "Expired or wrong link"));
-    }
-  }
-
-  private checkVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: CheckTokenDto = request.body;
-    const now = new Date()
-    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
-
-    if (await this.user.findOne({
-      verificationToken: data.token,
-      verificationExpiration: { $gt: seconds },
-      verified: false
-    })) {
-      const user = await this.user.findOneAndUpdate(
-        { verificationToken: data.token },
-        {
-          $set: {
-            verified: true,
-          },
-          $unset: {
-            verificationToken: "",
-            verificationExpiration: "",
-          }
-        }
-      )
-      user.password = undefined;
-      response.send({ "message": "Now, you can access our app! Just log in!" });
-    } else {
-      next(new AuthenticationException(404, "wrong or expired link"));
-    }
-  }
-
-  private changePassInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const data: ChangePassInDto = request.body;
-    const user = await this.user.findOne({ _id: request.user._id });
-    if (user) {
-      const isPasswordMatching = await bcrypt.compare(data.oldPassword, user.password);
-      if (isPasswordMatching) {
-        user.password = undefined;
-        const hashedPassword = await bcrypt.hash(data.newPassword, 10);
-        this.user.findByIdAndUpdate({ _id: request.user._id }, { password: hashedPassword })
-          .then((user) => {
-            if (user) {
-              user.password = undefined;
-              response.send({ "message": "Your password has been updated!" });
-            } else {
-              next(new AuthenticationException(404, 'No User'));
-            }
-          });
-      }
-    }
-  }
-
-  private changePassOutside = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: ChangePassOutDto = request.body;
-    const now = new Date()
-    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
-
-    if (data.newPassword === data.varPassword) {
-      if (await this.user.findOne({
-        restorationToken: data.token,
-        restorationExpiration: { $gt: seconds }
-      })) {
-        const hashedPassword = await bcrypt.hash(data.newPassword, 10);
-        const user = await this.user.findOneAndUpdate(
-          { restorationToken: data.token },
-          {
-            $set: {
-              password: hashedPassword
-            },
-            $unset: {
-              restorationToken: "",
-              restorationExpiration: ""
-            }
-          }
-        )
-        user.password = undefined;
-        response.send({ "message": "Your password has been updated! Please log in using your new credentials" });
-      } else {
-        next(new AuthenticationException(404, "wrong or expired link"));
-      }
-    } else {
-      next(new AuthenticationException(404, "passwords do not match"));
-    }
-
-  }
-
-  private loggingOut = (request: express.Request, response: express.Response) => {
-    response.setHeader('Set-Cookie', ['Authorization=;Max-age=0']);
-    response.send(200);
   }
 
   private createCookie(tokenData: TokenData) {
