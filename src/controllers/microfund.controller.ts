@@ -16,6 +16,7 @@ import accessMiddleware from '../middleware/access.middleware'
 import userModel from '../models/user.model';
 // Dtos
 import CampaignDto from '../microfundDtos/campaign.dto'
+import { ObjectId } from 'mongodb';
 
 class MicrofundController implements Controller {
     public path = '/profile';
@@ -43,7 +44,14 @@ class MicrofundController implements Controller {
             $unwind: '$campaigns'
         }, {
             $project: {
-                _id: false, name: '$name', merchant_id: '$_id', campaign_id: '$campaigns._id', cost: '$campaigns.cost', description: '$campaigns.description', expiresAt: '$campaigns.expiresAt', createdAt: '$campaigns.createdAt'
+                _id: false,
+                merchant_name: '$name',
+                merchant_id: '$_id',
+                campaign_id: '$campaigns._id',
+                cost: '$campaigns.cost',
+                description: '$campaigns.description',
+                expiresAt: '$campaigns.expiresAt',
+                createdAt: '$campaigns.createdAt'
             }
         }
         ]).exec().catch());
@@ -76,6 +84,31 @@ class MicrofundController implements Controller {
     }
     private readCampaignsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
         let error: Error, campaigns: Campaign[];
+        [error, campaigns] = await to(this.user.aggregate([{
+            $match: {
+                _id: new ObjectId(request.params.merchant_id)
+            }
+        }, {
+            $unwind: '$campaigns'
+        }, {
+            $project: {
+                _id: false,
+                merchant_name: '$name',
+                merchant_id: '$_id',
+                campaign_id: '$campaigns._id',
+                description: '$campaigns.description',
+                expiresAt: '$campaigns.expiresAt',
+                createdAt: '$campaigns.createdAt'
+            }
+        }
+        ]).exec().catch());
+        if (error) next(new DBException(422, error.message));
+        response.status(200).send({
+            data: campaigns,
+            message: "OK"
+        });
+        /*
+        let error: Error, campaigns: Campaign[];
 
         [error, campaigns] = await to(this.user.find({
             _id: request.params.merchant_id
@@ -88,7 +121,7 @@ class MicrofundController implements Controller {
             data: campaigns,
             message: "OK"
         });
-    }
+    */  }
 
     private readACampaign = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
         let error: Error, campaign: Campaign;

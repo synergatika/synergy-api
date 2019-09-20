@@ -1,0 +1,569 @@
+openapi: "3.0.0"
+
+info:
+  version: Draft
+  title: Synergy API
+  description: ""
+  license:
+    name: MIT
+
+servers:
+  - url: http://synergy.synergatika.com/v1
+  
+paths:
+  # Paths: Profile & Merchant
+  /profile:
+    get:
+      summary: "Read user's profile info (only for customers)"
+      operationId: readUserProfile
+      tags:
+        - profile
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/User'
+          
+    put:
+      summary: "Update user's profile info (only for customers)"
+      operationId: updateUserProfile
+      tags:
+        - profile
+      requestBody:
+        $ref: '#/components/requestBodies/CustomerRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/User'
+
+  /merchants:
+    get:
+      summary: "Read all merchants' info (not require login)"
+      operationId: readAllMerchants
+      tags:
+        - merchants
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Merchants'
+
+  /merchants/{merchant_id}:
+    get:
+      summary: "Read merchant's info (not require login)"
+      operationId: getMerchantInfo
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - merchants
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Merchant'
+          
+    put:
+      summary: "Update merchant's info"
+      operationId: updateMerchantInfo
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - merchants
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Merchant'
+  
+  # Paths: Loyalty - Offers
+  /loyalty/offers:
+    get:
+      summary: "Read offers from every store"
+      operationId: readAllOffers
+      tags:
+        - loyalty
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Offers'
+
+    post:
+      summary: "Create a new offer"
+      operationId: createOffer
+      tags: 
+        - loyalty
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '201':
+          $ref: '#/components/responses/Create'
+          
+  /loyalty/offers/{merchant_id}:
+    get:
+      summary: "Read offers for a specific store"
+      operationId: readOffersByStore
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - loyalty
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Offers'
+          
+  /loyalty/offers/{merchant_id}/{offer_id}:
+    put:
+      summary: "Update an Offer"
+      operationId: updateOffer
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/offer_id'
+      tags:
+        - loyalty
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Update'
+
+    delete:
+      summary: "Delete an Offer"
+      operationId: deleteOffer
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/offer_id'
+      tags:
+        - loyalty
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Update'
+
+  # Paths: Microfund - Campaigns
+  /microfund/campaigns:
+    get:
+      summary: "Read campaigns from every store"
+      operationId: readAllCampaigns
+      tags:
+        - microfund
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Campaigns'
+
+    post:
+      summary: "Create a new campaign"
+      operationId: createCampaign
+      tags: 
+        - microfund
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '201':
+          $ref: '#/components/responses/Create'
+          
+  /microfund/campaigns/{merchant_id}:
+    get:
+      summary: "Read offers for a specific store"
+      operationId: readCampaignsByStore
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - microfund
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Campaigns'
+          
+  /microfund/campaigns/{merchant_id}/{campaign_id}:
+    put:
+      summary: "Update an Campaign"
+      operationId: updateCampaign
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/campaign_id'
+      tags:
+        - microfund
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Update'
+
+    delete:
+      summary: "Delete an Campaign"
+      operationId: deleteCampaign
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/campaign_id'
+      tags:
+        - microfund
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Update'
+  
+  /microfund/campaigns/{merchant_id}/{campaign_id}/verify:
+    put:
+      summary: "Verify a Campaign (by Admin)"
+      operationId: verifyCampaign
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/campaign_id'
+      tags:
+        - microfund
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Update'
+          
+components:
+  parameters:
+    merchant_id:
+      in: path
+      name: merchant_id
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "ID of the selected store"
+    offer_id:
+      in: path
+      name: offer_id
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "ID of the selected offer"
+    campaign_id: 
+      in: path
+      name: campaign_id
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "ID of the selected campaign"
+
+  requestBodies:
+    # Profile & Merchant
+    CustomerRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CustomerDto'
+    MerchantRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MerchantDto'
+    
+    # Loyalty
+    OfferRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OfferDto'
+    
+    # Microfund
+    CampaignRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignDto'
+            
+  responses:
+    # Profile & Merchant
+    User: 
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Customer"
+    Merchant:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Merchant"
+    Merchants:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Merchants"
+    
+    # Loaylty - Offers
+    Offers:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Offers"
+          example: 
+            - id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              cost: 1000
+              description: "Get 10% discount"
+              expiresAt: "2019-11-15"
+            - id: "a8a85f64-5717-6245-c3fc-2c963f66afa6"
+              cost: 2000
+              description: "Get 25% discount"
+              expiresAt: "2019-10-15"
+
+    # Microfund - Campaigns
+    Campaigns:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Campaigns"
+            
+    # Create, Update, Error
+    Create:
+      description: Expected response to valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Created"
+          example: 
+            code: 100
+            message: "Campaign successfully created!"          
+    Update:
+      description: Expected response to valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Updated"
+          example: 
+            code: 100
+            message: "User's Profile successfully updated!"          
+    UnexpectedError:
+      description: Unexpected error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example: 
+            code: 100
+            message: "Something wrong happes!"   
+             
+
+  schemas:
+    # Request - Profile & Merchant
+    CustomerDto:
+      type: object
+      properties:
+        name:
+          type: string
+        imageURL:
+          type: string
+          format: url
+    MerchantDto:
+      type: object
+      properties:
+        name:
+          type: string
+        imageURL:
+          type: string
+          format: url
+        contact:
+          type: object
+          properties:
+            phone: 
+              type: number
+              format: int64
+            web:
+              type: string
+              format: url
+            address: 
+              type: object
+              properties:
+                street:
+                  type: string
+                zipCode:
+                  type: number
+                  format: int64
+                city:
+                  type: string            
+    
+    # Request - Loyalty
+    OfferDto:
+      type: object
+      properties:
+        description:
+          type: string
+        cost:
+          type: number
+        expiresAt:
+          type: string
+          format: date
+    
+    # Request - Microfund
+    CampaignDto:
+      type: object
+      properties:
+        description:
+          type: string
+        expiresAt:
+          type: string
+          format: date
+          
+    # Response - Profile & Merchant
+    Customer: 
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name: 
+          type: string
+        imageURL:
+          type: string
+          format: uri
+        email: 
+          type: string
+          format: email
+        memberSince:
+          type: string
+          format: date
+    Merchant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name: 
+          type: string
+        imageURL:
+          type: string
+          format: uri
+        email: 
+          type: string
+          format: email
+        memberSince:
+          type: string
+          format: date
+        contact:
+          type: object
+          properties: 
+            phone: 
+              type: number
+              format: int64
+            web:
+              type: string
+              format: url
+            address: 
+              type: object
+              properties:
+                street:
+                  type: string
+                zipCode:
+                  type: number
+                  format: int64
+                city:
+                  type: string
+    Merchants:
+      type: array
+      items:
+        $ref: "#/components/schemas/Merchant"
+    
+    # Response - Loyalty Offers
+    Offer:
+      type: object
+      properties:
+        merchant_name:
+          type: string
+        merchant_id:
+          type: string
+          format: uuid        
+        offer_id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date          
+        description:
+          type: string
+        cost:
+          type: number
+        expiresAt:
+          type: string
+          format: date      
+    Offers:
+      type: array
+      items:
+        $ref: '#/components/schemas/Offer'
+    
+    # Response - Microfund Campaigns
+    Campaign:
+      type: object
+      properties:
+        merchant_name:
+          type: string
+        merchant_id:
+          type: string
+          format: uuid        
+        campaign_id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date          
+        description:
+          type: string
+        expiresAt:
+          type: string
+          format: date
+    Campaigns:
+      type: array
+      items:
+        $ref: '#/components/schemas/Campaign'
+    # Response - Typical Create, Update, Error   
+    Created:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    Updated:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string

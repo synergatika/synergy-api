@@ -17,6 +17,7 @@ import userModel from '../models/user.model';
 // Dtos
 import OfferDto from '../loyaltyDtos/offer.dto'
 import UsersException from '../exceptions/UsersException';
+import { ObjectId } from 'mongodb';
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
@@ -42,7 +43,14 @@ class LoyaltyController implements Controller {
             $unwind: '$offers'
         }, {
             $project: {
-                _id: false, name: '$name', merchant_id: '$_id', offer_id: '$offers._id', cost: '$offers.cost', description: '$offers.description', expiresAt: '$offers.expiresAt', createdAt: '$offers.createdAt'
+                _id: false,
+                merchant_name: '$name',
+                merchant_id: '$_id',
+                offer_id: '$offers._id',
+                cost: '$offers.cost',
+                description: '$offers.description',
+                expiresAt: '$offers.expiresAt',
+                createdAt: '$offers.createdAt'
             }
         }
         ]).exec().catch());
@@ -77,18 +85,38 @@ class LoyaltyController implements Controller {
 
     private readOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
         let error: Error, offers: Offer[];
-
-        [error, offers] = await to(this.user.find({
-            _id: request.params.merchant_id
+        [error, offers] = await to(this.user.aggregate([{
+            $match: {
+                _id: new ObjectId(request.params.merchant_id)
+            }
         }, {
-            offers: true
-        }).catch());
-
+            $unwind: '$offers'
+        }, {
+            $project: {
+                _id: false,
+                merchant_name: '$name',
+                merchant_id: '$_id',
+                offer_id: '$offers._id',
+                cost: '$offers.cost',
+                description: '$offers.description',
+                expiresAt: '$offers.expiresAt',
+                createdAt: '$offers.createdAt'
+            }
+        }
+        ]).exec().catch());
+        /*
+                [error, offers] = await to(this.user.find({
+                    _id: request.params.merchant_id
+                }, {
+                    offers: true
+                }).catch());
+         */
         if (error) next(new DBException(422, error.message));
         response.status(200).send({
             data: offers,
             message: "OK"
         });
+
     }
 
     private updateOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

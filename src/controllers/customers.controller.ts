@@ -27,11 +27,11 @@ class CustomersController implements Controller {
     }
 
     private initializeRoutes() {
-        this.router.get(`${this.path}`, authMiddleware, this.getLoggedInUserInfo);
-        this.router.put(`${this.path}`, authMiddleware, validationMiddleware(CustomerDto), this.updateLoggedInUserInfo);
+        this.router.get(`${this.path}`, authMiddleware, this.readUserProfile);
+        this.router.put(`${this.path}`, authMiddleware, validationMiddleware(CustomerDto), this.updateUserProfile);
     }
 
-    private getLoggedInUserInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private readUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         let error: Error, user: User;
         [error, user] = await to(this.user.findOne({
             _id: request.user._id
@@ -44,7 +44,7 @@ class CustomersController implements Controller {
         });
     }
 
-    private updateLoggedInUserInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private updateUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: CustomerDto = request.body;
         let error: Error, user: User;
         [error, user] = await to(this.user.findOneAndUpdate({

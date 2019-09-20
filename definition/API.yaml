@@ -123,10 +123,8 @@ paths:
   # Profile & Merchant Paths
   /profile:
     get:
-      summary: "Get user info"
-      operationId: getLoggedInUserInfo
-      parameters:
-        - $ref: '#/components/parameters/user_id'
+      summary: "Read user's profile info (only for customers)"
+      operationId: readUserProfile
       tags:
         - profile
       responses:
@@ -136,12 +134,12 @@ paths:
           $ref: '#/components/responses/User'
           
     put:
-      summary: "Update user info"
-      operationId: updateLoggedInUserInfo
-      parameters:
-        - $ref: '#/components/parameters/user_id'
+      summary: "Update user's profile info (only for customers)"
+      operationId: updateUserProfile
       tags:
         - profile
+      requestBody:
+        $ref: '#/components/requestBodies/CustomerRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
@@ -201,7 +199,6 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '201':
           $ref: '#/components/responses/EarnResponse'
-
 
   /loyalty/redeem:
     post:
@@ -311,10 +308,8 @@ paths:
   # Microfund Paths
   /microfund/campaigns:
     get:
-      summary: "Get all campaigns"
-      operationId: getAllCampaigns
-      parameters:
-        - $ref: '#/components/parameters/merchant_id'
+      summary: "Read all campaigns"
+      operationId: readAllCampaigns
       tags:
         - microfund
       responses:
@@ -324,21 +319,34 @@ paths:
           $ref: '#/components/responses/Campaigns'
           
     post:
-      summary: "Create a campaign"
-      operationId: createCampaigns
-      parameters:
-        - $ref: '#/components/parameters/merchant_id'
+      summary: "Create a new campaign"
+      operationId: createCampaign
       tags:
         - microfund
       responses:
         '201':
           $ref: '#/components/responses/CreateResponse'
-          
-  /microfund/campaigns/{campaign_id}:
+ 
+  /microfund/campaigns/{merchant_id}:
+    get:
+      summary: "Read all campaigns by Store"
+      operationId: readCampaignByStore
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - microfund
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
+          $ref: '#/components/responses/Campaigns'
+
+  /microfund/campaigns/{merchant_id}/{campaign_id}:
     get:
       summary: "Get campaign info"
-      operationId: getCampaignInfo
+      operationId: readCampaign
       parameters:
+        - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
       tags:
         - microfund
@@ -349,8 +357,9 @@ paths:
           $ref: '#/components/responses/Campaign'
     put:
       summary: "Edit campaign info"
-      operationId: updateCampaignInfo
+      operationId: updateCampaign
       parameters:
+        - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
       tags:
         - microfund
@@ -358,11 +367,24 @@ paths:
         '200':
           $ref: '#/components/responses/Campaign'
   
-  /microfund/campaigns/{campaign_id}/verify:
+    delete:
+      summary: "Delete a campaign"
+      operationId: "deleteCampaign"
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/campaign)id'
+      tags:
+        - microfund
+      responses:
+        '200':
+          $ref: '#/components/responses/Camapign'
+
+  /microfund/campaigns/{merchant_id}/{campaign_id}/verify:
     put:
       summary: "Administrator verifies the campaign content"
       operationId: verifyCampaignInfo
       parameters:
+        - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
       tags:
         - microfund
@@ -370,7 +392,7 @@ paths:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '200':
-          $ref: '#/components/responses/Campaigns'
+          $ref: '#/components/responses/Update'
           
 components:
   parameters:
