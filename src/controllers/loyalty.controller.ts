@@ -16,6 +16,7 @@ import accessMiddleware from '../middleware/access.middleware';
 import userModel from '../models/user.model';
 // Dtos
 import OfferDto from '../loyaltyDtos/offer.dto'
+import UsersException from '../exceptions/UsersException';
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
@@ -27,95 +28,118 @@ class LoyaltyController implements Controller {
     }
 
     private initializeRoutes() {
-        this.router.get(`${this.path}/offers`, this.getOffers);
-        this.router.post(`${this.path}/offers`, authMiddleware, accessMiddleware.onlyAsMerchant, validationMiddleware(OfferDto), this.postAnOffer);
-        this.router.get(`${this.path}/offers/:merchant_id`, this.getOffersByStore);
-        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, validationMiddleware(OfferDto), this.updateAnOffer);
-        this.router.delete(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.deleteAnOffer);
+        this.router.get(`${this.path}/offers`, this.readAllOffers);
+        this.router.post(`${this.path}/offers`, authMiddleware, accessMiddleware.onlyAsMerchant, validationMiddleware(OfferDto), this.createOffer);
+        this.router.get(`${this.path}/offers/:merchant_id`, this.readOffersByStore);
+        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, validationMiddleware(OfferDto), this.updateOffer);
+        this.router.delete(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.deleteOffer);
     }
 
-    private getOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    private readAllOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
 
-        let err: Error, results: Offer[];
-        [err, results] = await to(this.user.aggregate([
-            {
-                $unwind: '$offers'
-            },
-            {
-                $project: {
-                    _id: false, name: '$name', merchant_id: '$_id', offer_id: '$offers._id', cost: '$offers.cost', description: '$offers.description', expiresAt: '$offers.expiresAt', createdAt: '$offers.createdAt'
+        let error: Error, offers: Offer[];
+        [error, offers] = await to(this.user.aggregate([{
+            $unwind: '$offers'
+        }, {
+            $project: {
+                _id: false, name: '$name', merchant_id: '$_id', offer_id: '$offers._id', cost: '$offers.cost', description: '$offers.description', expiresAt: '$offers.expiresAt', createdAt: '$offers.createdAt'
+            }
+        }
+        ]).exec().catch());
+        if (error) next(new DBException(422, "DB Error"));
+        response.status(200).send({
+            data: offers,
+            message: "OK"
+        });
+    }
+
+    private createOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+        const data: OfferDto = request.body;
+
+        let error: Error, results: Object; // {"n": 1, "nModified": 1, "ok": 1}
+        [error, results] = await to(this.user.updateOne({
+            _id: request.user._id
+        }, {
+            $push: {
+                offers: {
+                    "cost": data.cost,
+                    "description": data.description,
+                    "expiresAt": data.expiresAt
                 }
             }
-        ]).exec().catch());
-        if (err) next(new DBException(422, err.message));
-        response.send(results);
+        }).catch());
+        if (error) next(new DBException(422, "DB Error"));
+        response.status(201).send({
+            data: {},
+            message: "Success! A new offer has been created!"
+        });
     }
 
-    private postAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        const data: OfferDto = request.body;
+    private readOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+        let error: Error, offers: Offer[];
 
-        let error: Error, results: Object;
-        [error, results] = await to(this.user.updateOne({ _id: request.user._id },
-            {
-                $push: {
-                    offers: {
-                        "cost": data.cost,
-                        "description": data.description,
-                        "expiresAt": data.expiresAt
-                    }
-                }
-            }).catch());
-        if (error) next(new DBException(422, error.message));
-        response.send(results);
-    } // {"n": 1, "nModified": 1, "ok": 1}
-
-    private getOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-        let error: Error, results: Offer[];
-        [error, results] = await to(this.user.find({
+        [error, offers] = await to(this.user.find({
             _id: request.params.merchant_id
-        },
-            {
-                offers: true
-            }).catch());
+        }, {
+            offers: true
+        }).catch());
+
         if (error) next(new DBException(422, error.message));
-        response.send(results);
+        response.status(200).send({
+            data: offers,
+            message: "OK"
+        });
     }
 
-    private updateAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private updateOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: OfferDto = request.body;
 
-        let error: Error, results: Object;
-        [error, results] = await to(this.user.update(
-            { _id: request.user._id, 'offers._id': request.params.offer_id },
-            {
+        if ((request.user._id).toString() === (request.params.merchant_id).toString()) {
+            let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
+            [error, results] = await to(this.user.updateOne({
+                _id: request.user._id,
+                'offers._id': request.params.offer_id
+            }, {
                 $set:
                 {
-                    'offers.$[]': {
-                        _id: request.params.offer_id,
-                        description: data.description,
-                        cost: data.cost,
-                        expiresAt: data.expiresAt
-                    }
+                    'offers.$[]._id': request.params.offer_id,
+                    'offers.$[].descript': data.description,
+                    'offers.$[].cost': data.cost,
+                    'offers.$[].expiresAt': data.expiresAt
                 }
             }).catch());
-        if (error) next(new DBException(422, error.message));
-        response.send(results);
-    } // results = {"n": 1, "nModified": 1, "ok": 1}
+            if (error) next(new DBException(422, error.message));
+            response.status(200).send({
+                data: {},
+                message: "Success! Offer has been updated!"
+            });
+        } else {
+            next(new UsersException(404, 'Not Authorized'));
+        }
+    }
 
-    private deleteAnOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private deleteOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
-        let error: Error, results: Object;
-        [error, results] = await to(this.user.updateOne({ _id: request.user._id },
-            {
+        if ((request.user._id).toString() === (request.params.merchant_id).toString()) {
+            let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
+            [error, results] = await to(this.user.updateOne({
+                _id: request.user._id
+            }, {
                 $pull: {
                     offers: {
                         _id: request.params.offer_id
                     }
                 }
             }).catch());
-        if (error) next(new DBException(422, error.message));
-        response.send(results);
-    } // results = {"n": 1, "nModified": 1, "ok": 1}
+            if (error) next(new DBException(422, error.message));
+            response.status(200).send({
+                data: {},
+                message: "Success! Offer has been deleted!"
+            });
+        } else {
+            next(new UsersException(404, 'Not Authorized'));
+        }
+    }
 }
 
 export default LoyaltyController;

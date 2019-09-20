@@ -5,6 +5,7 @@ import * as nodemailer from 'nodemailer';
 
 // Exceptions
 import AuthenticationException from '../exceptions/AuthenticationException';
+import DBException from '../exceptions/AuthenticationException';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import DataStoredInToken from '../authInterfaces/dataStoredInToken';
@@ -14,6 +15,7 @@ import User from '../usersInterfaces/user.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationMiddleware from '../middleware/validation.middleware';
+import accessMiddleware from '../middleware/access.middleware';
 import authMiddleware from '../middleware/auth.middleware';
 // Models
 import userModel from '../models/user.model';
@@ -27,6 +29,8 @@ import ChangePassOutDto from '../authDtos/changePassOut.dto'
 import EmailDto from '../authDtos/email.dto'
 // Email
 import Transporter from '../utils/mailer'
+import to from 'await-to-ts';
+import UsersException from 'exceptions/UsersException';
 
 class AuthenticationController implements Controller {
   public path = '/auth';
@@ -42,10 +46,7 @@ class AuthenticationController implements Controller {
     this.router.post(`${this.path}/authenticate`, validationMiddleware(AuthenticationDto), this.authAuthenticate);
     this.router.post(`${this.path}/logout`, authMiddleware, this.loggingOut);
 
-    this.router.post(`${this.path}/register/:access`, authMiddleware, validationMiddleware(RegisterWithOutPasswordDto), this.registerInside, this.emailSender);
-
-    //this.router.post(`${this.path}/register/customer`, validationMiddleware(RegisterWithOutPasswordDto), this.registerCustomer, this.emailSender);
-    //this.router.post(`${this.path}/register/merchant`, validationMiddleware(RegisterWithOutPasswordDto), this.registerMerchant, this.emailSender);
+    this.router.post(`${this.path}/register/:access`, authMiddleware, accessMiddleware.registerWithoutPass, validationMiddleware(RegisterWithOutPasswordDto), this.registerInside, this.emailSender);
 
     this.router.put(`${this.path}/change_pass`, authMiddleware, validationMiddleware(ChangePassInDto), this.changePassInside);
 
@@ -60,40 +61,52 @@ class AuthenticationController implements Controller {
   private authRegister = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: RegisterWithPasswordDto = request.body;
     if (await this.user.findOne({ email: data.email })) {
-      next(new AuthenticationException(404, 'User with that credential already exists'));
+      next(new AuthenticationException(404, 'A user with these credentials already exists!'));
     } else {
       const hashedPassword = await bcrypt.hash(data.password, 10);
-      this.user.create({
+
+      let error: Error, results: User;
+      [error, results] = await to(this.user.create({
         ...data,
         access: 'customer',
         verified: 'false',
         password: hashedPassword,
-      }, (error: Error, results: User): void => {
-        if (error) next(new AuthenticationException(422, 'DB Error'));
-        next();
-      });
+      }).catch());
+      if (error) next(new DBException(422, 'DB ERROR'));
+      next();
     }
   }
 
   private authAuthenticate = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: AuthenticationDto = request.body;
-    const user = await this.user.findOne({ email: data.email }, {offers:false});
-    if (user) {
+
+    let error: Error, user: User;
+    [error, user] = await to(this.user.findOne({
+      email: data.email
+    }, {
+      offers: false
+    }).catch());
+    if (error) next(new DBException(422, 'DB ERROR'));
+    else if (user) {
       if (user.verified) {
         const isPasswordMatching = await bcrypt.compare(data.password, user.password);
         if (isPasswordMatching) {
           user.password = undefined;
-          const tokenData = this.createToken(user);
-          response.setHeader('Set-Cookie', [this.createCookie(tokenData)]);
-          response.send(user);
+          response.status(200).send({
+            data: {
+              user: user,
+              token: this.createToken(user)
+            },
+            message: "OK"
+          });
         } else {
-          next(new AuthenticationException(404, 'Wrong Credentials'));
+          next(new AuthenticationException(404, 'Wrong Credentials.'));
         }
       } else {
         next(this.askVerification);
       }
     } else {
-      next(new AuthenticationException(404, 'No user with this credentials'));
+      next(new AuthenticationException(404, 'No user with these credentials.'));
     }
   }
 
@@ -105,101 +118,60 @@ class AuthenticationController implements Controller {
   private registerInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RegisterWithOutPasswordDto = request.body;
     if (await this.user.findOne({ email: data.email })) {
-      next(new AuthenticationException(404, 'Already Exists!'));
+      next(new AuthenticationException(404, 'A user with these credentials already exists!'));
     } else {
       const tempPassword = this.generateToken(10, 1).token;
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
-      this.user.create({
+
+      let error: Error, user: User;
+      [error, user] = await to(this.user.create({
         ...data,
         access: request.params.access,
         verified: 'true',
         password: hashedPassword
-      }, (error: Error, results: User): void => {
-        if (error) next(new AuthenticationException(404, 'DB Error'));
-        response.locals = {
-          user: {
-            name: data.name,
-            email: data.email,
-            password: tempPassword
-          }, token: null, state: '3'
-        }
-        next();
-      });
-    }
-  }
-/*
-  private registerCustomer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const data: RegisterWithOutPasswordDto = request.body;
-    if (await this.user.findOne({ email: data.email })) {
-      next(new AuthenticationException(404, 'Already Exists!'));
-    } else {
-      const tempPassword = this.generateToken(10, 1).token;
-      const hashedPassword = await bcrypt.hash(tempPassword, 10);
-      this.user.create({
-        ...data,
-        access: 'customer',
-        verified: 'true',
-        password: hashedPassword
-      }, (error: Error, results: User): void => {
-        if (error) next(new AuthenticationException(404, 'DB Error'));
-        response.locals = {
-          user: {
-            name: data.name,
-            email: data.email,
-            password: tempPassword
-          }, token: null, state: '3'
-        }
-        next();
-      });
+      }).catch());
+      if (error) next(new DBException(422, 'DB ERROR'));
+      response.locals = {
+        user: {
+          name: data.name,
+          email: data.email,
+          password: tempPassword
+        }, token: null, state: '3'
+      }
+      next();
     }
   }
 
-  private registerMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const data: RegisterWithOutPasswordDto = request.body;
-    if (await this.user.findOne({ email: data.email })) {
-      next(new AuthenticationException(404, 'Already Exists!'));
-    } else {
-      const tempPassword = this.generateToken(10, 1).token;
-      const hashedPassword = await bcrypt.hash(tempPassword, 10);
-      this.user.create({
-        ...data,
-        access: 'merchant',
-        verified: 'true',
-        password: hashedPassword,
-      }, (error: Error, results: User): void => {
-        if (error) next(new AuthenticationException(404, 'Something Wrong DB'))
-        response.locals = {
-          user: {
-            name: data.name,
-            email: data.email,
-            password: tempPassword
-          }, token: null, state: '3'
-        };
-        next();
-      })
-    }
-  }
-*/
   private changePassInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: ChangePassInDto = request.body;
-    const user = await this.user.findOne({ _id: request.user._id });
-    if (user) {
+
+    let error: Error, user: User;
+    [error, user] = await to(this.user.findOne({
+      _id: request.user._id
+    }).catch());
+    if (error) next(new DBException(422, 'DB ERROR'));
+    else if (user) {
       const isPasswordMatching = await bcrypt.compare(data.oldPassword, user.password);
       if (isPasswordMatching) {
         user.password = undefined;
         const hashedPassword = await bcrypt.hash(data.newPassword, 10);
-        this.user.findByIdAndUpdate(
-          {
-            _id: request.user._id
-          },
-          {
-            password: hashedPassword
-          }, (error: Error, results: any): void => {
-            if (error) next(new AuthenticationException(404, 'No User'));
-            user.password = undefined;
-            response.send({ "message": "Your password has been updated!" });
-          });
+
+        let error: Error, results: Object;
+        [error, results] = await to(this.user.updateOne({
+          _id: request.user._id
+        }, {
+          password: hashedPassword
+        }).catch());
+        if (error) next(new DBException(422, 'DB ERROR'));
+        response.status(200).send({
+          data: {},
+          message: "Success! Your password has been Updated"
+        });
+      } else {
+        next(new AuthenticationException(404, 'Wrong Credentials.'));
       }
+    } else {
+      next(new AuthenticationException(404, 'There is no User with these credentials.'));
     }
   }
 
@@ -207,26 +179,25 @@ class AuthenticationController implements Controller {
     const data: EmailDto = request.body;
     if (await this.user.findOne({ email: data.email })) {
       const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
-      this.user.findOneAndUpdate(
-        {
+
+      let error: Error, results: Object;
+      [error, results] = await to(this.user.updateOne({
+        email: data.email
+      }, {
+        $set: {
+          verificationToken: token.token,
+          verificationExpiration: token.expiresAt
+        }
+      }).catch());
+      if (error) next(new DBException(422, 'DB ERROR'));
+      response.locals = {
+        user: {
           email: data.email
-        },
-        {
-          $set: {
-            verificationToken: token.token,
-            verificationExpiration: token.expiresAt
-          }
-        }, (error: Error, results: any): void => {
-          if (error) next(new AuthenticationException(422, 'DB ERROR'));
-          response.locals = {
-            user: {
-              email: data.email
-            }, token: token.token, state: '1'
-          };
-          next();
-        });
+        }, token: token.token, state: '1'
+      };
+      next();
     } else {
-      next(new AuthenticationException(404, 'No user'));
+      next(new AuthenticationException(404, 'There is no User with these credentials.'));
     }
   }
 
@@ -235,27 +206,26 @@ class AuthenticationController implements Controller {
     const now = new Date()
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
-    if (await this.user.findOne({
-      verificationToken: data.token,
-      verificationExpiration: { $gt: seconds },
-      verified: false
-    })) {
-      this.user.findOneAndUpdate(
-        { verificationToken: data.token },
-        {
-          $set: {
-            verified: true,
-          },
-          $unset: {
-            verificationToken: "",
-            verificationExpiration: "",
-          }
-        }, (error: Error, results: any): void => {
-          if (error) next(new AuthenticationException(422, 'DB ERROR'));
-          response.send({ "message": "Now, you can access our app! Just log in!" });
-        });
+    if (await this.user.findOne({ verificationToken: data.token, verificationExpiration: { $gt: seconds }, verified: false })) {
+      let error: Error, results: Object;
+      [error, results] = await to(this.user.updateOne({
+        verificationToken: data.token
+      }, {
+        $set: {
+          verified: true,
+        },
+        $unset: {
+          verificationToken: "",
+          verificationExpiration: "",
+        }
+      }).catch());
+      if (error) next(new DBException(422, 'DB ERROR'));
+      response.status(200).send({
+        data: {},
+        message: "Success! Your Email Address has been Verified"
+      });
     } else {
-      next(new AuthenticationException(404, "wrong or expired link"));
+      next(new AuthenticationException(404, "Link is wrong or has been expired"));
     }
   }
 
@@ -263,26 +233,25 @@ class AuthenticationController implements Controller {
     const data: EmailDto = request.body;
     if (await this.user.findOne({ email: data.email })) {
       const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
-      this.user.findOneAndUpdate(
-        {
+
+      let error: Error, results: Object;
+      [error, results] = await to(this.user.updateOne({
+        email: data.email
+      }, {
+        $set: {
+          restorationToken: token.token,
+          restorationExpiration: token.expiresAt
+        }
+      }).catch());
+      if (error) next(new DBException(422, 'DB ERROR'));
+      response.locals = {
+        user: {
           email: data.email
-        },
-        {
-          $set: {
-            restorationToken: token.token,
-            restorationExpiration: token.expiresAt
-          }
-        }, (error: Error, results: any): void => {
-          if (error) next(new AuthenticationException(422, 'DB ERROR'));
-          response.locals = {
-            user: {
-              email: data.email
-            }, token: token.token, state: '2'
-          };
-          next();
-        })
+        }, token: token.token, state: '2'
+      };
+      next();
     } else {
-      next(new AuthenticationException(404, 'There is no user registered with that email!'));
+      next(new AuthenticationException(404, 'There is no User with these credentials.'));
     }
   }
 
@@ -291,13 +260,13 @@ class AuthenticationController implements Controller {
     const now = new Date();
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
-    if (await this.user.findOne({
-      restorationToken: data.token,
-      restorationExpiration: { $gt: seconds }
-    })) {
-      response.send({ "message": "Now, please type and verify a new password!" });
+    if (await this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } })) {
+      response.status(200).send({
+        data: {},
+        message: "Success! You may now proceed to Updating your password!"
+      });
     } else {
-      next(new AuthenticationException(404, "Expired or wrong link"));
+      next(new AuthenticationException(404, "Link is wrong or has been expired."));
     }
   }
 
@@ -307,30 +276,31 @@ class AuthenticationController implements Controller {
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
     if (data.newPassword === data.varPassword) {
-      if (await this.user.findOne({
-        restorationToken: data.token,
-        restorationExpiration: { $gt: seconds }
-      })) {
+      if (await this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } })) {
         const hashedPassword = await bcrypt.hash(data.newPassword, 10);
-        this.user.findOneAndUpdate(
-          { restorationToken: data.token },
-          {
-            $set: {
-              password: hashedPassword
-            },
-            $unset: {
-              restorationToken: "",
-              restorationExpiration: ""
-            }
-          }, (error: Error, results: any): void => {
-            if (error) next(new AuthenticationException(422, 'DB ERROR'));
-            response.send({ "message": "Your password has been updated! Please log in using your new credentials" });
-          });
+
+        let error: Error, results: Object;
+        [error, results] = await to(this.user.updateOne({
+          restorationToken: data.token
+        }, {
+          $set: {
+            password: hashedPassword
+          },
+          $unset: {
+            restorationToken: "",
+            restorationExpiration: ""
+          }
+        }).catch());
+        if (error) next(new DBException(422, 'DB ERROR'));
+        response.status(200).send({
+          data: {},
+          message: "Success! You Password has been Updated!"
+        });
       } else {
-        next(new AuthenticationException(404, "wrong or expired link"));
+        next(new AuthenticationException(404, "Link is wrong or has been expired."));
       }
     } else {
-      next(new AuthenticationException(404, "passwords do not match"));
+      next(new AuthenticationException(404, "Password verification failed."));
     }
   }
 
@@ -353,24 +323,24 @@ class AuthenticationController implements Controller {
   }
 
   private emailSender = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const resData = response.locals;
+    const data = response.locals;
 
     let resEmail = {
-      to: resData.user.email,
+      to: data.user.email,
       subject: "",
       text: "",
       html: ""
     };
-    if (resData.state === '1') { // Email Verification
-      resEmail.subject = "Email Verification" + " " + resData.token,
+    if (data.state === '1') { // Email Verification
+      resEmail.subject = "Email Verification" + " | Token: " + data.token + " | Email: " + data.user.email,
         resEmail.text = "Must Verify",
         resEmail.html = '<b>Must Verify ✔</b>';
-    } else if (resData.state === '2') { // Password Restore
-      resEmail.subject = "Password Restoration" + " " + resData.token,
+    } else if (data.state === '2') { // Password Restoration
+      resEmail.subject = "Password Restoration" + " | Token: " + data.token + " | Email: " + data.user.email,
         resEmail.text = "Try Restore",
         resEmail.html = '<b>Try Restore ✔</b>';
-    } else if (resData.state === '3') { // Invite an merchant or a customer
-      resEmail.subject = "An account has been created for you" + " " + resData.user.password,
+    } else if (data.state === '3') { // Email Invitation
+      resEmail.subject = "New Account" + " | Password: " + data.user.password + " | Email: " + data.user.email,
         resEmail.text = "Your account",
         resEmail.html = '<b>Password included! Change it for your safety ✔</b>';
     }
@@ -386,12 +356,23 @@ class AuthenticationController implements Controller {
     // send mail with defined transport object
     Transporter.sendMail(mailOptions, (error: Error, info: nodemailer.SentMessageInfo): void => {
       if (error) next(new AuthenticationException(404, 'Email Fail'));
-      response.send(info);
+      else if (data.state === '1') { // Email Verification
+        response.status(200).send({
+          data: {},
+          message: "Please, follow your link to Validate your Email."
+        });
+      } else if (data.state === '2') { // Password Restoration
+        response.status(200).send({
+          data: {},
+          message: "Please, follow your link to Update your Password."
+        });
+      } else if (data.state === '3') { // Email Invitation
+        response.status(200).send({
+          data: { user: { name: data.user.name, email: data.user.email } },
+          message: "User has been Invited to enjoy our Community!"
+        });
+      }
     });
-  }
-
-  private createCookie(tokenData: TokenData) {
-    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}`;
   }
 
   private createToken(user: User): TokenData {

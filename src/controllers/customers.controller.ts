@@ -3,6 +3,7 @@ import to from 'await-to-ts'
 
 // Exceptions
 import UsersException from '../exceptions/UsersException';
+import DBException from '../exceptions/DBException';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import User from '../usersInterfaces/user.interface';
@@ -31,19 +32,22 @@ class CustomersController implements Controller {
     }
 
     private getLoggedInUserInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        let error: Error, results: User;
-        [error, results] = await to(this.user.findOne({
+        let error: Error, user: User;
+        [error, user] = await to(this.user.findOne({
             _id: request.user._id
         }).catch());
-        if (error) new UsersException(404, 'No user');
-        results.password = undefined;
-        response.send(results);
+        if (error) new DBException(404, 'DB Error');
+        user.password = undefined;
+        response.status(200).send({
+            data: user,
+            message: "OK"
+        });
     }
 
     private updateLoggedInUserInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: CustomerDto = request.body;
-        let error: Error, results: User;
-        [error, results] = await to(this.user.findOneAndUpdate({
+        let error: Error, user: User;
+        [error, user] = await to(this.user.findOneAndUpdate({
             _id: request.user._id
         }, {
             $set: {
@@ -51,10 +55,12 @@ class CustomersController implements Controller {
                 imageURL: data.imageURL
             }
         }, { new: true }).catch());
-        if (error) next(new UsersException(404, 'No user'));
-
-        results.password = undefined;
-        response.send(results);
+        if (error) new DBException(404, 'DB Error');
+        user.password = undefined;
+        response.status(200).send({
+            data: user,
+            message: "OK"
+        });
     }
 }
 

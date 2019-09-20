@@ -1,10 +1,20 @@
 import * as mongoose from 'mongoose';
 import User from '../usersInterfaces/user.interface';
 
+const campaignSchema = new mongoose.Schema({
+  description: String,
+  state: {
+    type: String,
+    enum: ['draft', 'checking', 'public', 'passProtected', 'expired'],
+    default: 'draft'
+  },
+  expiresAt: Date
+}, { timestamps: true });
+
 const offerSchema = new mongoose.Schema({
   description: String,
   cost: Number,
-  expiresAt: Number
+  expiresAt: Date
 }, { timestamps: true });
 
 const addressSchema = new mongoose.Schema({
@@ -27,7 +37,6 @@ const authSchema = new mongoose.Schema({
 });
 
 const userSchema = new mongoose.Schema({
-  contact: contactSchema,
   name: String,
   email: String,
   password: String,
@@ -43,7 +52,9 @@ const userSchema = new mongoose.Schema({
   verificationToken: String,
   verificationExpiration: Number,
   //auth: authSchema,
-  offers: [offerSchema]
+  contact: contactSchema,
+  offers: [offerSchema],
+  campaigns: [campaignSchema]
 }, {
   timestamps: true
 });
