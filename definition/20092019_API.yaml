@@ -11,6 +11,135 @@ servers:
   - url: http://synergy.synergatika.com/v1
   
 paths:
+
+  # Paths: Authentication
+  /auth/authenticate:
+    post:
+      summary: "Authenticate users"
+      operationId: authAuthenticate
+      tags:
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/AuthenticationRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/Authenticate'
+        '204':
+         $ref: '#/components/responses/EmailSend'
+
+  /auth/register:
+    post:
+      summary: "Auto-Register new user (only as customer)"
+      operationId: authRegister
+      tags:
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/EmailSend'
+  
+  /auth/register/{access}:
+    post:
+      summary: "Register/Invite a new user (only for admins or merchants)"
+      operationId: authRegisterWithoutPass
+      parameters:
+        - $ref: '#/components/parameters/access'
+      tags:
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterWithoutPassRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/EmailSend'
+  
+  /auth/change_pass:
+    put:
+      summary: "A logged in user changes the password"
+      operationId: changePassInside
+      tags: 
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/ChangePassInRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/Update'
+  
+  /auth/verify_email/{email}:
+    get:
+      summary: "Ask for email validation"
+      operationId: askVerification
+      parameters:
+        - $ref: '#/components/parameters/email'
+      tags:
+        - authentication
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/EmailSend'
+
+  /auth/verify_email:
+    post:
+      summary: "Checks if link is valid and verify email"
+      operationId: checkVerification
+      tags:
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/CheckTokenRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/Create'
+  
+  /auth/forgot_pass/{email}:
+    get:
+      summary: "Ask for password restoration"
+      operationId: askRestoration
+      parameters:
+        - $ref: '#/components/parameters/email'
+      tags:
+        - authentication
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/EmailSend'
+  /auth/forgot_pass:
+    post:
+      summary: "Checks if link is valid and procced"
+      operationId: checkRestoration
+      tags: 
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/CheckTokenRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/Update'
+    put:
+      summary: "A no logged in user changes the password"
+      operationId: changePassOutside
+      tags: 
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/ChangePassOutRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/Update'
+          
   # Paths: Profile & Merchant
   /profile:
     get:
@@ -251,8 +380,73 @@ components:
         format: uuid
       required: true
       description: "ID of the selected campaign"
-
+    access:
+      in: path
+      name: access
+      schema:
+        type: string
+        format: enum['customer', 'merchant']
+      required: true
+      description: "Declare the type of user that will be created"    
+    email:
+      in: path
+      name: email
+      schema:
+        type: string
+        format: email
+      required: true
+      description: "Declare the email address that will be used to verify email / restore password"
+      
   requestBodies:
+    # Auth
+    AuthenticationRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthenticationDto'
+            
+    RegisterRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterDto'
+    
+    RegisterWithoutPassRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterWithoutPassDto'
+            
+    ChangePassInRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChangePassInDto'
+    
+    CheckTokenRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CheckTokenDto'
+            
+    ChangePassOutRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChangePassOutDto'
+            
     # Profile & Merchant
     CustomerRequestBody:
       description: ""
@@ -288,6 +482,16 @@ components:
             $ref: '#/components/schemas/CampaignDto'
             
   responses:
+    # Auth
+    Authenticate:
+      description: Expected response to a valid request
+      content: 
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/User'
+              - $ref: '#/components/schemas/Token'
+            
     # Profile & Merchant
     User: 
       description: Expected response to a valid request
@@ -333,7 +537,7 @@ components:
           schema:
             $ref: "#/components/schemas/Campaigns"
             
-    # Create, Update, Error
+    # Create, Update, Email Send, Error
     Create:
       description: Expected response to valid request
       content:
@@ -351,7 +555,16 @@ components:
             $ref: "#/components/schemas/Updated"
           example: 
             code: 100
-            message: "User's Profile successfully updated!"          
+            message: "User's Profile successfully updated!" 
+    EmailSend:
+      description: Expected response to valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EmailSent"
+          example: 
+            code: 100
+            message: "An email has been sent. Follow the link to verify your address!"       
     UnexpectedError:
       description: Unexpected error
       content:
@@ -364,6 +577,68 @@ components:
              
 
   schemas:
+    # Request - Auth
+    AuthenticationDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    
+    RegisterDto:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    
+    RegisterWithoutPassDto:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email    
+    
+    ChangePassInDto:
+      type: object
+      properties:
+        oldPassword:
+          type: string
+          format: password  
+        newPassword:
+          type: string
+          format: password  
+    
+    CheckTokenDto:
+      type: object
+      properties:
+        token:
+          type: string
+          format: password  
+
+    ChangePassOutDto:
+      type: object
+      properties:
+        token:
+          type: string
+          format: password 
+        newPassword:
+          type: string
+          format: password  
+        verPassword:
+          type: string
+          format: password 
+          
     # Request - Profile & Merchant
     CustomerDto:
       type: object
@@ -423,6 +698,29 @@ components:
           type: string
           format: date
           
+    # Response - Auth
+    Token:
+      type: object
+      properties: 
+        token:
+          type: string
+          format: uuid
+        expiresIn:
+          type: string
+          format: date         
+    User: 
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        access: 
+          type: string
+          enum: [customer, merchant, admin]
+    
     # Response - Profile & Merchant
     Customer: 
       type: object
@@ -533,7 +831,8 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/Campaign'
-    # Response - Typical Create, Update, Error   
+    
+    # Response - Typical Create, Update, Email Sent, Error   
     Created:
       type: object
       required:
@@ -546,6 +845,17 @@ components:
         message:
           type: string
     Updated:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    EmailSent:
       type: object
       required:
         - code

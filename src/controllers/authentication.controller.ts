@@ -50,10 +50,10 @@ class AuthenticationController implements Controller {
 
     this.router.put(`${this.path}/change_pass`, authMiddleware, validationMiddleware(ChangePassInDto), this.changePassInside);
 
-    this.router.get(`${this.path}/verify_email`, validationMiddleware(EmailDto), this.askVerification, this.emailSender);
+    this.router.get(`${this.path}/verify_email/:email`, this.askVerification, this.emailSender);
     this.router.post(`${this.path}/verify_email`, validationMiddleware(CheckTokenDto), this.checkVerification);
 
-    this.router.get(`${this.path}/forgot_pass`, validationMiddleware(EmailDto), this.askRestoration, this.emailSender);
+    this.router.get(`${this.path}/forgot_pass/:email`, this.askRestoration, this.emailSender);
     this.router.post(`${this.path}/forgot_pass`, validationMiddleware(CheckTokenDto), this.checkRestoration);
     this.router.put(`${this.path}/forgot_pass`, validationMiddleware(ChangePassOutDto), this.changePassOutside);
   }
@@ -176,13 +176,13 @@ class AuthenticationController implements Controller {
   }
 
   private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: EmailDto = request.body;
-    if (await this.user.findOne({ email: data.email })) {
+    const email = request.params.email;
+    if (await this.user.findOne({ email: email })) {
       const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
 
       let error: Error, results: Object;
       [error, results] = await to(this.user.updateOne({
-        email: data.email
+        email: email
       }, {
         $set: {
           verificationToken: token.token,
@@ -192,7 +192,7 @@ class AuthenticationController implements Controller {
       if (error) next(new DBException(422, 'DB ERROR'));
       response.locals = {
         user: {
-          email: data.email
+          email: email
         }, token: token.token, state: '1'
       };
       next();
@@ -230,13 +230,13 @@ class AuthenticationController implements Controller {
   }
 
   private askRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: EmailDto = request.body;
-    if (await this.user.findOne({ email: data.email })) {
+    const email = request.params.email;
+    if (await this.user.findOne({ email: email })) {
       const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
 
       let error: Error, results: Object;
       [error, results] = await to(this.user.updateOne({
-        email: data.email
+        email: email
       }, {
         $set: {
           restorationToken: token.token,
@@ -246,7 +246,7 @@ class AuthenticationController implements Controller {
       if (error) next(new DBException(422, 'DB ERROR'));
       response.locals = {
         user: {
-          email: data.email
+          email: email
         }, token: token.token, state: '2'
       };
       next();
