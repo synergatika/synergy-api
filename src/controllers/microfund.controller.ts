@@ -34,7 +34,7 @@ class MicrofundController implements Controller {
         this.router.get(`${this.path}/campaigns/:merchant_id/:campaign_id`, this.readACampaign);
         this.router.put(`${this.path}/campaigns/:merchant_id//:campaign_id`, authMiddleware, validationMiddleware(CampaignDto), this.updateCampaign);
         this.router.delete(`${this.path}/campaigns/:merchant_id/:campaign_id`, authMiddleware, this.deleteACampaign);
-        this.router.put(`${this.path}/campaigns/:merchant_id/:campaign_id/verify`, authMiddleware, this.verifyCampaign);
+        this.router.put(`${this.path}/campaigns/:merchant_id/:campaign_id/verify`, authMiddleware, accessMiddleware.onlyAsAdmin, this.verifyCampaign);
     }
 
     private readAllCampaigns = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -71,8 +71,9 @@ class MicrofundController implements Controller {
         }, {
             $push: {
                 campaigns: {
-                    "description": data.description,
-                    "expiresAt": data.expiresAt
+                    'description': data.description,
+                    'expiresAt': data.expiresAt,
+                    'state': "draft"
                 }
             }
         }).catch());
@@ -148,7 +149,8 @@ class MicrofundController implements Controller {
                 {
                     'campaigns.$[]._id': request.params.campaign_id,
                     'campaigns.$[].descript': data.description,
-                    'campaigns.$[].expiresAt': data.expiresAt
+                    'campaigns.$[].expiresAt': data.expiresAt,
+                    'campaigns.$[].state': "checking"
                 }
             }).catch());
             if (error) next(new DBException(422, error.message));
@@ -184,6 +186,21 @@ class MicrofundController implements Controller {
     }
 
     private verifyCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+        let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
+        [error, results] = await to(this.user.updateOne({
+            _id: request.params.merchant_id,
+            'campaigns._id': request.params.campaign_id
+        }, {
+            $set:
+            {
+                'campaigns.$[].state': "public"
+            }
+        }).catch());
+        if (error) next(new DBException(422, error.message));
+        response.status(200).send({
+            data: {},
+            message: "Success! Camapign has been updated!"
+        });
     }
 }
 

@@ -160,7 +160,9 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           _id: request.user._id
         }, {
-          password: hashedPassword
+          $set: {
+            password: hashedPassword
+          }
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({

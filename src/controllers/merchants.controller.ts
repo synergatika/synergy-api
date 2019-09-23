@@ -71,7 +71,7 @@ class MerchantsController implements Controller {
                     name: data.name,
                     imageURL: data.imageURL,
                     contact: {
-                        web: data.contact.web,
+                        websiteURL: data.contact.websiteURL,
                         phone: data.contact.phone,
                         address: {
                             street: data.contact.address.street,

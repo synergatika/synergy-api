@@ -11,7 +11,6 @@ servers:
   - url: http://synergy.synergatika.com/v1
   
 paths:
-
   # Paths: Authentication
   /auth/authenticate:
     post:
@@ -86,7 +85,6 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/EmailSend'
-
   /auth/verify_email:
     post:
       summary: "Checks if link is valid and verify email"
@@ -217,7 +215,6 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Offers'
-
     post:
       summary: "Create a new offer"
       operationId: createOffer
@@ -406,7 +403,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AuthenticationDto'
-            
     RegisterRequestBody:
       description: ""
       required: true
@@ -414,7 +410,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/RegisterDto'
-    
     RegisterWithoutPassRequestBody:
       description: ""
       required: true
@@ -422,7 +417,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/RegisterWithoutPassDto'
-            
     ChangePassInRequestBody:
       description: ""
       required: true
@@ -430,7 +424,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ChangePassInDto'
-    
     CheckTokenRequestBody:
       description: ""
       required: true
@@ -438,7 +431,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/CheckTokenDto'
-            
     ChangePassOutRequestBody:
       description: ""
       required: true
@@ -488,10 +480,13 @@ components:
       content: 
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/User'
-              - $ref: '#/components/schemas/Token'
-            
+            type: object
+            properties:
+              user:
+                $ref: '#/components/schemas/User'
+              token:
+                $ref: '#/components/schemas/TokenData'
+
     # Profile & Merchant
     User: 
       description: Expected response to a valid request
@@ -563,7 +558,6 @@ components:
           schema:
             $ref: "#/components/schemas/EmailSent"
           example: 
-            code: 100
             message: "An email has been sent. Follow the link to verify your address!"       
     UnexpectedError:
       description: Unexpected error
@@ -587,7 +581,6 @@ components:
         password:
           type: string
           format: password
-    
     RegisterDto:
       type: object
       properties:
@@ -599,7 +592,6 @@ components:
         password:
           type: string
           format: password
-    
     RegisterWithoutPassDto:
       type: object
       properties:
@@ -608,7 +600,6 @@ components:
         email:
           type: string
           format: email    
-    
     ChangePassInDto:
       type: object
       properties:
@@ -618,14 +609,12 @@ components:
         newPassword:
           type: string
           format: password  
-    
     CheckTokenDto:
       type: object
       properties:
         token:
           type: string
           format: password  
-
     ChangePassOutDto:
       type: object
       properties:
@@ -662,7 +651,7 @@ components:
             phone: 
               type: number
               format: int64
-            web:
+            websiteURL:
               type: string
               format: url
             address: 
@@ -699,7 +688,7 @@ components:
           format: date
           
     # Response - Auth
-    Token:
+    TokenData:
       type: object
       properties: 
         token:
@@ -707,7 +696,7 @@ components:
           format: uuid
         expiresIn:
           type: string
-          format: date         
+          format: date
     User: 
       type: object
       properties:
@@ -762,7 +751,7 @@ components:
             phone: 
               type: number
               format: int64
-            web:
+            websiteURL:
               type: string
               format: url
             address: 
@@ -832,7 +821,7 @@ components:
       items:
         $ref: '#/components/schemas/Campaign'
     
-    # Response - Typical Create, Update, Email Sent, Error   
+    # Response - Typical Create, Update, Error   
     Created:
       type: object
       required:
@@ -858,12 +847,8 @@ components:
     EmailSent:
       type: object
       required:
-        - code
         - message
       properties:
-        code:
-          type: integer
-          format: int32
         message:
           type: string
     Error:

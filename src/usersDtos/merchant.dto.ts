@@ -35,7 +35,7 @@ export class Contact {
   public phone: string;
 
   @IsString()
-  public web: string;
+  public websiteURL: string;
 
   @IsString()
   public address: Address;
