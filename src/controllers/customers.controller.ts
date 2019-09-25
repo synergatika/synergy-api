@@ -35,12 +35,16 @@ class CustomersController implements Controller {
         let error: Error, user: User;
         [error, user] = await to(this.user.findOne({
             _id: request.user._id
+        }, {
+            verificationToken: false, verificationExpiration: false,
+            restorationToken: false, restorationExpiration: false,
+            offers: false, campaigns: false
         }).catch());
         if (error) new DBException(404, 'DB Error');
         user.password = undefined;
         response.status(200).send({
             data: user,
-            message: "OK"
+            code: 200
         });
     }
 
@@ -54,12 +58,18 @@ class CustomersController implements Controller {
                 name: data.name,
                 imageURL: data.imageURL
             }
-        }, { new: true }).catch());
+        }, {
+            projection: {
+                name: '$name',
+                imageURL: '$imageURL'
+            }
+        }).catch());
         if (error) new DBException(404, 'DB Error');
+
         user.password = undefined;
         response.status(200).send({
             data: user,
-            message: "OK"
+            code: 200
         });
     }
 }

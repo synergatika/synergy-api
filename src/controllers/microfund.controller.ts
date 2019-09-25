@@ -58,7 +58,7 @@ class MicrofundController implements Controller {
         if (error) next(new DBException(422, "DB Error"));
         response.status(200).send({
             data: campaigns,
-            message: "OK"
+            code: 200
         });
     }
 
@@ -79,8 +79,8 @@ class MicrofundController implements Controller {
         }).catch());
         if (error) next(new DBException(422, "DB Error"));
         response.status(201).send({
-            data: {},
-            message: "Success! A new campaign has been created!"
+            message: "Success! A new campaign has been created!",
+            code: 201
         });
     }
     private readCampaignsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -106,7 +106,7 @@ class MicrofundController implements Controller {
         if (error) next(new DBException(422, error.message));
         response.status(200).send({
             data: campaigns,
-            message: "OK"
+            code: 200
         });
         /*
         let error: Error, campaigns: Campaign[];
@@ -132,7 +132,7 @@ class MicrofundController implements Controller {
         if (error) next(new DBException(422, "DB Error"));
         response.status(200).send({
             data: campaign,
-            message: "OK"
+            code: 200
         });
     }
 
@@ -155,11 +155,11 @@ class MicrofundController implements Controller {
             }).catch());
             if (error) next(new DBException(422, error.message));
             response.status(200).send({
-                data: {},
-                message: "Success! Camapign has been updated!"
+                message: "Success! Campaign " + request.params.campaign_id + " has been updated!",
+                code: 200
             });
         } else {
-            next(new UsersException(404, 'Not Authorized'));
+            next(new UsersException(404, 'OOps! You are not authorized to proceed in this action.'));
         }
     }
 
@@ -177,11 +177,11 @@ class MicrofundController implements Controller {
             }).catch());
             if (error) next(new DBException(422, error.message));
             response.status(200).send({
-                data: {},
-                message: "Success! Camapign has been deleted!"
+                message: "Success! Campaign " + request.params.campaign_id + " has been deleted!",
+                code: 200
             });
         } else {
-            next(new UsersException(404, 'Not Authorized'));
+            next(new UsersException(404, 'OOps! You are not authorized to proceed in this action.'));
         }
     }
 
@@ -198,8 +198,8 @@ class MicrofundController implements Controller {
         }).catch());
         if (error) next(new DBException(422, error.message));
         response.status(200).send({
-            data: {},
-            message: "Success! Camapign has been updated!"
+            message: "Success! Campaign " + request.params.campaign_id + " has been verified!",
+            code: 200
         });
     }
 }

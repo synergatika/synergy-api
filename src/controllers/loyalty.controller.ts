@@ -1,8 +1,9 @@
 import * as express from 'express';
 import to from 'await-to-ts'
+import { ObjectId } from 'mongodb';
 
 // Exceptions
-import OffersException from '../exceptions/OffersException';
+import UsersException from '../exceptions/UsersException';
 import DBException from '../exceptions/DBException';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
@@ -16,8 +17,6 @@ import accessMiddleware from '../middleware/access.middleware';
 import userModel from '../models/user.model';
 // Dtos
 import OfferDto from '../loyaltyDtos/offer.dto'
-import UsersException from '../exceptions/UsersException';
-import { ObjectId } from 'mongodb';
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
@@ -32,8 +31,8 @@ class LoyaltyController implements Controller {
         this.router.get(`${this.path}/offers`, this.readAllOffers);
         this.router.post(`${this.path}/offers`, authMiddleware, accessMiddleware.onlyAsMerchant, validationMiddleware(OfferDto), this.createOffer);
         this.router.get(`${this.path}/offers/:merchant_id`, this.readOffersByStore);
-        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, validationMiddleware(OfferDto), this.updateOffer);
-        this.router.delete(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, this.deleteOffer);
+        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationMiddleware(OfferDto), this.updateOffer);
+        this.router.delete(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, this.deleteOffer);
     }
 
     private readAllOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -57,7 +56,7 @@ class LoyaltyController implements Controller {
         if (error) next(new DBException(422, "DB Error"));
         response.status(200).send({
             data: offers,
-            message: "OK"
+            code: 200
         });
     }
 
@@ -78,8 +77,8 @@ class LoyaltyController implements Controller {
         }).catch());
         if (error) next(new DBException(422, "DB Error"));
         response.status(201).send({
-            data: {},
-            message: "Success! A new offer has been created!"
+            message: "Success! A new offer has been created!",
+            code: 201
         });
     }
 
@@ -114,7 +113,7 @@ class LoyaltyController implements Controller {
         if (error) next(new DBException(422, error.message));
         response.status(200).send({
             data: offers,
-            message: "OK"
+            code: 200
         });
 
     }
@@ -138,11 +137,11 @@ class LoyaltyController implements Controller {
             }).catch());
             if (error) next(new DBException(422, error.message));
             response.status(200).send({
-                data: {},
-                message: "Success! Offer has been updated!"
+                message: "Success! Offer " + request.params.offer_id + " has been updated!",
+                code: 200
             });
         } else {
-            next(new UsersException(404, 'Not Authorized'));
+            next(new UsersException(404, 'OOps! You are not authorized to proceed in this action.'));
         }
     }
 
@@ -161,11 +160,11 @@ class LoyaltyController implements Controller {
             }).catch());
             if (error) next(new DBException(422, error.message));
             response.status(200).send({
-                data: {},
-                message: "Success! Offer has been deleted!"
+                message: "Success! Offer " + request.params.offer_id + " has been deleted!",
+                code: 200
             });
         } else {
-            next(new UsersException(404, 'Not Authorized'));
+            next(new UsersException(404, 'OOps! You are not authorized to proceed in this action.'));
         }
     }
 }

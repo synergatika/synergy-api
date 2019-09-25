@@ -15,7 +15,7 @@ class AccessMiddleware {
         } else if ((user.access === 'merchant') && (request.params.access === 'customer')) {
             next();
         } else {
-            next(new AuthenticationException(404, 'No Access'));
+            next(new AuthenticationException(403, 'Forbidden'));
         }
     }
 
@@ -24,7 +24,7 @@ class AccessMiddleware {
         if (user.access === 'admin') {
             next();
         } else {
-            next(new AuthenticationException(404, 'No Access'));
+            next(new AuthenticationException(403, 'Forbidden'));
         }
     }
 
@@ -33,7 +33,7 @@ class AccessMiddleware {
         if (user.access === 'merchant') {
             next();
         } else {
-            next(new AuthenticationException(404, 'No Access'));
+            next(new AuthenticationException(403, 'Forbidden'));
         }
     }
 
@@ -42,7 +42,7 @@ class AccessMiddleware {
         if (user.access === 'merchant') {
             next();
         } else {
-            next(new AuthenticationException(404, 'No Access'));
+            next(new AuthenticationException(403, 'Forbidden'));
         }
     }
 }

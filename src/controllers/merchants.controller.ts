@@ -2,8 +2,8 @@ import * as express from 'express';
 import to from 'await-to-ts'
 
 // Exceptions
-import DBException from '../exceptions/DBException';
 import UsersException from '../exceptions/UsersException';
+import DBException from '../exceptions/DBException';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import Merchant from '../usersInterfaces/merchant.interface';
@@ -42,7 +42,7 @@ class MerchantsController implements Controller {
         if (error) new DBException(404, 'DB Error');
         response.status(200).send({
             data: merchants,
-            message: "OK"
+            code: 200
         });
     }
 
@@ -51,12 +51,13 @@ class MerchantsController implements Controller {
         [error, merchant] = await to(this.user.findOne({
             _id: request.params.merchant_id
         }, {
-            password: false, verified: false, offers: false
+            password: false, verified: false, 
+            offers: false, campaigns: false
         }).catch());
         if (error) new DBException(404, 'DB Error');
         response.status(200).send({
             data: merchant,
-            message: "OK"
+            code: 200
         });
     }
 
@@ -76,16 +77,21 @@ class MerchantsController implements Controller {
                         address: {
                             street: data.contact.address.street,
                             city: data.contact.address.city,
-                            zipCode: data.contact.address.zipCode,
+                            zipCode: data.contact.address.zipCode
                         }
                     }
                 }
-            }, { new: true }).catch());
+            }, {
+                projection: {
+                    name: '$name',
+                    imageURL: '$imageURL',
+                    contact: '$contact'
+                }
+            }).catch());
             if (error) new DBException(404, 'DB Error');
-            merchant.password = undefined;
             response.status(200).send({
                 data: merchant,
-                message: "OK"
+                code: 200
             })
         } else {
             next(new UsersException(404, 'Not Authorized'));

@@ -30,7 +30,6 @@ import EmailDto from '../authDtos/email.dto'
 // Email
 import Transporter from '../utils/mailer'
 import to from 'await-to-ts';
-import UsersException from 'exceptions/UsersException';
 
 class AuthenticationController implements Controller {
   public path = '/auth';
@@ -84,7 +83,10 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.findOne({
       email: data.email
     }, {
-      offers: false
+      updatedAt: false,
+      contact: false, offers: false, campaigns: false,
+      restorationToken: false, restorationExpiration: false,
+      verificationToken: false, verificationExpiration: false
     }).catch());
     if (error) next(new DBException(422, 'DB ERROR'));
     else if (user) {
@@ -97,7 +99,7 @@ class AuthenticationController implements Controller {
               user: user,
               token: this.createToken(user)
             },
-            message: "OK"
+            code: 200
           });
         } else {
           next(new AuthenticationException(404, 'Wrong Credentials.'));
@@ -111,8 +113,11 @@ class AuthenticationController implements Controller {
   }
 
   private loggingOut = (request: express.Request, response: express.Response) => {
-    response.setHeader('Set-Cookie', ['Authorization=;Max-age=0']);
-    response.send(200);
+    const token = {
+      expiresIn: 0,
+      token: ""
+    }
+    response.status(200).send(token);
   }
 
   private registerInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -166,8 +171,8 @@ class AuthenticationController implements Controller {
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
-          data: {},
-          message: "Success! Your password has been Updated"
+          message: "Success! Your password has been Updated",
+          code: 200
         });
       } else {
         next(new AuthenticationException(404, 'Wrong Credentials.'));
@@ -223,8 +228,8 @@ class AuthenticationController implements Controller {
       }).catch());
       if (error) next(new DBException(422, 'DB ERROR'));
       response.status(200).send({
-        data: {},
-        message: "Success! Your Email Address has been Verified"
+        message: "Success! Your Email Address has been Verified",
+        code: 200
       });
     } else {
       next(new AuthenticationException(404, "Link is wrong or has been expired"));
@@ -264,8 +269,8 @@ class AuthenticationController implements Controller {
 
     if (await this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } })) {
       response.status(200).send({
-        data: {},
-        message: "Success! You may now proceed to Updating your password!"
+        message: "Success! You may now proceed to Updating your password!",
+        code: 200
       });
     } else {
       next(new AuthenticationException(404, "Link is wrong or has been expired."));
@@ -295,8 +300,8 @@ class AuthenticationController implements Controller {
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
-          data: {},
-          message: "Success! You Password has been Updated!"
+          message: "Success! You Password has been Updated!",
+          code: 200
         });
       } else {
         next(new AuthenticationException(404, "Link is wrong or has been expired."));
@@ -327,32 +332,32 @@ class AuthenticationController implements Controller {
   private emailSender = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data = response.locals;
 
-    let resEmail = {
+    let emailInfo = {
       to: data.user.email,
       subject: "",
-      text: "",
-      html: ""
+      text: ""
+      //html: ""
     };
     if (data.state === '1') { // Email Verification
-      resEmail.subject = "Email Verification" + " | Token: " + data.token + " | Email: " + data.user.email,
-        resEmail.text = "Must Verify",
-        resEmail.html = '<b>Must Verify ✔</b>';
+      emailInfo.subject = "Email Verification",
+        emailInfo.text = "Must Verify" + " | Token: " + data.token + " | Email: " + data.user.email
+      //emailInfo.html = '<b>Must Verify ✔</b>';
     } else if (data.state === '2') { // Password Restoration
-      resEmail.subject = "Password Restoration" + " | Token: " + data.token + " | Email: " + data.user.email,
-        resEmail.text = "Try Restore",
-        resEmail.html = '<b>Try Restore ✔</b>';
+      emailInfo.subject = "Password Restoration",
+        emailInfo.text = "Try Restore" + " | Token: " + data.token + " | Email: " + data.user.email
+      //emailInfo.html = '<b>Try Restore ✔</b>';
     } else if (data.state === '3') { // Email Invitation
-      resEmail.subject = "New Account" + " | Password: " + data.user.password + " | Email: " + data.user.email,
-        resEmail.text = "Your account",
-        resEmail.html = '<b>Password included! Change it for your safety ✔</b>';
+      emailInfo.subject = "New Account",
+        emailInfo.text = "Your account" + " | Password: " + data.user.password + " | Email: " + data.user.email
+      //emailInfo.html = '<b>Password included! Change it for your safety ✔</b>';
     }
 
     var mailOptions: nodemailer.SendMailOptions = {
       from: process.env.EMAIL_FROM, //'Fred Foo ✔ <dimitris.sec@gmail.com>', // sender address
       to: 'dmytakis@gmail.com', // list of receivers
-      subject: resEmail.subject, // Subject line
-      text: resEmail.text, // plaintext body
-      html: resEmail.html // html body
+      subject: emailInfo.subject, // Subject line
+      text: emailInfo.text, // plaintext body
+      //html: emailInfo.html // html body
     };
 
     // send mail with defined transport object
@@ -360,18 +365,18 @@ class AuthenticationController implements Controller {
       if (error) next(new AuthenticationException(404, 'Email Fail'));
       else if (data.state === '1') { // Email Verification
         response.status(200).send({
-          data: {},
-          message: "Please, follow your link to Validate your Email."
+          message: "Please, follow your link to Validate your Email.",
+          code: 200
         });
       } else if (data.state === '2') { // Password Restoration
         response.status(200).send({
-          data: {},
-          message: "Please, follow your link to Update your Password."
+          message: "Please, follow your link to Update your Password.",
+          code: 200
         });
       } else if (data.state === '3') { // Email Invitation
         response.status(200).send({
-          data: { user: { name: data.user.name, email: data.user.email } },
-          message: "User has been Invited to enjoy our Community!"
+          message: "User has been Invited to enjoy our Community!",
+          code: 200
         });
       }
     });
