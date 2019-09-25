@@ -124,7 +124,9 @@ class AuthenticationController implements Controller {
   }
 
   private registerInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const accesss: AccessDto["access"] = request.params.access;
     const data: RegisterWithOutPasswordDto = request.body;
+
     if (await this.user.findOne({ email: data.email })) {
       next(new AuthenticationException(404, 'A user with these credentials already exists!'));
     } else {
@@ -134,7 +136,7 @@ class AuthenticationController implements Controller {
       let error: Error, user: User;
       [error, user] = await to(this.user.create({
         ...data,
-        access: request.params.access,
+        access: accesss,
         verified: 'true',
         password: hashedPassword
       }).catch());
@@ -186,7 +188,8 @@ class AuthenticationController implements Controller {
   }
 
   private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const email = request.params.email;
+    const email: EmailDto["email"] = request.params.email;
+
     if (await this.user.findOne({ email: email })) {
       const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
 
@@ -240,7 +243,8 @@ class AuthenticationController implements Controller {
   }
 
   private askRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const email = request.params.email;
+    const email: EmailDto["email"] = request.params.email;
+
     if (await this.user.findOne({ email: email })) {
       const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
 

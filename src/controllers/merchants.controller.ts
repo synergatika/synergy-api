@@ -10,7 +10,7 @@ import Merchant from '../usersInterfaces/merchant.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
-import validationParamsMiddleware from '../middleware/body.validation';
+import validationParamsMiddleware from '../middleware/params.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 // Models
@@ -39,7 +39,10 @@ class MerchantsController implements Controller {
         [error, merchants] = await to(this.user.find({
             access: 'merchant'
         }, {
-            password: false, verified: false, offers: false
+            access: false,
+            password: false, verified: false,
+            updatedAt: false,
+            offers: false, campaigns: false
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
@@ -49,11 +52,15 @@ class MerchantsController implements Controller {
     }
 
     private getMerchantInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+        const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
+
         let error: Error, merchant: Merchant;
         [error, merchant] = await to(this.user.findOne({
-            _id: request.params.merchant_id
+            _id: merchant_id
         }, {
-            password: false, verified: false, 
+            access: false,
+            password: false, verified: false,
+            updatedAt: false,
             offers: false, campaigns: false
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
@@ -64,8 +71,10 @@ class MerchantsController implements Controller {
     }
 
     private updateMerchantInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+        const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
         const data: MerchantDto = request.body;
-        if ((request.user._id).toString() === (request.params.merchant_id).toString()) {
+
+        if ((request.user._id).toString() === (merchant_id).toString()) {
             let error: Error, merchant: Merchant;
             [error, merchant] = await to(this.user.findOneAndUpdate({
                 _id: request.user._id

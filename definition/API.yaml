@@ -8,7 +8,7 @@ info:
     name: MIT
 
 servers:
-  - url: http://synergy.synergatika.com/v1
+  - url: http://localhost:3000 #http://synergy.synergatika.com/v1
   
 paths:
   # Paths: Authentication
@@ -197,6 +197,8 @@ paths:
         - $ref: '#/components/parameters/merchant_id'
       tags:
         - merchants
+      requestBody:
+        $ref: '#/components/requestBodies/MerchantRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
@@ -220,6 +222,8 @@ paths:
       operationId: createOffer
       tags: 
         - loyalty
+      requestBody:
+        $ref: '#/components/requestBodies/OfferRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
@@ -249,6 +253,8 @@ paths:
         - $ref: '#/components/parameters/offer_id'
       tags:
         - loyalty
+      requestBody:
+        $ref: '#/components/requestBodies/OfferRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
@@ -287,6 +293,8 @@ paths:
       operationId: createCampaign
       tags: 
         - microfund
+      requestBody:
+        $ref: '#/components/requestBodies/CampaignRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
@@ -316,6 +324,8 @@ paths:
         - $ref: '#/components/parameters/campaign_id'
       tags:
         - microfund
+      requestBody:
+        $ref: '#/components/requestBodies/CampaignRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
@@ -620,17 +630,17 @@ components:
       properties:
         token:
           type: string
-          format: password  
+          format: uuid  
     ChangePassOutDto:
       type: object
       properties:
         token:
           type: string
-          format: password 
+          format: uuid 
         newPassword:
           type: string
           format: password  
-        verPassword:
+        varPassword:
           type: string
           format: password 
           

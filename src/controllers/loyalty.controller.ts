@@ -20,7 +20,7 @@ import userModel from '../models/user.model';
 import OfferDto from '../loyaltyDtos/offer.dto'
 
 import MerchantID from '../usersDtos/merchant_id.params.dto'
-import OfferID from '../microfundDtos/campaign_id.params.dto'
+import OfferID from '../loyaltyDtos/offer_id.params.dto'
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
@@ -87,10 +87,12 @@ class LoyaltyController implements Controller {
     }
 
     private readOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+        const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
+
         let error: Error, offers: Offer[];
         [error, offers] = await to(this.user.aggregate([{
             $match: {
-                _id: new ObjectId(request.params.merchant_id)
+                _id: new ObjectId(merchant_id)
             }
         }, {
             $unwind: '$offers'
@@ -115,17 +117,19 @@ class LoyaltyController implements Controller {
     }
 
     private updateOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+        const merchant_id: OfferID["merchant_id"] = request.params.merchant_id;
+        const offer_id: OfferID["offer_id"] = request.params.offer_id;
         const data: OfferDto = request.body;
 
-        if ((request.user._id).toString() === (request.params.merchant_id).toString()) {
+        if ((request.user._id).toString() === (merchant_id).toString()) {
             let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
             [error, results] = await to(this.user.updateOne({
                 _id: request.user._id,
-                'offers._id': request.params.offer_id
+                'offers._id': offer_id
             }, {
                 $set:
                 {
-                    'offers.$[]._id': request.params.offer_id,
+                    'offers.$[]._id': offer_id,
                     'offers.$[].descript': data.description,
                     'offers.$[].cost': data.cost,
                     'offers.$[].expiresAt': data.expiresAt
@@ -133,7 +137,7 @@ class LoyaltyController implements Controller {
             }).catch());
             if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
-                message: "Success! Offer " + request.params.offer_id + " has been updated!",
+                message: "Success! Offer " + offer_id + " has been updated!",
                 code: 200
             });
         } else {
@@ -142,20 +146,23 @@ class LoyaltyController implements Controller {
     }
 
     private deleteOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        if ((request.user._id).toString() === (request.params.merchant_id).toString()) {
+        const merchant_id: OfferID["merchant_id"] = request.params.merchant_id;
+        const offer_id: OfferID["offer_id"] = request.params.offer_id;
+
+        if ((request.user._id).toString() === (merchant_id).toString()) {
             let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
             [error, results] = await to(this.user.updateOne({
                 _id: request.user._id
             }, {
                 $pull: {
                     offers: {
-                        _id: request.params.offer_id
+                        _id: offer_id
                     }
                 }
             }).catch());
             if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
-                message: "Success! Offer " + request.params.offer_id + " has been deleted!",
+                message: "Success! Offer " + offer_id + " has been deleted!",
                 code: 200
             });
         } else {

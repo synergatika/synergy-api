@@ -88,10 +88,12 @@ class MicrofundController implements Controller {
         });
     }
     private readCampaignsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+        const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
+
         let error: Error, campaigns: Campaign[];
         [error, campaigns] = await to(this.user.aggregate([{
             $match: {
-                _id: new ObjectId(request.params.merchant_id)
+                _id: new ObjectId(merchant_id)
             }
         }, {
             $unwind: '$campaigns'
@@ -115,9 +117,13 @@ class MicrofundController implements Controller {
     }
 
     private readACampaign = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+        const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+        const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+
         let error: Error, campaign: Campaign;
         [error, campaign] = await to(this.user.findOne({
-            'campaigns._id': request.params.campaign_id
+            _id: merchant_id, 
+            'campaigns._id': campaign_id
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
@@ -127,17 +133,19 @@ class MicrofundController implements Controller {
     }
 
     private updateCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+        const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+        const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
         const data: CampaignDto = request.body;
 
-        if ((request.user._id).toString() === (request.params.merchant_id).toString()) {
+        if ((request.user._id).toString() === (merchant_id).toString()) {
             let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
             [error, results] = await to(this.user.updateOne({
                 _id: request.user._id,
-                'campaigns._id': request.params.campaign_id
+                'campaigns._id': campaign_id
             }, {
                 $set:
                 {
-                    'campaigns.$[]._id': request.params.campaign_id,
+                    'campaigns.$[]._id': campaign_id,
                     'campaigns.$[].descript': data.description,
                     'campaigns.$[].expiresAt': data.expiresAt,
                     'campaigns.$[].state': "checking"
@@ -145,7 +153,7 @@ class MicrofundController implements Controller {
             }).catch());
             if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
-                message: "Success! Campaign " + request.params.campaign_id + " has been updated!",
+                message: "Success! Campaign " + campaign_id + " has been updated!",
                 code: 200
             });
         } else {
@@ -154,20 +162,23 @@ class MicrofundController implements Controller {
     }
 
     private deleteACampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        if ((request.user._id).toString() === (request.params.merchant_id).toString()) {
+        const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+        const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+
+        if ((request.user._id).toString() === (merchant_id).toString()) {
             let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
             [error, results] = await to(this.user.updateOne({
                 _id: request.user._id
             }, {
                 $pull: {
                     campaigns: {
-                        _id: request.params.campaign_id
+                        _id: campaign_id
                     }
                 }
             }).catch());
             if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
-                message: "Success! Campaign " + request.params.campaign_id + " has been deleted!",
+                message: "Success! Campaign " + campaign_id + " has been deleted!",
                 code: 200
             });
         } else {
@@ -176,10 +187,13 @@ class MicrofundController implements Controller {
     }
 
     private verifyCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+        const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+        const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+        
         let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
         [error, results] = await to(this.user.updateOne({
-            _id: request.params.merchant_id,
-            'campaigns._id': request.params.campaign_id
+            _id: merchant_id,
+            'campaigns._id': campaign_id
         }, {
             $set:
             {
@@ -188,7 +202,7 @@ class MicrofundController implements Controller {
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
-            message: "Success! Campaign " + request.params.campaign_id + " has been verified!",
+            message: "Success! Campaign " + campaign_id + " has been verified!",
             code: 200
         });
     }
