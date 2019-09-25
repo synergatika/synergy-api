@@ -39,7 +39,7 @@ class MerchantsController implements Controller {
         }, {
             password: false, verified: false, offers: false
         }).catch());
-        if (error) new DBException(404, 'DB Error');
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
             data: merchants,
             code: 200
@@ -54,7 +54,7 @@ class MerchantsController implements Controller {
             password: false, verified: false, 
             offers: false, campaigns: false
         }).catch());
-        if (error) new DBException(404, 'DB Error');
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
             data: merchant,
             code: 200
@@ -88,7 +88,7 @@ class MerchantsController implements Controller {
                     contact: '$contact'
                 }
             }).catch());
-            if (error) new DBException(404, 'DB Error');
+            if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
                 data: merchant,
                 code: 200

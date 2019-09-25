@@ -17,13 +17,13 @@ async function authMiddleware(request: RequestWithUser, response: Response, next
         request.user = user;
         next();
       } else {
-        next(new AuthenticationException(404, "Wrong or Expired Token"));
+        next(new AuthenticationException(401, "Unauthorized"));
       }
     } catch (error) {
-      next(new AuthenticationException(404, "Wrong or Expired Token"));
+      next(new AuthenticationException(401, "Unauthorized"));
     }
   } else {
-    next(new AuthenticationException(404, "Token Missing!"));
+    next(new AuthenticationException(401, "Unauthorized"));
   }
 }
 

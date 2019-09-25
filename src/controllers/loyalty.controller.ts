@@ -53,7 +53,7 @@ class LoyaltyController implements Controller {
             }
         }
         ]).exec().catch());
-        if (error) next(new DBException(422, "DB Error"));
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
             data: offers,
             code: 200
@@ -75,7 +75,7 @@ class LoyaltyController implements Controller {
                 }
             }
         }).catch());
-        if (error) next(new DBException(422, "DB Error"));
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(201).send({
             message: "Success! A new offer has been created!",
             code: 201
@@ -101,16 +101,8 @@ class LoyaltyController implements Controller {
                 expiresAt: '$offers.expiresAt',
                 createdAt: '$offers.createdAt'
             }
-        }
-        ]).exec().catch());
-        /*
-                [error, offers] = await to(this.user.find({
-                    _id: request.params.merchant_id
-                }, {
-                    offers: true
-                }).catch());
-         */
-        if (error) next(new DBException(422, error.message));
+        }]).exec().catch());
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
             data: offers,
             code: 200
@@ -135,7 +127,7 @@ class LoyaltyController implements Controller {
                     'offers.$[].expiresAt': data.expiresAt
                 }
             }).catch());
-            if (error) next(new DBException(422, error.message));
+            if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
                 message: "Success! Offer " + request.params.offer_id + " has been updated!",
                 code: 200
@@ -146,7 +138,6 @@ class LoyaltyController implements Controller {
     }
 
     private deleteOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-
         if ((request.user._id).toString() === (request.params.merchant_id).toString()) {
             let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
             [error, results] = await to(this.user.updateOne({
@@ -158,7 +149,7 @@ class LoyaltyController implements Controller {
                     }
                 }
             }).catch());
-            if (error) next(new DBException(422, error.message));
+            if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
                 message: "Success! Offer " + request.params.offer_id + " has been deleted!",
                 code: 200

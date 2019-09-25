@@ -178,7 +178,7 @@ class AuthenticationController implements Controller {
         next(new AuthenticationException(404, 'Wrong Credentials.'));
       }
     } else {
-      next(new AuthenticationException(404, 'There is no User with these credentials.'));
+      next(new AuthenticationException(404, 'No user with these credentials.'));
     }
   }
 
@@ -204,7 +204,7 @@ class AuthenticationController implements Controller {
       };
       next();
     } else {
-      next(new AuthenticationException(404, 'There is no User with these credentials.'));
+      next(new AuthenticationException(404, 'No user with these credentials.'));
     }
   }
 
@@ -258,7 +258,7 @@ class AuthenticationController implements Controller {
       };
       next();
     } else {
-      next(new AuthenticationException(404, 'There is no User with these credentials.'));
+      next(new AuthenticationException(404, 'No user with these credentials.'));
     }
   }
 
@@ -307,7 +307,7 @@ class AuthenticationController implements Controller {
         next(new AuthenticationException(404, "Link is wrong or has been expired."));
       }
     } else {
-      next(new AuthenticationException(404, "Password verification failed."));
+      next(new AuthenticationException(404, "Verification failed."));
     }
   }
 
@@ -362,7 +362,7 @@ class AuthenticationController implements Controller {
 
     // send mail with defined transport object
     Transporter.sendMail(mailOptions, (error: Error, info: nodemailer.SentMessageInfo): void => {
-      if (error) next(new AuthenticationException(404, 'Email Fail'));
+      if (error) next(new AuthenticationException(404, 'Email failed'));
       else if (data.state === '1') { // Email Verification
         response.status(200).send({
           message: "Please, follow your link to Validate your Email.",

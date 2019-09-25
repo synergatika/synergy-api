@@ -55,7 +55,7 @@ class MicrofundController implements Controller {
             }
         }
         ]).exec().catch());
-        if (error) next(new DBException(422, "DB Error"));
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
             data: campaigns,
             code: 200
@@ -77,7 +77,7 @@ class MicrofundController implements Controller {
                 }
             }
         }).catch());
-        if (error) next(new DBException(422, "DB Error"));
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(201).send({
             message: "Success! A new campaign has been created!",
             code: 201
@@ -103,33 +103,19 @@ class MicrofundController implements Controller {
             }
         }
         ]).exec().catch());
-        if (error) next(new DBException(422, error.message));
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
             data: campaigns,
             code: 200
         });
-        /*
-        let error: Error, campaigns: Campaign[];
-
-        [error, campaigns] = await to(this.user.find({
-            _id: request.params.merchant_id
-        }, {
-            campaigns: true
-        }).catch());
-
-        if (error) next(new DBException(422, error.message));
-        response.status(200).send({
-            data: campaigns,
-            message: "OK"
-        });
-    */  }
+  }
 
     private readACampaign = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
         let error: Error, campaign: Campaign;
         [error, campaign] = await to(this.user.findOne({
             'campaigns._id': request.params.campaign_id
         }).catch());
-        if (error) next(new DBException(422, "DB Error"));
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
             data: campaign,
             code: 200
@@ -153,7 +139,7 @@ class MicrofundController implements Controller {
                     'campaigns.$[].state': "checking"
                 }
             }).catch());
-            if (error) next(new DBException(422, error.message));
+            if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
                 message: "Success! Campaign " + request.params.campaign_id + " has been updated!",
                 code: 200
@@ -175,7 +161,7 @@ class MicrofundController implements Controller {
                     }
                 }
             }).catch());
-            if (error) next(new DBException(422, error.message));
+            if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
                 message: "Success! Campaign " + request.params.campaign_id + " has been deleted!",
                 code: 200
@@ -196,7 +182,7 @@ class MicrofundController implements Controller {
                 'campaigns.$[].state': "public"
             }
         }).catch());
-        if (error) next(new DBException(422, error.message));
+        if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
             message: "Success! Campaign " + request.params.campaign_id + " has been verified!",
             code: 200

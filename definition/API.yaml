@@ -11,7 +11,7 @@ servers:
   - url: http://synergy.synergatika.com/v1
   
 paths:
-  # Auth Paths
+  # Paths: Authentication
   /auth/authenticate:
     post:
       summary: "Authenticate users"
@@ -23,27 +23,72 @@ paths:
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
-        '201': 
-          $ref: '#/components/responses/AuthenticateRes'
-        
+        '200': 
+          $ref: '#/components/responses/Authenticate'
+        '204':
+         $ref: '#/components/responses/EmailSend'
+
   /auth/register:
     post:
-      summary: "Register new user"
+      summary: "Auto-Register new user (only as customer)"
       operationId: authRegister
       tags:
         - authentication
       requestBody:
-        $ref: '#/components/requestBodies/RegistrationRequestBody'
+        $ref: '#/components/requestBodies/RegisterRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
-        '201': 
-          $ref: '#/components/responses/CreateResponse'
-
-  /auth/checkVerifyToken:
+        '200': 
+          $ref: '#/components/responses/EmailSend'
+  
+  /auth/register/{access}:
+    post:
+      summary: "Register/Invite a new user (only for admins or merchants)"
+      operationId: authRegisterWithoutPass
+      parameters:
+        - $ref: '#/components/parameters/access'
+      tags:
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterWithoutPassRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/EmailSend'
+  
+  /auth/change_pass:
     put:
-      summary: "Check if Token to verify Email is valid & Validate Email Address"
-      operationId: authCheckVerifyToken
+      summary: "A logged in user changes the password"
+      operationId: changePassInside
+      tags: 
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/ChangePassInRequestBody'
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/Update'
+  
+  /auth/verify_email/{email}:
+    get:
+      summary: "Ask for email validation"
+      operationId: askVerification
+      parameters:
+        - $ref: '#/components/parameters/email'
+      tags:
+        - authentication
+      responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
+        '200': 
+          $ref: '#/components/responses/EmailSend'
+  /auth/verify_email:
+    post:
+      summary: "Checks if link is valid and verify email"
+      operationId: checkVerification
       tags:
         - authentication
       requestBody:
@@ -52,75 +97,48 @@ paths:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '200': 
-          $ref: '#/components/responses/UpdateResponse'   
-          
-  /auth/refreshToken:
-    post:
-      summary: "Refresh token"
-      operationId: authRefreshToken
-      tags:
-        - authentication
-      responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
-        '201':
-          $ref: '#/components/responses/RefreshTokenRes'
+          $ref: '#/components/responses/Create'
   
-  /auth/changePass:
-    put:
-      summary: "A logged in user changes her/his/its password"
-      operationId: authChangePass
+  /auth/forgot_pass/{email}:
+    get:
+      summary: "Ask for password restoration"
+      operationId: askRestoration
+      parameters:
+        - $ref: '#/components/parameters/email'
       tags:
         - authentication
-      requestBody:
-        $ref: '#/components/requestBodies/ChangePassRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '200': 
-          $ref: '#/components/responses/UpdateResponse'
-          
-  /auth/forgotPass:
+          $ref: '#/components/responses/EmailSend'
+  /auth/forgot_pass:
     post:
-      summary: "A user forgets her/his/its password"
-      operationId: authForgotPass
-      tags:
+      summary: "Checks if link is valid and procced"
+      operationId: checkRestoration
+      tags: 
         - authentication
       requestBody:
-        $ref: '#/components/requestBodies/ForgotPassRequestBody'
-      responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'  
-        '200': 
-          $ref: '#/components/responses/UpdateResponse'
-          
-  /auth/checkRestoreToken:
-    put:
-      summary: "Check if Token to restore Password is valid"
-      operationId: authcheckRestoreToken
-      tags:
-        - authentication
-      requestBody:
-        $ref: '#/components/requestBodies/CheckTokenRequestBody' 
+        $ref: '#/components/requestBodies/CheckTokenRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '200': 
-          $ref: '#/components/responses/UpdateResponse'
-          
-  /auth/restorePassword:
+          $ref: '#/components/responses/Update'
     put:
-      summary: "User update her/his/its password"
-      operationId: authRestorePass
-      tags:
+      summary: "A no logged in user changes the password"
+      operationId: changePassOutside
+      tags: 
         - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/ChangePassOutRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '200': 
-          $ref: '#/components/responses/UpdateResponse'
+          $ref: '#/components/responses/Update'
           
-  # Profile & Merchant Paths
+  # Paths: Profile & Merchant
   /profile:
     get:
       summary: "Read user's profile info (only for customers)"
@@ -148,10 +166,10 @@ paths:
 
   /merchants:
     get:
-      summary: "Return merchants"
-      operationId: getMerchants
+      summary: "Read all merchants' info (not require login)"
+      operationId: readAllMerchants
       tags:
-        - merchant
+        - merchants
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
@@ -160,12 +178,12 @@ paths:
 
   /merchants/{merchant_id}:
     get:
-      summary: "Return merchant"
+      summary: "Read merchant's info (not require login)"
       operationId: getMerchantInfo
       parameters:
         - $ref: '#/components/parameters/merchant_id'
       tags:
-        - merchant
+        - merchants
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
@@ -173,76 +191,23 @@ paths:
           $ref: '#/components/responses/Merchant'
           
     put:
-      summary: "Update merchant information"
+      summary: "Update merchant's info"
       operationId: updateMerchantInfo
       parameters:
         - $ref: '#/components/parameters/merchant_id'
       tags:
-        - merchant
+        - merchants
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Merchant'
-
-  # Loyalty Paths
-  /loyalty/earn:
-    post:
-      summary: "Store rewards customer' loyalty with points"
-      operationId: earnToken
-      tags:
-        - loyalty
-      requestBody:
-        $ref: '#/components/requestBodies/TransactionRequestBody'
-      responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
-        '201':
-          $ref: '#/components/responses/EarnResponse'
-
-  /loyalty/redeem:
-    post:
-      summary: "Customer redeem points at store"
-      operationId: redeemToken
-      tags:
-        - loyalty
-      requestBody:
-        $ref: '#/components/requestBodies/TransactionRequestBody'
-      responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
-        '201':
-          $ref: '#/components/responses/RedeemResponse'
-
-  /loyalty/transaction:
-    get:
-      summary: "Returns logged in user's transactions"
-      operationId: getTransactions
-      tags:
-        - loyalty
-      responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
-        '200':
-          $ref: '#/components/responses/TransactionResponse'
-          
-  /loyalty/balance:
-    get:
-      summary: "Returns logged in user's balance"
-      operationId: getBalance
-      tags:
-        - loyalty
-      responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
-        '200':
-          $ref: '#/components/responses/BalanceResponse'
-
-
+  
+  # Paths: Loyalty - Offers
   /loyalty/offers:
     get:
-      summary: "Returns offers from all the stores"
-      operationId: getOffers
+      summary: "Read offers from every store"
+      operationId: readAllOffers
       tags:
         - loyalty
       responses:
@@ -250,22 +215,21 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Offers'
-
     post:
-      summary: "Add a new offer"
-      operationId: postAnOffer
+      summary: "Create a new offer"
+      operationId: createOffer
       tags: 
         - loyalty
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '201':
-          $ref: '#/components/responses/CreateResponse'
+          $ref: '#/components/responses/Create'
           
   /loyalty/offers/{merchant_id}:
     get:
-      summary: "Return offers for a specific store"
-      operationId: getOffersByStore
+      summary: "Read offers for a specific store"
+      operationId: readOffersByStore
       parameters:
         - $ref: '#/components/parameters/merchant_id'
       tags:
@@ -279,7 +243,7 @@ paths:
   /loyalty/offers/{merchant_id}/{offer_id}:
     put:
       summary: "Update an Offer"
-      operationId: updateAnOffer
+      operationId: updateOffer
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/offer_id'
@@ -289,11 +253,11 @@ paths:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '200':
-          $ref: '#/components/responses/UpdateResponse'
+          $ref: '#/components/responses/Update'
 
     delete:
       summary: "Delete an Offer"
-      operationId: deleteAnOffer
+      operationId: deleteOffer
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/offer_id'
@@ -303,12 +267,12 @@ paths:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '200':
-          $ref: '#/components/responses/DeleteResponse'
+          $ref: '#/components/responses/Update'
 
-  # Microfund Paths
+  # Paths: Microfund - Campaigns
   /microfund/campaigns:
     get:
-      summary: "Read all campaigns"
+      summary: "Read campaigns from every store"
       operationId: readAllCampaigns
       tags:
         - microfund
@@ -317,20 +281,22 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Campaigns'
-          
+
     post:
       summary: "Create a new campaign"
       operationId: createCampaign
-      tags:
+      tags: 
         - microfund
       responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
         '201':
-          $ref: '#/components/responses/CreateResponse'
- 
+          $ref: '#/components/responses/Create'
+          
   /microfund/campaigns/{merchant_id}:
     get:
-      summary: "Read all campaigns by Store"
-      operationId: readCampaignByStore
+      summary: "Read offers for a specific store"
+      operationId: readCampaignsByStore
       parameters:
         - $ref: '#/components/parameters/merchant_id'
       tags:
@@ -340,11 +306,11 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Campaigns'
-
+          
   /microfund/campaigns/{merchant_id}/{campaign_id}:
-    get:
-      summary: "Get campaign info"
-      operationId: readCampaign
+    put:
+      summary: "Update an Campaign"
+      operationId: updateCampaign
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
@@ -354,35 +320,26 @@ paths:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '200':
-          $ref: '#/components/responses/Campaign'
-    put:
-      summary: "Edit campaign info"
-      operationId: updateCampaign
+          $ref: '#/components/responses/Update'
+
+    delete:
+      summary: "Delete an Campaign"
+      operationId: deleteCampaign
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
       tags:
         - microfund
       responses:
+        default:
+          $ref: '#/components/responses/UnexpectedError'
         '200':
-          $ref: '#/components/responses/Campaign'
+          $ref: '#/components/responses/Update'
   
-    delete:
-      summary: "Delete a campaign"
-      operationId: "deleteCampaign"
-      parameters:
-        - $ref: '#/components/parameters/merchant_id'
-        - $ref: '#/components/parameters/campaign)id'
-      tags:
-        - microfund
-      responses:
-        '200':
-          $ref: '#/components/responses/Camapign'
-
   /microfund/campaigns/{merchant_id}/{campaign_id}/verify:
     put:
-      summary: "Administrator verifies the campaign content"
-      operationId: verifyCampaignInfo
+      summary: "Verify a Campaign (by Admin)"
+      operationId: verifyCampaign
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
@@ -396,14 +353,6 @@ paths:
           
 components:
   parameters:
-    user_id:
-      in: path
-      name: user_id
-      schema:
-        type: string
-        format: uuid
-      required: true
-      description: "ID of the selected user"
     merchant_id:
       in: path
       name: merchant_id
@@ -428,96 +377,123 @@ components:
         format: uuid
       required: true
       description: "ID of the selected campaign"
-
+    access:
+      in: path
+      name: access
+      schema:
+        type: string
+        format: enum['customer', 'merchant']
+      required: true
+      description: "Declare the type of user that will be created"    
+    email:
+      in: path
+      name: email
+      schema:
+        type: string
+        format: email
+      required: true
+      description: "Declare the email address that will be used to verify email / restore password"
+      
   requestBodies:
-    # Auth RequestBodies
+    # Auth
     AuthenticationRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/AuthenticationRequest'
-          example:
-            email: 'customer@somewhere.io'
-            password: 'secret'
-    RegistrationRequestBody:
+            $ref: '#/components/schemas/AuthenticationDto'
+    RegisterRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/RegistrationRequest'
-          example:
-            name: 'To Synergatiko tis geitonias'
-            email: 'customer@somewhere.io'
-            password: 'secret'
-    ChangePassRequestBody:
+            $ref: '#/components/schemas/RegisterDto'
+    RegisterWithoutPassRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ChangePassRequest'
-          example:
-            password: 'secret'
-            new: 'aMostStrongPass'
-    ForgotPassRequestBody:
+            $ref: '#/components/schemas/RegisterWithoutPassDto'
+    ChangePassInRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ForgotPassRequest'
-          example:
-            email: 'customer@somewhere.io'
+            $ref: '#/components/schemas/ChangePassInDto'
     CheckTokenRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CheckTokenRequest'
-          example:
-            token: 'jefg98845tjrekjgf55ttgrt'
-    # Transaction RequestBodies        
-    TransactionRequestBody:
+            $ref: '#/components/schemas/CheckTokenDto'
+    ChangePassOutRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
-            oneOf:
-              - $ref: '#/components/schemas/TransactionRequestEmail'
-              - $ref: '#/components/schemas/TransactionRequestAddress'
-              - $ref: '#/components/schemas/TransactionRequestCard'
-          example:
-            email: 'customer@somewhere.io'
-            amount: 130
-
-  responses:
-    # Auth's section
-    AuthenticateRes:
-      description: Expected response to a valide request
-      content: 
-        application/json:
-          schema:
-            allOf:
-              - $ref: "#/components/schemas/User"
-              - $ref: '#/components/schemas/Access'
-    RefreshTokenRes:
-      description: Expected response to a valid request
+            $ref: '#/components/schemas/ChangePassOutDto'
+            
+    # Profile & Merchant
+    CustomerRequestBody:
+      description: ""
+      required: true
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Access"
-    # User's section - Profile, Merchant's Info
+            $ref: '#/components/schemas/CustomerDto'
+    MerchantRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MerchantDto'
+    
+    # Loyalty
+    OfferRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OfferDto'
+    
+    # Microfund
+    CampaignRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CampaignDto'
+            
+  responses:
+    # Auth
+    Authenticate:
+      description: Expected response to a valid request
+      content: 
+        application/json:
+          schema:
+            type: object
+            properties:
+              user:
+                $ref: '#/components/schemas/User'
+              token:
+                $ref: '#/components/schemas/TokenData'
+
+    # Profile & Merchant
     User: 
       description: Expected response to a valid request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/User"
+            $ref: "#/components/schemas/Customer"
     Merchant:
       description: Expected response to a valid request
       content:
@@ -530,71 +506,40 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Merchants"
-    # Loyalty
+    
+    # Loaylty - Offers
     Offers:
       description: Expected response to a valid request
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Offers"
-          example: 
-            - id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          example:
+            - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"  
+              merchant_name: "Merchant 1"
+              offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
+              createdAt: "2019-09-10" 
               cost: 1000
               description: "Get 10% discount"
-            - id: "a8a85f64-5717-6245-c3fc-2c963f66afa6"
+              expiresAt: "2019-11-15"
+            - merchant_id: "67a85f64-5r717-4562-b3fc-2c963f66afa6"  
+              merchant_name: "Merchant 2"
+              offer_id: "55454564-5rre7-4ert62-b3fc-c9rtret3f6r9"
+              createdAt: "2019-09-15" 
               cost: 2000
-              description: "Get 25% discount"
-    EarnResponse:
-      description: 'Earn points'
-      content:
-        application/json:    
-          schema:
-            $ref: "#/components/schemas/EarnResponse"
-          example:
-            points: 
-              balance: 1300
-              earned: 13
-            code: 0
-            message: "Succesfully earn 13 points"
-    RedeemResponse:
-      description: 'Redeem points'
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/RedeemResponse"
-          example:
-            points: 
-              balance: 1287
-              redeemed: 13
-            code: 0
-            message: "Succesfully redeem 13 points"
-    TransactionResponse:
+              description: "1+1 Burger"
+              expiresAt: "2019-11-10"
+
+    # Microfund - Campaigns
+    Campaigns:
       description: Expected response to a valid request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Transactions"
-    BalanceResponse:
-      description: Expected response to a valid request
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Balance"      
-    # Microfund        
-    Campaign: 
-      description: Expected response to a valide request
-      content:
-        application/json:
-          schema: 
-            $ref: "#/components/schemas/Campaign"
-    Campaigns: 
-      description: Expected response to a valide request
-      content:
-        application/json:
-          schema: 
             $ref: "#/components/schemas/Campaigns"
-    # Typical create or update and error responses
-    CreateResponse:
+            
+    # Create, Update, Email Send, Error
+    Create:
       description: Expected response to valid request
       content:
         application/json:
@@ -603,7 +548,7 @@ components:
           example: 
             code: 100
             message: "Campaign successfully created!"          
-    UpdateResponse:
+    Update:
       description: Expected response to valid request
       content:
         application/json:
@@ -611,7 +556,15 @@ components:
             $ref: "#/components/schemas/Updated"
           example: 
             code: 100
-            message: "User's Profile successfully updated!"          
+            message: "User's Profile successfully updated!" 
+    EmailSend:
+      description: Expected response to valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/EmailSent"
+          example: 
+            message: "An email has been sent. Follow the link to verify your address!"       
     UnexpectedError:
       description: Unexpected error
       content:
@@ -620,29 +573,23 @@ components:
             $ref: "#/components/schemas/Error"
           example: 
             code: 100
-            message: "Something wrong happes!"            
+            message: "Something wrong happes!"   
+             
 
   schemas:
-    # Req: Auth Schemas
-    AuthenticationRequest: 
+    # Request - Auth
+    AuthenticationDto:
       type: object
-      required:
-        - email
-        - password
       properties:
         email:
           type: string
           format: email
-        password: 
+        password:
           type: string
           format: password
-    RegistrationRequest:
+    RegisterDto:
       type: object
-      required:
-        - name
-        - email
-        - password
-      properties: 
+      properties:
         name:
           type: string
         email:
@@ -651,86 +598,126 @@ components:
         password:
           type: string
           format: password
-    ChangePassRequest:
+    RegisterWithoutPassDto:
       type: object
-      required:
-        - password
-        - new
       properties:
-        password:
+        name:
           type: string
-          format: password
-        new: 
-          type: string
-          format: password
-    ForgotPassRequest:
-      type: object
-      required:
-        - email
-      properties:
         email:
           type: string
-          format: email
-    CheckTokenRequest:
+          format: email    
+    ChangePassInDto:
       type: object
-      required:
-        - token
+      properties:
+        oldPassword:
+          type: string
+          format: password  
+        newPassword:
+          type: string
+          format: password  
+    CheckTokenDto:
+      type: object
       properties:
         token:
           type: string
-    # Req: Loyalty Schemas
-    TransactionRequestCard:
+          format: password  
+    ChangePassOutDto:
       type: object
-      required:
-        - amount
-        - card_id
       properties:
-        card_id: 
+        token:
           type: string
-        amount:
-          type: number
-          format: float
-          minimum: 0
-    TransactionRequestEmail:
-      type: object
-      required:
-        - amount
-        - email
-      properties:
-        email: 
+          format: password 
+        newPassword:
           type: string
-          format: email
-        amount:
-          type: number
-          format: float
-          minimum: 0
-    TransactionRequestAddress:
-      type: object
-      required:
-        - amount
-        - address
-      properties:
-        address: 
+          format: password  
+        verPassword:
           type: string
-        amount:
-          type: number
-          format: float
-          minimum: 0
-    # Res: Auth Schemas
-    Access:
+          format: password 
+          
+    # Request - Profile & Merchant
+    CustomerDto:
       type: object
       properties:
-        bearer:
+        name:
+          type: string
+        imageURL:
+          type: string
+          format: url
+    MerchantDto:
+      type: object
+      properties:
+        name:
+          type: string
+        imageURL:
+          type: string
+          format: url
+        contact:
+          type: object
+          properties:
+            phone: 
+              type: number
+              format: int64
+            websiteURL:
+              type: string
+              format: url
+            address: 
+              type: object
+              properties:
+                street:
+                  type: string
+                zipCode:
+                  type: number
+                  format: int64
+                city:
+                  type: string            
+    
+    # Request - Loyalty
+    OfferDto:
+      type: object
+      properties:
+        description:
+          type: string
+        cost:
+          type: number
+        expiresAt:
+          type: string
+          format: date
+    
+    # Request - Microfund
+    CampaignDto:
+      type: object
+      properties:
+        description:
+          type: string
+        expiresAt:
+          type: string
+          format: date
+          
+    # Response - Auth
+    TokenData:
+      type: object
+      properties: 
+        token:
           type: string
           format: uuid
-        type: 
+        expiresIn:
           type: string
-          enum: [customer, merchant]
-        access:
-          type: string
-          enum: [user, admin]
-    # Res: Customers & Merchants Schemas
+          format: date
     User: 
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        access: 
+          type: string
+          enum: [customer, merchant, admin]
+    
+    # Response - Profile & Merchant
+    Customer: 
       type: object
       properties:
         id:
@@ -741,6 +728,9 @@ components:
         imageURL:
           type: string
           format: uri
+        email: 
+          type: string
+          format: email
         memberSince:
           type: string
           format: date
@@ -750,14 +740,14 @@ components:
         id:
           type: string
           format: uuid
-        email:
-          type: string
-          format: email
         name: 
           type: string
         imageURL:
           type: string
           format: uri
+        email: 
+          type: string
+          format: email
         memberSince:
           type: string
           format: date
@@ -767,6 +757,9 @@ components:
             phone: 
               type: number
               format: int64
+            websiteURL:
+              type: string
+              format: url
             address: 
               type: object
               properties:
@@ -781,105 +774,49 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/Merchant"
-    # Res: Loaylty Schemas
-    RedeemResponse:
-      type: object
-      required:
-        - code
-        - message
-      properties:
-        points:
-          type: object
-          required:
-            - redeemed
-          properties:
-            redeemed:
-              type: integer
-              format: int32
-            balance:
-              type: integer
-              format: int32
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
-    EarnResponse:
-      type: object
-      required:
-        - points
-        - code
-        - message      
-      properties:
-        points:
-          type: object
-          required:
-            - earned
-          properties:
-            earned:
-              type: integer
-              format: int32
-            balance:
-              type: integer
-              format: int32
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
-    Transaction:
-      type: object
-      required:
-        - timestamp
-        - tokens
-        - merchant_id
-      properties:
-        timestamp:
-          type: string
-          format: date-time
-        tokens:
-          type: integer
-          minimum: 0
-        merchant_id:
-          type: string
-          format: uuid
-    Transactions:
-      type: array
-      items:
-        $ref: "#/components/schemas/Transaction"
-    Balance:
-      type: object
-      required:
-        - balance
-      properties:
-        balance:
-          type: integer
-          minimum: 0
+    
+    # Response - Loyalty Offers
     Offer:
       type: object
       properties:
-        id:
+        merchant_name:
+          type: string
+        merchant_id:
+          type: string
+          format: uuid        
+        offer_id:
           type: string
           format: uuid
-        cost:
-          type: integer
-          minimum: 0
+        createdAt:
+          type: string
+          format: date          
         description:
           type: string
-    Offers:    
+        cost:
+          type: number
+        expiresAt:
+          type: string
+          format: date      
+    Offers:
       type: array
       items:
-        $ref: "#/components/schemas/Offer"
-    # Res: Microfund
+        $ref: '#/components/schemas/Offer'
+    
+    # Response - Microfund Campaigns
     Campaign:
       type: object
       properties:
-        id:
+        merchant_name:
+          type: string
+        merchant_id:
+          type: string
+          format: uuid        
+        campaign_id:
           type: string
           format: uuid
-        state: 
+        createdAt:
           type: string
-          enum: [draft, checking, public, passProtected, expired]
+          format: date          
         description:
           type: string
         expiresAt:
@@ -888,8 +825,9 @@ components:
     Campaigns:
       type: array
       items:
-        $ref: "#/components/schemas/Campaign"
-    # Res: Typical Create, Update, Error Schema   
+        $ref: '#/components/schemas/Campaign'
+    
+    # Response - Typical Create, Update, Error   
     Created:
       type: object
       required:
@@ -910,6 +848,13 @@ components:
         code:
           type: integer
           format: int32
+        message:
+          type: string
+    EmailSent:
+      type: object
+      required:
+        - message
+      properties:
         message:
           type: string
     Error:

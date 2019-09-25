@@ -40,7 +40,7 @@ class CustomersController implements Controller {
             restorationToken: false, restorationExpiration: false,
             offers: false, campaigns: false
         }).catch());
-        if (error) new DBException(404, 'DB Error');
+        if (error) next(new DBException(422, 'DB ERROR'));
         user.password = undefined;
         response.status(200).send({
             data: user,
@@ -64,7 +64,7 @@ class CustomersController implements Controller {
                 imageURL: '$imageURL'
             }
         }).catch());
-        if (error) new DBException(404, 'DB Error');
+        if (error) next(new DBException(422, 'DB ERROR'));
 
         user.password = undefined;
         response.status(200).send({
