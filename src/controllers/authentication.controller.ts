@@ -14,7 +14,8 @@ import AuthTokenData from '../authInterfaces/authTokenData.interface';
 import User from '../usersInterfaces/user.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
-import validationMiddleware from '../middleware/validation.middleware';
+import validationBodyMiddleware from '../middleware/body.validation';
+import validationParamsMiddleware from '../middleware/params.validation';
 import accessMiddleware from '../middleware/access.middleware';
 import authMiddleware from '../middleware/auth.middleware';
 // Models
@@ -26,7 +27,9 @@ import RegisterWithOutPasswordDto from '../authDtos/registerWithOutPassword.dto'
 import CheckTokenDto from '../authDtos/checkToken.dto'
 import ChangePassInDto from '../authDtos/changePassIn.dto'
 import ChangePassOutDto from '../authDtos/changePassOut.dto'
-import EmailDto from '../authDtos/email.dto'
+import EmailDto from '../authDtos/email.params.dto'
+import AccessDto from '../authDtos/access.params.dto'
+
 // Email
 import Transporter from '../utils/mailer'
 import to from 'await-to-ts';
@@ -41,20 +44,20 @@ class AuthenticationController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/register`, validationMiddleware(RegisterWithPasswordDto), this.authRegister, this.askVerification, this.emailSender);
-    this.router.post(`${this.path}/authenticate`, validationMiddleware(AuthenticationDto), this.authAuthenticate);
+    this.router.post(`${this.path}/register`, validationBodyMiddleware(RegisterWithPasswordDto), this.authRegister, this.askVerification, this.emailSender);
+    this.router.post(`${this.path}/authenticate`, validationBodyMiddleware(AuthenticationDto), this.authAuthenticate);
     this.router.post(`${this.path}/logout`, authMiddleware, this.loggingOut);
 
-    this.router.post(`${this.path}/register/:access`, authMiddleware, accessMiddleware.registerWithoutPass, validationMiddleware(RegisterWithOutPasswordDto), this.registerInside, this.emailSender);
+    this.router.post(`${this.path}/register/:access`, authMiddleware, validationParamsMiddleware(AccessDto), accessMiddleware.registerWithoutPass, validationBodyMiddleware(RegisterWithOutPasswordDto), this.registerInside, this.emailSender);
 
-    this.router.put(`${this.path}/change_pass`, authMiddleware, validationMiddleware(ChangePassInDto), this.changePassInside);
+    this.router.put(`${this.path}/change_pass`, authMiddleware, validationBodyMiddleware(ChangePassInDto), this.changePassInside);
 
-    this.router.get(`${this.path}/verify_email/:email`, this.askVerification, this.emailSender);
-    this.router.post(`${this.path}/verify_email`, validationMiddleware(CheckTokenDto), this.checkVerification);
+    this.router.get(`${this.path}/verify_email/:email`, validationParamsMiddleware(EmailDto), this.askVerification, this.emailSender);
+    this.router.post(`${this.path}/verify_email`, validationBodyMiddleware(CheckTokenDto), this.checkVerification);
 
-    this.router.get(`${this.path}/forgot_pass/:email`, this.askRestoration, this.emailSender);
-    this.router.post(`${this.path}/forgot_pass`, validationMiddleware(CheckTokenDto), this.checkRestoration);
-    this.router.put(`${this.path}/forgot_pass`, validationMiddleware(ChangePassOutDto), this.changePassOutside);
+    this.router.get(`${this.path}/forgot_pass/:email`, validationParamsMiddleware(EmailDto), this.askRestoration, this.emailSender);
+    this.router.post(`${this.path}/forgot_pass`, validationBodyMiddleware(CheckTokenDto), this.checkRestoration);
+    this.router.put(`${this.path}/forgot_pass`, validationBodyMiddleware(ChangePassOutDto), this.changePassOutside);
   }
 
   private authRegister = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -307,7 +310,7 @@ class AuthenticationController implements Controller {
         next(new AuthenticationException(404, "Link is wrong or has been expired."));
       }
     } else {
-      next(new AuthenticationException(404, "Verification failed."));
+      next(new AuthenticationException(404, "Password verification failed."));
     }
   }
 
@@ -362,7 +365,7 @@ class AuthenticationController implements Controller {
 
     // send mail with defined transport object
     Transporter.sendMail(mailOptions, (error: Error, info: nodemailer.SentMessageInfo): void => {
-      if (error) next(new AuthenticationException(404, 'Email failed'));
+      if (error) next(new AuthenticationException(404, 'Email transmission failed'));
       else if (data.state === '1') { // Email Verification
         response.status(200).send({
           message: "Please, follow your link to Validate your Email.",

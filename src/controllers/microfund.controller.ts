@@ -9,7 +9,8 @@ import Controller from '../interfaces/controller.interface';
 import Campaign from '../microfundInterfaces/campaign.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
-import validationMiddleware from '../middleware/validation.middleware';
+import validationBodyMiddleware from '../middleware/body.validation';
+import validationParamsMiddleware from '../middleware/params.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware'
 // Models
@@ -17,6 +18,9 @@ import userModel from '../models/user.model';
 // Dtos
 import CampaignDto from '../microfundDtos/campaign.dto'
 import { ObjectId } from 'mongodb';
+
+import MerchantID from '../usersDtos/merchant_id.params.dto'
+import CampaignID from '../microfundDtos/campaign_id.params.dto'
 
 class MicrofundController implements Controller {
     public path = '/profile';
@@ -29,12 +33,12 @@ class MicrofundController implements Controller {
 
     private initializeRoutes() {
         this.router.get(`${this.path}/campaigns`, this.readAllCampaigns);
-        this.router.post(`${this.path}/campaigns`, authMiddleware, accessMiddleware.onlyAsMerchant, validationMiddleware(CampaignDto), this.createCampaign);
-        this.router.get(`${this.path}/campaigns/:merchant_id`, this.readCampaignsByStore);
-        this.router.get(`${this.path}/campaigns/:merchant_id/:campaign_id`, this.readACampaign);
-        this.router.put(`${this.path}/campaigns/:merchant_id//:campaign_id`, authMiddleware, validationMiddleware(CampaignDto), this.updateCampaign);
-        this.router.delete(`${this.path}/campaigns/:merchant_id/:campaign_id`, authMiddleware, this.deleteACampaign);
-        this.router.put(`${this.path}/campaigns/:merchant_id/:campaign_id/verify`, authMiddleware, accessMiddleware.onlyAsAdmin, this.verifyCampaign);
+        this.router.post(`${this.path}/campaigns`, authMiddleware, accessMiddleware.onlyAsMerchant, validationBodyMiddleware(CampaignDto), this.createCampaign);
+        this.router.get(`${this.path}/campaigns/:merchant_id`, validationParamsMiddleware(MerchantID), this.readCampaignsByStore);
+        this.router.get(`${this.path}/campaigns/:merchant_id/:campaign_id`, validationParamsMiddleware(CampaignID), this.readACampaign);
+        this.router.put(`${this.path}/campaigns/:merchant_id//:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), validationBodyMiddleware(CampaignDto), this.updateCampaign);
+        this.router.delete(`${this.path}/campaigns/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), this.deleteACampaign);
+        this.router.put(`${this.path}/campaigns/:merchant_id/:campaign_id/verify`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(CampaignID), this.verifyCampaign);
     }
 
     private readAllCampaigns = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -108,7 +112,7 @@ class MicrofundController implements Controller {
             data: campaigns,
             code: 200
         });
-  }
+    }
 
     private readACampaign = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
         let error: Error, campaign: Campaign;

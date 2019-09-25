@@ -10,13 +10,17 @@ import Controller from '../interfaces/controller.interface';
 import Offer from '../loyaltyInterfaces/offer.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
-import validationMiddleware from '../middleware/validation.middleware';
+import validationBodyMiddleware from '../middleware/body.validation';
+import validationParamsMiddleware from '../middleware/params.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../models/user.model';
 // Dtos
 import OfferDto from '../loyaltyDtos/offer.dto'
+
+import MerchantID from '../usersDtos/merchant_id.params.dto'
+import OfferID from '../microfundDtos/campaign_id.params.dto'
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
@@ -29,10 +33,10 @@ class LoyaltyController implements Controller {
 
     private initializeRoutes() {
         this.router.get(`${this.path}/offers`, this.readAllOffers);
-        this.router.post(`${this.path}/offers`, authMiddleware, accessMiddleware.onlyAsMerchant, validationMiddleware(OfferDto), this.createOffer);
-        this.router.get(`${this.path}/offers/:merchant_id`, this.readOffersByStore);
-        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationMiddleware(OfferDto), this.updateOffer);
-        this.router.delete(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, this.deleteOffer);
+        this.router.post(`${this.path}/offers`, authMiddleware, accessMiddleware.onlyAsMerchant, validationBodyMiddleware(OfferDto), this.createOffer);
+        this.router.get(`${this.path}/offers/:merchant_id`, validationParamsMiddleware(MerchantID), this.readOffersByStore);
+        this.router.put(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), validationBodyMiddleware(OfferDto), this.updateOffer);
+        this.router.delete(`${this.path}/offers/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), this.deleteOffer);
     }
 
     private readAllOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {

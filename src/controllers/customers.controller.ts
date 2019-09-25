@@ -9,7 +9,7 @@ import Controller from '../interfaces/controller.interface';
 import User from '../usersInterfaces/user.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
-import validationMiddleware from '../middleware/validation.middleware';
+import validationBodyMiddleware from '../middleware/body.validation';
 import authMiddleware from '../middleware/auth.middleware';
 // import accessMiddleware from '../middleware/access.middleware'
 // Models
@@ -28,7 +28,7 @@ class CustomersController implements Controller {
 
     private initializeRoutes() {
         this.router.get(`${this.path}`, authMiddleware, this.readUserProfile);
-        this.router.put(`${this.path}`, authMiddleware, validationMiddleware(CustomerDto), this.updateUserProfile);
+        this.router.put(`${this.path}`, authMiddleware, validationBodyMiddleware(CustomerDto), this.updateUserProfile);
     }
 
     private readUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

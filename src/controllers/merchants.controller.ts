@@ -9,13 +9,15 @@ import Controller from '../interfaces/controller.interface';
 import Merchant from '../usersInterfaces/merchant.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
-import validationMiddleware from '../middleware/validation.middleware';
+import validationBodyMiddleware from '../middleware/body.validation';
+import validationParamsMiddleware from '../middleware/body.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../models/user.model';
 // Dtos
 import MerchantDto from '../usersDtos/merchant.dto'
+import MerchantID from '../usersDtos/merchant_id.params.dto'
 
 class MerchantsController implements Controller {
     public path = '/merchants';
@@ -28,8 +30,8 @@ class MerchantsController implements Controller {
 
     private initializeRoutes() {
         this.router.get(`${this.path}`, this.getMerchants);
-        this.router.get(`${this.path}/:merchant_id`, this.getMerchantInfo);
-        this.router.put(`${this.path}/:merchant_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationMiddleware(MerchantDto), this.updateMerchantInfo);
+        this.router.get(`${this.path}/:merchant_id`, validationParamsMiddleware(MerchantID), this.getMerchantInfo);
+        this.router.put(`${this.path}/:merchant_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(MerchantID), validationBodyMiddleware(MerchantDto), this.updateMerchantInfo);
     }
 
     private getMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
