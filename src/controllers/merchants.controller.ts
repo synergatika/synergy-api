@@ -105,7 +105,7 @@ class MerchantsController implements Controller {
                 code: 200
             })
         } else {
-            next(new UsersException(404, 'Not Authorized'));
+            next(new UsersException(404, 'OOps! You are not authorized to proceed in this action.'));
         }
     }
 }

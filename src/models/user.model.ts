@@ -5,7 +5,7 @@ const campaignSchema = new mongoose.Schema({
   description: String,
   state: {
     type: String,
-    enum: ['draft', 'checking', 'public', 'passProtected', 'expired'],
+    enum: ['draft', 'checking', 'public', 'private', 'expired'],
     default: 'draft'
   },
   expiresAt: Date

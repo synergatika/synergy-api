@@ -17,13 +17,13 @@ async function authMiddleware(request: RequestWithUser, response: Response, next
         request.user = user;
         next();
       } else {
-        next(new AuthenticationException(401, "Unauthorized"));
+        next(new AuthenticationException(401, "Authorization Required."));
       }
     } catch (error) {
-      next(new AuthenticationException(401, "Unauthorized"));
+      next(new AuthenticationException(401, "Authorization Required."));
     }
   } else {
-    next(new AuthenticationException(401, "Unauthorized"));
+    next(new AuthenticationException(401, "Authorization Required."));
   }
 }
 

@@ -113,7 +113,6 @@ class LoyaltyController implements Controller {
             data: offers,
             code: 200
         });
-
     }
 
     private updateOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

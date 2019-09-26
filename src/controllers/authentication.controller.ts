@@ -286,7 +286,7 @@ class AuthenticationController implements Controller {
 
   private changePassOutside = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: ChangePassOutDto = request.body;
-    const now = new Date()
+    const now = new Date();
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
     if (data.newPassword === data.varPassword) {
