@@ -188,12 +188,11 @@ paths:
         - profile
       responses:
         '200':
-          $ref: '#/components/responses/User'
+          $ref: '#/components/responses/Customer'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/DB_Error'
-          
     put:
       summary: "Update user's profile info (only for customers)"
       operationId: updateUserProfile
@@ -203,7 +202,7 @@ paths:
         $ref: '#/components/requestBodies/CustomerRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/User'
+          $ref: '#/components/responses/Customer'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -328,7 +327,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/DB_Error' 
-
     delete:
       summary: "Delete an Offer"
       operationId: deleteOffer
@@ -382,7 +380,7 @@ paths:
           
   /microfund/campaigns/{merchant_id}:
     get:
-      summary: "Read offers for a specific store"
+      summary: "Read campaigns for a specific store"
       operationId: readCampaignsByStore
       parameters:
         - $ref: '#/components/parameters/merchant_id'
@@ -397,6 +395,21 @@ paths:
           $ref: '#/components/responses/DB_Error' 
           
   /microfund/campaigns/{merchant_id}/{campaign_id}:
+    get:
+      summary: "Read a campaign"
+      operationId: readACampaign
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/campaign_id'
+      tags:
+        - microfund        
+      responses:
+        '200':
+          $ref: '#/components/responses/Campaign'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/DB_Error'  
     put:
       summary: "Update an Campaign"
       operationId: updateCampaign
@@ -418,7 +431,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/DB_Error' 
-          
     delete:
       summary: "Delete an Campaign"
       operationId: deleteCampaign
@@ -597,33 +609,57 @@ components:
                 $ref: '#/components/schemas/TokenData'
 
     # Profile & Merchant
-    User: 
+    Customer: 
       description: Expected response to a valid request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Customer"
-
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/Customer'
+              code:
+                type: number
+                default: 200
+                
+                
     Merchant:
       description: Expected response to a valid request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Merchant"
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Merchant"
+              code:
+                type: number
+                default: 200
     Merchants:
       description: Expected response to a valid request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Merchants"
-    
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Merchants"
+              code:
+                type: number
+                default: 200    
     # Loaylty - Offers
     Offers:
       description: Expected response to a valid request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Offers"
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Offers"
+              code:
+                type: number
+                default: 200 
           example:
             - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"  
               merchant_name: "Merchant 1"
@@ -641,12 +677,30 @@ components:
               expiresAt: "2019-11-10"
 
     # Microfund - Campaigns
+    Campaign:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Campaign"
+              code:
+                type: number
+                default: 200
     Campaigns:
       description: Expected response to a valid request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Campaigns"
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Campaigns"
+              code:
+                type: number
+                default: 200 
             
     # Create, Update, Email Send, Error
     Create:
@@ -776,7 +830,7 @@ components:
         newPassword:
           type: string
           format: password  
-        varPassword:
+        verPassword:
           type: string
           format: password 
           
