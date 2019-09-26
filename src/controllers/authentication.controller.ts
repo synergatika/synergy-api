@@ -86,7 +86,8 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.findOne({
       email: data.email
     }, {
-      updatedAt: false,
+      name: false, imageURL: false, 
+      createdAt: false, updatedAt: false,
       contact: false, offers: false, campaigns: false,
       restorationToken: false, restorationExpiration: false,
       verificationToken: false, verificationExpiration: false

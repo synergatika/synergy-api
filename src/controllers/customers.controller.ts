@@ -36,9 +36,11 @@ class CustomersController implements Controller {
         [error, user] = await to(this.user.findOne({
             _id: request.user._id
         }, {
+            access: false, verified: false,
             verificationToken: false, verificationExpiration: false,
             restorationToken: false, restorationExpiration: false,
-            offers: false, campaigns: false
+            offers: false, campaigns: false,
+            updatedAt: false
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
         user.password = undefined;
@@ -61,7 +63,9 @@ class CustomersController implements Controller {
         }, {
             projection: {
                 name: '$name',
-                imageURL: '$imageURL'
+                email: '$email',
+                imageURL: '$imageURL',
+                createdAt: '$createdAt'
             }
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));

@@ -21,13 +21,17 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/AuthenticationRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/Authenticate'
         '204':
          $ref: '#/components/responses/EmailSend'
-
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
+          
   /auth/register:
     post:
       summary: "Auto-Register new user (only as customer)"
@@ -37,11 +41,15 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/RegisterRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/EmailSend'
-  
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
+          
   /auth/register/{access}:
     post:
       summary: "Register/Invite a new user (only for admins or merchants)"
@@ -53,11 +61,19 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/RegisterWithoutPassRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/EmailSend'
-  
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
+          
   /auth/change_pass:
     put:
       summary: "A logged in user changes the password"
@@ -67,11 +83,17 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/ChangePassInRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/Update'
-  
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
+          
   /auth/verify_email/{email}:
     get:
       summary: "Ask for email validation"
@@ -81,10 +103,14 @@ paths:
       tags:
         - authentication
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/EmailSend'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
   /auth/verify_email:
     post:
       summary: "Checks if link is valid and verify email"
@@ -94,11 +120,15 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/CheckTokenRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/Create'
-  
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
+          
   /auth/forgot_pass/{email}:
     get:
       summary: "Ask for password restoration"
@@ -108,10 +138,14 @@ paths:
       tags:
         - authentication
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/EmailSend'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
   /auth/forgot_pass:
     post:
       summary: "Checks if link is valid and procced"
@@ -121,10 +155,14 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/CheckTokenRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/Update'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
     put:
       summary: "A no logged in user changes the password"
       operationId: changePassOutside
@@ -133,11 +171,14 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/ChangePassOutRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200': 
           $ref: '#/components/responses/Update'
-          
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error'           
   # Paths: Profile & Merchant
   /profile:
     get:
@@ -146,10 +187,12 @@ paths:
       tags:
         - profile
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/DB_Error'
           
     put:
       summary: "Update user's profile info (only for customers)"
@@ -159,10 +202,14 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/CustomerRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/User'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/DB_Error'
 
   /merchants:
     get:
@@ -171,10 +218,10 @@ paths:
       tags:
         - merchants
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Merchants'
+        '422':
+          $ref: '#/components/responses/DB_Error'
 
   /merchants/{merchant_id}:
     get:
@@ -185,11 +232,12 @@ paths:
       tags:
         - merchants
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Merchant'
-          
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/DB_Error'          
     put:
       summary: "Update merchant's info"
       operationId: updateMerchantInfo
@@ -200,11 +248,17 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/MerchantRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Merchant'
-  
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
+          
   # Paths: Loyalty - Offers
   /loyalty/offers:
     get:
@@ -213,10 +267,10 @@ paths:
       tags:
         - loyalty
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Offers'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
     post:
       summary: "Create a new offer"
       operationId: createOffer
@@ -225,10 +279,16 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/OfferRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '201':
           $ref: '#/components/responses/Create'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
           
   /loyalty/offers/{merchant_id}:
     get:
@@ -239,10 +299,12 @@ paths:
       tags:
         - loyalty
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Offers'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/DB_Error'   
           
   /loyalty/offers/{merchant_id}/{offer_id}:
     put:
@@ -256,10 +318,16 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/OfferRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Update'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
 
     delete:
       summary: "Delete an Offer"
@@ -270,10 +338,16 @@ paths:
       tags:
         - loyalty
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Update'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
 
   # Paths: Microfund - Campaigns
   /microfund/campaigns:
@@ -283,11 +357,10 @@ paths:
       tags:
         - microfund
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Campaigns'
-
+        '422':
+          $ref: '#/components/responses/DB_Error' 
     post:
       summary: "Create a new campaign"
       operationId: createCampaign
@@ -296,10 +369,16 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/CampaignRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '201':
           $ref: '#/components/responses/Create'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
           
   /microfund/campaigns/{merchant_id}:
     get:
@@ -310,10 +389,12 @@ paths:
       tags:
         - microfund
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Campaigns'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
           
   /microfund/campaigns/{merchant_id}/{campaign_id}:
     put:
@@ -327,11 +408,17 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/CampaignRequestBody'
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Update'
-
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
+          
     delete:
       summary: "Delete an Campaign"
       operationId: deleteCampaign
@@ -341,11 +428,17 @@ paths:
       tags:
         - microfund
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Update'
-  
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/DB_Error'   
+          
   /microfund/campaigns/{merchant_id}/{campaign_id}/verify:
     put:
       summary: "Verify a Campaign (by Admin)"
@@ -356,10 +449,16 @@ paths:
       tags:
         - microfund
       responses:
-        default:
-          $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Update'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/DB_Error' 
           
 components:
   parameters:
@@ -504,6 +603,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Customer"
+
     Merchant:
       description: Expected response to a valid request
       content:
@@ -556,7 +656,7 @@ components:
           schema:
             $ref: "#/components/schemas/Created"
           example: 
-            code: 100
+            code: 201
             message: "Campaign successfully created!"          
     Update:
       description: Expected response to valid request
@@ -565,7 +665,7 @@ components:
           schema:
             $ref: "#/components/schemas/Updated"
           example: 
-            code: 100
+            code: 200
             message: "User's Profile successfully updated!" 
     EmailSend:
       description: Expected response to valid request
@@ -574,15 +674,51 @@ components:
           schema:
             $ref: "#/components/schemas/EmailSent"
           example: 
-            message: "An email has been sent. Follow the link to verify your address!"       
-    UnexpectedError:
-      description: Unexpected error
+            message: "An email has been sent. Follow the link to verify your address!"
+    Bad_Request: 
+      description: Bad Request (400)
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
           example: 
-            code: 100
+            code: 400
+            message: "Something wrong happes!"       
+    Unauthorized:
+      description: Unauthorized (401)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example: 
+            code: 401
+            message: "Something wrong happes!"       
+    Forbidden:
+      description: Forbidden (403)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example: 
+            code: 403
+            message: "Something wrong happes!" 
+    Not_Found:
+      description: Not Found (404)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example: 
+            code: 404
+            message: "Something wrong happes!" 
+    DB_Error:
+      description: DataBase Error (422)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example: 
+            code: 422
             message: "Something wrong happes!"   
              
 
@@ -652,7 +788,7 @@ components:
           type: string
         imageURL:
           type: string
-          format: url
+          format: uri
     MerchantDto:
       type: object
       properties:
@@ -660,7 +796,7 @@ components:
           type: string
         imageURL:
           type: string
-          format: url
+          format: uri
         contact:
           type: object
           properties:
@@ -669,7 +805,7 @@ components:
               format: int64
             websiteURL:
               type: string
-              format: url
+              format: uri
             address: 
               type: object
               properties:
@@ -725,6 +861,9 @@ components:
         access: 
           type: string
           enum: [customer, merchant, admin]
+        verified:
+          type: boolean
+        
     
     # Response - Profile & Merchant
     Customer: 
@@ -741,7 +880,7 @@ components:
         email: 
           type: string
           format: email
-        memberSince:
+        createdAt:
           type: string
           format: date
     Merchant:
@@ -758,7 +897,7 @@ components:
         email: 
           type: string
           format: email
-        memberSince:
+        createdAt:
           type: string
           format: date
         contact:
@@ -769,7 +908,7 @@ components:
               format: int64
             websiteURL:
               type: string
-              format: url
+              format: uri
             address: 
               type: object
               properties:
