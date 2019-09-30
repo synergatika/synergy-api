@@ -4,8 +4,20 @@ import * as mongoose from 'mongoose';
 import Controller from './interfaces/controller.interface';
 import * as cookieParser from 'cookie-parser';
 import errorMiddleware from './middleware/error.middleware'
+
+import * as cors from 'cors';
+
+
 class App {
   public app: express.Application;
+
+  private options: cors.CorsOptions = {
+    allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "X-Access-Token"],
+    credentials: true,
+    methods: "GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE",
+    origin: 'http://localhost:4200',
+    preflightContinue: false
+  };
 
   constructor(controllers: Controller[]) {
     this.app = express();
@@ -25,6 +37,7 @@ class App {
   private initializeMiddlewares() {
     this.app.use(bodyParser.json());
     this.app.use(cookieParser());
+    this.app.use(cors(this.options));
   }
 
   private initializeErrorHandling() {
