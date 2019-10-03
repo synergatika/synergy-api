@@ -74,6 +74,7 @@ class AuthenticationController implements Controller {
         verified: 'false',
         password: hashedPassword,
       }).catch());
+      request.params.email = data.email;
       if (error) next(new DBException(422, 'DB ERROR'));
       next();
     }
