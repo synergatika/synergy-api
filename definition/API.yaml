@@ -9,7 +9,7 @@ info:
 
 servers:
   - url: http://localhost:3000 #http://synergy.synergatika.com/v1
-  
+
 paths:
   # Paths: Authentication
   /auth/authenticate:
@@ -21,7 +21,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/AuthenticationRequestBody'
       responses:
-        '200': 
+        '200':
           $ref: '#/components/responses/Authenticate'
         '204':
          $ref: '#/components/responses/EmailSend'
@@ -30,8 +30,8 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
   /auth/register:
     post:
       summary: "Auto-Register new user (only as customer)"
@@ -41,19 +41,21 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/RegisterRequestBody'
       responses:
-        '200': 
+        '200':
           $ref: '#/components/responses/EmailSend'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
   /auth/register/{access}:
     post:
       summary: "Register/Invite a new user (only for admins or merchants)"
       operationId: authRegisterWithoutPass
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/access'
       tags:
@@ -61,7 +63,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/RegisterWithoutPassRequestBody'
       responses:
-        '200': 
+        '200':
           $ref: '#/components/responses/EmailSend'
         '400':
           $ref: '#/components/responses/Bad_Request'
@@ -72,18 +74,20 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
   /auth/change_pass:
     put:
       summary: "A logged in user changes the password"
       operationId: changePassInside
-      tags: 
+      security:
+        - bearerAuth: []
+      tags:
         - authentication
       requestBody:
         $ref: '#/components/requestBodies/ChangePassInRequestBody'
       responses:
-        '200': 
+        '200':
           $ref: '#/components/responses/Update'
         '400':
           $ref: '#/components/responses/Bad_Request'
@@ -92,8 +96,8 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
   /auth/verify_email/{email}:
     get:
       summary: "Ask for email validation"
@@ -103,14 +107,14 @@ paths:
       tags:
         - authentication
       responses:
-        '200': 
+        '200':
           $ref: '#/components/responses/EmailSend'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error' 
+          $ref: '#/components/responses/DB_Error'
   /auth/verify_email:
     post:
       summary: "Checks if link is valid and verify email"
@@ -120,15 +124,15 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/CheckTokenRequestBody'
       responses:
-        '200': 
+        '200':
           $ref: '#/components/responses/Create'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
   /auth/forgot_pass/{email}:
     get:
       summary: "Ask for password restoration"
@@ -138,52 +142,54 @@ paths:
       tags:
         - authentication
       responses:
-        '200': 
+        '200':
           $ref: '#/components/responses/EmailSend'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error' 
+          $ref: '#/components/responses/DB_Error'
   /auth/forgot_pass:
     post:
       summary: "Checks if link is valid and procced"
       operationId: checkRestoration
-      tags: 
+      tags:
         - authentication
       requestBody:
         $ref: '#/components/requestBodies/CheckTokenRequestBody'
       responses:
-        '200': 
+        '200':
           $ref: '#/components/responses/Update'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error' 
+          $ref: '#/components/responses/DB_Error'
     put:
       summary: "A no logged in user changes the password"
       operationId: changePassOutside
-      tags: 
+      tags:
         - authentication
       requestBody:
         $ref: '#/components/requestBodies/ChangePassOutRequestBody'
       responses:
-        '200': 
+        '200':
           $ref: '#/components/responses/Update'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'           
+          $ref: '#/components/responses/DB_Error'
   # Paths: Profile & Merchant
   /profile:
     get:
       summary: "Read user's profile info (only for customers)"
       operationId: readUserProfile
+      security:
+        - bearerAuth: []
       tags:
         - profile
       responses:
@@ -196,6 +202,8 @@ paths:
     put:
       summary: "Update user's profile info (only for customers)"
       operationId: updateUserProfile
+      security:
+        - bearerAuth: []
       tags:
         - profile
       requestBody:
@@ -236,10 +244,12 @@ paths:
         '400':
           $ref: '#/components/responses/Bad_Request'
         '422':
-          $ref: '#/components/responses/DB_Error'          
+          $ref: '#/components/responses/DB_Error'
     put:
       summary: "Update merchant's info"
       operationId: updateMerchantInfo
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/merchant_id'
       tags:
@@ -256,8 +266,8 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
   # Paths: Loyalty - Offers
   /loyalty/offers:
     get:
@@ -269,11 +279,13 @@ paths:
         '200':
           $ref: '#/components/responses/Offers'
         '422':
-          $ref: '#/components/responses/DB_Error' 
+          $ref: '#/components/responses/DB_Error'
     post:
       summary: "Create a new offer"
       operationId: createOffer
-      tags: 
+      security:
+        - bearerAuth: []
+      tags:
         - loyalty
       requestBody:
         $ref: '#/components/requestBodies/OfferRequestBody'
@@ -287,8 +299,8 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
   /loyalty/offers/{merchant_id}:
     get:
       summary: "Read offers for a specific store"
@@ -303,12 +315,14 @@ paths:
         '400':
           $ref: '#/components/responses/Bad_Request'
         '422':
-          $ref: '#/components/responses/DB_Error'   
-          
+          $ref: '#/components/responses/DB_Error'
+
   /loyalty/offers/{merchant_id}/{offer_id}:
     put:
       summary: "Update an Offer"
       operationId: updateOffer
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/offer_id'
@@ -326,10 +340,12 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error' 
+          $ref: '#/components/responses/DB_Error'
     delete:
       summary: "Delete an Offer"
       operationId: deleteOffer
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/offer_id'
@@ -345,7 +361,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error' 
+          $ref: '#/components/responses/DB_Error'
 
   # Paths: Microfund - Campaigns
   /microfund/campaigns:
@@ -358,11 +374,13 @@ paths:
         '200':
           $ref: '#/components/responses/Campaigns'
         '422':
-          $ref: '#/components/responses/DB_Error' 
+          $ref: '#/components/responses/DB_Error'
     post:
       summary: "Create a new campaign"
       operationId: createCampaign
-      tags: 
+      security:
+        - bearerAuth: []
+      tags:
         - microfund
       requestBody:
         $ref: '#/components/requestBodies/CampaignRequestBody'
@@ -376,8 +394,8 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
   /microfund/campaigns/{merchant_id}:
     get:
       summary: "Read campaigns for a specific store"
@@ -392,8 +410,8 @@ paths:
         '400':
           $ref: '#/components/responses/Bad_Request'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
   /microfund/campaigns/{merchant_id}/{campaign_id}:
     get:
       summary: "Read a campaign"
@@ -402,17 +420,19 @@ paths:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
       tags:
-        - microfund        
+        - microfund
       responses:
         '200':
           $ref: '#/components/responses/Campaign'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '422':
-          $ref: '#/components/responses/DB_Error'  
+          $ref: '#/components/responses/DB_Error'
     put:
       summary: "Update an Campaign"
       operationId: updateCampaign
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
@@ -430,10 +450,12 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error' 
+          $ref: '#/components/responses/DB_Error'
     delete:
       summary: "Delete an Campaign"
       operationId: deleteCampaign
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
@@ -449,12 +471,14 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error'   
-          
+          $ref: '#/components/responses/DB_Error'
+
   /microfund/campaigns/{merchant_id}/{campaign_id}/verify:
     put:
       summary: "Verify a Campaign (by Admin)"
       operationId: verifyCampaign
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
@@ -470,8 +494,8 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error' 
-          
+          $ref: '#/components/responses/DB_Error'
+
 components:
   parameters:
     merchant_id:
@@ -490,7 +514,7 @@ components:
         format: uuid
       required: true
       description: "ID of the selected offer"
-    campaign_id: 
+    campaign_id:
       in: path
       name: campaign_id
       schema:
@@ -505,7 +529,7 @@ components:
         type: string
         format: enum['customer', 'merchant']
       required: true
-      description: "Declare the type of user that will be created"    
+      description: "Declare the type of user that will be created"
     email:
       in: path
       name: email
@@ -514,7 +538,7 @@ components:
         format: email
       required: true
       description: "Declare the email address that will be used to verify email / restore password"
-      
+
   requestBodies:
     # Auth
     AuthenticationRequestBody:
@@ -559,7 +583,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ChangePassOutDto'
-            
+
     # Profile & Merchant
     CustomerRequestBody:
       description: ""
@@ -575,7 +599,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/MerchantDto'
-    
+
     # Loyalty
     OfferRequestBody:
       description: ""
@@ -584,7 +608,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/OfferDto'
-    
+
     # Microfund
     CampaignRequestBody:
       description: ""
@@ -593,12 +617,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/CampaignDto'
-            
+
   responses:
     # Auth
     Authenticate:
       description: Expected response to a valid request
-      content: 
+      content:
         application/json:
           schema:
             type: object
@@ -609,7 +633,7 @@ components:
                 $ref: '#/components/schemas/TokenData'
 
     # Profile & Merchant
-    Customer: 
+    Customer:
       description: Expected response to a valid request
       content:
         application/json:
@@ -621,8 +645,8 @@ components:
               code:
                 type: number
                 default: 200
-                
-                
+
+
     Merchant:
       description: Expected response to a valid request
       content:
@@ -646,7 +670,7 @@ components:
                 $ref: "#/components/schemas/Merchants"
               code:
                 type: number
-                default: 200    
+                default: 200
     # Loaylty - Offers
     Offers:
       description: Expected response to a valid request
@@ -659,19 +683,19 @@ components:
                 $ref: "#/components/schemas/Offers"
               code:
                 type: number
-                default: 200 
+                default: 200
           example:
-            - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"  
+            - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
               merchant_name: "Merchant 1"
               offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
-              createdAt: "2019-09-10" 
+              createdAt: "2019-09-10"
               cost: 1000
               description: "Get 10% discount"
               expiresAt: "2019-11-15"
-            - merchant_id: "67a85f64-5r717-4562-b3fc-2c963f66afa6"  
+            - merchant_id: "67a85f64-5r717-4562-b3fc-2c963f66afa6"
               merchant_name: "Merchant 2"
               offer_id: "55454564-5rre7-4ert62-b3fc-c9rtret3f6r9"
-              createdAt: "2019-09-15" 
+              createdAt: "2019-09-15"
               cost: 2000
               description: "1+1 Burger"
               expiresAt: "2019-11-10"
@@ -700,8 +724,8 @@ components:
                 $ref: "#/components/schemas/Campaigns"
               code:
                 type: number
-                default: 200 
-            
+                default: 200
+
     # Create, Update, Email Send, Error
     Create:
       description: Expected response to valid request
@@ -709,72 +733,72 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Created"
-          example: 
+          example:
             code: 201
-            message: "Campaign successfully created!"          
+            message: "Campaign successfully created!"
     Update:
       description: Expected response to valid request
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Updated"
-          example: 
+          example:
             code: 200
-            message: "User's Profile successfully updated!" 
+            message: "User's Profile successfully updated!"
     EmailSend:
       description: Expected response to valid request
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/EmailSent"
-          example: 
+          example:
             message: "An email has been sent. Follow the link to verify your address!"
-    Bad_Request: 
+    Bad_Request:
       description: Bad Request (400)
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-          example: 
+          example:
             code: 400
-            message: "Something wrong happes!"       
+            message: "Something wrong happes!"
     Unauthorized:
       description: Unauthorized (401)
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-          example: 
+          example:
             code: 401
-            message: "Something wrong happes!"       
+            message: "Something wrong happes!"
     Forbidden:
       description: Forbidden (403)
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-          example: 
+          example:
             code: 403
-            message: "Something wrong happes!" 
+            message: "Something wrong happes!"
     Not_Found:
       description: Not Found (404)
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-          example: 
+          example:
             code: 404
-            message: "Something wrong happes!" 
+            message: "Something wrong happes!"
     DB_Error:
       description: DataBase Error (422)
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-          example: 
+          example:
             code: 422
-            message: "Something wrong happes!"   
-             
+            message: "Something wrong happes!"
+
 
   schemas:
     # Request - Auth
@@ -787,6 +811,9 @@ components:
         password:
           type: string
           format: password
+      required:
+        - email
+        - password
     RegisterDto:
       type: object
       properties:
@@ -798,6 +825,10 @@ components:
         password:
           type: string
           format: password
+      required:
+        - name
+        - email
+        - password
     RegisterWithoutPassDto:
       type: object
       properties:
@@ -805,35 +836,50 @@ components:
           type: string
         email:
           type: string
-          format: email    
+          format: email
+        sector:
+          type: string
+          enum: [None, B2B Services & Other Goods and Services, Durables, Durables (Technology), Education, Food, Hotels, cafes and restaurants, Recreation and Culture]
+      required:
+        - name
+        - email
     ChangePassInDto:
       type: object
       properties:
         oldPassword:
           type: string
-          format: password  
+          format: password
         newPassword:
           type: string
-          format: password  
+          format: password
+      required:
+        - oldPassword
+        - newPassword
     CheckTokenDto:
       type: object
       properties:
         token:
           type: string
-          format: uuid  
+          format: uuid
+      required:
+        - token
     ChangePassOutDto:
       type: object
       properties:
         token:
           type: string
-          format: uuid 
+          format: uuid
         newPassword:
           type: string
-          format: password  
+          format: password
         verPassword:
           type: string
-          format: password 
-          
+          format: password
+      required:
+        - token
+        - newPassword
+        - verPassword
+
     # Request - Profile & Merchant
     CustomerDto:
       type: object
@@ -843,6 +889,8 @@ components:
         imageURL:
           type: string
           format: uri
+      required:
+        - name
     MerchantDto:
       type: object
       properties:
@@ -851,16 +899,19 @@ components:
         imageURL:
           type: string
           format: uri
+        sector:
+          type: string
+          enum: [None, B2B Services & Other Goods and Services, Durables, Durables (Technology), Education, Food, Hotels, cafes and restaurants, Recreation and Culture]
         contact:
           type: object
           properties:
-            phone: 
+            phone:
               type: number
               format: int64
             websiteURL:
               type: string
               format: uri
-            address: 
+            address:
               type: object
               properties:
                 street:
@@ -869,8 +920,18 @@ components:
                   type: number
                   format: int64
                 city:
-                  type: string            
-    
+                  type: string
+              required:
+                - street
+                - zipCode
+                - city
+          required:
+            - phone
+            - address
+      required:
+        - name
+        - imageURL
+        - sector
     # Request - Loyalty
     OfferDto:
       type: object
@@ -882,7 +943,7 @@ components:
         expiresAt:
           type: string
           format: date
-    
+
     # Request - Microfund
     CampaignDto:
       type: object
@@ -892,18 +953,18 @@ components:
         expiresAt:
           type: string
           format: date
-          
+
     # Response - Auth
     TokenData:
       type: object
-      properties: 
+      properties:
         token:
           type: string
           format: uuid
         expiresIn:
           type: string
           format: date
-    User: 
+    User:
       type: object
       properties:
         id:
@@ -912,26 +973,26 @@ components:
         email:
           type: string
           format: email
-        access: 
+        access:
           type: string
           enum: [customer, merchant, admin]
         verified:
           type: boolean
-        
-    
+
+
     # Response - Profile & Merchant
-    Customer: 
+    Customer:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        name: 
+        name:
           type: string
         imageURL:
           type: string
           format: uri
-        email: 
+        email:
           type: string
           format: email
         createdAt:
@@ -943,12 +1004,15 @@ components:
         id:
           type: string
           format: uuid
-        name: 
+        name:
           type: string
         imageURL:
           type: string
           format: uri
-        email: 
+        sector:
+          type: string
+          enum: [None, B2B Services & Other Goods and Services, Durables, Durables (Technology), Education, Food, Hotels, cafes and restaurants, Recreation and Culture]
+        email:
           type: string
           format: email
         createdAt:
@@ -956,14 +1020,14 @@ components:
           format: date
         contact:
           type: object
-          properties: 
-            phone: 
+          properties:
+            phone:
               type: number
               format: int64
             websiteURL:
               type: string
               format: uri
-            address: 
+            address:
               type: object
               properties:
                 street:
@@ -977,7 +1041,7 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/Merchant"
-    
+
     # Response - Loyalty Offers
     Offer:
       type: object
@@ -986,25 +1050,25 @@ components:
           type: string
         merchant_id:
           type: string
-          format: uuid        
+          format: uuid
         offer_id:
           type: string
           format: uuid
         createdAt:
           type: string
-          format: date          
+          format: date
         description:
           type: string
         cost:
           type: number
         expiresAt:
           type: string
-          format: date      
+          format: date
     Offers:
       type: array
       items:
         $ref: '#/components/schemas/Offer'
-    
+
     # Response - Microfund Campaigns
     Campaign:
       type: object
@@ -1013,13 +1077,13 @@ components:
           type: string
         merchant_id:
           type: string
-          format: uuid        
+          format: uuid
         campaign_id:
           type: string
           format: uuid
         createdAt:
           type: string
-          format: date          
+          format: date
         description:
           type: string
         expiresAt:
@@ -1029,8 +1093,8 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/Campaign'
-    
-    # Response - Typical Create, Update, Error   
+
+    # Response - Typical Create, Update, Error
     Created:
       type: object
       required:
@@ -1071,3 +1135,9 @@ components:
           format: int32
         message:
           type: string
+
+  securitySchemes:
+    bearerAuth:            # arbitrary name for the security scheme
+      type: http
+      scheme: bearer
+      bearerFormat: JWT    # optional, arbitrary value for documentation purposes

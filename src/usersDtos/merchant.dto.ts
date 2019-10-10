@@ -1,4 +1,4 @@
-import { IsString, IsNumber } from 'class-validator';
+import { IsString, IsNumber, IsEnum, IsOptional } from 'class-validator';
 /*
 export enum Access {
   Customer = 'customer',
@@ -8,16 +8,27 @@ export enum Access {
 class RegisterWithOutPasswordDto {
   @IsString()
   public name: string;
- 
+
   @IsEmail()
   public email: string;
- 
-  @IsEnum(Access) 
-  public access: Access 
+
+  @IsEnum(Access)
+  public access: Access
 }
- 
+
 export default RegisterWithOutPasswordDto;
 */
+
+export enum Sector {
+  n = 'None',
+  a = 'B2B Services & Other Goods and Services',
+  b = 'Durables',
+  c = 'Durables (Technology)',
+  d = 'Education',
+  e = 'Food',
+  f = 'Hotels, cafes and restaurants',
+  g = 'Recreation and Culture'
+}
 
 export class Address {
   @IsString()
@@ -34,6 +45,7 @@ export class Contact {
   @IsString()
   public phone: string;
 
+  @IsOptional()
   @IsString()
   public websiteURL: string;
 
@@ -48,7 +60,10 @@ class MerchantDto {
   @IsString()
   public imageURL: string;
 
-  public contact: Contact
+  @IsEnum(Sector)
+  public sector: Sector;
+
+  public contact: Contact;
 }
 
 export default MerchantDto;

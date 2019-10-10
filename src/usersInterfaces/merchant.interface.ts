@@ -10,6 +10,7 @@ interface Merchant extends User{
             zipCode: number;
         }
     }
+    sector: string;
 }
 
 export default Merchant;

@@ -47,6 +47,11 @@ const userSchema = new mongoose.Schema({
     enum: ['customer', 'merchant', 'admin'],
     default: 'custumer'
   },
+  sector: {
+    type: String,
+    enum: ['None', 'B2B Services & Other Goods and Services', 'Durables', 'Durables (Technology)', 'Education', 'Food', 'Hotels, cafes and restaurants', 'Recreation and Culture'],
+    default: 'None'
+  },
   restorationToken: String,
   restorationExpiration: Number,
   verificationToken: String,
@@ -56,8 +61,8 @@ const userSchema = new mongoose.Schema({
   offers: [offerSchema],
   campaigns: [campaignSchema]
 }, {
-  timestamps: true
-});
+    timestamps: true
+  });
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 

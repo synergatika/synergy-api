@@ -18,64 +18,64 @@ import userModel from '../models/user.model';
 import CustomerDto from '../usersDtos/merchant.dto'
 
 class CustomersController implements Controller {
-    public path = '/profile';
-    public router = express.Router();
-    private user = userModel;
+  public path = '/profile';
+  public router = express.Router();
+  private user = userModel;
 
-    constructor() {
-        this.initializeRoutes();
-    }
+  constructor() {
+    this.initializeRoutes();
+  }
 
-    private initializeRoutes() {
-        this.router.get(`${this.path}`, authMiddleware, this.readUserProfile);
-        this.router.put(`${this.path}`, authMiddleware, validationBodyMiddleware(CustomerDto), this.updateUserProfile);
-    }
+  private initializeRoutes() {
+    this.router.get(`${this.path}`, authMiddleware, this.readUserProfile);
+    this.router.put(`${this.path}`, authMiddleware, validationBodyMiddleware(CustomerDto), this.updateUserProfile);
+  }
 
-    private readUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        let error: Error, user: User;
-        [error, user] = await to(this.user.findOne({
-            _id: request.user._id
-        }, {
-            access: false, verified: false,
-            verificationToken: false, verificationExpiration: false,
-            restorationToken: false, restorationExpiration: false,
-            offers: false, campaigns: false,
-            updatedAt: false
-        }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
-        user.password = undefined;
-        response.status(200).send({
-            data: user,
-            code: 200
-        });
-    }
+  private readUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    let error: Error, user: User;
+    [error, user] = await to(this.user.findOne({
+      _id: request.user._id
+    }, {
+        access: false, verified: false,
+        verificationToken: false, verificationExpiration: false,
+        restorationToken: false, restorationExpiration: false,
+        offers: false, campaigns: false,
+        updatedAt: false
+      }).catch());
+    if (error) next(new DBException(422, 'DB ERROR'));
+    user.password = undefined;
+    response.status(200).send({
+      data: user,
+      code: 200
+    });
+  }
 
-    private updateUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        const data: CustomerDto = request.body;
-        let error: Error, user: User;
-        [error, user] = await to(this.user.findOneAndUpdate({
-            _id: request.user._id
-        }, {
-            $set: {
-                name: data.name,
-                imageURL: data.imageURL
-            }
-        }, {
-            projection: {
-                name: '$name',
-                email: '$email',
-                imageURL: '$imageURL',
-                createdAt: '$createdAt'
-            }
-        }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+  private updateUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: CustomerDto = request.body;
+    let error: Error, user: User;
+    [error, user] = await to(this.user.findOneAndUpdate({
+      _id: request.user._id
+    }, {
+        $set: {
+          name: data.name,
+          imageURL: data.imageURL
+        }
+      }, {
+        projection: {
+          name: '$name',
+          email: '$email',
+          imageURL: '$imageURL',
+          createdAt: '$createdAt'
+        }
+      }).catch());
+    if (error) next(new DBException(422, 'DB ERROR'));
 
-        user.password = undefined;
-        response.status(200).send({
-            data: user,
-            code: 200
-        });
-    }
+    user.password = undefined;
+    response.status(200).send({
+      data: user,
+      code: 200
+    });
+  }
 }
 
 export default CustomersController;

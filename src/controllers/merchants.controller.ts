@@ -29,12 +29,12 @@ class MerchantsController implements Controller {
     }
 
     private initializeRoutes() {
-        this.router.get(`${this.path}`, this.getMerchants);
-        this.router.get(`${this.path}/:merchant_id`, validationParamsMiddleware(MerchantID), this.getMerchantInfo);
+        this.router.get(`${this.path}`, this.readMerchants);
+        this.router.get(`${this.path}/:merchant_id`, validationParamsMiddleware(MerchantID), this.readMerchantInfo);
         this.router.put(`${this.path}/:merchant_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(MerchantID), validationBodyMiddleware(MerchantDto), this.updateMerchantInfo);
     }
 
-    private getMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private readMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         let error: Error, merchants: Merchant[];
         [error, merchants] = await to(this.user.find({
             access: 'merchant'
@@ -51,7 +51,7 @@ class MerchantsController implements Controller {
         });
     }
 
-    private getMerchantInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private readMerchantInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
 
         let error: Error, merchant: Merchant;
@@ -82,6 +82,7 @@ class MerchantsController implements Controller {
                 $set: {
                     name: data.name,
                     imageURL: data.imageURL,
+                    sector: data.sector,
                     contact: {
                         websiteURL: data.contact.websiteURL,
                         phone: data.contact.phone,
