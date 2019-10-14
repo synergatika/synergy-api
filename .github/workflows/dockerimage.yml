@@ -15,6 +15,6 @@ jobs:
       with:
         registry: docker.pkg.github.com
         name: synergatika/synergy-api/synergy-api
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        username: synergatika
+        password: ${{ secrets.GITHUB_TOKEN }}
         cache: true
