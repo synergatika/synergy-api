@@ -1,6 +1,6 @@
 import * as chai from 'chai';
 import chaiHttp from 'chai-http';
-import User from "../models/user.model";
+import User from "../src/models/user.model";
 import to from 'await-to-ts';
 
 chai.use(require('chai-http'));
