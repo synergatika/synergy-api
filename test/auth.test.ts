@@ -1,7 +1,9 @@
 import * as chai from 'chai';
 import chaiHttp from 'chai-http';
+import chaiAsPromised from 'chai-as-promised'
 
-chai.use(require('chai').should)
+chai.should()
+chai.use(require('chai-as-promised'))
 chai.use(require('chai-http'));
 
 const defaultCustomer = {
