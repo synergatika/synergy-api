@@ -2,7 +2,7 @@ import * as chai from 'chai';
 import chaiHttp from 'chai-http';
 
 chai.use(require('chai-http'));
-chai.should();
+const should = require('chai').should();
 
 const defaultCustomer = {
     email: "customer1@gmail.com",
@@ -75,6 +75,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        // res.body.should.have.property('message')
                         newUser.verificationToken = res.body.tempData.token;
                         done();
                     })
