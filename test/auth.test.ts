@@ -1,8 +1,8 @@
 import * as chai from 'chai';
 import chaiHttp from 'chai-http';
+import should from 'should';
 
 chai.use(require('chai-http'));
-const should = require('chai').should();
 
 const defaultCustomer = {
     email: "customer1@gmail.com",
