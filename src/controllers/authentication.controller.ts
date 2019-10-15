@@ -58,10 +58,27 @@ class AuthenticationController implements Controller {
     this.router.get(`${this.path}/forgot_pass/:email`, validationParamsMiddleware(EmailDto), this.askRestoration, this.emailSender);
     this.router.post(`${this.path}/forgot_pass`, validationBodyMiddleware(CheckTokenDto), this.checkRestoration);
     this.router.put(`${this.path}/forgot_pass`, validationBodyMiddleware(ChangePassOutDto), this.changePassOutside);
+
+    // Only for Test
+    this.router.put(`${this.path}/deleteTest`, this.deleteTestUsers);
+  }
+
+  private deleteTestUsers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data = request.body;
+
+    await this.user.deleteMany({ $or: [{ email: data.email1 }, { email: data.email2 }, { email: data.email3 }] });
+    response.status(200).send({
+      message: 'OK',
+      code: 200
+    })
+
   }
 
   private authRegister = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: RegisterWithPasswordDto = request.body;
+    //console.log(this.router);
+    //console.log(data.email);
+
     if (await this.user.findOne({ email: data.email })) {
       next(new AuthenticationException(404, 'A user with these credentials already exists!'));
     } else {
@@ -75,6 +92,8 @@ class AuthenticationController implements Controller {
         password: hashedPassword,
       }).catch());
       request.params.email = data.email;
+
+
       if (error) next(new DBException(422, 'DB ERROR'));
       next();
     }
@@ -87,12 +106,12 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.findOne({
       email: data.email
     }, {
-        name: false, imageURL: false,
-        createdAt: false, updatedAt: false,
-        contact: false, offers: false, campaigns: false,
-        restorationToken: false, restorationExpiration: false,
-        verificationToken: false, verificationExpiration: false
-      }).catch());
+      name: false, imageURL: false,
+      createdAt: false, updatedAt: false,
+      contact: false, offers: false, campaigns: false,
+      restorationToken: false, restorationExpiration: false,
+      verificationToken: false, verificationExpiration: false
+    }).catch());
     if (error) next(new DBException(422, 'DB ERROR'));
     else if (user) {
       if (user.verified) {
@@ -173,10 +192,10 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           _id: request.user._id
         }, {
-            $set: {
-              password: hashedPassword
-            }
-          }).catch());
+          $set: {
+            password: hashedPassword
+          }
+        }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
           message: "Success! Your password has been Updated",
@@ -191,7 +210,6 @@ class AuthenticationController implements Controller {
   }
 
   private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-
     const email: EmailDto["email"] = request.params.email;
     if (await this.user.findOne({ email: email, verified: false })) {
       const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
@@ -200,11 +218,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-          $set: {
-            verificationToken: token.token,
-            verificationExpiration: token.expiresAt
-          }
-        }).catch());
+        $set: {
+          verificationToken: token.token,
+          verificationExpiration: token.expiresAt
+        }
+      }).catch());
       if (error) next(new DBException(422, 'DB ERROR'));
       response.locals = {
         user: {
@@ -227,14 +245,14 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         verificationToken: data.token
       }, {
-          $set: {
-            verified: true,
-          },
-          $unset: {
-            verificationToken: "",
-            verificationExpiration: "",
-          }
-        }).catch());
+        $set: {
+          verified: true,
+        },
+        $unset: {
+          verificationToken: "",
+          verificationExpiration: "",
+        }
+      }).catch());
       if (error) next(new DBException(422, 'DB ERROR'));
       response.status(200).send({
         message: "Success! Your Email Address has been Verified",
@@ -255,11 +273,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-          $set: {
-            restorationToken: token.token,
-            restorationExpiration: token.expiresAt
-          }
-        }).catch());
+        $set: {
+          restorationToken: token.token,
+          restorationExpiration: token.expiresAt
+        }
+      }).catch());
       if (error) next(new DBException(422, 'DB ERROR'));
       response.locals = {
         user: {
@@ -301,14 +319,14 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           restorationToken: data.token
         }, {
-            $set: {
-              password: hashedPassword
-            },
-            $unset: {
-              restorationToken: "",
-              restorationExpiration: ""
-            }
-          }).catch());
+          $set: {
+            password: hashedPassword
+          },
+          $unset: {
+            restorationToken: "",
+            restorationExpiration: ""
+          }
+        }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
         response.status(200).send({
           message: "Success! You Password has been Updated!",
@@ -342,7 +360,6 @@ class AuthenticationController implements Controller {
 
   private emailSender = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data = response.locals;
-
     let emailInfo = {
       to: data.user.email,
       subject: "",
@@ -374,18 +391,22 @@ class AuthenticationController implements Controller {
     // send mail with defined transport object
     Transporter.sendMail(mailOptions, (error: Error, info: nodemailer.SentMessageInfo): void => {
       if (error) next(new AuthenticationException(404, 'Email transmission failed'));
+
       else if (data.state === '1') { // Email Verification
         response.status(200).send({
+          tempData: { "token": data.token }, // Only for testing
           message: "Please, follow your link to Validate your Email.",
           code: 200
         });
       } else if (data.state === '2') { // Password Restoration
         response.status(200).send({
+          tempData: { "token": data.token }, // Only for testing
           message: "Please, follow your link to Update your Password.",
           code: 200
         });
       } else if (data.state === '3') { // Email Invitation
         response.status(200).send({
+          tempData: { "password": data.user.password }, // Only for testing
           message: "User has been Invited to enjoy our Community!",
           code: 200
         });

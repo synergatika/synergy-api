@@ -15,7 +15,7 @@ import authMiddleware from '../middleware/auth.middleware';
 // Models
 import userModel from '../models/user.model';
 // Dtos
-import CustomerDto from '../usersDtos/merchant.dto'
+import CustomerDto from '../usersDtos/customer.dto'
 
 class CustomersController implements Controller {
   public path = '/profile';
@@ -36,12 +36,12 @@ class CustomersController implements Controller {
     [error, user] = await to(this.user.findOne({
       _id: request.user._id
     }, {
-        access: false, verified: false,
-        verificationToken: false, verificationExpiration: false,
-        restorationToken: false, restorationExpiration: false,
-        offers: false, campaigns: false,
-        updatedAt: false
-      }).catch());
+      access: false, verified: false,
+      verificationToken: false, verificationExpiration: false,
+      restorationToken: false, restorationExpiration: false,
+      offers: false, campaigns: false,
+      updatedAt: false
+    }).catch());
     if (error) next(new DBException(422, 'DB ERROR'));
     user.password = undefined;
     response.status(200).send({
@@ -56,18 +56,18 @@ class CustomersController implements Controller {
     [error, user] = await to(this.user.findOneAndUpdate({
       _id: request.user._id
     }, {
-        $set: {
-          name: data.name,
-          imageURL: data.imageURL
-        }
-      }, {
-        projection: {
-          name: '$name',
-          email: '$email',
-          imageURL: '$imageURL',
-          createdAt: '$createdAt'
-        }
-      }).catch());
+      $set: {
+        name: data.name,
+        imageURL: data.imageURL
+      }
+    }, {
+      projection: {
+        name: '$name',
+        email: '$email',
+        imageURL: '$imageURL',
+        createdAt: '$createdAt'
+      }
+    }).catch());
     if (error) next(new DBException(422, 'DB ERROR'));
 
     user.password = undefined;
