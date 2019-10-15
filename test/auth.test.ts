@@ -1,7 +1,8 @@
 import * as chai from 'chai';
 import chaiHttp from 'chai-http';
-import should from 'should';
-
+//import should from 'should';
+//chai.should();
+chai.use(require('chai').should)
 chai.use(require('chai-http'));
 
 const defaultCustomer = {
