@@ -5,9 +5,9 @@ on: [push]
 jobs:
 
   build:
- 
+
     runs-on: ubuntu-latest
- 
+
     steps:
     - uses: actions/checkout@v1
     - name: Use Node.js 10.x
@@ -17,6 +17,22 @@ jobs:
     - run: npm run test
       env:
         CI: true
+        APP: dev
+        PORT: 3000
+        DB_DIALECT: mongo
+        DB_HOST: localhost
+        DB_PORT: 27017
+        DB_NAME: synergy
+        DB_USER:
+        DB_PASSWORD:
+        JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        JWT_EXPIRATION: 36000
+        TOKEN_LENGTH: 32
+        TOKEN_EXPIRATION: 5
+        EMAIL_SERVICE: Gmail
+        EMAIL_USER: ${{ secrets.EMAIL_USER }}
+        EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        EMAIL_FROM: Synergy | A Social and Solidarity Economy Toolkit
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
       with:
