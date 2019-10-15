@@ -1,7 +1,6 @@
 import * as chai from 'chai';
 import chaiHttp from 'chai-http';
-//import should from 'should';
-//chai.should();
+
 chai.use(require('chai').should)
 chai.use(require('chai-http'));
 
@@ -60,8 +59,8 @@ describe("Test All in One", () => {
                 }
             )
             .end((err, res) => {
-                res.should.have.status(200);
-                res.body.should.be.a('object');
+                (res).should.have.status(200);
+                (res.body).should.be.a('object');
                 done();
             })
     });
