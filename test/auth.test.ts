@@ -1,7 +1,5 @@
 import * as chai from 'chai';
 import chaiHttp from 'chai-http';
-import User from "../models/user.model";
-import to from 'await-to-ts';
 
 chai.use(require('chai-http'));
 chai.should();
@@ -38,19 +36,21 @@ var newUser = { // Auto Registered
 
 var newCustomer = { // Registerd by Merchant
     name: "Invited Customer",
-    email: "customer11@gmail.com"
+    email: "customer11@gmail.com",
+    password: ''
 }
 
 var newMerchant = { // Registered by Admin
     name: "Merchant Ten",
-    email: "customer10@gmail.com"
+    email: "merchant10@gmail.com",
+    password: ''
 }
-var value = 10;
 
 describe("Test All in One", () => {
+
     before((done) => {
         chai.request("http://localhost:3000")
-            .put("/auth/deleteTest")
+            .put("/auth/test/delete_users")
             .send(
                 {
                     email1: newUser.email,
@@ -64,10 +64,11 @@ describe("Test All in One", () => {
                 done();
             })
     });
-    describe("Customer", () => {
-        describe("Customer Auth Cycle (/auth)", () => {
 
-            it("1. should register a user as customer", (done) => {
+    describe("Customer", () => {
+
+        describe("Customer Auth (/auth)", () => {
+            it("1. should create a new user (auto-registration as customer)", (done) => {
                 chai.request("http://localhost:3000")
                     .post("/auth/register")
                     .send(newUser)
@@ -90,7 +91,7 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("3. should NOT register user with the same email", (done) => {
+            it("3. should NOT create user | as there is already user with these email address)", (done) => {
                 chai.request("http://localhost:3000")
                     .post("/auth/register")
                     .send(newUser)
@@ -100,7 +101,7 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("4. should NOT send a verfication email as user has already verify email address", (done) => {
+            it("4. should NOT send a verfication email | as user has already verified email address", (done) => {
                 chai.request("http://localhost:3000")
                     .get("/auth/verify_email/" + newUser.email)
                     .end((err, res) => {
@@ -109,12 +110,12 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("5. should NOT authenticate user due to wrong credentials", (done) => {
+            it("5. should NOT authenticate user | due to wrong credentials", (done) => {
                 chai.request("http://localhost:3000")
                     .post("/auth/authenticate")
                     .send({
                         email: newUser.email,
-                        password: "random_pass"
+                        password: "random_password"
                     })
                     .end((err, res) => {
                         res.should.have.status(404);
@@ -132,7 +133,7 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("7. should NOT validate restoration Token as it is wrong", (done) => {
+            it("7. should NOT validate restoration token | as it is wrong", (done) => {
                 chai.request("http://localhost:3000")
                     .post("/auth/forgot_pass")
                     .send({
@@ -144,7 +145,7 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("8. should validate restoration Token", (done) => {
+            it("8. should validate restoration token", (done) => {
                 chai.request("http://localhost:3000")
                     .post("/auth/forgot_pass")
                     .send({
@@ -156,13 +157,13 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("9. should NOT restore password as does not match with verification password", (done) => {
+            it("9. should NOT update/restore password | as does not match with verification password", (done) => {
                 chai.request("http://localhost:3000")
                     .put("/auth/forgot_pass")
                     .send({
                         token: newUser.restorationToken,
                         newPassword: "new_password",
-                        verPassword: "not_the_same"
+                        verPassword: "random_password"
                     })
                     .end((err, res) => {
                         res.should.have.status(404);
@@ -170,7 +171,7 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("10. should restore password", (done) => {
+            it("10. should update/restore password", (done) => {
                 chai.request("http://localhost:3000")
                     .put("/auth/forgot_pass")
                     .send({
@@ -199,7 +200,7 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("12. should change user's password", (done) => {
+            it("12. should update user's password", (done) => {
                 chai.request("http://localhost:3000")
                     .put("/auth/change_pass")
                     .set('Authorization', 'Bearer ' + newUser.authToken)
@@ -215,6 +216,7 @@ describe("Test All in One", () => {
                     });
             });
         });
+
         describe("Customer's Profile (/profile)", () => {
             it("1. should read user's profile", (done) => {
                 chai.request("http://localhost:3000")
@@ -226,13 +228,13 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("2. should update user's profile", (done) => {
+            it("2. should update customer's profile", (done) => {
                 chai.request("http://localhost:3000")
                     .put("/profile")
                     .set('Authorization', 'Bearer ' + newUser.authToken)
                     .send({
-                        imageURL: "http://url.url",
-                        name: "New Name User"
+                        imageURL: "http://customer_image.com",
+                        name: "Random Name"
                     })
                     .end((err, res) => {
                         res.should.have.status(200);
@@ -244,131 +246,274 @@ describe("Test All in One", () => {
     });
 
     describe("Merchant", () => {
-        it("1. should authenticate user", (done) => {
+        describe("Merchant Auth (/auth)", () => {
+            it("1. should authenticate user", (done) => {
+                chai.request("http://localhost:3000")
+                    .post("/auth/authenticate")
+                    .send({
+                        email: defaultMerchant.email,
+                        password: defaultMerchant.password
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        defaultMerchant._id = res.body.data.user._id;
+                        defaultMerchant.authToken = res.body.data.token.token;
+                        done();
+                    });
+            });
+            it("2. should NOT create a new merchant | as customer cannot create customer", (done) => {
+                chai.request("http://localhost:3000")
+                    .post("/auth/register/" + "merchant")
+                    .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                    .send({
+                        name: newMerchant.name,
+                        email: newMerchant.email
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(403);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
+            it("3. should create a new customer", (done) => {
+                chai.request("http://localhost:3000")
+                    .post("/auth/register/" + "customer")
+                    .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                    .send({
+                        name: newCustomer.name,
+                        email: newCustomer.email
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        newCustomer.password = res.body.tempData.password;
+                        done();
+                    });
+            });
+            it("4. should authenticate the new customer", (done) => {
+                chai.request("http://localhost:3000")
+                    .post("/auth/authenticate/")
+                    .send({
+                        email: newCustomer.email,
+                        password: newCustomer.password
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
+        });
+
+        describe("Merchant's Profile(Info) (/auth)", () => {
+            it("1. should NOT update merchant's profile(info) | as it does not belong to logged in user", (done) => {
+                chai.request("http://localhost:3000")
+                    .put("/merchants/" + 'random_id')
+                    .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                    .send({
+                        name: "Merchant One",
+                        imageURL: "http://merchant_image.gr",
+                        contact: {
+                            phone: 2105555555,
+                            websiteURL: 'merchant_shop.gr',
+                            address: {
+                                street: "My Street",
+                                zipCode: 10000,
+                                city: "Athens"
+                            }
+                        },
+                        sector: "Durables"
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(403);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
+            it("2. should NOT update merchant's profile(info) | as it does not belong to logged in user", (done) => {
+                chai.request("http://localhost:3000")
+                    .put("/merchants/" + defaultMerchant._id)
+                    .set('Authorization', 'Bearer ' + 'random_jwt')
+                    .send({
+                        name: "Merchant One",
+                        imageURL: "http://merchant_image.gr",
+                        contact: {
+                            phone: 2105555555,
+                            websiteURL: 'merchant_shop.gr',
+                            address: {
+                                street: "My Street",
+                                zipCode: 10000,
+                                city: "Athens"
+                            }
+                        },
+                        sector: "Durables"
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(401);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
+            it("3. should update merchant's profile(info)", (done) => {
+                chai.request("http://localhost:3000")
+                    .put("/merchants/" + defaultMerchant._id)
+                    .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                    .send({
+                        name: "New Merchant Name",
+                        imageURL: "http://url_merchant.gr",
+                        contact: {
+                            phone: 2105555555,
+                            websiteURL: 'www.merchant_shop.gr',
+                            address: {
+                                street: "My Street",
+                                zipCode: 10000,
+                                city: "Athens"
+                            }
+                        },
+                        sector: "Durables"
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
+        });
+    });
+
+    describe("Admin", () => {
+
+        describe("Admin Auth (/auth)", () => {
+            it("1. should authenticate user", (done) => {
+                chai.request("http://localhost:3000")
+                    .post("/auth/authenticate")
+                    .send({
+                        email: defaultAdmin.email,
+                        password: defaultAdmin.password
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        defaultAdmin._id = res.body.data.user._id;
+                        defaultAdmin.authToken = res.body.data.token.token;
+                        done();
+                    });
+            });
+            it("2. should update password", (done) => {
+                chai.request("http://localhost:3000")
+                    .put("/auth/change_pass")
+                    .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
+                    .send({
+                        oldPassword: defaultAdmin.password,
+                        newPassword: 'new_password'
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
+            it("3. should authenticate user", (done) => {
+                chai.request("http://localhost:3000")
+                    .post("/auth/authenticate")
+                    .send({
+                        email: defaultAdmin.email,
+                        password: 'new_password'
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        defaultAdmin._id = res.body.data.user._id;
+                        defaultAdmin.authToken = res.body.data.token.token;
+                        done();
+                    });
+            });
+            it("4. should update password", (done) => {
+                chai.request("http://localhost:3000")
+                    .put("/auth/change_pass")
+                    .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
+                    .send({
+                        oldPassword: 'new_password',
+                        newPassword: defaultAdmin.password
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
+            it("5. should create a new merchant", (done) => {
+                chai.request("http://localhost:3000")
+                    .post("/auth/register/" + "merchant")
+                    .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
+                    .send({
+                        name: newMerchant.name,
+                        email: newMerchant.email
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        newMerchant.password = res.body.tempData.password;
+                        done();
+                    });
+            });
+            it("6. should NOT authenticate the new merchant | as password is empty", (done) => {
+                chai.request("http://localhost:3000")
+                    .post("/auth/authenticate/")
+                    .send({
+                        email: newMerchant.email,
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(400);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
+            it("7. should authenticate the new merchant", (done) => {
+                chai.request("http://localhost:3000")
+                    .post("/auth/authenticate/")
+                    .send({
+                        email: newMerchant.email,
+                        password: newMerchant.password
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
+        });
+    });
+
+    describe("No Login Required", () => {
+        it("1. should read all merchants", (done) => {
             chai.request("http://localhost:3000")
-                .post("/auth/authenticate")
-                .send({
-                    email: defaultMerchant.email,
-                    password: defaultMerchant.password
-                })
+                .get("/merchants/")
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.body.should.be.a('object');
-                    defaultMerchant._id = res.body.data.user._id;
-                    defaultMerchant.authToken = res.body.data.token.token;
                     done();
                 });
         });
-        it("2. should NOT update merchants profile as profile not belongs to logged in user", (done) => {
+        it("2. should read a merchant's info", (done) => {
             chai.request("http://localhost:3000")
-                .put("/merchants/" + 'ab12cd34ef56')
-                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
-                .send({
-                    name: "New Merchant Name",
-                    imageURL: "http://url_merchant.gr",
-                    contact: {
-                        phone: 2105555555,
-                        websiteURL: 'merchant_shop.gr',
-                        address: {
-                            street: "My Street",
-                            zipCode: 10000,
-                            city: "Athens"
-                        }
-                    },
-                    sector: "Durables"
-                })
+                .get("/merchants/" + defaultMerchant._id)
                 .end((err, res) => {
-                    res.should.have.status(403);
+                    res.should.have.status(200);
                     res.body.should.be.a('object');
                     done();
                 });
         });
-        it("3. should update merchants profile", (done) => {
+        it("3. should NOT read anything | as url does not exist", (done) => {
             chai.request("http://localhost:3000")
-                .put("/merchants/" + defaultMerchant._id)
-                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
-                .send({
-                    name: "New Merchant Name",
-                    imageURL: "http://url_merchant.gr",
-                    contact: {
-                        phone: 2105555555,
-                        websiteURL: 'merchant_shop.gr',
-                        address: {
-                            street: "My Street",
-                            zipCode: 10000,
-                            city: "Athens"
-                        }
-                    },
-                    sector: "Durables"
-                })
+                .get("/random_url/")
                 .end((err, res) => {
-                    res.should.have.status(200);
+                    res.should.have.status(404);
                     res.body.should.be.a('object');
                     done();
                 });
         });
     });
-
-
-    describe("Admin", () => {
-        it("1. should authenticate user", (done) => {
-            chai.request("http://localhost:3000")
-                .post("/auth/authenticate")
-                .send({
-                    email: defaultAdmin.email,
-                    password: defaultAdmin.password
-                })
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.body.should.be.a('object');
-                    defaultAdmin._id = res.body.data.user._id;
-                    defaultAdmin.authToken = res.body.data.token.token;
-                    done();
-                });
-        });
-        it("2. should change password", (done) => {
-            chai.request("http://localhost:3000")
-                .put("/auth/change_pass")
-                .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
-                .send({
-                    oldPassword: defaultAdmin.password,
-                    newPassword: 'new_password'
-                })
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.body.should.be.a('object');
-                    done();
-                });
-        });
-        it("3. should authenticate user", (done) => {
-            chai.request("http://localhost:3000")
-                .post("/auth/authenticate")
-                .send({
-                    email: defaultAdmin.email,
-                    password: 'new_password'
-                })
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.body.should.be.a('object');
-                    defaultAdmin._id = res.body.data.user._id;
-                    defaultAdmin.authToken = res.body.data.token.token;
-                    done();
-                });
-        });
-        it("4. should change password", (done) => {
-            chai.request("http://localhost:3000")
-                .put("/auth/change_pass")
-                .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
-                .send({
-                    oldPassword: 'new_password',
-                    newPassword: defaultAdmin.password
-                })
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.body.should.be.a('object');
-                    done();
-                });
-        });
-    })
 });
 

@@ -45,7 +45,6 @@ class MerchantsController implements Controller {
             offers: false, campaigns: false
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
-        console.log(merchants);
         response.status(200).send({
             data: merchants,
             code: 200

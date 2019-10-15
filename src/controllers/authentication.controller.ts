@@ -59,20 +59,21 @@ class AuthenticationController implements Controller {
     this.router.post(`${this.path}/forgot_pass`, validationBodyMiddleware(CheckTokenDto), this.checkRestoration);
     this.router.put(`${this.path}/forgot_pass`, validationBodyMiddleware(ChangePassOutDto), this.changePassOutside);
 
-    // Only for Test
-    this.router.put(`${this.path}/deleteTest`, this.deleteTestUsers);
+    // ---- // // For Testing Purposes Only
+    this.router.put(`${this.path}/test/delete_users`, this.deleteTestUsers);
+    // ---- //
   }
 
+  // ---- // // For Testing Purposes Only
   private deleteTestUsers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data = request.body;
-
     await this.user.deleteMany({ $or: [{ email: data.email1 }, { email: data.email2 }, { email: data.email3 }] });
     response.status(200).send({
       message: 'OK',
       code: 200
     })
-
   }
+  // ---- //
 
   private authRegister = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: RegisterWithPasswordDto = request.body;
@@ -363,29 +364,30 @@ class AuthenticationController implements Controller {
     let emailInfo = {
       to: data.user.email,
       subject: "",
-      text: ""
-      //html: ""
+      // text: "",
+      html: "<h3>Hello world?</h3><p>Test</p>"
     };
     if (data.state === '1') { // Email Verification
       emailInfo.subject = "Email Verification",
-        emailInfo.text = "Must Verify" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/verify/" + data.token
-      //emailInfo.html = '<b>Must Verify ✔</b>';
+        //  emailInfo.text = "Must Verify" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/verify/" + data.token
+        emailInfo.html = '<h4>Must Verify!</h4>' + '<p>' + 'Restore' + ' | Token: ' + data.token + ' | Email: ' + data.user.email + '</p>' + '<a href=' + '"http://localhost:4200/verify/' + data.token + '"' + '>' + "Link" + '</a>';
     } else if (data.state === '2') { // Password Restoration
       emailInfo.subject = "Password Restoration",
-        emailInfo.text = "Try Restore" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/restore/" + data.token
-      //emailInfo.html = '<b>Try Restore ✔</b>';
+        //  emailInfo.text = "Try Restore" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/restore/" + data.token
+        emailInfo.html = '<h4>Try Restore?</h4>' + '<p>' + 'Restore' + ' | Token: ' + data.token + ' | Email: ' + data.user.email + '</p>' + '<a href=' + '"http://localhost:4200/restore/' + data.token + '"' + '>' + "Link" + '</a>';
     } else if (data.state === '3') { // Email Invitation
       emailInfo.subject = "New Account",
-        emailInfo.text = "Your account" + " | Password: " + data.user.password + " | Email: " + data.user.email
-      //emailInfo.html = '<b>Password included! Change it for your safety ✔</b>';
+        //  emailInfo.text = "Your account" + " | Password: " + data.user.password + " | Email: " + data.user.email
+        emailInfo.html = '<h4>Password included! Change it for your safety</h4>' + '<p>' + 'Your account' + ' | Password: ' + data.user.password + ' | Email: ' + data.user.email + '</p>';
     }
 
     var mailOptions: nodemailer.SendMailOptions = {
       from: process.env.EMAIL_FROM, //'Fred Foo ✔ <dimitris.sec@gmail.com>', // sender address
-      to: 'dmytakis@gmail.com', // list of receivers
+      to: 'dmytakis@gmail.com', // Dev
+      //to: data.user.email, // Prod
       subject: emailInfo.subject, // Subject line
-      text: emailInfo.text, // plaintext body
-      //html: emailInfo.html // html body
+      // text: emailInfo.text, // plaintext body
+      html: emailInfo.html // html body
     };
 
     // send mail with defined transport object
@@ -394,19 +396,25 @@ class AuthenticationController implements Controller {
 
       else if (data.state === '1') { // Email Verification
         response.status(200).send({
-          tempData: { "token": data.token }, // Only for testing
+          // ---- // // For Testing Purposes Only
+          tempData: { "token": data.token },
+          // ---- //
           message: "Please, follow your link to Validate your Email.",
           code: 200
         });
       } else if (data.state === '2') { // Password Restoration
         response.status(200).send({
-          tempData: { "token": data.token }, // Only for testing
+          // ---- // // For Testing Purposes Only
+          tempData: { "token": data.token },
+          // ---- //
           message: "Please, follow your link to Update your Password.",
           code: 200
         });
       } else if (data.state === '3') { // Email Invitation
         response.status(200).send({
-          tempData: { "password": data.user.password }, // Only for testing
+          // ---- // // For Testing Purposes Only
+          tempData: { "password": data.user.password },
+          // ---- // 
           message: "User has been Invited to enjoy our Community!",
           code: 200
         });
