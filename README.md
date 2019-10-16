@@ -1,4 +1,7 @@
-# synergy-api
+Synergy API
+===========
+
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg?style=flat)](https://raw.githubusercontent.com/synergatika/synergy-api/master/LICENSE)
 
 ## How to build a new docker image
 
