@@ -6,16 +6,12 @@ chai.should()
 chai.use(require('chai-as-promised'))
 chai.use(require('chai-http'));
 
-
 import userModel from '../src/models/user.model'
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
 
 import 'dotenv/config';
-
 import validateEnv from '../src/utils/validateEnv';
-import { doesNotReject } from 'assert';
-
 validateEnv();
 
 const defaultCustomer = {
@@ -145,7 +141,8 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
-                        // res.body.should.have.property('message')
+                        res.body.should.have.property('message');
+                        res.body.should.have.property('tempData')
                         newUser.verificationToken = res.body.tempData.token;
                         done();
                     })
@@ -159,6 +156,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -169,6 +167,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(404);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -178,6 +177,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(404);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -191,6 +191,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(404);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -200,6 +201,8 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
+                        res.body.should.have.property('tempData')
                         newUser.restorationToken = res.body.tempData.token;
                         done();
                     });
@@ -213,6 +216,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(404);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -225,6 +229,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -239,6 +244,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(404);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -253,6 +259,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         newUser.password = 'new_password'
                         done();
                     });
@@ -267,6 +274,10 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
+                        res.body.data.should.have.property('user');
+                        res.body.data.should.have.property('token');
                         newUser.authToken = res.body.data.token.token;
                         done();
                     });
@@ -282,6 +293,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         newUser.password = 'newest_password';
                         done();
                     });
@@ -296,10 +308,26 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
                         done();
                     });
             });
-            it("2. should update customer's profile", (done) => {
+            it("2. should NOT update customer's profile | as name is empty", (done) => {
+                chai.request("http://localhost:3000")
+                    .put("/profile")
+                    .set('Authorization', 'Bearer ' + newUser.authToken)
+                    .send({
+                        imageURL: "http://customer_image.com"
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(400);
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('message');
+                        done();
+                    });
+            });
+            it("3. should update customer's profile", (done) => {
                 chai.request("http://localhost:3000")
                     .put("/profile")
                     .set('Authorization', 'Bearer ' + newUser.authToken)
@@ -310,6 +338,8 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
                         done();
                     });
             });
@@ -328,6 +358,10 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
+                        res.body.data.should.have.property('user');
+                        res.body.data.should.have.property('token');
                         defaultMerchant._id = res.body.data.user._id;
                         defaultMerchant.authToken = res.body.data.token.token;
                         done();
@@ -372,6 +406,10 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
+                        res.body.data.should.have.property('user');
+                        res.body.data.should.have.property('token');
                         done();
                     });
             });
@@ -399,6 +437,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(403);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -423,6 +462,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(401);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -447,6 +487,8 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
                         done();
                     });
             });
@@ -466,6 +508,10 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
+                        res.body.data.should.have.property('user');
+                        res.body.data.should.have.property('token');
                         defaultAdmin._id = res.body.data.user._id;
                         defaultAdmin.authToken = res.body.data.token.token;
                         done();
@@ -482,6 +528,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -495,6 +542,10 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
+                        res.body.data.should.have.property('user');
+                        res.body.data.should.have.property('token');
                         defaultAdmin._id = res.body.data.user._id;
                         defaultAdmin.authToken = res.body.data.token.token;
                         done();
@@ -525,6 +576,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         newMerchant.password = res.body.tempData.password;
                         done();
                     });
@@ -538,6 +590,7 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(400);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('message');
                         done();
                     });
             });
@@ -551,6 +604,10 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
+                        res.body.data.should.have.property('user');
+                        res.body.data.should.have.property('token');
                         done();
                     });
             });
@@ -564,6 +621,8 @@ describe("Test All in One", () => {
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.body.should.be.a('object');
+                    res.body.should.have.property('data');
+                    res.body.data.should.be.a('array');
                     done();
                 });
         });
@@ -573,6 +632,8 @@ describe("Test All in One", () => {
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.body.should.be.a('object');
+                    res.body.should.have.property('data');
+                    res.body.data.should.be.a('object');
                     done();
                 });
         });
