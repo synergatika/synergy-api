@@ -353,15 +353,18 @@ class AuthenticationController implements Controller {
     if (data.state === '1') { // Email Verification
       emailInfo.subject = "Email Verification",
         //  emailInfo.text = "Must Verify" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/verify/" + data.token
-        emailInfo.html = '<h4>Must Verify!</h4>' + '<p>' + 'Restore' + ' | Token: ' + data.token + ' | Email: ' + data.user.email + '</p>' + '<a href=' + '"http://localhost:4200/verify/' + data.token + '"' + '>' + "Link" + '</a>';
+        emailInfo.html = '<h4>Must Verify!</h4>' + '<p>' + 'Restore' + ' | Token: ' + data.token + ' | Email: '
+        + data.user.email + '</p>' + '<a href=' + '"' + `${process.env.APP_URL}` + 'verify/' + data.token + '"' + ' > ' + "Link" + ' </a>';
     } else if (data.state === '2') { // Password Restoration
       emailInfo.subject = "Password Restoration",
         //  emailInfo.text = "Try Restore" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/restore/" + data.token
-        emailInfo.html = '<h4>Try Restore?</h4>' + '<p>' + 'Restore' + ' | Token: ' + data.token + ' | Email: ' + data.user.email + '</p>' + '<a href=' + '"http://localhost:4200/restore/' + data.token + '"' + '>' + "Link" + '</a>';
+        emailInfo.html = '<h4>Try Restore?</h4>' + '<p>' + 'Restore' + ' | Token: '
+        + data.token + ' | Email: ' + data.user.email + '</p>' + '<a href=' + '"' + `${process.env.APP_URL}` + 'restore/' + data.token + '"' + '>' + "Link" + '</a>';
     } else if (data.state === '3') { // Email Invitation
       emailInfo.subject = "New Account",
         //  emailInfo.text = "Your account" + " | Password: " + data.user.password + " | Email: " + data.user.email
-        emailInfo.html = '<h4>Password included! Change it for your safety</h4>' + '<p>' + 'Your account' + ' | Password: ' + data.user.password + ' | Email: ' + data.user.email + '</p>';
+        emailInfo.html = '<h4>Password included! Change it for your safety</h4>' + '<p>' + 'Your account' + ' | Password: '
+        + data.user.password + ' | Email: ' + data.user.email + '</p>';
     }
 
     var mailOptions: nodemailer.SendMailOptions = {

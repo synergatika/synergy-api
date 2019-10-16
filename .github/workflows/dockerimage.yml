@@ -19,6 +19,8 @@ jobs:
         CI: true
         APP: dev
         PORT: 3000
+        API_URL: http://localhost:3000/
+        APP_URL: http://localhost:4200/
         DB_DIALECT: mongo
         DB_HOST: localhost
         DB_PORT: 27017

@@ -6,58 +6,15 @@ chai.should()
 chai.use(require('chai-as-promised'))
 chai.use(require('chai-http'));
 
-import userModel from '../src/models/user.model'
-import * as mongoose from 'mongoose';
-import * as bcrypt from 'bcrypt';
-
 import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
+import { CommandCursor } from 'mongodb';
 validateEnv();
 
-const defaultCustomer = {
-    name: "Customer 10",
-    email: "customer10@gmail.com",
-    password: "customer10",
-    authToken: '',
-    _id: ''
-}
-
-const defaultMerchant = {
-    name: "Merchant 10",
-    email: "merchant10@gmail.com",
-    password: "merchant10",
-    authToken: '',
-    _id: ''
-}
-
-const defaultAdmin = {
-    name: "Admin 10",
-    email: "admin10@gmail.com",
-    password: "admin10",
-    authToken: '',
-    _id: ''
-}
-
-var newUser = { // Auto Registered
-    name: "Customer El",
-    email: "customer11@gmail.com",
-    password: "customer11",
-    verificationToken: '',
-    restorationToken: '',
-    authToken: ''
-}
-
-var newCustomer = { // Registerd by Merchant
-    name: "Invited Customer",
-    email: "customer12@gmail.com",
-    password: ''
-}
-
-var newMerchant = { // Registered by Admin
-    name: "Merchant El",
-    email: "merchant11@gmail.com",
-    password: ''
-}
+import userModel from '../src/models/user.model'
+import { defaultCustomer, defaultMerchant, defaultAdmin, newUser, newCustomer, newMerchant } from './structs.test'
+import * as mongoose from 'mongoose';
+import * as bcrypt from 'bcrypt';
 
 describe("Test All in One", () => {
 
@@ -117,6 +74,7 @@ describe("Test All in One", () => {
         })
     });
     before(() => {
+        console.log(typeof (`${process.env.API_URL}`));
         return bcrypt.hash(defaultAdmin.password, 10, (err, hash) => {
             return userModel.create({
                 email: defaultAdmin.email,
@@ -135,8 +93,8 @@ describe("Test All in One", () => {
 
         describe("Customer Auth (/auth)", () => {
             it("1. should create a new user (auto-registration as customer)", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/register")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/register")
                     .send(newUser)
                     .end((err, res) => {
                         res.should.have.status(200);
@@ -148,8 +106,8 @@ describe("Test All in One", () => {
                     })
             });
             it("2. should verify a user's email address", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/verify_email")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/verify_email")
                     .send({
                         "token": newUser.verificationToken
                     })
@@ -161,8 +119,8 @@ describe("Test All in One", () => {
                     });
             });
             it("3. should NOT create user | as there is already user with these email address)", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/register")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/register")
                     .send(newUser)
                     .end((err, res) => {
                         res.should.have.status(404);
@@ -172,8 +130,8 @@ describe("Test All in One", () => {
                     });
             });
             it("4. should NOT send a verfication email | as user has already verified email address", (done) => {
-                chai.request("http://localhost:3000")
-                    .get("/auth/verify_email/" + newUser.email)
+                chai.request(`${process.env.API_URL}`)
+                    .get("auth/verify_email/" + newUser.email)
                     .end((err, res) => {
                         res.should.have.status(404);
                         res.body.should.be.a('object');
@@ -182,8 +140,8 @@ describe("Test All in One", () => {
                     });
             });
             it("5. should NOT authenticate user | due to wrong credentials", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/authenticate")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate")
                     .send({
                         email: newUser.email,
                         password: "random_password"
@@ -196,8 +154,8 @@ describe("Test All in One", () => {
                     });
             });
             it("6. should send a restoration email", (done) => {
-                chai.request("http://localhost:3000")
-                    .get("/auth/forgot_pass/" + newUser.email)
+                chai.request(`${process.env.API_URL}`)
+                    .get("auth/forgot_pass/" + newUser.email)
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
@@ -208,8 +166,8 @@ describe("Test All in One", () => {
                     });
             });
             it("7. should NOT validate restoration token | as it is wrong", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/forgot_pass")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/forgot_pass")
                     .send({
                         token: "random_token"
                     })
@@ -221,8 +179,8 @@ describe("Test All in One", () => {
                     });
             });
             it("8. should validate restoration token", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/forgot_pass")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/forgot_pass")
                     .send({
                         token: newUser.restorationToken
                     })
@@ -234,8 +192,8 @@ describe("Test All in One", () => {
                     });
             });
             it("9. should NOT update/restore password | as does not match with verification password", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/auth/forgot_pass")
+                chai.request(`${process.env.API_URL}`)
+                    .put("auth/forgot_pass")
                     .send({
                         token: newUser.restorationToken,
                         newPassword: "new_password",
@@ -249,8 +207,8 @@ describe("Test All in One", () => {
                     });
             });
             it("10. should update/restore password", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/auth/forgot_pass")
+                chai.request(`${process.env.API_URL}`)
+                    .put("auth/forgot_pass")
                     .send({
                         token: newUser.restorationToken,
                         newPassword: "new_password",
@@ -265,8 +223,8 @@ describe("Test All in One", () => {
                     });
             });
             it("11. should authenticate user", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/authenticate")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate")
                     .send({
                         email: newUser.email,
                         password: newUser.password
@@ -283,8 +241,8 @@ describe("Test All in One", () => {
                     });
             });
             it("12. should update user's password", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/auth/change_pass")
+                chai.request(`${process.env.API_URL}`)
+                    .put("auth/change_pass")
                     .set('Authorization', 'Bearer ' + newUser.authToken)
                     .send({
                         oldPassword: newUser.password,
@@ -302,8 +260,8 @@ describe("Test All in One", () => {
 
         describe("Customer's Profile (/profile)", () => {
             it("1. should read user's profile", (done) => {
-                chai.request("http://localhost:3000")
-                    .get("/profile")
+                chai.request(`${process.env.API_URL}`)
+                    .get("profile")
                     .set('Authorization', 'Bearer ' + newUser.authToken)
                     .end((err, res) => {
                         res.should.have.status(200);
@@ -314,8 +272,8 @@ describe("Test All in One", () => {
                     });
             });
             it("2. should NOT update customer's profile | as name is empty", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/profile")
+                chai.request(`${process.env.API_URL}`)
+                    .put("profile")
                     .set('Authorization', 'Bearer ' + newUser.authToken)
                     .send({
                         imageURL: "http://customer_image.com"
@@ -328,8 +286,8 @@ describe("Test All in One", () => {
                     });
             });
             it("3. should update customer's profile", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/profile")
+                chai.request(`${process.env.API_URL}`)
+                    .put("profile")
                     .set('Authorization', 'Bearer ' + newUser.authToken)
                     .send({
                         imageURL: "http://customer_image.com",
@@ -349,8 +307,8 @@ describe("Test All in One", () => {
     describe("Merchant", () => {
         describe("Merchant Auth (/auth)", () => {
             it("1. should authenticate user", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/authenticate")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate")
                     .send({
                         email: defaultMerchant.email,
                         password: defaultMerchant.password
@@ -368,8 +326,8 @@ describe("Test All in One", () => {
                     });
             });
             it("2. should NOT create a new merchant | as customer cannot create customer", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/register/" + "merchant")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/register/" + "merchant")
                     .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
                     .send({
                         name: newMerchant.name,
@@ -382,8 +340,8 @@ describe("Test All in One", () => {
                     });
             });
             it("3. should create a new customer", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/register/" + "customer")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/register/" + "customer")
                     .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
                     .send({
                         name: newCustomer.name,
@@ -397,8 +355,8 @@ describe("Test All in One", () => {
                     });
             });
             it("4. should authenticate the new customer", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/authenticate/")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate/")
                     .send({
                         email: newCustomer.email,
                         password: newCustomer.password
@@ -415,10 +373,10 @@ describe("Test All in One", () => {
             });
         });
 
-        describe("Merchant's Profile(Info) (/auth)", () => {
+        describe("Merchant's Profile(Info) (/merchants)", () => {
             it("1. should NOT update merchant's profile(info) | as it does not belong to logged in user", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/merchants/" + 'random_id')
+                chai.request(`${process.env.API_URL}`)
+                    .put("merchants/" + 'random_id')
                     .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
                     .send({
                         name: "Merchant One",
@@ -442,8 +400,8 @@ describe("Test All in One", () => {
                     });
             });
             it("2. should NOT update merchant's profile(info) | as it does not belong to logged in user", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/merchants/" + defaultMerchant._id)
+                chai.request(`${process.env.API_URL}`)
+                    .put("merchants/" + defaultMerchant._id)
                     .set('Authorization', 'Bearer ' + 'random_jwt')
                     .send({
                         name: "Merchant One",
@@ -467,8 +425,8 @@ describe("Test All in One", () => {
                     });
             });
             it("3. should update merchant's profile(info)", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/merchants/" + defaultMerchant._id)
+                chai.request(`${process.env.API_URL}`)
+                    .put("merchants/" + defaultMerchant._id)
                     .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
                     .send({
                         name: "New Merchant Name",
@@ -499,8 +457,8 @@ describe("Test All in One", () => {
 
         describe("Admin Auth (/auth)", () => {
             it("1. should authenticate user", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/authenticate")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate")
                     .send({
                         email: defaultAdmin.email,
                         password: defaultAdmin.password
@@ -518,8 +476,8 @@ describe("Test All in One", () => {
                     });
             });
             it("2. should update password", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/auth/change_pass")
+                chai.request(`${process.env.API_URL}`)
+                    .put("auth/change_pass")
                     .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
                     .send({
                         oldPassword: defaultAdmin.password,
@@ -533,8 +491,8 @@ describe("Test All in One", () => {
                     });
             });
             it("3. should authenticate user", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/authenticate")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate")
                     .send({
                         email: defaultAdmin.email,
                         password: 'new_password'
@@ -552,8 +510,8 @@ describe("Test All in One", () => {
                     });
             });
             it("4. should update password", (done) => {
-                chai.request("http://localhost:3000")
-                    .put("/auth/change_pass")
+                chai.request(`${process.env.API_URL}`)
+                    .put("auth/change_pass")
                     .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
                     .send({
                         oldPassword: 'new_password',
@@ -566,8 +524,8 @@ describe("Test All in One", () => {
                     });
             });
             it("5. should create a new merchant", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/register/" + "merchant")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/register/" + "merchant")
                     .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
                     .send({
                         name: newMerchant.name,
@@ -582,8 +540,8 @@ describe("Test All in One", () => {
                     });
             });
             it("6. should NOT authenticate the new merchant | as password is empty", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/authenticate/")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate/")
                     .send({
                         email: newMerchant.email,
                     })
@@ -595,8 +553,8 @@ describe("Test All in One", () => {
                     });
             });
             it("7. should authenticate the new merchant", (done) => {
-                chai.request("http://localhost:3000")
-                    .post("/auth/authenticate/")
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate/")
                     .send({
                         email: newMerchant.email,
                         password: newMerchant.password
@@ -614,10 +572,10 @@ describe("Test All in One", () => {
         });
     });
 
-    describe("No Login Required", () => {
+    describe("No Login Required (/merchants)", () => {
         it("1. should read all merchants", (done) => {
-            chai.request("http://localhost:3000")
-                .get("/merchants/")
+            chai.request(`${process.env.API_URL}`)
+                .get("merchants/")
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.body.should.be.a('object');
@@ -627,8 +585,8 @@ describe("Test All in One", () => {
                 });
         });
         it("2. should read a merchant's info", (done) => {
-            chai.request("http://localhost:3000")
-                .get("/merchants/" + defaultMerchant._id)
+            chai.request(`${process.env.API_URL}`)
+                .get("merchants/" + defaultMerchant._id)
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.body.should.be.a('object');
@@ -638,8 +596,8 @@ describe("Test All in One", () => {
                 });
         });
         it("3. should NOT read anything | as url does not exist", (done) => {
-            chai.request("http://localhost:3000")
-                .get("/random_url/")
+            chai.request(`${process.env.API_URL}`)
+                .get("random_url/")
                 .end((err, res) => {
                     res.should.have.status(404);
                     res.body.should.be.a('object');
