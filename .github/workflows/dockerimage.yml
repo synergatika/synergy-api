@@ -29,7 +29,8 @@ jobs:
         JWT_EXPIRATION: 36000
         TOKEN_LENGTH: 32
         TOKEN_EXPIRATION: 5
-        EMAIL_SERVICE: Gmail
+        EMAIL_HOST: ${{ secrets.EMAIL_HOST }}
+        EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
         EMAIL_FROM: Synergy | A Social and Solidarity Economy Toolkit
