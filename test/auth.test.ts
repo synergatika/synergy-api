@@ -6,31 +6,46 @@ chai.should()
 chai.use(require('chai-as-promised'))
 chai.use(require('chai-http'));
 
+
+import userModel from '../src/models/user.model'
+import * as mongoose from 'mongoose';
+import * as bcrypt from 'bcrypt';
+
+import 'dotenv/config';
+
+import validateEnv from '../src/utils/validateEnv';
+import { doesNotReject } from 'assert';
+
+validateEnv();
+
 const defaultCustomer = {
-    email: "customer1@gmail.com",
-    password: "customer1",
+    name: "Customer 10",
+    email: "customer10@gmail.com",
+    password: "customer10",
     authToken: '',
     _id: ''
 }
 
 const defaultMerchant = {
-    email: "merchant1@gmail.com",
-    password: "merchant1",
+    name: "Merchant 10",
+    email: "merchant10@gmail.com",
+    password: "merchant10",
     authToken: '',
     _id: ''
 }
 
 const defaultAdmin = {
-    email: "admin1@gmail.com",
-    password: "admin1",
+    name: "Admin 10",
+    email: "admin10@gmail.com",
+    password: "admin10",
     authToken: '',
     _id: ''
 }
 
 var newUser = { // Auto Registered
-    name: "Customer Ten",
-    email: "customer10@gmail.com",
-    password: "customer10",
+    name: "Customer El",
+    email: "customer11@gmail.com",
+    password: "customer11",
     verificationToken: '',
     restorationToken: '',
     authToken: ''
@@ -38,33 +53,86 @@ var newUser = { // Auto Registered
 
 var newCustomer = { // Registerd by Merchant
     name: "Invited Customer",
-    email: "customer11@gmail.com",
+    email: "customer12@gmail.com",
     password: ''
 }
 
 var newMerchant = { // Registered by Admin
-    name: "Merchant Ten",
-    email: "merchant10@gmail.com",
+    name: "Merchant El",
+    email: "merchant11@gmail.com",
     password: ''
 }
 
 describe("Test All in One", () => {
 
     before((done) => {
-        chai.request("http://localhost:3000")
-            .put("/auth/test/delete_users")
-            .send(
-                {
-                    email1: newUser.email,
-                    email2: newCustomer.email,
-                    email3: newMerchant.email
-                }
-            )
-            .end((err, res) => {
-                // (res).should.have.status(200);
-                (res.body).should.be.a('object');
-                done();
+        connectToTheDatabase();
+        function connectToTheDatabase() {
+            const {
+                DB_HOST,
+                DB_PORT,
+                DB_NAME,
+                DB_USER,
+                DB_PASSWORD
+            } = process.env;
+
+            // const mongo_location = 'mongodb://' + "127.0.0.1" + ':' + "27017" + '/' + "synergyDB";
+            mongoose.connect('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME, {
+                useCreateIndex: true,
+                useNewUrlParser: true,
+                useUnifiedTopology: true,
+                useFindAndModify: false
             })
+                .then(() => { done(); })
+                .catch((err) => {
+                    console.log('*** Can Not Connect to Mongo Server:', 'mongodb://' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME)
+                    console.log(err)
+                })
+        }
+    });
+    before(() => {
+        return userModel.deleteMany({
+            $or: [{ email: newUser.email },
+            { email: newCustomer.email },
+            { email: newMerchant.email },
+            { email: defaultCustomer.email },
+            { email: defaultMerchant.email },
+            { email: defaultAdmin.email }]
+        });
+    })
+    before(() => {
+        return bcrypt.hash(defaultCustomer.password, 10, (err, hash) => {
+            return userModel.create({
+                email: defaultCustomer.email,
+                access: 'customer',
+                verified: 'true',
+                password: hash,
+            })
+        })
+    });
+    before(() => {
+        return bcrypt.hash(defaultMerchant.password, 10, (err, hash) => {
+            return userModel.create({
+                email: defaultMerchant.email,
+                access: 'merchant',
+                verified: 'true',
+                password: hash,
+            })
+        })
+    });
+    before(() => {
+        return bcrypt.hash(defaultAdmin.password, 10, (err, hash) => {
+            return userModel.create({
+                email: defaultAdmin.email,
+                access: 'admin',
+                verified: 'true',
+                password: hash,
+            })
+        })
+    });
+
+    after((done) => {
+        mongoose.disconnect().then(() => { done(); });
     });
 
     describe("Customer", () => {

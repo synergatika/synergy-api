@@ -58,27 +58,10 @@ class AuthenticationController implements Controller {
     this.router.get(`${this.path}/forgot_pass/:email`, validationParamsMiddleware(EmailDto), this.askRestoration, this.emailSender);
     this.router.post(`${this.path}/forgot_pass`, validationBodyMiddleware(CheckTokenDto), this.checkRestoration);
     this.router.put(`${this.path}/forgot_pass`, validationBodyMiddleware(ChangePassOutDto), this.changePassOutside);
-
-    // ---- // // For Testing Purposes Only
-    this.router.put(`${this.path}/test/delete_users`, this.deleteTestUsers);
-    // ---- //
   }
-
-  // ---- // // For Testing Purposes Only
-  private deleteTestUsers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data = request.body;
-    await this.user.deleteMany({ $or: [{ email: data.email1 }, { email: data.email2 }, { email: data.email3 }] });
-    response.status(200).send({
-      message: 'OK',
-      code: 200
-    })
-  }
-  // ---- //
 
   private authRegister = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: RegisterWithPasswordDto = request.body;
-    //console.log(this.router);
-    //console.log(data.email);
 
     if (await this.user.findOne({ email: data.email })) {
       next(new AuthenticationException(404, 'A user with these credentials already exists!'));
@@ -392,8 +375,10 @@ class AuthenticationController implements Controller {
 
     // send mail with defined transport object
     Transporter.sendMail(mailOptions, (error: Error, info: nodemailer.SentMessageInfo): void => {
-      if (error) next(new AuthenticationException(404, 'Email transmission failed'));
-
+      if (error) {
+        console.log(mailOptions);
+        console.log(error); next(new AuthenticationException(404, 'Email transmission failed'));
+      }
       else if (data.state === '1') { // Email Verification
         response.status(200).send({
           // ---- // // For Testing Purposes Only

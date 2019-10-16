@@ -3,6 +3,7 @@ import * as nodemailer from 'nodemailer'
 //const transporter: nodemailer.Transporter = nodemailer.createTransport('smtps://dimitris.sec%40gmail.com:6947879557@smtp.gmail.com');
 // create reusable transporter object using SMTP transport
 const transporter: nodemailer.Transporter = nodemailer.createTransport({
+    //service: process.env.EMAIL_SERVICE,
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
     auth: {
