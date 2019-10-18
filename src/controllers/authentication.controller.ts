@@ -2,6 +2,11 @@ import * as bcrypt from 'bcrypt';
 import * as express from 'express';
 import * as jwt from 'jsonwebtoken';
 import * as nodemailer from 'nodemailer';
+import to from 'await-to-ts';
+
+import Promise from 'bluebird';
+const Email = require('email-templates');
+const email = new Email();
 
 // Exceptions
 import AuthenticationException from '../exceptions/AuthenticationException';
@@ -32,7 +37,6 @@ import AccessDto from '../authDtos/access.params.dto'
 
 // Email
 import Transporter from '../utils/mailer'
-import to from 'await-to-ts';
 
 class AuthenticationController implements Controller {
   public path = '/auth';
@@ -76,7 +80,6 @@ class AuthenticationController implements Controller {
         password: hashedPassword,
       }).catch());
       request.params.email = data.email;
-
 
       if (error) next(new DBException(422, 'DB ERROR'));
       next();
@@ -348,67 +351,79 @@ class AuthenticationController implements Controller {
       to: data.user.email,
       subject: "",
       // text: "",
-      html: "<h3>Hello world?</h3><p>Test</p>"
+      html: "<h3>Hello world?</h3><p>Test</p>",
+      type: '',
+      locals: {},
     };
     if (data.state === '1') { // Email Verification
-      emailInfo.subject = "Email Verification",
-        //  emailInfo.text = "Must Verify" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/verify/" + data.token
-        emailInfo.html = '<h4>Must Verify!</h4>' + '<p>' + 'Restore' + ' | Token: ' + data.token + ' | Email: '
-        + data.user.email + '</p>' + '<a href=' + '"' + `${process.env.APP_URL}` + 'verify/' + data.token + '"' + ' > ' + "Link" + ' </a>';
+      emailInfo.type = 'verification',
+        emailInfo.locals = { email: data.user.email, token: data.token, link: `${process.env.APP_URL}` + 'verify/' + data.token },
+        emailInfo.subject = "Email Verification";
+      //  emailInfo.text = "Must Verify" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/verify/" + data.token
+      // emailInfo.html = '<h4>Must Verify!</h4>' + '<p>' + 'Restore' + ' | Token: ' + data.token + ' | Email: '
+      // + data.user.email + '</p>' + '<a href=' + '"' + `${process.env.APP_URL}` + 'verify/' + data.token + '"' + ' > ' + "Link" + ' </a>';
     } else if (data.state === '2') { // Password Restoration
-      emailInfo.subject = "Password Restoration",
-        //  emailInfo.text = "Try Restore" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/restore/" + data.token
-        emailInfo.html = '<h4>Try Restore?</h4>' + '<p>' + 'Restore' + ' | Token: '
-        + data.token + ' | Email: ' + data.user.email + '</p>' + '<a href=' + '"' + `${process.env.APP_URL}` + 'restore/' + data.token + '"' + '>' + "Link" + '</a>';
+      emailInfo.type = 'restoration',
+        emailInfo.locals = { email: data.user.email, token: data.token, link: `${process.env.APP_URL}` + 'restore/' + data.token },
+        emailInfo.subject = "Password Restoration";
+      //  emailInfo.text = "Try Restore" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/restore/" + data.token
+      //emailInfo.html = '<h4>Try Restore?</h4>' + '<p>' + 'Restore' + ' | Token: '
+      //+ data.token + ' | Email: ' + data.user.email + '</p>' + '<a href=' + '"' + `${process.env.APP_URL}` + 'restore/' + data.token + '"' + '>' + "Link" + '</a>';
     } else if (data.state === '3') { // Email Invitation
-      emailInfo.subject = "New Account",
-        //  emailInfo.text = "Your account" + " | Password: " + data.user.password + " | Email: " + data.user.email
-        emailInfo.html = '<h4>Password included! Change it for your safety</h4>' + '<p>' + 'Your account' + ' | Password: '
-        + data.user.password + ' | Email: ' + data.user.email + '</p>';
+      emailInfo.type = 'registration',
+        emailInfo.locals = { email: data.user.email, password: data.user.password },
+        emailInfo.subject = "New Account";
+      //  emailInfo.text = "Your account" + " | Password: " + data.user.password + " | Email: " + data.user.email
+      //emailInfo.html = '<h4>Password included! Change it for your safety</h4>' + '<p>' + 'Your account' + ' | Password: '
+      //+ data.user.password + ' | Email: ' + data.user.email + '</p>';
     }
 
-    var mailOptions: nodemailer.SendMailOptions = {
-      from: process.env.EMAIL_FROM, //'Fred Foo ✔ <dimitris.sec@gmail.com>', // sender address
-      to: 'dmytakis@gmail.com', // Dev
-      //to: data.user.email, // Prod
-      subject: emailInfo.subject, // Subject line
-      // text: emailInfo.text, // plaintext body
-      html: emailInfo.html // html body
-    };
 
-    // send mail with defined transport object
-    Transporter.sendMail(mailOptions, (error: Error, info: nodemailer.SentMessageInfo): void => {
-      if (error) {
-        console.log(mailOptions);
-        console.log(error); next(new AuthenticationException(404, 'Email transmission failed'));
-      }
-      else if (data.state === '1') { // Email Verification
-        response.status(200).send({
-          // ---- // // For Testing Purposes Only
-          tempData: { "token": data.token },
-          // ---- //
-          message: "Please, follow your link to Validate your Email.",
-          code: 200
-        });
-      } else if (data.state === '2') { // Password Restoration
-        response.status(200).send({
-          // ---- // // For Testing Purposes Only
-          tempData: { "token": data.token },
-          // ---- //
-          message: "Please, follow your link to Update your Password.",
-          code: 200
-        });
-      } else if (data.state === '3') { // Email Invitation
-        response.status(200).send({
-          // ---- // // For Testing Purposes Only
-          tempData: { "password": data.user.password },
-          // ---- // 
-          message: "User has been Invited to enjoy our Community!",
-          code: 200
-        });
-      }
-    });
+
+    let error, res: object = {};
+    [error, res] = await to(Promise.all([email.render(emailInfo.type, emailInfo.locals)])
+      .then((res: object) => {
+        emailInfo.html = res.toString();
+        var mailOptions: nodemailer.SendMailOptions = {
+          from: process.env.EMAIL_FROM, //'Fred Foo ✔ <dimitris.sec@gmail.com>', // sender address
+          to: 'dmytakis@gmail.com', // Dev
+          //to: data.user.email, // Prod
+          subject: emailInfo.subject, // Subject line
+          // text: emailInfo.text, // plaintext body
+          html: emailInfo.html // html body
+        };
+        return Transporter.sendMail(mailOptions);
+      })
+    );
+
+    if (error) next(new AuthenticationException(404, 'Email transmission failed'));
+    else if (data.state === '1') { // Email Verification
+      response.status(200).send({
+        // ---- // // For Testing Purposes Only
+        tempData: { "token": data.token },
+        // ---- //
+        message: "Please, follow your link to Validate your Email.",
+        code: 200
+      });
+    } else if (data.state === '2') { // Password Restoration
+      response.status(200).send({
+        // ---- // // For Testing Purposes Only
+        tempData: { "token": data.token },
+        // ---- //
+        message: "Please, follow your link to Update your Password.",
+        code: 200
+      });
+    } else if (data.state === '3') { // Email Invitation
+      response.status(200).send({
+        // ---- // // For Testing Purposes Only
+        tempData: { "password": data.user.password },
+        // ---- //
+        message: "User has been Invited to enjoy our Community!",
+        code: 200
+      });
+    }
   }
+
 
   private createToken(user: User): TokenData {
     const expiresIn = parseInt(process.env.JWT_EXPIRATION); // an hour
