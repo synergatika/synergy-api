@@ -44,3 +44,11 @@ jobs:
         username: synergatika
         password: ${{ secrets.GITHUB_TOKEN }}
         cache: true
+    - name: executing remote ssh commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        key: ${{ secrets.KEY }}
+        script: |
+          cd /opt/synergy-api
+          ./update.sh
