@@ -44,11 +44,3 @@ jobs:
         username: synergatika
         password: ${{ secrets.GITHUB_TOKEN }}
         cache: true
-    - name: Deploy API
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.HOST }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd /opt/synergy-api
-          ./update.sh
