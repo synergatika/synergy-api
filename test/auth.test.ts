@@ -714,15 +714,14 @@ describe("Test All in One", () => {
                     res.should.have.status(403);
                     res.body.should.be.a('object');
                     done();
-
                 });
         });
         it("3. should delete an offer", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .delete("loyalty/offers/" + defaultMerchant._id + "/" + offers[1].offer_id)
-                .set('Authorization', 'Bearer ' + newMerchant.authToken)
+                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
                 .end((err, res) => {
-                    res.should.have.status(403);
+                    res.should.have.status(200);
                     res.body.should.be.a('object');
                     done();
                 });
