@@ -31,12 +31,14 @@ var newUser = { // Auto Registered
 var newCustomer = { // Registerd by Merchant
     name: "Invited Customer",
     email: "customer12@gmail.com",
-    password: ''
+    password: '',
+    authToken: ''
 };
 var newMerchant = { // Registered by Admin
     name: "Merchant El",
     email: "merchant11@gmail.com",
-    password: ''
+    password: '',
+    authToken: ''
 };
 
 export {

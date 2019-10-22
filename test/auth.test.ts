@@ -16,6 +16,8 @@ import { defaultCustomer, defaultMerchant, defaultAdmin, newUser, newCustomer, n
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
 
+var offer_id = '';
+
 describe("Test All in One", () => {
 
     before((done) => {
@@ -566,12 +568,64 @@ describe("Test All in One", () => {
                         res.body.data.should.be.a('object');
                         res.body.data.should.have.property('user');
                         res.body.data.should.have.property('token');
+
+                        newMerchant.authToken = res.body.data.token.token;
                         done();
                     });
             });
         });
     });
 
+    describe("Offers (/loyalty/offers)", () => {
+        it("1. should create a new offer", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .post("loyalty/offers/")
+                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                .send({
+                    description: '2 + 1 Beers',
+                    cost: 1300,
+                    expiresAt: '2019-10-22'
+                })
+                .end((err, res) => {
+                    res.should.have.status(201);
+                    res.body.should.be.a('object');
+                    done();
+
+                });
+        });
+        it("2. should NOT create a new offer | as user is not a merchant", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .post("loyalty/offers/")
+                .set('Authorization', 'Bearer ' + defaultCustomer.authToken)
+                .send({
+                    description: 'Free meals at Sundays',
+                    cost: 2000,
+                    expiresAt: '2019-12-22'
+                })
+                .end((err, res) => {
+                    res.should.have.status(401);
+                    res.body.should.be.a('object');
+                    done();
+
+                });
+        });
+        it("3. should create a new offer", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .post("loyalty/offers/")
+                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                .send({
+                    description: 'Free meals at Sundays',
+                    cost: 2000,
+                    expiresAt: '2019-12-22'
+                })
+                .end((err, res) => {
+                    res.should.have.status(201);
+                    res.body.should.be.a('object');
+                    done();
+
+                });
+        });
+    });
     describe("No Login Required (/merchants)", () => {
         it("1. should read all merchants", (done) => {
             chai.request(`${process.env.API_URL}`)
@@ -602,6 +656,50 @@ describe("Test All in One", () => {
                     res.should.have.status(404);
                     res.body.should.be.a('object');
                     done();
+                });
+        });
+        it("4. should read all offers", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .get("loyalty/offers/")
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    res.body.should.be.a('object');
+                    offer_id = res.body.data[0].offer_id;
+                    done();
+                });
+        });
+    });
+    describe("Offers (/loyalty/offers)", () => {
+        it("1. should update an offer", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .put("loyalty/offers/" + defaultMerchant._id + "/" + offer_id)
+                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                .send({
+                    description: '5 + 2 Beers',
+                    cost: 2000,
+                    expiresAt: '2020-10-22'
+                })
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    res.body.should.be.a('object');
+                    done();
+
+                });
+        });
+        it("2. should NOT update offer | as it does not belong to logged in user", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .put("loyalty/offers/" + defaultMerchant._id + "/" + offer_id)
+                .set('Authorization', 'Bearer ' + newMerchant.authToken)
+                .send({
+                    description: 'Free meals at Mondays',
+                    cost: 2200,
+                    expiresAt: '2019-11-22'
+                })
+                .end((err, res) => {
+                    res.should.have.status(403);
+                    res.body.should.be.a('object');
+                    done();
+
                 });
         });
     });

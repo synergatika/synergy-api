@@ -22,7 +22,7 @@ import { ObjectId } from 'mongodb';
 import MerchantID from '../usersDtos/merchant_id.params.dto'
 import CampaignID from '../microfundDtos/campaign_id.params.dto'
 
-class MicrofundController implements Controller {
+class CampaignsController implements Controller {
     public path = '/profile';
     public router = express.Router();
     private user = userModel;
@@ -122,7 +122,7 @@ class MicrofundController implements Controller {
 
         let error: Error, campaign: Campaign;
         [error, campaign] = await to(this.user.findOne({
-            _id: merchant_id, 
+            _id: merchant_id,
             'campaigns._id': campaign_id
         }).catch());
         if (error) next(new DBException(422, 'DB ERROR'));
@@ -189,7 +189,7 @@ class MicrofundController implements Controller {
     private verifyCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
         const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
-        
+
         let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
         [error, results] = await to(this.user.updateOne({
             _id: merchant_id,
@@ -208,4 +208,4 @@ class MicrofundController implements Controller {
     }
 }
 
-export default MicrofundController;
+export default CampaignsController;
