@@ -129,7 +129,7 @@ class OffersController implements Controller {
                 $set:
                 {
                     'offers.$[]._id': offer_id,
-                    'offers.$[].descript': data.description,
+                    'offers.$[].description': data.description,
                     'offers.$[].cost': data.cost,
                     'offers.$[].expiresAt': data.expiresAt
                 }

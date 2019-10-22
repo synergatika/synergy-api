@@ -1,3 +1,5 @@
+import { object } from "prop-types";
+
 var defaultCustomer = {
     name: "Customer 10",
     email: "customer10@gmail.com",
@@ -41,11 +43,24 @@ var newMerchant = { // Registered by Admin
     authToken: ''
 };
 
+type Offer = {
+    merchant_name: '',
+    offer_id: '',
+    merchant_id: '',
+    description: '',
+    cost: '',
+    expiresAt: '',
+    createdAt: ''
+}
+
+var offers: Offer[] = new Array();
+
 export {
     defaultCustomer,
     defaultMerchant,
     defaultAdmin,
     newUser,
     newCustomer,
-    newMerchant
+    newMerchant,
+    offers
 }

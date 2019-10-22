@@ -396,7 +396,7 @@ class AuthenticationController implements Controller {
       })
     );
 
-    if (error) { console.log(error); next(new AuthenticationException(404, 'Email transmission failed')); }
+    if (error) next(new AuthenticationException(404, 'Email transmission failed'));
     else if (data.state === '1') { // Email Verification
       response.status(200).send({
         // ---- // // For Testing Purposes Only

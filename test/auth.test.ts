@@ -8,15 +8,14 @@ chai.use(require('chai-http'));
 
 import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
-import { CommandCursor } from 'mongodb';
+
 validateEnv();
 
 import userModel from '../src/models/user.model'
-import { defaultCustomer, defaultMerchant, defaultAdmin, newUser, newCustomer, newMerchant } from './structs.test'
+import { defaultCustomer, defaultMerchant, defaultAdmin, newUser, newCustomer, newMerchant, offers } from './structs.test'
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
-
-var offer_id = '';
+import { array } from 'prop-types';
 
 describe("Test All in One", () => {
 
@@ -76,7 +75,6 @@ describe("Test All in One", () => {
         })
     });
     before(() => {
-        console.log(typeof (`${process.env.API_URL}`));
         return bcrypt.hash(defaultAdmin.password, 10, (err, hash) => {
             return userModel.create({
                 email: defaultAdmin.email,
@@ -626,73 +624,90 @@ describe("Test All in One", () => {
                 });
         });
     });
-    describe("No Login Required (/merchants)", () => {
-        it("1. should read all merchants", (done) => {
-            chai.request(`${process.env.API_URL}`)
-                .get("merchants/")
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.body.should.be.a('object');
-                    res.body.should.have.property('data');
-                    res.body.data.should.be.a('array');
-                    done();
-                });
+    describe("No Login Required", () => {
+        describe("Merchants (/merchants)", () => {
+            it("1. should read all merchants", (done) => {
+                chai.request(`${process.env.API_URL}`)
+                    .get("merchants/")
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('array');
+                        done();
+                    });
+            });
+            it("2. should read a merchant's info", (done) => {
+                chai.request(`${process.env.API_URL}`)
+                    .get("merchants/" + defaultMerchant._id)
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('data');
+                        res.body.data.should.be.a('object');
+                        done();
+                    });
+            });
+            it("3. should NOT read anything | as url does not exist", (done) => {
+                chai.request(`${process.env.API_URL}`)
+                    .get("random_url/")
+                    .end((err, res) => {
+                        res.should.have.status(404);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
         });
-        it("2. should read a merchant's info", (done) => {
-            chai.request(`${process.env.API_URL}`)
-                .get("merchants/" + defaultMerchant._id)
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.body.should.be.a('object');
-                    res.body.should.have.property('data');
-                    res.body.data.should.be.a('object');
-                    done();
-                });
-        });
-        it("3. should NOT read anything | as url does not exist", (done) => {
-            chai.request(`${process.env.API_URL}`)
-                .get("random_url/")
-                .end((err, res) => {
-                    res.should.have.status(404);
-                    res.body.should.be.a('object');
-                    done();
-                });
-        });
-        it("4. should read all offers", (done) => {
-            chai.request(`${process.env.API_URL}`)
-                .get("loyalty/offers/")
-                .end((err, res) => {
-                    res.should.have.status(200);
-                    res.body.should.be.a('object');
-                    offer_id = res.body.data[0].offer_id;
-                    done();
-                });
+        describe("Offers (/loyalty/offers)", () => {
+            it("1. should read all offers", (done) => {
+                chai.request(`${process.env.API_URL}`)
+                    .get("loyalty/offers/")
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+
+                        let i = 0;
+                        for (i = 0; i < (res.body.data).length; i++) {
+                            offers.push((res.body.data)[i]);
+                        }
+
+                        done();
+                    });
+            });
+            it("2. should read all merchant's offers", (done) => {
+                chai.request(`${process.env.API_URL}`)
+                    .get("loyalty/offers/" + defaultMerchant._id)
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        done();
+                    });
+            });
         });
     });
     describe("Offers (/loyalty/offers)", () => {
         it("1. should update an offer", (done) => {
             chai.request(`${process.env.API_URL}`)
-                .put("loyalty/offers/" + defaultMerchant._id + "/" + offer_id)
+                .put("loyalty/offers/" + defaultMerchant._id + "/" + offers[0].offer_id)
                 .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
                 .send({
                     description: '5 + 2 Beers',
-                    cost: 2000,
+                    cost: 5000,
                     expiresAt: '2020-10-22'
                 })
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.body.should.be.a('object');
                     done();
-
                 });
         });
         it("2. should NOT update offer | as it does not belong to logged in user", (done) => {
             chai.request(`${process.env.API_URL}`)
-                .put("loyalty/offers/" + defaultMerchant._id + "/" + offer_id)
+                .put("loyalty/offers/" + defaultMerchant._id + "/" + offers[0].offer_id)
                 .set('Authorization', 'Bearer ' + newMerchant.authToken)
                 .send({
                     description: 'Free meals at Mondays',
-                    cost: 2200,
+                    cost: 3000,
                     expiresAt: '2019-11-22'
                 })
                 .end((err, res) => {
@@ -700,6 +715,16 @@ describe("Test All in One", () => {
                     res.body.should.be.a('object');
                     done();
 
+                });
+        });
+        it("3. should delete an offer", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .delete("loyalty/offers/" + defaultMerchant._id + "/" + offers[1].offer_id)
+                .set('Authorization', 'Bearer ' + newMerchant.authToken)
+                .end((err, res) => {
+                    res.should.have.status(403);
+                    res.body.should.be.a('object');
+                    done();
                 });
         });
     });
