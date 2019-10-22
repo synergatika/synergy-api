@@ -123,7 +123,10 @@ class OffersController implements Controller {
         if ((request.user._id).toString() === (merchant_id).toString()) {
             let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
             [error, results] = await to(this.user.updateOne(
-                { 'offers._id': offer_id }, {
+                {
+                    _id: merchant_id,
+                    'offers._id': offer_id
+                }, {
                 '$set': {
                     'offers.$._id': offer_id,
                     'offers.$.description': data.description,
@@ -131,18 +134,7 @@ class OffersController implements Controller {
                     'offers.$.expiresAt': data.expiresAt
                 }
             }).catch());
-            /*       [error, results] = await to(this.user.updateOne({
-                       _id: request.user._id,
-                       'offers._id': offer_id
-                   }, {
-                       $set:
-                       {
-                           'offers.$[]._id': offer_id,
-                           'offers.$[].description': data.description,
-                           'offers.$[].cost': data.cost,
-                           'offers.$[].expiresAt': data.expiresAt
-                       }
-                   }).catch());*/
+
             if (error) next(new DBException(422, 'DB ERROR'));
             response.status(200).send({
                 message: "Success! Offer " + offer_id + " has been updated!",
@@ -160,7 +152,7 @@ class OffersController implements Controller {
         if ((request.user._id).toString() === (merchant_id).toString()) {
             let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
             [error, results] = await to(this.user.updateOne({
-                _id: request.user._id
+                _id: merchant_id
             }, {
                 $pull: {
                     offers: {
