@@ -21,20 +21,20 @@ const addressSchema = new mongoose.Schema({
   street: String,
   zipCode: Number,
   city: String
-});
+}, { _id: false });
 
 const contactSchema = new mongoose.Schema({
   address: addressSchema,
   phone: String,
   websiteURL: String
-});
+}, { _id: false });
 
 const authSchema = new mongoose.Schema({
   restorationToken: String,
   restorationExpiration: Number,
   verificationToken: String,
   verificationExpiration: Number
-});
+}, { _id: false });
 
 const userSchema = new mongoose.Schema({
   name: String,
@@ -61,8 +61,8 @@ const userSchema = new mongoose.Schema({
   offers: [offerSchema],
   campaigns: [campaignSchema]
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 
