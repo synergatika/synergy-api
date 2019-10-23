@@ -2,8 +2,8 @@ import * as express from 'express';
 import to from 'await-to-ts'
 
 // Exceptions
-import UsersException from '../exceptions/UsersException';
-import DBException from '../exceptions/DBException';
+import ForbiddenException from '../exceptions/Forbidden.exception';
+import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import Merchant from '../usersInterfaces/merchant.interface';
@@ -44,7 +44,7 @@ class MerchantsController implements Controller {
             updatedAt: false,
             offers: false, campaigns: false
         }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
             data: merchants,
             code: 200
@@ -63,7 +63,7 @@ class MerchantsController implements Controller {
             updatedAt: false,
             offers: false, campaigns: false
         }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
             data: merchant,
             code: 200
@@ -100,13 +100,13 @@ class MerchantsController implements Controller {
                     contact: '$contact'
                 }
             }).catch());
-            if (error) next(new DBException(422, 'DB ERROR'));
+            if (error) next(new UnprocessableEntityException('DB ERROR'));
             response.status(200).send({
                 data: merchant,
                 code: 200
             })
         } else {
-            next(new UsersException(403, 'OOps! You are not authorized to proceed in this action.'));
+            next(new ForbiddenException('OOps! You are not authorized to proceed in this action.'));
         }
     }
 }

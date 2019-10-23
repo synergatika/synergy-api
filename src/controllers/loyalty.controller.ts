@@ -3,8 +3,7 @@ import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 
 // Exceptions
-import UsersException from '../exceptions/UsersException';
-import DBException from '../exceptions/DBException';
+
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';

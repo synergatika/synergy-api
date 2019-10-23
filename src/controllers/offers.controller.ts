@@ -3,8 +3,8 @@ import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 
 // Exceptions
-import UsersException from '../exceptions/UsersException';
-import DBException from '../exceptions/DBException';
+import ForbiddenException from '../exceptions/Forbidden.exception';
+import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import Offer from '../loyaltyInterfaces/offer.interface';
@@ -57,7 +57,7 @@ class OffersController implements Controller {
             }
         }
         ]).exec().catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
             data: offers,
             code: 200
@@ -79,7 +79,7 @@ class OffersController implements Controller {
                 }
             }
         }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(201).send({
             message: "Success! A new offer has been created!",
             code: 201
@@ -108,7 +108,7 @@ class OffersController implements Controller {
                 createdAt: '$offers.createdAt'
             }
         }]).exec().catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
             data: offers,
             code: 200
@@ -135,13 +135,13 @@ class OffersController implements Controller {
                 }
             }).catch());
 
-            if (error) next(new DBException(422, 'DB ERROR'));
+            if (error) next(new UnprocessableEntityException('DB ERROR'));
             response.status(200).send({
                 message: "Success! Offer " + offer_id + " has been updated!",
                 code: 200
             });
         } else {
-            next(new UsersException(403, 'OOps! You are not authorized to proceed in this action.'));
+            next(new ForbiddenException('OOps! You are not authorized to proceed in this action.'));
         }
     }
 
@@ -160,13 +160,13 @@ class OffersController implements Controller {
                     }
                 }
             }).catch());
-            if (error) next(new DBException(422, 'DB ERROR'));
+            if (error) next(new UnprocessableEntityException('DB ERROR'));
             response.status(200).send({
                 message: "Success! Offer " + offer_id + " has been deleted!",
                 code: 200
             });
         } else {
-            next(new UsersException(403, 'OOps! You are not authorized to proceed in this action.'));
+            next(new ForbiddenException('OOps! You are not authorized to proceed in this action.'));
         }
     }
 }

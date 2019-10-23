@@ -9,8 +9,8 @@ const Email = require('email-templates');
 const email = new Email();
 
 // Exceptions
-import AuthenticationException from '../exceptions/AuthenticationException';
-import DBException from '../exceptions/AuthenticationException';
+import NotFoundException from '../exceptions/NotFound.exception';
+import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import DataStoredInToken from '../authInterfaces/dataStoredInToken';
@@ -37,6 +37,7 @@ import AccessDto from '../authDtos/access.params.dto'
 
 // Email
 import Transporter from '../utils/mailer'
+import NotFound from '../exceptions/NotFound.exception';
 
 class AuthenticationController implements Controller {
   public path = '/auth';
@@ -68,7 +69,7 @@ class AuthenticationController implements Controller {
     const data: RegisterWithPasswordDto = request.body;
 
     if (await this.user.findOne({ email: data.email })) {
-      next(new AuthenticationException(404, 'A user with these credentials already exists!'));
+      next(new NotFoundException('A user with these credentials already exists!'));
     } else {
       const hashedPassword = await bcrypt.hash(data.password, 10);
 
@@ -81,7 +82,7 @@ class AuthenticationController implements Controller {
       }).catch());
       request.params.email = data.email;
 
-      if (error) next(new DBException(422, 'DB ERROR'));
+      if (error) next(new UnprocessableEntityException('DB ERROR'));
       next();
     }
   }
@@ -99,7 +100,7 @@ class AuthenticationController implements Controller {
       restorationToken: false, restorationExpiration: false,
       verificationToken: false, verificationExpiration: false
     }).catch());
-    if (error) next(new DBException(422, 'DB ERROR'));
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
       if (user.verified) {
         const isPasswordMatching = await bcrypt.compare(data.password, user.password);
@@ -113,14 +114,14 @@ class AuthenticationController implements Controller {
             code: 200
           });
         } else {
-          next(new AuthenticationException(404, 'Wrong Credentials.'));
+          next(new NotFoundException('Wrong Credentials.'));
         }
       } else {
         request.params.email = data.email;
         next();
       }
     } else {
-      next(new AuthenticationException(404, 'No user with these credentials.'));
+      next(new NotFoundException('No user with these credentials.'));
     }
   }
 
@@ -137,7 +138,7 @@ class AuthenticationController implements Controller {
     const data: RegisterWithOutPasswordDto = request.body;
 
     if (await this.user.findOne({ email: data.email })) {
-      next(new AuthenticationException(404, 'A user with these credentials already exists!'));
+      next(new NotFoundException('A user with these credentials already exists!'));
     } else {
       const tempPassword = this.generateToken(10, 1).token;
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
@@ -149,7 +150,7 @@ class AuthenticationController implements Controller {
         verified: 'true',
         password: hashedPassword,
       }).catch());
-      if (error) next(new DBException(422, 'DB ERROR'));
+      if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
           name: data.name,
@@ -168,7 +169,7 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.findOne({
       _id: request.user._id
     }).catch());
-    if (error) next(new DBException(422, 'DB ERROR'));
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
       const isPasswordMatching = await bcrypt.compare(data.oldPassword, user.password);
       if (isPasswordMatching) {
@@ -183,16 +184,16 @@ class AuthenticationController implements Controller {
             password: hashedPassword
           }
         }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
           message: "Success! Your password has been Updated",
           code: 200
         });
       } else {
-        next(new AuthenticationException(404, 'Wrong Credentials.'));
+        next(new NotFoundException('Wrong Credentials.'));
       }
     } else {
-      next(new AuthenticationException(404, 'No user with these credentials.'));
+      next(new NotFoundException('No user with these credentials.'));
     }
   }
 
@@ -210,7 +211,7 @@ class AuthenticationController implements Controller {
           verificationExpiration: token.expiresAt
         }
       }).catch());
-      if (error) next(new DBException(422, 'DB ERROR'));
+      if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
           email: email
@@ -218,7 +219,7 @@ class AuthenticationController implements Controller {
       };
       next();
     } else {
-      next(new AuthenticationException(404, 'No user with these credentials.'));
+      next(new NotFoundException('No user with these credentials.'));
     }
   }
 
@@ -240,13 +241,13 @@ class AuthenticationController implements Controller {
           verificationExpiration: "",
         }
       }).catch());
-      if (error) next(new DBException(422, 'DB ERROR'));
+      if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your Email Address has been Verified",
         code: 200
       });
     } else {
-      next(new AuthenticationException(404, "Link is wrong or has been expired"));
+      next(new NotFoundException("Link is wrong or has been expired"));
     }
   }
 
@@ -265,7 +266,7 @@ class AuthenticationController implements Controller {
           restorationExpiration: token.expiresAt
         }
       }).catch());
-      if (error) next(new DBException(422, 'DB ERROR'));
+      if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
           email: email
@@ -273,7 +274,7 @@ class AuthenticationController implements Controller {
       };
       next();
     } else {
-      next(new AuthenticationException(404, 'No user with these credentials.'));
+      next(new NotFoundException('No user with these credentials.'));
     }
   }
 
@@ -289,7 +290,7 @@ class AuthenticationController implements Controller {
         code: 200
       });
     } else {
-      next(new AuthenticationException(404, "Link is wrong or has been expired."));
+      next(new NotFoundException("Link is wrong or has been expired."));
     }
   }
 
@@ -314,16 +315,16 @@ class AuthenticationController implements Controller {
             restorationExpiration: ""
           }
         }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
           message: "Success! You Password has been Updated!",
           code: 200
         });
       } else {
-        next(new AuthenticationException(404, "Link is wrong or has been expired."));
+        next(new NotFoundException("Link is wrong or has been expired."));
       }
     } else {
-      next(new AuthenticationException(404, "Password verification failed."));
+      next(new NotFoundException("Password verification failed."));
     }
   }
 
@@ -396,7 +397,7 @@ class AuthenticationController implements Controller {
       })
     );
 
-    if (error) next(new AuthenticationException(404, 'Email transmission failed'));
+    if (error) next(new NotFoundException('Email transmission failed'));
     else if (data.state === '1') { // Email Verification
       response.status(200).send({
         // ---- // // For Testing Purposes Only

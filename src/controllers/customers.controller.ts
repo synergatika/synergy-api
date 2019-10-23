@@ -2,8 +2,7 @@ import * as express from 'express';
 import to from 'await-to-ts'
 
 // Exceptions
-import UsersException from '../exceptions/UsersException';
-import DBException from '../exceptions/DBException';
+import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import User from '../usersInterfaces/user.interface';
@@ -42,7 +41,7 @@ class CustomersController implements Controller {
       offers: false, campaigns: false,
       updatedAt: false
     }).catch());
-    if (error) next(new DBException(422, 'DB ERROR'));
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
     user.password = undefined;
     response.status(200).send({
       data: user,
@@ -68,7 +67,7 @@ class CustomersController implements Controller {
         createdAt: '$createdAt'
       }
     }).catch());
-    if (error) next(new DBException(422, 'DB ERROR'));
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
 
     user.password = undefined;
     response.status(200).send({

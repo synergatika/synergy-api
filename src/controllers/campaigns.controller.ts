@@ -2,8 +2,8 @@ import * as express from 'express';
 import to from 'await-to-ts'
 
 // Exceptions
-import UsersException from '../exceptions/UsersException';
-import DBException from '../exceptions/DBException';
+import ForbiddenException from '../exceptions/Forbidden.exception';
+import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import Campaign from '../microfundInterfaces/campaign.interface';
@@ -59,7 +59,7 @@ class CampaignsController implements Controller {
             }
         }
         ]).exec().catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
             data: campaigns,
             code: 200
@@ -81,7 +81,7 @@ class CampaignsController implements Controller {
                 }
             }
         }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(201).send({
             message: "Success! A new campaign has been created!",
             code: 201
@@ -109,7 +109,7 @@ class CampaignsController implements Controller {
             }
         }
         ]).exec().catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
             data: campaigns,
             code: 200
@@ -125,7 +125,7 @@ class CampaignsController implements Controller {
             _id: merchant_id,
             'campaigns._id': campaign_id
         }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
             data: campaign,
             code: 200
@@ -151,13 +151,13 @@ class CampaignsController implements Controller {
                     'campaigns.$[].state': "checking"
                 }
             }).catch());
-            if (error) next(new DBException(422, 'DB ERROR'));
+            if (error) next(new UnprocessableEntityException('DB ERROR'));
             response.status(200).send({
                 message: "Success! Campaign " + campaign_id + " has been updated!",
                 code: 200
             });
         } else {
-            next(new UsersException(403, 'OOps! You are not authorized to proceed in this action.'));
+            next(new ForbiddenException('OOps! You are not authorized to proceed in this action.'));
         }
     }
 
@@ -176,13 +176,13 @@ class CampaignsController implements Controller {
                     }
                 }
             }).catch());
-            if (error) next(new DBException(422, 'DB ERROR'));
+            if (error) next(new UnprocessableEntityException('DB ERROR'));
             response.status(200).send({
                 message: "Success! Campaign " + campaign_id + " has been deleted!",
                 code: 200
             });
         } else {
-            next(new UsersException(403, 'OOps! You are not authorized to proceed in this action.'));
+            next(new ForbiddenException('OOps! You are not authorized to proceed in this action.'));
         }
     }
 
@@ -200,7 +200,7 @@ class CampaignsController implements Controller {
                 'campaigns.$[].state': "public"
             }
         }).catch());
-        if (error) next(new DBException(422, 'DB ERROR'));
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
             message: "Success! Campaign " + campaign_id + " has been verified!",
             code: 200
