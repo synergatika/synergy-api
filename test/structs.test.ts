@@ -5,7 +5,8 @@ var defaultCustomer = {
     email: "customer10@gmail.com",
     password: "customer10",
     authToken: '',
-    _id: ''
+    _id: '',
+
 };
 
 var defaultMerchant = {
@@ -13,14 +14,16 @@ var defaultMerchant = {
     email: "merchant10@gmail.com",
     password: "merchant10",
     authToken: '',
-    _id: ''
+    _id: '',
+
 };
 var defaultAdmin = {
     name: "Admin 10",
     email: "admin10@gmail.com",
     password: "admin10",
     authToken: '',
-    _id: ''
+    _id: '',
+
 };
 var newUser = { // Auto Registered
     name: "Customer El",
@@ -33,14 +36,16 @@ var newUser = { // Auto Registered
 var newCustomer = { // Registerd by Merchant
     name: "Invited Customer",
     email: "customer12@gmail.com",
-    password: '',
-    authToken: ''
+    password: 'customer12',
+    authToken: '',
+    tempPass: ''
 };
 var newMerchant = { // Registered by Admin
     name: "Merchant El",
     email: "merchant11@gmail.com",
     password: '',
-    authToken: ''
+    authToken: '',
+    tempPass: ''
 };
 
 type Offer = {

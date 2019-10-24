@@ -17,8 +17,19 @@ import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { array } from 'prop-types';
 
+describe("Establishing", () => {
+    it("1. should establish a new DB Connection", (done) => {
+        chai.request(`${process.env.API_URL}`)
+            .get("status")
+            .end((err, res) => {
+                res.should.have.status(200);
+                res.body.should.be.a('object');
+                res.body.should.have.property('data')
+                done();
+            })
+    });
+});
 describe("Test All in One", () => {
-
     before((done) => {
         connectToTheDatabase();
         function connectToTheDatabase() {
@@ -61,6 +72,8 @@ describe("Test All in One", () => {
                 access: 'customer',
                 verified: 'true',
                 password: hash,
+                email_verified: true,
+                pass_verified: true
             })
         })
     });
@@ -71,6 +84,8 @@ describe("Test All in One", () => {
                 access: 'merchant',
                 verified: 'true',
                 password: hash,
+                email_verified: true,
+                pass_verified: true
             })
         })
     });
@@ -81,6 +96,8 @@ describe("Test All in One", () => {
                 access: 'admin',
                 verified: 'true',
                 password: hash,
+                email_verified: true,
+                pass_verified: true
             })
         })
     });
@@ -350,11 +367,39 @@ describe("Test All in One", () => {
                     .end((err, res) => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
-                        newCustomer.password = res.body.tempData.password;
+                        newCustomer.tempPass = res.body.tempData.password;
                         done();
                     });
             });
-            it("4. should authenticate the new customer", (done) => {
+            it("4. sould NOT authenticate the new customer | as password is random and has not be changed", (done) => {
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate/")
+                    .send({
+                        email: newCustomer.email,
+                        password: newCustomer.tempPass
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('message');
+                        done();
+                    });
+            });
+            it("5. should set a new password", (done) => {
+                chai.request(`${process.env.API_URL}`)
+                    .put("auth/set_pass/" + newCustomer.email)
+                    .send({
+                        oldPassword: newCustomer.tempPass,
+                        newPassword: newCustomer.password
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('message');
+                        done();
+                    });
+            });
+            it("6. should authenticate the new customer", (done) => {
                 chai.request(`${process.env.API_URL}`)
                     .post("auth/authenticate/")
                     .send({
@@ -535,7 +580,7 @@ describe("Test All in One", () => {
                         res.should.have.status(200);
                         res.body.should.be.a('object');
                         res.body.should.have.property('message');
-                        newMerchant.password = res.body.tempData.password;
+                        newMerchant.tempPass = res.body.tempData.password;
                         done();
                     });
             });
@@ -552,7 +597,35 @@ describe("Test All in One", () => {
                         done();
                     });
             });
-            it("7. should authenticate the new merchant", (done) => {
+            it("7. sould NOT authenticate the new merchant | as password is random and has not be changed", (done) => {
+                chai.request(`${process.env.API_URL}`)
+                    .post("auth/authenticate/")
+                    .send({
+                        email: newMerchant.email,
+                        password: newMerchant.tempPass
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('message');
+                        done();
+                    });
+            });
+            it("8. should set a new password", (done) => {
+                chai.request(`${process.env.API_URL}`)
+                    .put("auth/set_pass/" + newMerchant.email)
+                    .send({
+                        oldPassword: newMerchant.tempPass,
+                        newPassword: newMerchant.password
+                    })
+                    .end((err, res) => {
+                        res.should.have.status(200);
+                        res.body.should.be.a('object');
+                        res.body.should.have.property('message');
+                        done();
+                    });
+            });
+            it("9. should authenticate the new merchant", (done) => {
                 chai.request(`${process.env.API_URL}`)
                     .post("auth/authenticate/")
                     .send({

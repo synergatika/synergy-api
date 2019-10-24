@@ -54,6 +54,7 @@ class AuthenticationController implements Controller {
     this.router.post(`${this.path}/logout`, authMiddleware, this.loggingOut);
 
     this.router.post(`${this.path}/register/:access`, authMiddleware, validationParamsMiddleware(AccessDto), accessMiddleware.registerWithoutPass, validationBodyMiddleware(RegisterWithOutPasswordDto), this.registerInside, this.emailSender);
+    this.router.put(`${this.path}/set_pass/:email`, validationParamsMiddleware(EmailDto), validationBodyMiddleware(ChangePassInDto), this.changePassMiddle);
 
     this.router.put(`${this.path}/change_pass`, authMiddleware, validationBodyMiddleware(ChangePassInDto), this.changePassInside);
 
@@ -77,11 +78,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.create({
         ...data,
         access: 'customer',
-        verified: 'false',
+        email_verified: false,
+        pass_verified: true,
         password: hashedPassword,
       }).catch());
       request.params.email = data.email;
-
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       next();
     }
@@ -102,17 +103,24 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
-      if (user.verified) {
+      if (user.email_verified) {
         const isPasswordMatching = await bcrypt.compare(data.password, user.password);
         if (isPasswordMatching) {
-          user.password = undefined;
-          response.status(200).send({
-            data: {
-              user: user,
-              token: this.createToken(user)
-            },
-            code: 200
-          });
+          if (user.pass_verified) {
+            user.password = undefined;
+            response.status(200).send({
+              data: {
+                user: user,
+                token: this.createToken(user)
+              },
+              code: 200
+            });
+          } else {
+            response.status(200).send({
+              message: "Please, update your password.",
+              code: 200
+            });
+          }
         } else {
           next(new NotFoundException('Wrong Credentials.'));
         }
@@ -147,7 +155,8 @@ class AuthenticationController implements Controller {
       [error, user] = await to(this.user.create({
         ...data,
         access: accesss,
-        verified: 'true',
+        email_verified: true,
+        pass_verified: false,
         password: hashedPassword,
       }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
@@ -197,9 +206,46 @@ class AuthenticationController implements Controller {
     }
   }
 
+  private changePassMiddle = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: ChangePassInDto = request.body;
+    const email: EmailDto["email"] = request.params.email;
+
+    let error: Error, user: User;
+    [error, user] = await to(this.user.findOne({
+      email: email, pass_verified: false
+    }).catch());
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    else if (user) {
+      const isPasswordMatching = await bcrypt.compare(data.oldPassword, user.password);
+      if (isPasswordMatching) {
+        user.password = undefined;
+        const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+
+        let error: Error, results: Object;
+        [error, results] = await to(this.user.updateOne({
+          email: email
+        }, {
+          $set: {
+            pass_verified: true,
+            password: hashedPassword
+          }
+        }).catch());
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
+        response.status(200).send({
+          message: "Success! Your password has been Updated",
+          code: 200
+        });
+      } else {
+        next(new NotFoundException('Wrong Credentials.'));
+      }
+    } else {
+      next(new NotFoundException('No user with these credentials.'));
+    }
+  }
+
   private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const email: EmailDto["email"] = request.params.email;
-    if (await this.user.findOne({ email: email, verified: false })) {
+    if (await this.user.findOne({ email: email, email_verified: false, pass_verified: true })) {
       const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
 
       let error: Error, results: Object;
@@ -228,13 +274,13 @@ class AuthenticationController implements Controller {
     const now = new Date()
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
-    if (await this.user.findOne({ verificationToken: data.token, verificationExpiration: { $gt: seconds }, verified: false })) {
+    if (await this.user.findOne({ verificationToken: data.token, verificationExpiration: { $gt: seconds }, email_verified: false, pass_verified: true })) {
       let error: Error, results: Object;
       [error, results] = await to(this.user.updateOne({
         verificationToken: data.token
       }, {
         $set: {
-          verified: true,
+          email_verified: true,
         },
         $unset: {
           verificationToken: "",
@@ -425,7 +471,6 @@ class AuthenticationController implements Controller {
     }
   }
 
-
   private createToken(user: User): TokenData {
     const expiresIn = parseInt(process.env.JWT_EXPIRATION); // an hour
     const secret = process.env.JWT_SECRET;
@@ -437,6 +482,10 @@ class AuthenticationController implements Controller {
       token: jwt.sign(dataStoredInToken, secret, { expiresIn }),
     };
   }
-}
 
+  private createAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  }
+  private updateAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  }
+}
 export default AuthenticationController;

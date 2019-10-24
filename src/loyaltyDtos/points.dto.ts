@@ -8,7 +8,7 @@ class PointsDto {
     public _to: string;
 
     @IsNumber()
-    public _points: number;
+    public _value: number;
 }
 
 export default PointsDto;

@@ -40,7 +40,8 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: String,
-  verified: Boolean,
+  email_verified: Boolean,
+  pass_verified: Boolean,
   imageURL: String,
   access: {
     type: String,
@@ -56,7 +57,7 @@ const userSchema = new mongoose.Schema({
   restorationExpiration: Number,
   verificationToken: String,
   verificationExpiration: Number,
-  //auth: authSchema,
+  // auth: authSchema,
   contact: contactSchema,
   offers: [offerSchema],
   campaigns: [campaignSchema]

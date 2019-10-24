@@ -9,7 +9,6 @@ import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 // Models

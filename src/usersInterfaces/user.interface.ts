@@ -8,7 +8,8 @@ interface User {
   password: string;
 
   access: string;
-  verified: boolean;
+  email_verified: boolean;
+  pass_verified: boolean;
   createdAt: Date;
 }
 

@@ -56,10 +56,10 @@ paths:
       operationId: authRegisterWithoutPass
       security:
         - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/access'
       tags:
         - authentication
+      parameters:
+        - $ref: '#/components/parameters/access'
       requestBody:
         $ref: '#/components/requestBodies/RegisterWithoutPassRequestBody'
       responses:
@@ -71,6 +71,26 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/DB_Error'
+
+  /auth/set_pass: 
+    put:
+      summary: "An invited user changes the password"
+      operationId: changePassMiddle
+      tags:
+        - authentication
+      parameters:
+        - $ref: '#/components/parameters/email'
+      requestBody:
+        $ref: '#/components/requestBodies/ChangePassInRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/Update'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
@@ -183,6 +203,7 @@ paths:
           $ref: '#/components/responses/Not_Found'
         '422':
           $ref: '#/components/responses/DB_Error'
+  
   # Paths: Profile & Merchant
   /profile:
     get:
