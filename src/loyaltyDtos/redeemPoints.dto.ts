@@ -1,6 +1,6 @@
 import { IsString, IsNumber } from 'class-validator';
 
-class PointsDto {
+class RedeemPointsDto {
     @IsString()
     public _from: string;
 
@@ -8,7 +8,7 @@ class PointsDto {
     public _to: string;
 
     @IsNumber()
-    public _value: number;
+    public _points: number;
 }
 
-export default PointsDto;
+export default RedeemPointsDto;

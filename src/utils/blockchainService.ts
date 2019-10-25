@@ -17,7 +17,7 @@ export class BlockchainService {
         return encAccount;
     }
 
-    unlockWallet(encAccount: string, password: string) {
+    unlockWallet(encAccount: Object, password: string) {
         return this.web3.eth.accounts.decrypt(encAccount, password);
     }
 

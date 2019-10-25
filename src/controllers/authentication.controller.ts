@@ -18,6 +18,8 @@ import TokenData from '../authInterfaces/tokenData.interface';
 import AuthTokenData from '../authInterfaces/authTokenData.interface';
 import User from '../usersInterfaces/user.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
+import Account from 'blockchainInterfaces/account.interface';
+
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
@@ -37,7 +39,8 @@ import AccessDto from '../authDtos/access.params.dto'
 
 // Email
 import Transporter from '../utils/mailer'
-import NotFound from '../exceptions/NotFound.exception';
+import { BlockchainService } from '../utils/BlockchainService';
+const serviceInstance = new BlockchainService('localhost', '/mnt/c/Users/Dimitris Sociality/Documents/Project - Synergy API/synergy-api/dist', process.env.BLOCKCHAIN_OWNER_PK);
 
 class AuthenticationController implements Controller {
   public path = '/auth';
@@ -49,21 +52,31 @@ class AuthenticationController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/register`, validationBodyMiddleware(RegisterWithPasswordDto), this.authRegister, this.askVerification, this.emailSender);
-    this.router.post(`${this.path}/authenticate`, validationBodyMiddleware(AuthenticationDto), this.authAuthenticate, this.askVerification, this.emailSender);
+    this.router.post(`${this.path}/register`, validationBodyMiddleware(RegisterWithPasswordDto),
+      this.authRegister, this.registerAccount, this.askVerification, this.emailSender);
+    this.router.post(`${this.path}/authenticate`, validationBodyMiddleware(AuthenticationDto),
+      this.authAuthenticate, this.askVerification, this.emailSender);
     this.router.post(`${this.path}/logout`, authMiddleware, this.loggingOut);
 
-    this.router.post(`${this.path}/register/:access`, authMiddleware, validationParamsMiddleware(AccessDto), accessMiddleware.registerWithoutPass, validationBodyMiddleware(RegisterWithOutPasswordDto), this.registerInside, this.emailSender);
-    this.router.put(`${this.path}/set_pass/:email`, validationParamsMiddleware(EmailDto), validationBodyMiddleware(ChangePassInDto), this.changePassMiddle);
+    this.router.post(`${this.path}/register/:access`, authMiddleware, validationParamsMiddleware(AccessDto), accessMiddleware.registerWithoutPass, validationBodyMiddleware(RegisterWithOutPasswordDto),
+      this.registerInside, this.registerAccount, this.emailSender);
+    this.router.put(`${this.path}/set_pass/:email`, validationParamsMiddleware(EmailDto), validationBodyMiddleware(ChangePassInDto),
+      this.changePassMiddle);
 
-    this.router.put(`${this.path}/change_pass`, authMiddleware, validationBodyMiddleware(ChangePassInDto), this.changePassInside);
+    this.router.put(`${this.path}/change_pass`, authMiddleware, validationBodyMiddleware(ChangePassInDto),
+      this.changePassInside);
 
-    this.router.get(`${this.path}/verify_email/:email`, validationParamsMiddleware(EmailDto), this.askVerification, this.emailSender);
-    this.router.post(`${this.path}/verify_email`, validationBodyMiddleware(CheckTokenDto), this.checkVerification);
+    this.router.get(`${this.path}/verify_email/:email`, validationParamsMiddleware(EmailDto),
+      this.askVerification, this.emailSender);
+    this.router.post(`${this.path}/verify_email`, validationBodyMiddleware(CheckTokenDto),
+      this.checkVerification);
 
-    this.router.get(`${this.path}/forgot_pass/:email`, validationParamsMiddleware(EmailDto), this.askRestoration, this.emailSender);
-    this.router.post(`${this.path}/forgot_pass`, validationBodyMiddleware(CheckTokenDto), this.checkRestoration);
-    this.router.put(`${this.path}/forgot_pass`, validationBodyMiddleware(ChangePassOutDto), this.changePassOutside);
+    this.router.get(`${this.path}/forgot_pass/:email`, validationParamsMiddleware(EmailDto),
+      this.askRestoration, this.emailSender);
+    this.router.post(`${this.path}/forgot_pass`, validationBodyMiddleware(CheckTokenDto),
+      this.checkRestoration);
+    this.router.put(`${this.path}/forgot_pass`, validationBodyMiddleware(ChangePassOutDto),
+      this.changePassOutside);
   }
 
   private authRegister = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -73,19 +86,58 @@ class AuthenticationController implements Controller {
       next(new NotFoundException('A user with these credentials already exists!'));
     } else {
       const hashedPassword = await bcrypt.hash(data.password, 10);
+      const account: Account = this.createAccount(data.password);
 
       let error: Error, results: User;
       [error, results] = await to(this.user.create({
         ...data,
         access: 'customer',
-        email_verified: false,
-        pass_verified: true,
+        email_verified: false, pass_verified: true,
         password: hashedPassword,
+        account: account
       }).catch());
       request.params.email = data.email;
       if (error) next(new UnprocessableEntityException('DB ERROR'));
+      response.locals = {
+        account: account,
+        user: {
+          email: data.email,
+          password: data.password
+        }
+      }
       next();
     }
+  }
+
+  private createAccount(password: string): Account {
+    const account: Account = serviceInstance.createWallet(password);
+    return account;
+  }
+
+  private registerAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    /* const data = response.locals;
+ 
+     const newAccount = serviceInstance.unlockWallet(data.account, data.user.password);
+     console.log(newAccount);
+     console.log(data.account);
+     console.log(serviceInstance.address);
+     let error: Error, res;
+     [error, res] = await to(serviceInstance.getLoyaltyAppContract()
+       .then(instance => {
+         console.log(typeof instance)
+         console.log("Done")
+         return instance.registerMember({ from: newAccount.address });
+       })
+       .catch(error => {
+         console.log(error)
+         console.log("Error");
+         return new NotFoundException('Blockchain Problem');
+       }));
+     if (error) next(new UnprocessableEntityException("Blockchain Error"));
+     console.log(error);
+     console.log(res);
+ */
+    next();
   }
 
   private authAuthenticate = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -116,9 +168,9 @@ class AuthenticationController implements Controller {
               code: 200
             });
           } else {
-            response.status(200).send({
+            response.status(204).send({
               message: "Please, update your password.",
-              code: 200
+              code: 204
             });
           }
         } else {
@@ -126,6 +178,9 @@ class AuthenticationController implements Controller {
         }
       } else {
         request.params.email = data.email;
+        response.locals = {
+          statusCode: 204
+        }
         next();
       }
     } else {
@@ -150,6 +205,7 @@ class AuthenticationController implements Controller {
     } else {
       const tempPassword = this.generateToken(10, 1).token;
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      const account: Account = this.createAccount(tempPassword);
 
       let error: Error, user: User;
       [error, user] = await to(this.user.create({
@@ -158,8 +214,10 @@ class AuthenticationController implements Controller {
         email_verified: true,
         pass_verified: false,
         password: hashedPassword,
+        account: account
       }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
+
       response.locals = {
         user: {
           name: data.name,
@@ -445,12 +503,13 @@ class AuthenticationController implements Controller {
 
     if (error) next(new NotFoundException('Email transmission failed'));
     else if (data.state === '1') { // Email Verification
-      response.status(200).send({
+
+      response.status(response.locals.statusCode || 200).send({
         // ---- // // For Testing Purposes Only
         tempData: { "token": data.token },
         // ---- //
         message: "Please, follow your link to Validate your Email.",
-        code: 200
+        code: response.locals.statusCode || 200
       });
     } else if (data.state === '2') { // Password Restoration
       response.status(200).send({
@@ -483,9 +542,5 @@ class AuthenticationController implements Controller {
     };
   }
 
-  private createAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-  }
-  private updateAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-  }
 }
 export default AuthenticationController;

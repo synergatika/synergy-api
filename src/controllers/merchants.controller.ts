@@ -16,8 +16,8 @@ import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../models/user.model';
 // Dtos
-import MerchantDto from '../usersDtos/merchant.dto'
-import MerchantID from '../usersDtos/merchant_id.params.dto'
+import MerchantDto from '../usersDtos/merchant.dto';
+import MerchantID from '../usersDtos/merchant_id.params.dto';
 
 class MerchantsController implements Controller {
     public path = '/merchants';
@@ -36,6 +36,7 @@ class MerchantsController implements Controller {
 
     private readMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         let error: Error, merchants: Merchant[];
+
         [error, merchants] = await to(this.user.find({
             access: 'merchant'
         }, {

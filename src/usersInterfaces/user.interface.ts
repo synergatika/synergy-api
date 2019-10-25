@@ -6,6 +6,12 @@ interface User {
 
   email: string;
   password: string;
+  account: {
+    version: number;
+    id: string;
+    address: string;
+    crypto: object;
+  };
 
   access: string;
   email_verified: boolean;

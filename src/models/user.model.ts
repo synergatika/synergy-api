@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose';
 import User from '../usersInterfaces/user.interface';
+import { object } from 'prop-types';
 
 const campaignSchema = new mongoose.Schema({
   description: String,
@@ -40,6 +41,10 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: String,
+  account: {
+    type: Object,
+    // required: true
+  },
   email_verified: Boolean,
   pass_verified: Boolean,
   imageURL: String,
