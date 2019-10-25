@@ -39,7 +39,7 @@ import AccessDto from '../authDtos/access.params.dto'
 
 // Email
 import Transporter from '../utils/mailer'
-import { BlockchainService } from '../utils/BlockchainService';
+import { BlockchainService } from '../utils/blockchainService';
 const serviceInstance = new BlockchainService('localhost', '/mnt/c/Users/Dimitris Sociality/Documents/Project - Synergy API/synergy-api/dist', process.env.BLOCKCHAIN_OWNER_PK);
 
 class AuthenticationController implements Controller {
