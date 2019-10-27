@@ -26,7 +26,7 @@ jobs:
         export CXX="g++-7"
         npm install -g npm@latest
         npm install -g ganache-cli truffle
-        npm install 
+        npm install
         npx ganache-cli -l 100000000 -m "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat" > /dev/null &
         truffle migrate
         cd ..
@@ -52,7 +52,7 @@ jobs:
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
         EMAIL_FROM: Synergy | A Social and Solidarity Economy Toolkit
-        ETH_API_ACCOUNT_PRIVKEY: 0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3
+        ETH_API_ACCOUNT_PRIVKEY: '0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
         ETH_REMOTE_API: localhost
         ETH_CONTRACTS_PATH: contracts
     - name: Publish to Registry
