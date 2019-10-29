@@ -1,6 +1,6 @@
 import * as express from 'express';
 import to from 'await-to-ts'
-import { ObjectId } from 'mongodb';
+var path = require('path');
 
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
@@ -17,6 +17,41 @@ import userModel from '../models/user.model';
 // Dtos
 import EarnPointsDto from '../loyaltyDtos/earnPoints.dto'
 import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto'
+// Eth
+import { BlockchainService } from '../utils/blockchainService';
+const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
+
+var accounts = [{
+    ad: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+    pk: '0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
+}, {
+    ad: '0xf17f52151EbEF6C7334FAD080c5704D77216b732',
+    pk: '0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f'
+}, {
+    ad: '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef',
+    pk: '0x0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1'
+}, {
+    ad: '0x821aEa9a577a9b44299B9c15c88cf3087F3b5544',
+    pk: '0xc88b703fb08cbea894b6aeff5a544fb92e78a18e19814cd85da83b71f772aa6c'
+}, {
+    ad: '0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2',
+    pk: '0x388c684f0ba1ef5017716adb5d21a053ea8e90277d0868337519f97bede61418'
+}, {
+    ad: '0x2932b7A2355D6fecc4b5c0B6BD44cC31df247a2e',
+    pk: '0x659cbb0e2411a44db63778987b1e22153c086a95eb6b18bdf89de078917abc63'
+}, {
+    ad: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5',
+    pk: '0x82d052c865f5763aad42add438569276c00d3d88a2d062d36b2bae914d58b8c8'
+}, {
+    ad: '0x0F4F2Ac550A1b4e2280d04c21cEa7EBD822934b5',
+    pk: '0xaa3680d5d48a8283413f7a108367c7299ca73f553735860a87b08f39395618b7'
+}, {
+    ad: '0x6330A553Fc93768F612722BB8c2eC78aC90B3bbc',
+    pk: '0x0f62d96d6675f32685bbdb8ac13cda7c23436f63efbb9d07700d8669ff12b7c4'
+}, {
+    ad: '0x5AEDA56215b167893e80B4fE645BA6d5Bab767DE',
+    pk: '0x8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5'
+}]
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
@@ -28,7 +63,7 @@ class LoyaltyController implements Controller {
     }
 
     private initializeRoutes() {
-        this.router.post(`${this.path}/earn`, validationBodyMiddleware(EarnPointsDto), this.earnToken);
+        this.router.post(`${this.path}/earn`, authMiddleware, validationBodyMiddleware(EarnPointsDto), this.earnToken);
 
         //this.router.post(`${this.path}/earn`, authMiddleware, accessMiddleware.onlyAsMerchant, validationBodyMiddleware(PointsDto), this.earnToken);
         this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, validationBodyMiddleware(RedeemPointsDto), this.redeemToken);
@@ -41,12 +76,11 @@ class LoyaltyController implements Controller {
 
         let error: Error, user: User;
         [error, user] = await to(this.user.findOne({
-            $or: [
-                { email: data._to },
-                {
-                    'account.address': data._to
-                }
-            ]
+            $or: [{
+                email: data._to
+            }, {
+                'account.address': data._to
+            }]
         }, {
             password: false, access: false,
             imageURL: false, sector: false,
@@ -64,15 +98,30 @@ class LoyaltyController implements Controller {
             });
         }
         const _points = this.amountToPoints(data._amount);
+
         // Here call blockchain with request.user.account.address & user.account.address & points
-        response.status(200).send({
-            data: {
-                _partnerAddress: request.user.account.address,
-                _memberAddress: user.account.address,
-                _points: _points
-            },
-            code: 200
-        });
+        await serviceInstance.getLoyaltyAppContract()
+            .then((result) => {
+                return result.earnPoints(_points, '0x627306090abaB3A6e1400e9345bC60c78a8BEf57', user.account.address, { from: request.user.account.address })
+                    .then((result: any) => {
+                        response.status(200).send({
+                            data: {
+                                _partnerAddress: request.user.account.address,
+                                _memberAddress: user.account.address,
+                                _points: _points
+                            },
+                            code: 200
+                        });
+                    })
+                    .catch((error: Error) => {
+                        console.log(error);
+                        next(new UnprocessableEntityException('Blockchain Error'))
+                    })
+            })
+            .catch((error) => {
+                console.log(error);
+                next(new UnprocessableEntityException('Blockchain Error'))
+            })
     }
 
     private redeemToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -80,12 +129,11 @@ class LoyaltyController implements Controller {
 
         let error: Error, user: User;
         [error, user] = await to(this.user.findOne({
-            $or: [
-                { email: data._to },
-                {
-                    'account.address': data._to
-                }
-            ]
+            $or: [{
+                email: data._to
+            }, {
+                'account.address': (data._to)
+            }]
         }, {
             password: false, access: false,
             imageURL: false, sector: false,
@@ -98,14 +146,28 @@ class LoyaltyController implements Controller {
         if (error) next(new UnprocessableEntityException('DB ERROR'));
 
         // Here call blockchain with request.user.account.address & user.account.address & points
-        response.status(200).send({
-            data: {
-                _partnerAddress: request.user.account.address,
-                _memberAddress: user.account.address,
-                _points: data._points
-            },
-            code: 200
-        });
+        await serviceInstance.getLoyaltyAppContract()
+            .then((result) => {
+                return result.usePoints(data._points, '0x627306090abaB3A6e1400e9345bC60c78a8BEf57', user.account.address)
+                    .then((result: any) => {
+                        response.status(200).send({
+                            data: {
+                                _partnerAddress: request.user.account.address,
+                                _memberAddress: user.account.address,
+                                _points: data._points
+                            },
+                            code: 200
+                        });
+                    })
+                    .catch((error: Error) => {
+                        console.log(error);
+                        next(new UnprocessableEntityException('Blockchain Error'))
+                    })
+            })
+            .catch((error) => {
+                console.log(error);
+                next(new UnprocessableEntityException('Blockchain Error'))
+            })
     }
 
     private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -130,7 +192,7 @@ class LoyaltyController implements Controller {
     }
 
     private amountToPoints(_amount: number): number {
-        const _points: number = Math.round(_amount * 0.001);
+        const _points: number = _amount;
         return _points;
     }
 }

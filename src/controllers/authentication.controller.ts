@@ -3,6 +3,7 @@ import * as express from 'express';
 import * as jwt from 'jsonwebtoken';
 import * as nodemailer from 'nodemailer';
 import to from 'await-to-ts';
+var path = require('path');
 
 import Promise from 'bluebird';
 const Email = require('email-templates');
@@ -37,10 +38,42 @@ import ChangePassOutDto from '../authDtos/changePassOut.dto'
 import EmailDto from '../authDtos/email.params.dto'
 import AccessDto from '../authDtos/access.params.dto'
 
+var accounts = [{
+  ad: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
+  pk: '0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
+}, {
+  ad: '0xf17f52151EbEF6C7334FAD080c5704D77216b732',
+  pk: '0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f'
+}, {
+  ad: '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef',
+  pk: '0x0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1'
+}, {
+  ad: '0x821aEa9a577a9b44299B9c15c88cf3087F3b5544',
+  pk: '0xc88b703fb08cbea894b6aeff5a544fb92e78a18e19814cd85da83b71f772aa6c'
+}, {
+  ad: '0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2',
+  pk: '0x388c684f0ba1ef5017716adb5d21a053ea8e90277d0868337519f97bede61418'
+}, {
+  ad: '0x2932b7A2355D6fecc4b5c0B6BD44cC31df247a2e',
+  pk: '0x659cbb0e2411a44db63778987b1e22153c086a95eb6b18bdf89de078917abc63'
+}, {
+  ad: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5',
+  pk: '0x82d052c865f5763aad42add438569276c00d3d88a2d062d36b2bae914d58b8c8'
+}, {
+  ad: '0x0F4F2Ac550A1b4e2280d04c21cEa7EBD822934b5',
+  pk: '0xaa3680d5d48a8283413f7a108367c7299ca73f553735860a87b08f39395618b7'
+}, {
+  ad: '0x6330A553Fc93768F612722BB8c2eC78aC90B3bbc',
+  pk: '0x0f62d96d6675f32685bbdb8ac13cda7c23436f63efbb9d07700d8669ff12b7c4'
+}, {
+  ad: '0x5AEDA56215b167893e80B4fE645BA6d5Bab767DE',
+  pk: '0x8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5'
+}]
 // Email
 import Transporter from '../utils/mailer'
+// Eth
 import { BlockchainService } from '../utils/blockchainService';
-const serviceInstance = new BlockchainService('localhost', '/mnt/c/Users/Dimitris Sociality/Documents/Project - Synergy API/synergy-api/dist', process.env.BLOCKCHAIN_OWNER_PK);
+const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
 class AuthenticationController implements Controller {
   public path = '/auth';
@@ -86,58 +119,101 @@ class AuthenticationController implements Controller {
       next(new NotFoundException('A user with these credentials already exists!'));
     } else {
       const hashedPassword = await bcrypt.hash(data.password, 10);
-      const account: Account = this.createAccount(data.password);
+      const account: Account = this.createAccount(data.email, data.password);
 
       let error: Error, results: User;
       [error, results] = await to(this.user.create({
         ...data,
-        access: 'customer',
+        access: 'customer', account: account,
         email_verified: false, pass_verified: true,
-        password: hashedPassword,
-        account: account
+        password: hashedPassword
       }).catch());
       request.params.email = data.email;
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
-        account: account,
         user: {
           email: data.email,
           password: data.password
-        }
+        }, account: account
       }
       next();
     }
   }
 
-  private createAccount(password: string): Account {
-    const account: Account = serviceInstance.createWallet(password);
+  private registerInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const accesss: AccessDto["access"] = request.params.access;
+    const data: RegisterWithOutPasswordDto = request.body;
+
+    if (await this.user.findOne({ email: data.email })) {
+      next(new NotFoundException('A user with these credentials already exists!'));
+    } else {
+      const tempPassword = this.generateToken(10, 1).token;
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      const account: Account = this.createAccount(data.email, tempPassword);
+
+      let error: Error, user: User;
+      [error, user] = await to(this.user.create({
+        ...data,
+        access: accesss, account: account,
+        email_verified: true,
+        pass_verified: false,
+        password: hashedPassword
+      }).catch());
+      if (error) next(new UnprocessableEntityException('DB ERROR'));
+
+      response.locals = {
+        user: {
+          name: data.name,
+          email: data.email,
+          password: tempPassword
+        }, account: account,
+        token: null, state: '3'
+      }
+      next();
+    }
+  }
+
+  private createAccount(email: string, password: string): Account {
+    // // Prod //
+    // const account: Account = serviceInstance.createWallet(password);
+
+    // // Dev //
+    var account: Account = { version: 0, id: '', address: '', crypto: {} };
+    if (email === 'customer11@gmail.com') {
+      account = serviceInstance.readyWallet(accounts[4].pk, password)
+    } else if (email === 'customer12@gmail.com') {
+      account = serviceInstance.readyWallet(accounts[5].pk, password)
+    } else if (email === 'merchant11@gmail.com') {
+      account = serviceInstance.readyWallet(accounts[6].pk, password)
+    }
     return account;
   }
 
   private registerAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    /* const data = response.locals;
- 
-     const newAccount = serviceInstance.unlockWallet(data.account, data.user.password);
-     console.log(newAccount);
-     console.log(data.account);
-     console.log(serviceInstance.address);
-     let error: Error, res;
-     [error, res] = await to(serviceInstance.getLoyaltyAppContract()
-       .then(instance => {
-         console.log(typeof instance)
-         console.log("Done")
-         return instance.registerMember({ from: newAccount.address });
-       })
-       .catch(error => {
-         console.log(error)
-         console.log("Error");
-         return new NotFoundException('Blockchain Problem');
-       }));
-     if (error) next(new UnprocessableEntityException("Blockchain Error"));
-     console.log(error);
-     console.log(res);
- */
-    next();
+    const data = response.locals;
+
+    const newAccount = serviceInstance.unlockWallet(data.account, data.user.password);
+    if ((!request.body.access) || (request.body.accesss === 'customer')) {
+      await serviceInstance.getLoyaltyAppContract().then((result) => {
+        return result.registerMember({ from: newAccount.address })
+          .then((result: any) => {
+            next()
+          })
+          .catch((error: Error) => {
+            next(new UnprocessableEntityException('Blockchain Error'))
+          })
+      });
+    } else if (request.body.accesss === 'merchant') {
+      await serviceInstance.getLoyaltyAppContract().then((result) => {
+        return result.registerPartner({ from: newAccount.address })
+          .then((result: any) => {
+            next()
+          })
+          .catch((error: Error) => {
+            next(new UnprocessableEntityException('Blockchain Error'))
+          })
+      });
+    }
   }
 
   private authAuthenticate = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -194,39 +270,6 @@ class AuthenticationController implements Controller {
       token: ""
     }
     response.status(200).send(token);
-  }
-
-  private registerInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const accesss: AccessDto["access"] = request.params.access;
-    const data: RegisterWithOutPasswordDto = request.body;
-
-    if (await this.user.findOne({ email: data.email })) {
-      next(new NotFoundException('A user with these credentials already exists!'));
-    } else {
-      const tempPassword = this.generateToken(10, 1).token;
-      const hashedPassword = await bcrypt.hash(tempPassword, 10);
-      const account: Account = this.createAccount(tempPassword);
-
-      let error: Error, user: User;
-      [error, user] = await to(this.user.create({
-        ...data,
-        access: accesss,
-        email_verified: true,
-        pass_verified: false,
-        password: hashedPassword,
-        account: account
-      }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
-
-      response.locals = {
-        user: {
-          name: data.name,
-          email: data.email,
-          password: tempPassword
-        }, token: null, state: '3'
-      }
-      next();
-    }
   }
 
   private changePassInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -303,6 +346,7 @@ class AuthenticationController implements Controller {
 
   private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const email: EmailDto["email"] = request.params.email;
+
     if (await this.user.findOne({ email: email, email_verified: false, pass_verified: true })) {
       const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
 
@@ -501,9 +545,8 @@ class AuthenticationController implements Controller {
       })
     );
 
-    if (error) next(new NotFoundException('Email transmission failed'));
+    if (error) next(new NotFoundException('Sending Email Fail'));
     else if (data.state === '1') { // Email Verification
-
       response.status(response.locals.statusCode || 200).send({
         // ---- // // For Testing Purposes Only
         tempData: { "token": data.token },

@@ -5,6 +5,7 @@ const contract: any = require("@truffle/contract");
 export class BlockchainService {
     private web3: any;
     public address: any;
+    public instance: any;
 
     constructor(private hostname: string, private path: string, private_key: string) {
         this.web3 = new Web3(Web3.givenProvider || `ws://${hostname}:8546`);
@@ -17,6 +18,11 @@ export class BlockchainService {
         return encAccount;
     }
 
+    readyWallet(pk: string, password: string) {
+        var encAccount = this.web3.eth.accounts.encrypt(pk, password);
+        return encAccount;
+    }
+
     unlockWallet(encAccount: Object, password: string) {
         return this.web3.eth.accounts.decrypt(encAccount, password);
     }
@@ -26,7 +32,6 @@ export class BlockchainService {
         const LoyaltyPointsContract = this.loadImplementationContract();
 
         const proxy = await PointsTokenStorageContract.deployed();
-
         return await LoyaltyPointsContract.at(proxy.address);
     }
 
