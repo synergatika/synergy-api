@@ -110,6 +110,7 @@ describe("Merchant", () => {
                     res.body.data.should.be.a('object');
                     res.body.data.should.have.property('user');
                     res.body.data.should.have.property('token');
+                    newCustomer.authToken = res.body.data.token.token;
                     done();
                 });
         });
