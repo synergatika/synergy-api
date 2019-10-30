@@ -18,8 +18,8 @@ export class BlockchainService {
         return encAccount;
     }
 
-    readyWallet(pk: string, password: string) {
-        var encAccount = this.web3.eth.accounts.encrypt(pk, password);
+    lockWallet(privateKey: string, password: string) {
+        var encAccount = this.web3.eth.accounts.encrypt(privateKey, password);
         return encAccount;
     }
 

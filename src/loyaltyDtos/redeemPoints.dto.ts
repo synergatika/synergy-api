@@ -2,7 +2,7 @@ import { IsString, IsNumber } from 'class-validator';
 
 class RedeemPointsDto {
     @IsString()
-    public _from: string;
+    public password: string;
 
     @IsString()
     public _to: string;

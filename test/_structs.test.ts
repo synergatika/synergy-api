@@ -43,7 +43,7 @@ var newCustomer = { // Registerd by Merchant
 var newMerchant = { // Registered by Admin
     name: "Merchant El",
     email: "merchant11@gmail.com",
-    password: '',
+    password: 'newMerchant',
     authToken: '',
     tempPass: ''
 };
