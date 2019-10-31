@@ -2,12 +2,12 @@ import * as express from 'express';
 import to from 'await-to-ts'
 
 // Exceptions
-import ForbiddenException from '../exceptions/Forbidden.exception';
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import Merchant from '../usersInterfaces/merchant.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
+import User from '../usersInterfaces/user.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
@@ -31,7 +31,7 @@ class MerchantsController implements Controller {
     private initializeRoutes() {
         this.router.get(`${this.path}`, this.readMerchants);
         this.router.get(`${this.path}/:merchant_id`, validationParamsMiddleware(MerchantID), this.readMerchantInfo);
-        this.router.put(`${this.path}/:merchant_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(MerchantID), validationBodyMiddleware(MerchantDto), this.updateMerchantInfo);
+        this.router.put(`${this.path}/:merchant_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(MerchantID), accessMiddleware.belongsTo, validationBodyMiddleware(MerchantDto), this.updateMerchantInfo);
     }
 
     private readMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -40,8 +40,8 @@ class MerchantsController implements Controller {
         [error, merchants] = await to(this.user.find({
             access: 'merchant'
         }, {
-            access: false,
-            password: false, verified: false,
+            access: false, password: false,
+            email_verified: false, pass_verified: false,
             updatedAt: false,
             offers: false, campaigns: false
         }).catch());
@@ -59,8 +59,8 @@ class MerchantsController implements Controller {
         [error, merchant] = await to(this.user.findOne({
             _id: merchant_id
         }, {
-            access: false,
-            password: false, verified: false,
+            access: false, password: false,
+            email_verified: false, pass_verified: false,
             updatedAt: false,
             offers: false, campaigns: false
         }).catch());
@@ -74,41 +74,41 @@ class MerchantsController implements Controller {
     private updateMerchantInfo = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
         const data: MerchantDto = request.body;
+        const user: User = request.user;
 
-        if ((request.user._id).toString() === (merchant_id).toString()) {
-            let error: Error, merchant: Merchant;
-            [error, merchant] = await to(this.user.findOneAndUpdate({
-                _id: request.user._id
-            }, {
-                $set: {
-                    name: data.name,
-                    imageURL: data.imageURL,
-                    sector: data.sector,
-                    contact: {
-                        websiteURL: data.contact.websiteURL,
-                        phone: data.contact.phone,
-                        address: {
-                            street: data.contact.address.street,
-                            city: data.contact.address.city,
-                            zipCode: data.contact.address.zipCode
-                        }
+        let error: Error, merchant: Merchant;
+        [error, merchant] = await to(this.user.findOneAndUpdate({
+            _id: merchant_id
+        }, {
+            $set: {
+                name: data.name,
+                imageURL: data.imageURL,
+                sector: data.sector,
+                contact: {
+                    websiteURL: data.contact.websiteURL,
+                    phone: data.contact.phone,
+                    address: {
+                        street: data.contact.address.street,
+                        city: data.contact.address.city,
+                        zipCode: data.contact.address.zipCode
                     }
                 }
-            }, {
-                projection: {
-                    name: '$name',
-                    imageURL: '$imageURL',
-                    contact: '$contact'
-                }
-            }).catch());
-            if (error) next(new UnprocessableEntityException('DB ERROR'));
-            response.status(200).send({
-                data: merchant,
-                code: 200
-            })
-        } else {
-            next(new ForbiddenException('OOps! You are not authorized to proceed in this action.'));
-        }
+            }
+        }, {
+            projection: {
+                email: '$email',
+                createdAt: '$createdAt',
+                name: '$name',
+                imageURL: '$imageURL',
+                sector: '$sector',
+                contact: '$contact'
+            }
+        }).catch());
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
+        response.status(200).send({
+            data: merchant,
+            code: 200
+        })
     }
 }
 

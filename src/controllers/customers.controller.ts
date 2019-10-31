@@ -6,11 +6,11 @@ import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exce
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import User from '../usersInterfaces/user.interface';
+import Customer from '../usersInterfaces/customer.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import authMiddleware from '../middleware/auth.middleware';
-// import accessMiddleware from '../middleware/access.middleware'
 // Models
 import userModel from '../models/user.model';
 // Dtos
@@ -31,29 +31,35 @@ class CustomersController implements Controller {
   }
 
   private readUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    let error: Error, user: User;
-    [error, user] = await to(this.user.findOne({
-      _id: request.user._id
+    const user: User = request.user;
+
+    let error: Error, customer: Customer;
+    [error, customer] = await to(this.user.findOne({
+      _id: user._id
     }, {
-      access: false, verified: false,
+      access: false,
+      email_verified: false, pass_verified: false,
       verificationToken: false, verificationExpiration: false,
       restorationToken: false, restorationExpiration: false,
       offers: false, campaigns: false,
       updatedAt: false
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
-    user.password = undefined;
+
+    customer.password = undefined;
     response.status(200).send({
-      data: user,
+      data: customer,
       code: 200
     });
   }
 
   private updateUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: CustomerDto = request.body;
-    let error: Error, user: User;
-    [error, user] = await to(this.user.findOneAndUpdate({
-      _id: request.user._id
+    const user: User = request.user;
+
+    let error: Error, customer: Customer;
+    [error, customer] = await to(this.user.findOneAndUpdate({
+      _id: user._id
     }, {
       $set: {
         name: data.name,
@@ -61,17 +67,17 @@ class CustomersController implements Controller {
       }
     }, {
       projection: {
-        name: '$name',
         email: '$email',
-        imageURL: '$imageURL',
-        createdAt: '$createdAt'
+        createdAt: '$createdAt',
+        name: '$name',
+        imageURL: '$imageURL'
       }
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
 
-    user.password = undefined;
+    customer.password = undefined;
     response.status(200).send({
-      data: user,
+      data: customer,
       code: 200
     });
   }

@@ -2,12 +2,12 @@ import * as express from 'express';
 import to from 'await-to-ts'
 
 // Exceptions
-import ForbiddenException from '../exceptions/Forbidden.exception';
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import Campaign from '../microfundInterfaces/campaign.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
+import User from '../usersInterfaces/user.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
@@ -36,8 +36,8 @@ class CampaignsController implements Controller {
         this.router.post(`${this.path}/campaigns`, authMiddleware, accessMiddleware.onlyAsMerchant, validationBodyMiddleware(CampaignDto), this.createCampaign);
         this.router.get(`${this.path}/campaigns/:merchant_id`, validationParamsMiddleware(MerchantID), this.readCampaignsByStore);
         this.router.get(`${this.path}/campaigns/:merchant_id/:campaign_id`, validationParamsMiddleware(CampaignID), this.readACampaign);
-        this.router.put(`${this.path}/campaigns/:merchant_id//:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), validationBodyMiddleware(CampaignDto), this.updateCampaign);
-        this.router.delete(`${this.path}/campaigns/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), this.deleteACampaign);
+        this.router.put(`${this.path}/campaigns/:merchant_id//:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, validationBodyMiddleware(CampaignDto), this.updateCampaign);
+        this.router.delete(`${this.path}/campaigns/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, this.deleteACampaign);
         this.router.put(`${this.path}/campaigns/:merchant_id/:campaign_id/verify`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(CampaignID), this.verifyCampaign);
     }
 
@@ -68,10 +68,10 @@ class CampaignsController implements Controller {
 
     private createCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: CampaignDto = request.body;
-
+        const user: User = request.user;
         let error: Error, results: Object; // {"n": 1, "nModified": 1, "ok": 1}
         [error, results] = await to(this.user.updateOne({
-            _id: request.user._id
+            _id: user._id
         }, {
             $push: {
                 campaigns: {
@@ -87,6 +87,7 @@ class CampaignsController implements Controller {
             code: 201
         });
     }
+
     private readCampaignsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
         const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
 
@@ -137,53 +138,45 @@ class CampaignsController implements Controller {
         const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
         const data: CampaignDto = request.body;
 
-        if ((request.user._id).toString() === (merchant_id).toString()) {
-            let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-            [error, results] = await to(this.user.updateOne({
-                _id: request.user._id,
-                'campaigns._id': campaign_id
-            }, {
-                $set:
-                {
-                    'campaigns.$[]._id': campaign_id,
-                    'campaigns.$[].descript': data.description,
-                    'campaigns.$[].expiresAt': data.expiresAt,
-                    'campaigns.$[].state': "checking"
-                }
-            }).catch());
-            if (error) next(new UnprocessableEntityException('DB ERROR'));
-            response.status(200).send({
-                message: "Success! Campaign " + campaign_id + " has been updated!",
-                code: 200
-            });
-        } else {
-            next(new ForbiddenException('OOps! You are not authorized to proceed in this action.'));
-        }
+        let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
+        [error, results] = await to(this.user.updateOne({
+            _id: merchant_id,
+            'campaigns._id': campaign_id
+        }, {
+            $set:
+            {
+                'campaigns.$[]._id': campaign_id,
+                'campaigns.$[].descript': data.description,
+                'campaigns.$[].expiresAt': data.expiresAt,
+                'campaigns.$[].state': "checking"
+            }
+        }).catch());
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
+        response.status(200).send({
+            message: "Success! Campaign " + campaign_id + " has been updated!",
+            code: 200
+        });
     }
 
     private deleteACampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
         const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
-        if ((request.user._id).toString() === (merchant_id).toString()) {
-            let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-            [error, results] = await to(this.user.updateOne({
-                _id: request.user._id
-            }, {
-                $pull: {
-                    campaigns: {
-                        _id: campaign_id
-                    }
+        let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
+        [error, results] = await to(this.user.updateOne({
+            _id: merchant_id
+        }, {
+            $pull: {
+                campaigns: {
+                    _id: campaign_id
                 }
-            }).catch());
-            if (error) next(new UnprocessableEntityException('DB ERROR'));
-            response.status(200).send({
-                message: "Success! Campaign " + campaign_id + " has been deleted!",
-                code: 200
-            });
-        } else {
-            next(new ForbiddenException('OOps! You are not authorized to proceed in this action.'));
-        }
+            }
+        }).catch());
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
+        response.status(200).send({
+            message: "Success! Campaign " + campaign_id + " has been deleted!",
+            code: 200
+        });
     }
 
     private verifyCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

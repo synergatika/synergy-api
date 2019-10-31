@@ -41,13 +41,13 @@ const userSchema = new mongoose.Schema({
   name: String,
   email: String,
   password: String,
+  imageURL: String,
+
   account: {
     type: Object,
     // required: true
   },
-  email_verified: Boolean,
-  pass_verified: Boolean,
-  imageURL: String,
+
   access: {
     type: String,
     enum: ['customer', 'merchant', 'admin'],
@@ -58,12 +58,15 @@ const userSchema = new mongoose.Schema({
     enum: ['None', 'B2B Services & Other Goods and Services', 'Durables', 'Durables (Technology)', 'Education', 'Food', 'Hotels, cafes and restaurants', 'Recreation and Culture'],
     default: 'None'
   },
+  contact: contactSchema,
+
+  email_verified: Boolean,
+  pass_verified: Boolean,
   restorationToken: String,
   restorationExpiration: Number,
   verificationToken: String,
   verificationExpiration: Number,
   // auth: authSchema,
-  contact: contactSchema,
   offers: [offerSchema],
   campaigns: [campaignSchema]
 }, {

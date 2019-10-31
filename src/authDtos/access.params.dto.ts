@@ -1,8 +1,8 @@
 import { IsEnum } from 'class-validator';
 
-class EmailDto {
+class AccessDto {
     @IsEnum(['customer', 'merchant'])
     public access: string;
 }
 
-export default EmailDto;
+export default AccessDto;

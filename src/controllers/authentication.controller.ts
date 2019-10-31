@@ -20,7 +20,6 @@ import AuthTokenData from '../authInterfaces/authTokenData.interface';
 import User from '../usersInterfaces/user.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import Account from 'blockchainInterfaces/account.interface';
-
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
@@ -109,7 +108,7 @@ class AuthenticationController implements Controller {
     this.router.post(`${this.path}/forgot_pass`, validationBodyMiddleware(CheckTokenDto),
       this.checkRestoration);
     this.router.put(`${this.path}/forgot_pass`, validationBodyMiddleware(ChangePassOutDto),
-      this.changePassOutside);
+      this.changePassOutside, this.registerAccount, this.recoverAccount);
   }
 
   private authRegister = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -123,13 +122,13 @@ class AuthenticationController implements Controller {
 
       let error: Error, results: User;
       [error, results] = await to(this.user.create({
-        ...data,
+        ...data, password: hashedPassword,
         access: 'customer', account: account,
-        email_verified: false, pass_verified: true,
-        password: hashedPassword
+        email_verified: false, pass_verified: true
       }).catch());
-      request.params.email = data.email;
       if (error) next(new UnprocessableEntityException('DB ERROR'));
+
+      request.params.email = data.email;
       response.locals = {
         user: {
           email: data.email,
@@ -153,11 +152,9 @@ class AuthenticationController implements Controller {
 
       let error: Error, user: User;
       [error, user] = await to(this.user.create({
-        ...data,
+        ...data, password: hashedPassword,
         access: accesss, account: account,
-        email_verified: true,
-        pass_verified: false,
-        password: hashedPassword
+        email_verified: true, pass_verified: false
       }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
 
@@ -180,11 +177,11 @@ class AuthenticationController implements Controller {
     // // Dev //
     var account: Account = { version: 0, id: '', address: '', crypto: {} };
     if (email === 'customer11@gmail.com') {
-      account = serviceInstance.lockWallet(accounts[7].pk, password)
+      account = serviceInstance.lockWallet(accounts[3].pk, password)
     } else if (email === 'customer12@gmail.com') {
-      account = serviceInstance.lockWallet(accounts[8].pk, password)
+      account = serviceInstance.lockWallet(accounts[4].pk, password)
     } else if (email === 'merchant11@gmail.com') {
-      account = serviceInstance.lockWallet(accounts[9].pk, password)
+      account = serviceInstance.lockWallet(accounts[5].pk, password)
     }
     return account;
   }
@@ -290,38 +287,29 @@ class AuthenticationController implements Controller {
 
   private changePassInside = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: ChangePassInDto = request.body;
+    const user: User = request.user;
 
-    let error: Error, user: User;
-    [error, user] = await to(this.user.findOne({
-      _id: request.user._id
-    }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
-    else if (user) {
-      const isPasswordMatching = await bcrypt.compare(data.oldPassword, user.password);
-      if (isPasswordMatching) {
-        user.password = undefined;
-        const hashedPassword = await bcrypt.hash(data.newPassword, 10);
-        // const account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, data.oldPassword)).privateKey, data.newPassword)
+    if (await bcrypt.compare(data.oldPassword, user.password)) { // Is password matching?
+      user.password = undefined;
+      const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+      const account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, data.oldPassword)).privateKey, data.newPassword)
 
-        let error: Error, results: Object;
-        [error, results] = await to(this.user.updateOne({
-          _id: request.user._id
-        }, {
-          $set: {
-            //     account: account,
-            password: hashedPassword
-          }
-        }).catch());
-        if (error) next(new UnprocessableEntityException('DB ERROR'));
-        response.status(200).send({
-          message: "Success! Your password has been Updated",
-          code: 200
-        });
-      } else {
-        next(new NotFoundException('Wrong Credentials.'));
-      }
+      let error: Error, results: Object;
+      [error, results] = await to(this.user.updateOne({
+        _id: user._id
+      }, {
+        $set: {
+          account: account,
+          password: hashedPassword
+        }
+      }).catch());
+      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      response.status(200).send({
+        message: "Success! Your password has been Updated",
+        code: 200
+      });
     } else {
-      next(new NotFoundException('No user with these credentials.'));
+      next(new NotFoundException('Wrong Credentials.'));
     }
   }
 
@@ -335,8 +323,7 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
-      const isPasswordMatching = await bcrypt.compare(data.oldPassword, user.password);
-      if (isPasswordMatching) {
+      if (await bcrypt.compare(data.oldPassword, user.password)) { // Is password matching?
         user.password = undefined;
         const hashedPassword = await bcrypt.hash(data.newPassword, 10);
         const account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, data.oldPassword)).privateKey, data.newPassword)
@@ -462,6 +449,32 @@ class AuthenticationController implements Controller {
     }
   }
 
+  private recoverAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data = response.locals;
+
+    await serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.recoverPoints(data.oldAccount.address, data.account.address, serviceInstance.address)
+          .then((result: any) => {
+            console.log(result);
+            console.log("OK - New Account: " + data.account.address + " | Old Account: " + data.oldAccount.address);
+            next();
+          })
+          .catch((error: Error) => {
+            console.log(error);
+            next(new UnprocessableEntityException('Blockchain Error'))
+          })
+      })
+      .catch((error: Error) => {
+        console.log(error);
+        next(new UnprocessableEntityException('Blockchain Error'))
+      })
+    response.status(200).send({
+      message: "Success! You Password has been Updated!",
+      code: 200
+    });
+  }
+
   private changePassOutside = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: ChangePassOutDto = request.body;
     const now = new Date();
@@ -470,13 +483,16 @@ class AuthenticationController implements Controller {
     if (data.newPassword === data.verPassword) {
       if (await this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } })) {
         const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+        const account = serviceInstance.lockWallet(accounts[6].pk, data.newPassword)
+        //const account: Account = this.createAccount(user.email, data.newPassword);
 
-        let error: Error, results: Object;
-        [error, results] = await to(this.user.updateOne({
+        let error: Error, user: User;
+        [error, user] = await to(this.user.findOneAndUpdate({
           restorationToken: data.token
         }, {
           $set: {
-            password: hashedPassword
+            password: hashedPassword,
+            account: account
           },
           $unset: {
             restorationToken: "",
@@ -484,10 +500,16 @@ class AuthenticationController implements Controller {
           }
         }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
-        response.status(200).send({
-          message: "Success! You Password has been Updated!",
-          code: 200
-        });
+
+        request.params.accesss = user.access;
+        response.locals = {
+          user: {
+            email: user.email,
+            password: data.newPassword
+          }, account: account,
+          oldAccount: user.account
+        }
+        next();
       } else {
         next(new NotFoundException("Link is wrong or has been expired."));
       }
@@ -546,8 +568,6 @@ class AuthenticationController implements Controller {
       //emailInfo.html = '<h4>Password included! Change it for your safety</h4>' + '<p>' + 'Your account' + ' | Password: '
       //+ data.user.password + ' | Email: ' + data.user.email + '</p>';
     }
-
-
 
     let error, res: object = {};
     [error, res] = await to(Promise.all([email.render(emailInfo.type, emailInfo.locals)])

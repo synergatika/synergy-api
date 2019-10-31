@@ -195,11 +195,6 @@ class LoyaltyController implements Controller {
             })
     }
 
-    private amountToPoints(_amount: number): number {
-        const _points: number = _amount;
-        return _points;
-    }
-
     private partnersInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         await serviceInstance.getLoyaltyAppContract()
             .then((instance) => {
@@ -245,6 +240,11 @@ class LoyaltyController implements Controller {
                 console.log(error);
                 next(new UnprocessableEntityException('Blockchain Error'))
             })
+    }
+
+    private amountToPoints(_amount: number): number {
+        const _points: number = _amount;
+        return _points;
     }
 }
 
