@@ -1,6 +1,8 @@
 import * as express from 'express';
 import to from 'await-to-ts'
 
+// Dtos
+import CustomerDto from '../usersDtos/customer.dto'
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
@@ -13,8 +15,7 @@ import validationBodyMiddleware from '../middleware/body.validation';
 import authMiddleware from '../middleware/auth.middleware';
 // Models
 import userModel from '../models/user.model';
-// Dtos
-import CustomerDto from '../usersDtos/customer.dto'
+
 
 class CustomersController implements Controller {
   public path = '/profile';

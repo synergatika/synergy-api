@@ -1,7 +1,13 @@
 import * as express from 'express';
 import to from 'await-to-ts'
 var path = require('path');
+// Eth
+import { BlockchainService } from '../utils/blockchainService';
+const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
+// Dtos
+import EarnPointsDto from '../loyaltyDtos/earnPoints.dto'
+import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto'
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
 // Interfaces
@@ -14,12 +20,6 @@ import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../models/user.model';
-// Dtos
-import EarnPointsDto from '../loyaltyDtos/earnPoints.dto'
-import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto'
-// Eth
-import { BlockchainService } from '../utils/blockchainService';
-const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
 var accounts =
     [{
@@ -103,9 +103,7 @@ class LoyaltyController implements Controller {
                     return instance.earnPoints(this.amountToPoints(data._amount), user.account.address, _partner, { from: accounts[0].ad })
                         .then((results: any) => {
                             response.status(200).send({
-                                data: {
-                                    results
-                                },
+                                data: results,
                                 code: 200
                             });
                         })
@@ -153,9 +151,7 @@ class LoyaltyController implements Controller {
                     return instance.usePoints(data._points, user.account.address, _partner, { from: accounts[0].ad })
                         .then((results: any) => {
                             response.status(200).send({
-                                data: {
-                                    results
-                                },
+                                data: results,
                                 code: 200
                             });
                         })
@@ -178,9 +174,7 @@ class LoyaltyController implements Controller {
                 return instance.members(_member)
                     .then((results: any) => {
                         response.status(200).send({
-                            data: {
-                                results
-                            },
+                            data: results,
                             code: 200
                         });
                     })
@@ -201,9 +195,7 @@ class LoyaltyController implements Controller {
                 return instance.partnersInfoLength()
                     .then((results: any) => {
                         response.status(200).send({
-                            data: {
-                                results
-                            },
+                            data: results,
                             code: 200
                         });
                     })
@@ -225,9 +217,7 @@ class LoyaltyController implements Controller {
                 return instance.transactionsInfoLength()
                     .then((results: any) => {
                         response.status(200).send({
-                            data: {
-                                results
-                            },
+                            data: results,
                             code: 200
                         });
                     })

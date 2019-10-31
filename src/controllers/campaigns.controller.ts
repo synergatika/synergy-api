@@ -1,6 +1,11 @@
 import * as express from 'express';
 import to from 'await-to-ts'
+import { ObjectId } from 'mongodb';
 
+// Dtos
+import CampaignDto from '../microfundDtos/campaign.dto'
+import MerchantID from '../usersDtos/merchant_id.params.dto'
+import CampaignID from '../microfundDtos/campaign_id.params.dto'
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
@@ -15,12 +20,6 @@ import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware'
 // Models
 import userModel from '../models/user.model';
-// Dtos
-import CampaignDto from '../microfundDtos/campaign.dto'
-import { ObjectId } from 'mongodb';
-
-import MerchantID from '../usersDtos/merchant_id.params.dto'
-import CampaignID from '../microfundDtos/campaign_id.params.dto'
 
 class CampaignsController implements Controller {
     public path = '/profile';

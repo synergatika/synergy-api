@@ -1,6 +1,8 @@
 import { plainToClass } from 'class-transformer';
 import { validate, ValidationError } from 'class-validator';
 import * as express from 'express';
+
+// Exceptions
 import HttpException from '../exceptions/HttpException';
 
 function validationBody<T>(type: any): express.RequestHandler {

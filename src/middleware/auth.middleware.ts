@@ -1,8 +1,12 @@
 import { NextFunction, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
+
+// Exceptions
 import UnauthorizedException from '../exceptions/Unauthorized.exception';
+// Interfaces
 import DataStoredInToken from '../authInterfaces/dataStoredInToken';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
+// Models
 import userModel from '../models/user.model';
 
 async function authMiddleware(request: RequestWithUser, response: Response, next: NextFunction) {

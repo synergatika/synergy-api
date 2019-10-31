@@ -2,10 +2,10 @@ import * as express from 'express';
 import * as mongoose from 'mongoose';
 import to from 'await-to-ts';
 
-// Interfaces
-import Controller from '../interfaces/controller.interface';
 // Exceptions
 import NotFoundException from '../exceptions/NotFound.exception';
+// Interfaces
+import Controller from '../interfaces/controller.interface';
 
 class HelpController implements Controller {
     public path = '/status';

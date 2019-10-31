@@ -1,15 +1,16 @@
 import { NextFunction, Response } from 'express';
 import * as bcrypt from 'bcrypt';
 
+// Dtos
+import AccessDto from '../authDtos/access.params.dto';
+// Exceptions
+import ForbiddenException from '../exceptions/Forbidden.exception';
 // Interfaces
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
-// Exceptions
-import ForbiddenException from '../exceptions/Forbidden.exception';
-// Model
+// Models
 import userModel from '../models/user.model';
-// Dtos
-import AccessDto from '../authDtos/access.params.dto';
+
 
 
 class AccessMiddleware {

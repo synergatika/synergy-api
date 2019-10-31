@@ -1,8 +1,10 @@
 import { plainToClass } from 'class-transformer';
 import { validate, ValidationError } from 'class-validator';
 import * as express from 'express';
+
+// Exceptions
 import HttpException from '../exceptions/HttpException';
- 
+
 function validationParams<T>(type: any): express.RequestHandler {
   return (req, res, next) => {
 
@@ -18,5 +20,5 @@ function validationParams<T>(type: any): express.RequestHandler {
       });
   };
 }
- 
+
 export default validationParams;

@@ -1,5 +1,7 @@
 import 'dotenv/config';
 import App from './app';
+
+// Controllers
 import AuthenticationController from './controllers/authentication.controller';
 import CustomersController from './controllers/customers.controller';
 import MerchantsController from './controllers/merchants.controller';

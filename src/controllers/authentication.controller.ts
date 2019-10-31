@@ -4,11 +4,25 @@ import * as jwt from 'jsonwebtoken';
 import * as nodemailer from 'nodemailer';
 import to from 'await-to-ts';
 var path = require('path');
-
 import Promise from 'bluebird';
+
+// Email
+import Transporter from '../utils/mailer'
 const Email = require('email-templates');
 const email = new Email();
+// Eth
+import { BlockchainService } from '../utils/blockchainService';
+const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
+// Dtos
+import AuthenticationDto from '../authDtos/authentication.dto';
+import RegisterWithPasswordDto from '../authDtos/registerWithPassword.dto';
+import RegisterWithOutPasswordDto from '../authDtos/registerWithOutPassword.dto';
+import CheckTokenDto from '../authDtos/checkToken.dto'
+import ChangePassInDto from '../authDtos/changePassIn.dto'
+import ChangePassOutDto from '../authDtos/changePassOut.dto'
+import EmailDto from '../authDtos/email.params.dto'
+import AccessDto from '../authDtos/access.params.dto'
 // Exceptions
 import NotFoundException from '../exceptions/NotFound.exception';
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
@@ -19,7 +33,7 @@ import TokenData from '../authInterfaces/tokenData.interface';
 import AuthTokenData from '../authInterfaces/authTokenData.interface';
 import User from '../usersInterfaces/user.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import Account from 'blockchainInterfaces/account.interface';
+import Account from 'interfaces/account.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
@@ -27,15 +41,6 @@ import accessMiddleware from '../middleware/access.middleware';
 import authMiddleware from '../middleware/auth.middleware';
 // Models
 import userModel from '../models/user.model';
-// Dtos
-import AuthenticationDto from '../authDtos/authentication.dto';
-import RegisterWithPasswordDto from '../authDtos/registerWithPassword.dto';
-import RegisterWithOutPasswordDto from '../authDtos/registerWithOutPassword.dto';
-import CheckTokenDto from '../authDtos/checkToken.dto'
-import ChangePassInDto from '../authDtos/changePassIn.dto'
-import ChangePassOutDto from '../authDtos/changePassOut.dto'
-import EmailDto from '../authDtos/email.params.dto'
-import AccessDto from '../authDtos/access.params.dto'
 
 var accounts = [{ //0
   ad: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
@@ -68,11 +73,6 @@ var accounts = [{ //0
   ad: '0x5AEDA56215b167893e80B4fE645BA6d5Bab767DE',
   pk: '0x8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5'
 }]
-// Email
-import Transporter from '../utils/mailer'
-// Eth
-import { BlockchainService } from '../utils/blockchainService';
-const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
 class AuthenticationController implements Controller {
   public path = '/auth';
