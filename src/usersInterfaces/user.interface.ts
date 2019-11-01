@@ -14,6 +14,8 @@ interface User {
   email_verified: boolean;
   pass_verified: boolean;
   createdAt: Date;
+
+  previousAccounts: Object;
 }
 
 export default User;

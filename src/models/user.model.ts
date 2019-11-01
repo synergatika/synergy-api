@@ -68,7 +68,8 @@ const userSchema = new mongoose.Schema({
   verificationExpiration: Number,
   // auth: authSchema,
   offers: [offerSchema],
-  campaigns: [campaignSchema]
+  campaigns: [campaignSchema],
+  previousAccounts: [Object]
 }, {
   timestamps: true
 });

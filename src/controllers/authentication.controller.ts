@@ -118,8 +118,11 @@ class AuthenticationController implements Controller {
       next(new NotFoundException('A user with these credentials already exists!'));
     } else {
       const hashedPassword = await bcrypt.hash(data.password, 10);
+      // -- //
+      // const account: Account = serviceInstance.createWallet(data.password);
+      // -- //
       const account: Account = this.createAccount(data.email, data.password);
-
+      // -- //
       let error: Error, results: User;
       [error, results] = await to(this.user.create({
         ...data, password: hashedPassword,
@@ -148,8 +151,11 @@ class AuthenticationController implements Controller {
     } else {
       const tempPassword = this.generateToken(10, 1).token;
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      // -- //
+      // const account: Account = serviceInstance.createWallet(data.password);
+      // -- //
       const account: Account = this.createAccount(data.email, tempPassword);
-
+      // -- //
       let error: Error, user: User;
       [error, user] = await to(this.user.create({
         ...data, password: hashedPassword,
@@ -188,9 +194,10 @@ class AuthenticationController implements Controller {
 
   private registerAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data = response.locals;
+    const access = request.params.access;
 
     const newAccount = serviceInstance.unlockWallet(data.account, data.user.password);
-    if ((!request.params.access) || (request.params.access === 'customer')) {
+    if ((!access) || (access === 'customer')) {
       await serviceInstance.getLoyaltyAppContract()
         .then((instance) => {
           return instance.registerMember({ from: newAccount.address })
@@ -208,7 +215,7 @@ class AuthenticationController implements Controller {
           console.log(error);
           next(new UnprocessableEntityException('Blockchain Error'))
         })
-    } else if (request.params.access === 'merchant') {
+    } else if (access === 'merchant') {
       await serviceInstance.getLoyaltyAppContract()
         .then((instance) => {
           return instance.registerPartner(newAccount.address, serviceInstance.address)
@@ -481,35 +488,35 @@ class AuthenticationController implements Controller {
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
     if (data.newPassword === data.verPassword) {
-      /*if (await this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } })) {
-        const hashedPassword = await bcrypt.hash(data.newPassword, 10);
-        const account = serviceInstance.lockWallet(accounts[6].pk, data.newPassword)*/
-      //const account: Account = this.createAccount(user.email, data.newPassword);
 
-
-
-      let err: Error, us: User;
-      [err, us] = await to(this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } }).catch());
-      if (us) {
+      let error: Error, user: User;
+      [error, user] = await to(this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } }).catch());
+      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      else if (user) {
         var hashedPassword = await bcrypt.hash(data.newPassword, 10);
+        // -- //
+        // const account = serviceInstance.createWallet(data.newPassword)
+        // -- //
         var account: Account = { version: 0, id: '', address: '', crypto: {} };
-        if (us.email === 'customer11@gmail.com') {
+        if (user.email === 'customer11@gmail.com') {
           hashedPassword = await bcrypt.hash(data.newPassword, 10);
           account = serviceInstance.lockWallet(accounts[6].pk, data.newPassword)
         } else {
           hashedPassword = await bcrypt.hash(data.newPassword, 10);
           account = serviceInstance.lockWallet(accounts[7].pk, data.newPassword)
         }
+        // -- //
 
-
-
-        let error: Error, user: User;
-        [error, user] = await to(this.user.findOneAndUpdate({
+        let error: Error, results: Object;
+        [error, results] = await to(this.user.updateOne({
           restorationToken: data.token
         }, {
           $set: {
             password: hashedPassword,
             account: account
+          },
+          $push: {
+            previousAccounts: user.account
           },
           $unset: {
             restorationToken: "",
