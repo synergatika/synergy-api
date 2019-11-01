@@ -7,7 +7,7 @@ const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.j
 
 // Dtos
 import EarnPointsDto from '../loyaltyDtos/earnPoints.dto'
-import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto'
+import RedeemPointsDto from '../loyaltyDtos/usePoints.dto'
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
 // Interfaces
@@ -65,7 +65,7 @@ class LoyaltyController implements Controller {
 
     private initializeRoutes() {
         this.router.post(`${this.path}/earn`, authMiddleware, accessMiddleware.confirmPassword,/*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), this.earnToken);
-        this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.confirmPassword, validationBodyMiddleware(RedeemPointsDto), this.redeemToken);
+        this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.confirmPassword, validationBodyMiddleware(RedeemPointsDto), this.useToken);
         this.router.get(`${this.path}/balance`, authMiddleware, this.readBalance);
         this.router.get(`${this.path}/partners`, authMiddleware, this.partnersInfoLength);
         this.router.get(`${this.path}/transactions`, authMiddleware, this.transactionsInfoLength);
@@ -119,7 +119,7 @@ class LoyaltyController implements Controller {
         }
     }
 
-    private redeemToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private useToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: RedeemPointsDto = request.body;
         const _partner = (serviceInstance.unlockWallet(request.user.account, data.password)).address;
 

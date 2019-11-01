@@ -244,9 +244,9 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
-      if (user.email_verified) {
-        const isPasswordMatching = await bcrypt.compare(data.password, user.password);
-        if (isPasswordMatching) {
+      const isPasswordMatching = await bcrypt.compare(data.password, user.password);
+      if (isPasswordMatching) {
+        if (user.email_verified) {
           if (user.pass_verified) {
             user.password = undefined;
             response.status(200).send({
@@ -263,14 +263,14 @@ class AuthenticationController implements Controller {
             });
           }
         } else {
-          next(new NotFoundException('Wrong Credentials.'));
+          request.params.email = data.email;
+          response.locals = {
+            statusCode: 204
+          }
+          next();
         }
       } else {
-        request.params.email = data.email;
-        response.locals = {
-          statusCode: 204
-        }
-        next();
+        next(new NotFoundException('Wrong Credentials.'));
       }
     } else {
       next(new NotFoundException('No user with these credentials.'));
@@ -319,7 +319,7 @@ class AuthenticationController implements Controller {
 
     let error: Error, user: User;
     [error, user] = await to(this.user.findOne({
-      email: email, pass_verified: false
+      email: email, email_verified: true, pass_verified: false
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
@@ -380,7 +380,7 @@ class AuthenticationController implements Controller {
 
   private checkVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: CheckTokenDto = request.body;
-    const now = new Date()
+    const now = new Date();
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
     if (await this.user.findOne({ verificationToken: data.token, verificationExpiration: { $gt: seconds }, email_verified: false, pass_verified: true })) {
@@ -468,7 +468,7 @@ class AuthenticationController implements Controller {
       .catch((error: Error) => {
         console.log(error);
         next(new UnprocessableEntityException('Blockchain Error'))
-      })
+      });
     response.status(200).send({
       message: "Success! You Password has been Updated!",
       code: 200
@@ -481,10 +481,27 @@ class AuthenticationController implements Controller {
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
     if (data.newPassword === data.verPassword) {
-      if (await this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } })) {
+      /*if (await this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } })) {
         const hashedPassword = await bcrypt.hash(data.newPassword, 10);
-        const account = serviceInstance.lockWallet(accounts[6].pk, data.newPassword)
-        //const account: Account = this.createAccount(user.email, data.newPassword);
+        const account = serviceInstance.lockWallet(accounts[6].pk, data.newPassword)*/
+      //const account: Account = this.createAccount(user.email, data.newPassword);
+
+
+
+      let err: Error, us: User;
+      [err, us] = await to(this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } }).catch());
+      if (us) {
+        var hashedPassword = await bcrypt.hash(data.newPassword, 10);
+        var account: Account = { version: 0, id: '', address: '', crypto: {} };
+        if (us.email === 'customer11@gmail.com') {
+          hashedPassword = await bcrypt.hash(data.newPassword, 10);
+          account = serviceInstance.lockWallet(accounts[6].pk, data.newPassword)
+        } else {
+          hashedPassword = await bcrypt.hash(data.newPassword, 10);
+          account = serviceInstance.lockWallet(accounts[7].pk, data.newPassword)
+        }
+
+
 
         let error: Error, user: User;
         [error, user] = await to(this.user.findOneAndUpdate({
@@ -569,10 +586,10 @@ class AuthenticationController implements Controller {
       //+ data.user.password + ' | Email: ' + data.user.email + '</p>';
     }
 
-    let error, res: object = {};
-    [error, res] = await to(Promise.all([email.render(emailInfo.type, emailInfo.locals)])
-      .then((res: object) => {
-        emailInfo.html = res.toString();
+    let error, results: object = {};
+    [error, results] = await to(Promise.all([email.render(emailInfo.type, emailInfo.locals)])
+      .then((template: object) => {
+        emailInfo.html = template.toString();
         var mailOptions: nodemailer.SendMailOptions = {
           from: process.env.EMAIL_FROM, //'Fred Foo ✔ <dimitris.sec@gmail.com>', // sender address
           to: 'dmytakis@gmail.com', // Dev

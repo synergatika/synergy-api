@@ -38,6 +38,7 @@ var newCustomer = { // Registerd by Merchant
     email: "customer12@gmail.com",
     password: 'customer12',
     authToken: '',
+    restorationToken: '',
     tempPass: ''
 };
 var newMerchant = { // Registered by Admin

@@ -24,13 +24,13 @@ paths:
         '200':
           $ref: '#/components/responses/Authenticate'
         '204':
-         $ref: '#/components/responses/EmailSend'
+         $ref: '#/components/responses/Need_Verification'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /auth/register:
     post:
@@ -48,7 +48,7 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /auth/register/{access}:
     post:
@@ -74,7 +74,7 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /auth/set_pass: 
     put:
@@ -94,7 +94,7 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /auth/change_pass:
     put:
@@ -116,7 +116,7 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /auth/verify_email/{email}:
     get:
@@ -134,7 +134,7 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
   /auth/verify_email:
     post:
       summary: "Checks if link is valid and verify email"
@@ -151,7 +151,7 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /auth/forgot_pass/{email}:
     get:
@@ -169,7 +169,7 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
   /auth/forgot_pass:
     post:
       summary: "Checks if link is valid and procced"
@@ -186,7 +186,7 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
     put:
       summary: "A no logged in user changes the password"
       operationId: changePassOutside
@@ -202,7 +202,7 @@ paths:
         '404':
           $ref: '#/components/responses/Not_Found'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
   
   # Paths: Profile & Merchant
   /profile:
@@ -219,7 +219,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
     put:
       summary: "Update user's profile info (only for customers)"
       operationId: updateUserProfile
@@ -237,7 +237,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /merchants:
     get:
@@ -249,7 +249,7 @@ paths:
         '200':
           $ref: '#/components/responses/Merchants'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /merchants/{merchant_id}:
     get:
@@ -265,7 +265,7 @@ paths:
         '400':
           $ref: '#/components/responses/Bad_Request'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
     put:
       summary: "Update merchant's info"
       operationId: updateMerchantInfo
@@ -287,7 +287,72 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  # Paths: Loyalty
+  /loyalty/earn:
+    post:
+      summary: ""
+      operationId: earnToken
+      security:
+        - bearerAuth: []      
+      tags:
+        - loyalty
+      requestBody:
+        $ref: '#/components/requestBodies/EarnTokenRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/Update'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /loyalty/redeem:
+    post:
+      summary: ""
+      operationId: useToken
+      security:
+        - bearerAuth: []
+      tags:
+        - loyalty
+      requestBody:
+        $ref: '#/components/requestBodies/UseTokenRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/Update'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /loyalty/balance:
+    post:
+      summary: ""
+      operationId: readBalance
+      security:
+        - bearerAuth: []
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Balance'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   # Paths: Loyalty - Offers
   /loyalty/offers:
@@ -300,7 +365,7 @@ paths:
         '200':
           $ref: '#/components/responses/Offers'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
     post:
       summary: "Create a new offer"
       operationId: createOffer
@@ -320,7 +385,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /loyalty/offers/{merchant_id}:
     get:
@@ -336,7 +401,7 @@ paths:
         '400':
           $ref: '#/components/responses/Bad_Request'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /loyalty/offers/{merchant_id}/{offer_id}:
     put:
@@ -361,7 +426,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
     delete:
       summary: "Delete an Offer"
       operationId: deleteOffer
@@ -382,7 +447,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   # Paths: Microfund - Campaigns
   /microfund/campaigns:
@@ -395,7 +460,7 @@ paths:
         '200':
           $ref: '#/components/responses/Campaigns'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
     post:
       summary: "Create a new campaign"
       operationId: createCampaign
@@ -415,7 +480,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /microfund/campaigns/{merchant_id}:
     get:
@@ -431,7 +496,7 @@ paths:
         '400':
           $ref: '#/components/responses/Bad_Request'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /microfund/campaigns/{merchant_id}/{campaign_id}:
     get:
@@ -448,7 +513,7 @@ paths:
         '400':
           $ref: '#/components/responses/Bad_Request'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
     put:
       summary: "Update an Campaign"
       operationId: updateCampaign
@@ -471,7 +536,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
     delete:
       summary: "Delete an Campaign"
       operationId: deleteCampaign
@@ -492,7 +557,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /microfund/campaigns/{merchant_id}/{campaign_id}/verify:
     put:
@@ -515,7 +580,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/DB_Error'
+          $ref: '#/components/responses/Unprocessable_Entity'
 
 components:
   parameters:
@@ -622,6 +687,26 @@ components:
             $ref: '#/components/schemas/MerchantDto'
 
     # Loyalty
+    EarnTokenRequestBody:      
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/EarnPointsEmailDto'
+              - $ref: '#/components/schemas/EarnPointsAddressDto'
+        
+    UseTokenRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/UsePointsEmailDto'
+              - $ref: '#/components/schemas/UsePointsAddressDto'
+
     OfferRequestBody:
       description: ""
       required: true
@@ -692,7 +777,8 @@ components:
               code:
                 type: number
                 default: 200
-    # Loaylty - Offers
+          
+    # Loyalty - Offers
     Offers:
       description: Expected response to a valid request
       content:
@@ -720,6 +806,22 @@ components:
               cost: 2000
               description: "1+1 Burger"
               expiresAt: "2019-11-10"
+    Balance:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Balance"
+              code:
+                type: number
+                default: 200
+          example:
+            memberAddress: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5'
+            points: 50
+            isRegistered: true
 
     # Microfund - Campaigns
     Campaign:
@@ -746,7 +848,16 @@ components:
               code:
                 type: number
                 default: 200
-
+    Need_Verification:
+      description: Password or Email has not been verified
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Need_Verification"
+          example:
+            code: 204
+            message: "Please update your password1"
+            
     # Create, Update, Email Send, Error
     Create:
       description: Expected response to valid request
@@ -771,7 +882,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/EmailSent"
+            $ref: "#/components/schemas/EmailSend"
           example:
             message: "An email has been sent. Follow the link to verify your address!"
     Bad_Request:
@@ -810,8 +921,8 @@ components:
           example:
             code: 404
             message: "Something wrong happes!"
-    DB_Error:
-      description: DataBase Error (422)
+    Unprocessable_Entity:
+      description: DataBase OR Blockchain Error(422)
       content:
         application/json:
           schema:
@@ -954,6 +1065,54 @@ components:
         - imageURL
         - sector
     # Request - Loyalty
+    EarnPointsEmailDto:
+      type: object
+      properties:
+        password:
+          type: string
+          format: password
+        _to:
+          type: string
+          format: email
+        _amount:
+          type: number
+
+    EarnPointsAddressDto:
+      type: object
+      properties:
+        password:
+          type: string
+          format: password
+        _to:
+          type: string
+          format: address
+        _amount:
+          type: number
+
+    UsePointsEmailDto:
+      type: object
+      properties:
+        password:
+          type: string
+          format: password
+        _to:
+          type: string
+          format: email
+        _points:
+          type: number
+
+    UsePointsAddressDto:
+      type: object
+      properties:
+        password:
+          type: string
+          format: password
+        _to:
+          type: string
+          format: address
+        _points:
+          type: number
+    
     OfferDto:
       type: object
       properties:
@@ -997,9 +1156,10 @@ components:
         access:
           type: string
           enum: [customer, merchant, admin]
-        verified:
+        email_verified:
           type: boolean
-
+        pass_verified:
+          type: boolean
 
     # Response - Profile & Merchant
     Customer:
@@ -1063,7 +1223,18 @@ components:
       items:
         $ref: "#/components/schemas/Merchant"
 
-    # Response - Loyalty Offers
+    # Response - Loyalty
+    Balance:
+      type: object
+      properties:
+        memberAddress:
+          type: string
+          format: address
+        points:
+          type: number
+        isRegistered:
+          type: boolean
+          
     Offer:
       type: object
       properties:
@@ -1115,6 +1286,17 @@ components:
       items:
         $ref: '#/components/schemas/Campaign'
 
+    Need_Verification:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
     # Response - Typical Create, Update, Error
     Created:
       type: object
@@ -1138,7 +1320,7 @@ components:
           format: int32
         message:
           type: string
-    EmailSent:
+    EmailSend:
       type: object
       required:
         - message
