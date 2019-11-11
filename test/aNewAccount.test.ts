@@ -12,6 +12,7 @@ import validateEnv from '../src/utils/validateEnv';
 validateEnv();
 
 import userModel from '../src/models/user.model'
+import transactionModel from '../src/models/transaction.model'
 import { newUser, defaultAdmin, defaultMerchant, defaultCustomer, newCustomer, newMerchant, offers } from './_structs.test'
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -21,7 +22,7 @@ var path = require('path');
 import { BlockchainService } from '../src/utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
-var accounts = [{ //0
+const Accounts = [{ //0
     ad: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
     pk: '0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
 }, {//1
@@ -33,27 +34,7 @@ var accounts = [{ //0
 }, {//3
     ad: '0x821aEa9a577a9b44299B9c15c88cf3087F3b5544',
     pk: '0xc88b703fb08cbea894b6aeff5a544fb92e78a18e19814cd85da83b71f772aa6c'
-}, {//4
-    ad: '0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2',
-    pk: '0x388c684f0ba1ef5017716adb5d21a053ea8e90277d0868337519f97bede61418'
-}, {//5
-    ad: '0x2932b7A2355D6fecc4b5c0B6BD44cC31df247a2e',
-    pk: '0x659cbb0e2411a44db63778987b1e22153c086a95eb6b18bdf89de078917abc63'
-}, {//6
-    ad: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5',
-    pk: '0x82d052c865f5763aad42add438569276c00d3d88a2d062d36b2bae914d58b8c8'
-}, {//7
-    ad: '0x0F4F2Ac550A1b4e2280d04c21cEa7EBD822934b5',
-    pk: '0xaa3680d5d48a8283413f7a108367c7299ca73f553735860a87b08f39395618b7'
-}, {//8
-    ad: '0x6330A553Fc93768F612722BB8c2eC78aC90B3bbc',
-    pk: '0x0f62d96d6675f32685bbdb8ac13cda7c23436f63efbb9d07700d8669ff12b7c4'
-}, {//9
-    ad: '0x5AEDA56215b167893e80B4fE645BA6d5Bab767DE',
-    pk: '0x8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5'
-}]
-
-
+}];
 
 describe("Establishing", () => {
     it("1. should establish a new DB Connection", (done) => {
@@ -94,6 +75,9 @@ describe("New Account", () => {
         }
     });
     before(() => {
+        return transactionModel.deleteMany({ createdAt: { $gt: 1573058654985 } });
+    })
+    before(() => {
         return userModel.deleteOne({
             email: newUser.email
         });
@@ -133,7 +117,7 @@ describe("New Account", () => {
                 password: hash,
                 email_verified: true,
                 pass_verified: true,
-                account: serviceInstance.lockWallet(accounts[0].pk, defaultAdmin.password)
+                account: serviceInstance.lockWallet(Accounts[0].pk, defaultAdmin.password)
             });
         });
     });
@@ -146,7 +130,7 @@ describe("New Account", () => {
                 password: hash,
                 email_verified: true,
                 pass_verified: true,
-                account: serviceInstance.lockWallet(accounts[1].pk, defaultCustomer.password)
+                account: serviceInstance.lockWallet(Accounts[1].pk, defaultCustomer.password)
             });
         });
     });
@@ -159,7 +143,7 @@ describe("New Account", () => {
                 password: hash,
                 email_verified: true,
                 pass_verified: true,
-                account: serviceInstance.lockWallet(accounts[2].pk, defaultMerchant.password)
+                account: serviceInstance.lockWallet(Accounts[2].pk, defaultMerchant.password)
             });
         });
     });

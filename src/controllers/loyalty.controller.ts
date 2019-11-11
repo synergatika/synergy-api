@@ -20,44 +20,14 @@ import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../models/user.model';
-
-var accounts =
-    [{
-        ad: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-        pk: '0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
-    }, {
-        ad: '0xf17f52151EbEF6C7334FAD080c5704D77216b732',
-        pk: '0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f'
-    }, {
-        ad: '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef',
-        pk: '0x0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1'
-    }, {
-        ad: '0x821aEa9a577a9b44299B9c15c88cf3087F3b5544',
-        pk: '0xc88b703fb08cbea894b6aeff5a544fb92e78a18e19814cd85da83b71f772aa6c'
-    }, {
-        ad: '0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2',
-        pk: '0x388c684f0ba1ef5017716adb5d21a053ea8e90277d0868337519f97bede61418'
-    }, {
-        ad: '0x2932b7A2355D6fecc4b5c0B6BD44cC31df247a2e',
-        pk: '0x659cbb0e2411a44db63778987b1e22153c086a95eb6b18bdf89de078917abc63'
-    }, {
-        ad: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5',
-        pk: '0x82d052c865f5763aad42add438569276c00d3d88a2d062d36b2bae914d58b8c8'
-    }, {
-        ad: '0x0F4F2Ac550A1b4e2280d04c21cEa7EBD822934b5',
-        pk: '0xaa3680d5d48a8283413f7a108367c7299ca73f553735860a87b08f39395618b7'
-    }, {
-        ad: '0x6330A553Fc93768F612722BB8c2eC78aC90B3bbc',
-        pk: '0x0f62d96d6675f32685bbdb8ac13cda7c23436f63efbb9d07700d8669ff12b7c4'
-    }, {
-        ad: '0x5AEDA56215b167893e80B4fE645BA6d5Bab767DE',
-        pk: '0x8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5'
-    }]
+import transactionModel from '../models/transaction.model';
+import { newExpression } from 'babel-types';
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
     public router = express.Router();
     private user = userModel;
+    private transaction = transactionModel;
 
     constructor() {
         this.initializeRoutes();
@@ -65,10 +35,11 @@ class LoyaltyController implements Controller {
 
     private initializeRoutes() {
         this.router.post(`${this.path}/earn`, authMiddleware, accessMiddleware.confirmPassword,/*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), this.earnToken);
-        this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.confirmPassword, validationBodyMiddleware(RedeemPointsDto), this.useToken);
+        this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.confirmPassword, validationBodyMiddleware(RedeemPointsDto), this.redeemToken);
         this.router.get(`${this.path}/balance`, authMiddleware, this.readBalance);
-        this.router.get(`${this.path}/partners`, authMiddleware, this.partnersInfoLength);
-        this.router.get(`${this.path}/transactions`, authMiddleware, this.transactionsInfoLength);
+        this.router.get(`${this.path}/transactions`, authMiddleware, this.readTransactions);
+        this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
+        this.router.get(`${this.path}/transactions_info`, authMiddleware, this.transactionInfoLength);
     }
 
     private earnToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -82,14 +53,8 @@ class LoyaltyController implements Controller {
             }, {
                 'account.address': data._to
             }]
-        }, {
-            password: false, access: false,
-            imageURL: false, sector: false,
-            email_verified: false, pass_verified: false,
-            createdAt: false, updatedAt: false,
-            contact: false, offers: false, campaigns: false,
-            restorationToken: false, restorationExpiration: false,
-            verificationToken: false, verificationExpiration: false
+        }).select({
+            "email": 1, "account": 1
         }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         else if (!user) {// Have to create a customer (/auth/register/customer) and then transfer points
@@ -100,10 +65,14 @@ class LoyaltyController implements Controller {
         } else {
             await serviceInstance.getLoyaltyAppContract()
                 .then((instance) => {
-                    return instance.earnPoints(this.amountToPoints(data._amount), user.account.address, _partner, { from: accounts[0].ad })
-                        .then((results: any) => {
+                    return instance.earnPoints(this.amountToPoints(data._amount), user.account.address, _partner, serviceInstance.address)
+                        .then(async (result: any) => {
+                            console.log("TEST: " + request.user.name, request.user.email);
+                            await this.transaction.create({
+                                ...result, type: "EarnPoints", _from_name: request.user.name, _from_email: request.user.email, _to_email: user.email, _points: this.amountToPoints(data._amount)
+                            });
                             response.status(200).send({
-                                data: results,
+                                data: result,
                                 code: 200
                             });
                         })
@@ -119,7 +88,7 @@ class LoyaltyController implements Controller {
         }
     }
 
-    private useToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private redeemToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const data: RedeemPointsDto = request.body;
         const _partner = (serviceInstance.unlockWallet(request.user.account, data.password)).address;
 
@@ -130,14 +99,8 @@ class LoyaltyController implements Controller {
             }, {
                 'account.address': (data._to)
             }]
-        }, {
-            password: false, access: false,
-            imageURL: false, sector: false,
-            email_verified: false, pass_verified: false,
-            createdAt: false, updatedAt: false,
-            contact: false, offers: false, campaigns: false,
-            restorationToken: false, restorationExpiration: false,
-            verificationToken: false, verificationExpiration: false
+        }).select({
+            "email": 1, "account": 1
         }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         else if (!user) {
@@ -148,10 +111,13 @@ class LoyaltyController implements Controller {
         } else {
             await serviceInstance.getLoyaltyAppContract()
                 .then((instance) => {
-                    return instance.usePoints(data._points, user.account.address, _partner, { from: accounts[0].ad })
-                        .then((results: any) => {
+                    return instance.usePoints(data._points, user.account.address, _partner, serviceInstance.address)
+                        .then(async (result: any) => {
+                            await this.transaction.create({
+                                ...result, type: "RedeemPoints", _from_name: request.user.name, _from_email: request.user.email, _to_email: user.email, _points: data._points
+                            });
                             response.status(200).send({
-                                data: results,
+                                data: result,
                                 code: 200
                             });
                         })
@@ -189,6 +155,26 @@ class LoyaltyController implements Controller {
             })
     }
 
+    private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+
+        let error: Error, transactions: any;
+        [error, transactions] = await to(this.transaction.find({
+            _to_email: request.user.email, $or: [{ type: "EarnPoints" }, { type: "RedeemPoints" }]
+        }).select({
+            "_id": 1, "type": 1,
+            "_from_name": 1, "_from_email": 1,
+            "_to_email": 1, "tx": 1,
+            "createdAt": 1, "points": 1
+        }).catch());
+        if (error) next(new UnprocessableEntityException('DB ERROR'));
+        console.log(transactions);
+        response.status(200).send({
+            data: transactions,
+            code: 200
+        });
+
+    }
+
     private partnersInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         await serviceInstance.getLoyaltyAppContract()
             .then((instance) => {
@@ -210,8 +196,7 @@ class LoyaltyController implements Controller {
             })
     }
 
-
-    private transactionsInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    private transactionInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         await serviceInstance.getLoyaltyAppContract()
             .then((instance) => {
                 return instance.transactionsInfoLength()

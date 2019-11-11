@@ -17,8 +17,8 @@ async function authMiddleware(request: RequestWithUser, response: Response, next
       const verificationResponse = jwt.verify((token.authorization).replace('Bearer ', ''), secret) as DataStoredInToken;
       const id = verificationResponse._id;
       const user = await userModel.findById(id).select({
-        "_id": 1,
-        "email:": 1, "password": 1,
+        "_id": 1, "name": 1,
+        "email": 1, "password": 1,
         "account": 1, "access": 1,
         "email_verified": 1, "pass_verified": 1
       });

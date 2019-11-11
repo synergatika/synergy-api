@@ -41,43 +41,13 @@ import accessMiddleware from '../middleware/access.middleware';
 import authMiddleware from '../middleware/auth.middleware';
 // Models
 import userModel from '../models/user.model';
-
-var accounts = [{ //0
-  ad: '0x627306090abaB3A6e1400e9345bC60c78a8BEf57',
-  pk: '0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
-}, {//1
-  ad: '0xf17f52151EbEF6C7334FAD080c5704D77216b732',
-  pk: '0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f'
-}, {//2
-  ad: '0xC5fdf4076b8F3A5357c5E395ab970B5B54098Fef',
-  pk: '0x0dbbe8e4ae425a6d2687f1a7e3ba17bc98c673636790f1b8ad91193c05875ef1'
-}, {//3
-  ad: '0x821aEa9a577a9b44299B9c15c88cf3087F3b5544',
-  pk: '0xc88b703fb08cbea894b6aeff5a544fb92e78a18e19814cd85da83b71f772aa6c'
-}, {//4
-  ad: '0x0d1d4e623D10F9FBA5Db95830F7d3839406C6AF2',
-  pk: '0x388c684f0ba1ef5017716adb5d21a053ea8e90277d0868337519f97bede61418'
-}, {//5
-  ad: '0x2932b7A2355D6fecc4b5c0B6BD44cC31df247a2e',
-  pk: '0x659cbb0e2411a44db63778987b1e22153c086a95eb6b18bdf89de078917abc63'
-}, {//6
-  ad: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5',
-  pk: '0x82d052c865f5763aad42add438569276c00d3d88a2d062d36b2bae914d58b8c8'
-}, {//7
-  ad: '0x0F4F2Ac550A1b4e2280d04c21cEa7EBD822934b5',
-  pk: '0xaa3680d5d48a8283413f7a108367c7299ca73f553735860a87b08f39395618b7'
-}, {//8
-  ad: '0x6330A553Fc93768F612722BB8c2eC78aC90B3bbc',
-  pk: '0x0f62d96d6675f32685bbdb8ac13cda7c23436f63efbb9d07700d8669ff12b7c4'
-}, {//9
-  ad: '0x5AEDA56215b167893e80B4fE645BA6d5Bab767DE',
-  pk: '0x8d5366123cb560bb606379f90a0bfd4769eecc0557f1b362dcae9012b548b1e5'
-}]
+import transactionModel from '../models/transaction.model';
 
 class AuthenticationController implements Controller {
   public path = '/auth';
   public router = express.Router();
   private user = userModel;
+  private transaction = transactionModel;
 
   constructor() {
     this.initializeRoutes();
@@ -118,11 +88,8 @@ class AuthenticationController implements Controller {
       next(new NotFoundException('A user with these credentials already exists!'));
     } else {
       const hashedPassword = await bcrypt.hash(data.password, 10);
-      // -- //
-      // const account: Account = serviceInstance.createWallet(data.password);
-      // -- //
-      const account: Account = this.createAccount(data.email, data.password);
-      // -- //
+      const account: Account = serviceInstance.createWallet(data.password);
+
       let error: Error, results: User;
       [error, results] = await to(this.user.create({
         ...data, password: hashedPassword,
@@ -151,11 +118,8 @@ class AuthenticationController implements Controller {
     } else {
       const tempPassword = this.generateToken(10, 1).token;
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
-      // -- //
-      // const account: Account = serviceInstance.createWallet(data.password);
-      // -- //
-      const account: Account = this.createAccount(data.email, tempPassword);
-      // -- //
+      const account: Account = serviceInstance.createWallet(tempPassword);
+
       let error: Error, user: User;
       [error, user] = await to(this.user.create({
         ...data, password: hashedPassword,
@@ -176,22 +140,6 @@ class AuthenticationController implements Controller {
     }
   }
 
-  private createAccount(email: string, password: string): Account {
-    // // Prod //
-    // const account: Account = serviceInstance.createWallet(password);
-
-    // // Dev //
-    var account: Account = { version: 0, id: '', address: '', crypto: {} };
-    if (email === 'customer11@gmail.com') {
-      account = serviceInstance.lockWallet(accounts[3].pk, password)
-    } else if (email === 'customer12@gmail.com') {
-      account = serviceInstance.lockWallet(accounts[4].pk, password)
-    } else if (email === 'merchant11@gmail.com') {
-      account = serviceInstance.lockWallet(accounts[5].pk, password)
-    }
-    return account;
-  }
-
   private registerAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data = response.locals;
     const access = request.params.access;
@@ -200,9 +148,12 @@ class AuthenticationController implements Controller {
     if ((!access) || (access === 'customer')) {
       await serviceInstance.getLoyaltyAppContract()
         .then((instance) => {
-          return instance.registerMember({ from: newAccount.address })
-            .then((result: any) => {
+          return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
+            .then(async (result: any) => {
               console.log(result);
+              await this.transaction.create({
+                ...result, type: "RegisterMember"
+              });
               console.log("OK - Member: " + newAccount.address);
               next();
             })
@@ -219,8 +170,11 @@ class AuthenticationController implements Controller {
       await serviceInstance.getLoyaltyAppContract()
         .then((instance) => {
           return instance.registerPartner(newAccount.address, serviceInstance.address)
-            .then((result: any) => {
+            .then(async (result: any) => {
               console.log(result);
+              await this.transaction.create({
+                ...result, type: "RegisterPartner"
+              });
               console.log("OK - Partner: " + newAccount.address);
               next();
             })
@@ -242,12 +196,9 @@ class AuthenticationController implements Controller {
     let error: Error, user: User;
     [error, user] = await to(this.user.findOne({
       email: data.email
-    }, {
-      name: false, imageURL: false,
-      createdAt: false, updatedAt: false,
-      contact: false, offers: false, campaigns: false,
-      restorationToken: false, restorationExpiration: false,
-      verificationToken: false, verificationExpiration: false
+    }).select({
+      "_id": 1, "email": 1, "password": 1,
+      "email_verified": 1, "pass_verified": 1
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
@@ -458,24 +409,32 @@ class AuthenticationController implements Controller {
 
   private recoverAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data = response.locals;
+    const access = request.params.access;
 
-    await serviceInstance.getLoyaltyAppContract()
-      .then((instance) => {
-        return instance.recoverPoints(data.oldAccount.address, data.account.address, serviceInstance.address)
-          .then((result: any) => {
-            console.log(result);
-            console.log("OK - New Account: " + data.account.address + " | Old Account: " + data.oldAccount.address);
-            next();
-          })
-          .catch((error: Error) => {
-            console.log(error);
-            next(new UnprocessableEntityException('Blockchain Error'))
-          })
-      })
-      .catch((error: Error) => {
-        console.log(error);
-        next(new UnprocessableEntityException('Blockchain Error'))
-      });
+    if (access === 'customer') {
+      await serviceInstance.getLoyaltyAppContract()
+        .then((instance) => {
+          return instance.recoverPoints(data.oldAccount.address, data.account.address, serviceInstance.address)
+            .then(async (result: any) => {
+              console.log(result);
+              await this.transaction.create({
+                ...result, type: "RecoverPoints"
+              });
+              console.log("OK - New Account: " + data.account.address + " | Old Account: " + data.oldAccount.address);
+              next();
+            })
+            .catch((error: Error) => {
+              console.log(error);
+              next(new UnprocessableEntityException('Blockchain Error'))
+            })
+        })
+        .catch((error: Error) => {
+          console.log(error);
+          next(new UnprocessableEntityException('Blockchain Error'))
+        });
+    } else if (access === 'merchant') {
+
+    }
     response.status(200).send({
       message: "Success! You Password has been Updated!",
       code: 200
@@ -493,19 +452,8 @@ class AuthenticationController implements Controller {
       [error, user] = await to(this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       else if (user) {
-        var hashedPassword = await bcrypt.hash(data.newPassword, 10);
-        // -- //
-        // const account = serviceInstance.createWallet(data.newPassword)
-        // -- //
-        var account: Account = { version: 0, id: '', address: '', crypto: {} };
-        if (user.email === 'customer11@gmail.com') {
-          hashedPassword = await bcrypt.hash(data.newPassword, 10);
-          account = serviceInstance.lockWallet(accounts[6].pk, data.newPassword)
-        } else {
-          hashedPassword = await bcrypt.hash(data.newPassword, 10);
-          account = serviceInstance.lockWallet(accounts[7].pk, data.newPassword)
-        }
-        // -- //
+        const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+        const account = serviceInstance.createWallet(data.newPassword)
 
         let error: Error, results: Object;
         [error, results] = await to(this.user.updateOne({
@@ -574,23 +522,14 @@ class AuthenticationController implements Controller {
       emailInfo.type = 'verification',
         emailInfo.locals = { email: data.user.email, token: data.token, link: `${process.env.APP_URL}` + 'verify/' + data.token },
         emailInfo.subject = "Email Verification";
-      //  emailInfo.text = "Must Verify" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/verify/" + data.token
-      // emailInfo.html = '<h4>Must Verify!</h4>' + '<p>' + 'Restore' + ' | Token: ' + data.token + ' | Email: '
-      // + data.user.email + '</p>' + '<a href=' + '"' + `${process.env.APP_URL}` + 'verify/' + data.token + '"' + ' > ' + "Link" + ' </a>';
     } else if (data.state === '2') { // Password Restoration
       emailInfo.type = 'restoration',
         emailInfo.locals = { email: data.user.email, token: data.token, link: `${process.env.APP_URL}` + 'restore/' + data.token },
         emailInfo.subject = "Password Restoration";
-      //  emailInfo.text = "Try Restore" + " | Token: " + data.token + " | Email: " + data.user.email + " | Link: " + "http://localhost:4200/restore/" + data.token
-      //emailInfo.html = '<h4>Try Restore?</h4>' + '<p>' + 'Restore' + ' | Token: '
-      //+ data.token + ' | Email: ' + data.user.email + '</p>' + '<a href=' + '"' + `${process.env.APP_URL}` + 'restore/' + data.token + '"' + '>' + "Link" + '</a>';
     } else if (data.state === '3') { // Email Invitation
       emailInfo.type = 'registration',
         emailInfo.locals = { email: data.user.email, password: data.user.password },
         emailInfo.subject = "New Account";
-      //  emailInfo.text = "Your account" + " | Password: " + data.user.password + " | Email: " + data.user.email
-      //emailInfo.html = '<h4>Password included! Change it for your safety</h4>' + '<p>' + 'Your account' + ' | Password: '
-      //+ data.user.password + ' | Email: ' + data.user.email + '</p>';
     }
 
     let error, results: object = {};
@@ -602,7 +541,6 @@ class AuthenticationController implements Controller {
           to: 'dmytakis@gmail.com', // Dev
           //to: data.user.email, // Prod
           subject: emailInfo.subject, // Subject line
-          // text: emailInfo.text, // plaintext body
           html: emailInfo.html // html body
         };
         return Transporter.sendMail(mailOptions);
@@ -612,25 +550,25 @@ class AuthenticationController implements Controller {
     if (error) next(new NotFoundException('Sending Email Fail'));
     else if (data.state === '1') { // Email Verification
       response.status(response.locals.statusCode || 200).send({
-        // ---- // // For Testing Purposes Only
+        // -- For Testing Purposes Only -- //
         tempData: { "token": data.token },
-        // ---- //
+        // -- ////////////|\\\\\\\\\\\\ -- //
         message: "Please, follow your link to Validate your Email.",
         code: response.locals.statusCode || 200
       });
     } else if (data.state === '2') { // Password Restoration
       response.status(200).send({
-        // ---- // // For Testing Purposes Only
+        // -- For Testing Purposes Only -- //
         tempData: { "token": data.token },
-        // ---- //
+        // -- ////////////|\\\\\\\\\\\\ -- //
         message: "Please, follow your link to Update your Password.",
         code: 200
       });
     } else if (data.state === '3') { // Email Invitation
       response.status(200).send({
-        // ---- // // For Testing Purposes Only
+        // -- For Testing Purposes Only -- //
         tempData: { "password": data.user.password },
-        // ---- //
+        // -- ////////////|\\\\\\\\\\\\ -- //
         message: "User has been Invited to enjoy our Community!",
         code: 200
       });

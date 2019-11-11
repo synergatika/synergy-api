@@ -37,13 +37,10 @@ class CustomersController implements Controller {
     let error: Error, customer: Customer;
     [error, customer] = await to(this.user.findOne({
       _id: user._id
-    }, {
-      access: false,
-      email_verified: false, pass_verified: false,
-      verificationToken: false, verificationExpiration: false,
-      restorationToken: false, restorationExpiration: false,
-      offers: false, campaigns: false,
-      updatedAt: false
+    }).select({
+      "id": 1, "email": 1,
+      "name": 1, "imageURL": 1,
+      "createdAt": 1
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
 

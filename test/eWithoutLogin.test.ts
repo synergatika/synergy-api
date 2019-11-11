@@ -8,14 +8,10 @@ chai.use(require('chai-http'));
 
 import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
-
 validateEnv();
 
-import userModel from '../src/models/user.model'
-import { defaultCustomer, defaultMerchant, defaultAdmin, newUser, newCustomer, newMerchant, offers } from './_structs.test'
-import * as mongoose from 'mongoose';
-import * as bcrypt from 'bcrypt';
-import { array } from 'prop-types';
+import { defaultMerchant, offers } from './_structs.test'
+
 
 describe("Without Login", () => {
     describe("Merchants (/merchants)", () => {

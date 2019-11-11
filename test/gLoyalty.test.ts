@@ -8,15 +8,9 @@ chai.use(require('chai-http'));
 
 import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
-
 validateEnv();
 
-import userModel from '../src/models/user.model'
-import { defaultMerchant, newCustomer, newMerchant, defaultCustomer, offers, newUser } from './_structs.test'
-import * as mongoose from 'mongoose';
-import * as bcrypt from 'bcrypt';
-import { array } from 'prop-types';
-
+import { newCustomer, newMerchant, newUser } from './_structs.test'
 
 describe("Loyalty", () => {
     describe("Loyalty (/loyalty)", () => {
@@ -80,7 +74,6 @@ describe("Loyalty", () => {
                     res.body.should.have.property('data');
                     res.body.data.should.be.a('object');
                     res.body.data.should.have.property('points');
-                    console.log(res.body);
                     done();
                 });
         });
@@ -99,7 +92,6 @@ describe("Loyalty", () => {
                     res.body.should.have.property('data');
                     res.body.data.should.be.a('object');
                     res.body.data.should.have.property('receipt');
-                    console.log(res.body);
                     done();
                 });
         });
@@ -172,7 +164,6 @@ describe("Loyalty", () => {
                     res.body.should.have.property('data');
                     res.body.data.should.be.a('object');
                     res.body.data.should.have.property('points');
-                    console.log(res.body);
                     done();
                 });
         });
@@ -186,7 +177,18 @@ describe("Loyalty", () => {
                     res.body.should.have.property('data');
                     res.body.data.should.be.a('object');
                     res.body.data.should.have.property('points');
-                    console.log(res.body);
+                    done();
+                });
+        });
+        it("12. should read transactions", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .get("loyalty/transactions")
+                .set('Authorization', 'Bearer ' + newUser.authToken)
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    res.body.should.be.a('object');
+                    res.body.should.have.property('data');
+                    res.body.data.should.be.a('array');
                     done();
                 });
         });

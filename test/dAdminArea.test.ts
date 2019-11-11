@@ -8,15 +8,12 @@ chai.use(require('chai-http'));
 
 import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
-
 validateEnv();
 
-import userModel from '../src/models/user.model'
 import { defaultAdmin, newMerchant } from './_structs.test'
-import * as mongoose from 'mongoose';
-import * as bcrypt from 'bcrypt';
 
 describe("Admin", () => {
+
     describe("Admin Auth (/auth)", () => {
         it("1. should authenticate user", (done) => {
             chai.request(`${process.env.API_URL}`)

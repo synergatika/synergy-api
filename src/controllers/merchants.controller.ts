@@ -39,11 +39,10 @@ class MerchantsController implements Controller {
 
         [error, merchants] = await to(this.user.find({
             access: 'merchant'
-        }, {
-            access: false, password: false,
-            email_verified: false, pass_verified: false,
-            updatedAt: false,
-            offers: false, campaigns: false
+        }).select({
+            "id": 1, "email": 1,
+            "name": 1, "imageURL": 1,
+            "contact": 1, "createdAt": 1
         }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
@@ -58,11 +57,10 @@ class MerchantsController implements Controller {
         let error: Error, merchant: Merchant;
         [error, merchant] = await to(this.user.findOne({
             _id: merchant_id
-        }, {
-            access: false, password: false,
-            email_verified: false, pass_verified: false,
-            updatedAt: false,
-            offers: false, campaigns: false
+        }).select({
+            "id": 1, "email": 1,
+            "name": 1, "imageURL": 1,
+            "contact": 1, "createdAt": 1
         }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({

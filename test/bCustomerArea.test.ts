@@ -8,12 +8,8 @@ chai.use(require('chai-http'));
 
 import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
-
 validateEnv();
 
-import userModel from '../src/models/user.model'
-import * as mongoose from 'mongoose';
-import * as bcrypt from 'bcrypt';
 import { defaultCustomer } from './_structs.test'
 
 describe("Customer", () => {

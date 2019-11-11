@@ -335,7 +335,7 @@ paths:
           $ref: '#/components/responses/Unprocessable_Entity'
 
   /loyalty/balance:
-    post:
+    get:
       summary: ""
       operationId: readBalance
       security:
@@ -345,12 +345,24 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Balance'
-        '400':
-          $ref: '#/components/responses/Bad_Request'
         '401':
           $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /loyalty/transactions:
+    get:
+      summary: ""
+      operationId: readTransactions
+      security:
+        - bearerAuth: []
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Transactions'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
@@ -792,20 +804,23 @@ components:
                 type: number
                 default: 200
           example:
-            - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-              merchant_name: "Merchant 1"
-              offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
-              createdAt: "2019-09-10"
-              cost: 1000
-              description: "Get 10% discount"
-              expiresAt: "2019-11-15"
-            - merchant_id: "67a85f64-5r717-4562-b3fc-2c963f66afa6"
-              merchant_name: "Merchant 2"
-              offer_id: "55454564-5rre7-4ert62-b3fc-c9rtret3f6r9"
-              createdAt: "2019-09-15"
-              cost: 2000
-              description: "1+1 Burger"
-              expiresAt: "2019-11-10"
+            data:
+              - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 1"
+                offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-10"
+                cost: 1000
+                description: "Get 10% discount"
+                expiresAt: "2019-11-15"
+              - merchant_id: "67a85f64-5r717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 2"
+                offer_id: "55454564-5rre7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-15"
+                cost: 2000
+                description: "1+1 Burger"
+                expiresAt: "2019-11-10"
+            code: 200
+                  
     Balance:
       description: Expected response to a valid request
       content:
@@ -822,6 +837,38 @@ components:
             memberAddress: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5'
             points: 50
             isRegistered: true
+      
+    Transactions:        
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Transactions"
+              code:
+                type: number
+                default: 200
+          example:
+            data:
+              - _id: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5'
+                type: 'EarnPoints'
+                _from_name: 'Merchant A'
+                _from_email: 'merchantA@gmail.com'
+                _to_email: 'customerB@gmail.com'
+                tx: '0x85d7e1737e95f4c805f6df5c9cc1c5fdab69d916feb770b4391e4aab0ab4f878'
+                points: 25
+                createdAt: '2019-10-05'
+              - _id: '0x1234eF87E392377ec08E7c08Eb105Ef5448FG67'
+                type: 'RedeemPoints'
+                _from_name: 'Merchant B'
+                _from_email: 'merchant_b@gmail.com'
+                _to_email: 'customerB@gmail.com'
+                tx: '0x54d7e1737e95f4c805f6df5c9cc1c5fdab69d916feb770b4391e4aab0ab4c762'
+                points: 40
+                createdAt: '2019-11-10'
+            code: 200          
 
     # Microfund - Campaigns
     Campaign:
@@ -1234,7 +1281,36 @@ components:
           type: number
         isRegistered:
           type: boolean
-          
+   
+    Transaction:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [EarnPoints, RedeemPoints]
+        _from_name:
+          type: string
+        _from_email:
+          type: string
+          format: email
+        _to_email:
+          type: string
+          format: email
+        tx:
+          type: string
+        points:
+          type: number
+        createdAt:
+          type: string
+          format: date    
+    Transactions:
+      type: array
+      items:
+        $ref: '#/components/schemas/Transaction'            
+    
     Offer:
       type: object
       properties:
@@ -1286,17 +1362,6 @@ components:
       items:
         $ref: '#/components/schemas/Campaign'
 
-    Need_Verification:
-      type: object
-      required:
-        - code
-        - message
-      properties:
-        code:
-          type: integer
-          format: int32
-        message:
-          type: string
     # Response - Typical Create, Update, Error
     Created:
       type: object
@@ -1338,7 +1403,18 @@ components:
           format: int32
         message:
           type: string
-
+    Need_Verification:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+          
   securitySchemes:
     bearerAuth:            # arbitrary name for the security scheme
       type: http
