@@ -42,7 +42,7 @@ paths:
         $ref: '#/components/requestBodies/RegisterRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/EmailSend'
+          $ref: '#/components/responses/Email_Sent'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
@@ -64,7 +64,7 @@ paths:
         $ref: '#/components/requestBodies/RegisterWithoutPassRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/EmailSend'
+          $ref: '#/components/responses/Email_Sent'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -88,7 +88,7 @@ paths:
         $ref: '#/components/requestBodies/ChangePassInRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
@@ -108,7 +108,7 @@ paths:
         $ref: '#/components/requestBodies/ChangePassInRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -128,7 +128,7 @@ paths:
         - authentication
       responses:
         '200':
-          $ref: '#/components/responses/EmailSend'
+          $ref: '#/components/responses/Email_Sent'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
@@ -145,7 +145,7 @@ paths:
         $ref: '#/components/requestBodies/CheckTokenRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/Create'
+          $ref: '#/components/responses/Created'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
@@ -163,7 +163,7 @@ paths:
         - authentication
       responses:
         '200':
-          $ref: '#/components/responses/EmailSend'
+          $ref: '#/components/responses/Email_Sent'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
@@ -180,7 +180,7 @@ paths:
         $ref: '#/components/requestBodies/CheckTokenRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
@@ -196,7 +196,7 @@ paths:
         $ref: '#/components/requestBodies/ChangePassOutRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
@@ -302,7 +302,7 @@ paths:
         $ref: '#/components/requestBodies/EarnTokenRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -315,16 +315,16 @@ paths:
   /loyalty/redeem:
     post:
       summary: ""
-      operationId: useToken
+      operationId: redeemToken
       security:
         - bearerAuth: []
       tags:
         - loyalty
       requestBody:
-        $ref: '#/components/requestBodies/UseTokenRequestBody'
+        $ref: '#/components/requestBodies/RedeemTokenRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -389,7 +389,7 @@ paths:
         $ref: '#/components/requestBodies/OfferRequestBody'
       responses:
         '201':
-          $ref: '#/components/responses/Create'
+          $ref: '#/components/responses/Created'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -430,7 +430,7 @@ paths:
         $ref: '#/components/requestBodies/OfferRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -451,7 +451,7 @@ paths:
         - loyalty
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -484,7 +484,7 @@ paths:
         $ref: '#/components/requestBodies/CampaignRequestBody'
       responses:
         '201':
-          $ref: '#/components/responses/Create'
+          $ref: '#/components/responses/Created'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -540,7 +540,7 @@ paths:
         $ref: '#/components/requestBodies/CampaignRequestBody'
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -561,7 +561,7 @@ paths:
         - microfund
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -584,7 +584,7 @@ paths:
         - microfund
       responses:
         '200':
-          $ref: '#/components/responses/Update'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -709,15 +709,15 @@ components:
               - $ref: '#/components/schemas/EarnPointsEmailDto'
               - $ref: '#/components/schemas/EarnPointsAddressDto'
         
-    UseTokenRequestBody:
+    RedeemTokenRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
             oneOf:
-              - $ref: '#/components/schemas/UsePointsEmailDto'
-              - $ref: '#/components/schemas/UsePointsAddressDto'
+              - $ref: '#/components/schemas/RedeemPointsEmailDto'
+              - $ref: '#/components/schemas/RedeemPointsAddressDto'
 
     OfferRequestBody:
       description: ""
@@ -905,8 +905,8 @@ components:
             code: 204
             message: "Please update your password1"
             
-    # Create, Update, Email Send, Error
-    Create:
+    # Create, Updated, Email Send, Error
+    Created:
       description: Expected response to valid request
       content:
         application/json:
@@ -915,7 +915,7 @@ components:
           example:
             code: 201
             message: "Campaign successfully created!"
-    Update:
+    Updated:
       description: Expected response to valid request
       content:
         application/json:
@@ -924,12 +924,12 @@ components:
           example:
             code: 200
             message: "User's Profile successfully updated!"
-    EmailSend:
+    Email_Sent:
       description: Expected response to valid request
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/EmailSend"
+            $ref: "#/components/schemas/Email_Sent"
           example:
             message: "An email has been sent. Follow the link to verify your address!"
     Bad_Request:
@@ -1136,7 +1136,7 @@ components:
         _amount:
           type: number
 
-    UsePointsEmailDto:
+    RedeemPointsEmailDto:
       type: object
       properties:
         password:
@@ -1148,7 +1148,7 @@ components:
         _points:
           type: number
 
-    UsePointsAddressDto:
+    RedeemPointsAddressDto:
       type: object
       properties:
         password:
@@ -1291,18 +1291,27 @@ components:
         type:
           type: string
           enum: [EarnPoints, RedeemPoints]
-        _from_name:
+        from_id:
           type: string
-        _from_email:
+          format: uuid
+        to_id:
           type: string
-          format: email
-        _to_email:
-          type: string
-          format: email
+          format: uuid
+        info:
+          type: object
+          properties:
+            from_name:
+              type: string
+            from_email:
+              type: string
+              format: email
+            to_email:
+              type: string
+              format: email
+            points:
+              type: number
         tx:
           type: string
-        points:
-          type: number
         createdAt:
           type: string
           format: date    
@@ -1362,7 +1371,7 @@ components:
       items:
         $ref: '#/components/schemas/Campaign'
 
-    # Response - Typical Create, Update, Error
+    # Response - Typical Responses (Created, Updated, Email Sent, Need Verification, Error)
     Created:
       type: object
       required:
@@ -1385,11 +1394,15 @@ components:
           format: int32
         message:
           type: string
-    EmailSend:
+    Email_Sent:
       type: object
       required:
+        - code
         - message
       properties:
+        code:
+          type: integer
+          format: int32
         message:
           type: string
     Error:

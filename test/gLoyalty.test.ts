@@ -14,7 +14,7 @@ import { newCustomer, newMerchant, newUser } from './_structs.test'
 
 describe("Loyalty", () => {
     describe("Loyalty (/loyalty)", () => {
-        it("1. should earn points", (done) => {
+        it("1. should earn points - 201 Created", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/earn")
                 .set('Authorization', 'Bearer ' + newMerchant.authToken)
@@ -24,14 +24,14 @@ describe("Loyalty", () => {
                     _amount: 45
                 })
                 .end((err, res) => {
-                    res.should.have.status(200);
+                    res.should.have.status(201);
                     res.body.should.be.a('object');
                     res.body.should.have.property('data');
                     res.body.data.should.have.property('receipt');
                     done();
                 });
         });
-        it("2. should NOT earn points | as password is wrong", (done) => {
+        it("2. should NOT earn points | password is wrong - 403 Forbidden", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/earn")
                 .set('Authorization', 'Bearer ' + newMerchant.authToken)
@@ -47,7 +47,7 @@ describe("Loyalty", () => {
                     done();
                 });
         });
-        it("3. should earn points", (done) => {
+        it("3. should earn points - 201 Created", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/earn")
                 .set('Authorization', 'Bearer ' + newMerchant.authToken)
@@ -57,14 +57,14 @@ describe("Loyalty", () => {
                     _amount: 25
                 })
                 .end((err, res) => {
-                    res.should.have.status(200);
+                    res.should.have.status(201);
                     res.body.should.be.a('object');
                     res.body.should.have.property('data');
                     res.body.data.should.have.property('receipt');
                     done();
                 });
         });
-        it("4. should read balance", (done) => {
+        it("4. should read balance - 200 Balance", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("loyalty/balance")
                 .set('Authorization', 'Bearer ' + newCustomer.authToken)
@@ -77,7 +77,7 @@ describe("Loyalty", () => {
                     done();
                 });
         });
-        it("5. should use points", (done) => {
+        it("5. should use points - 201 Created", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/redeem")
                 .set('Authorization', 'Bearer ' + newMerchant.authToken)
@@ -87,7 +87,7 @@ describe("Loyalty", () => {
                     _points: 15
                 })
                 .end((err, res) => {
-                    res.should.have.status(200);
+                    res.should.have.status(201);
                     res.body.should.be.a('object');
                     res.body.should.have.property('data');
                     res.body.data.should.be.a('object');
@@ -95,7 +95,7 @@ describe("Loyalty", () => {
                     done();
                 });
         });
-        it("6. should send a restoration email", (done) => {
+        it("6. should send a restoration email - 200 Email Sent", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("auth/forgot_pass/" + newCustomer.email)
                 .end((err, res) => {
@@ -107,7 +107,7 @@ describe("Loyalty", () => {
                     done();
                 });
         });
-        it("7. should validate restoration token", (done) => {
+        it("7. should validate restoration token - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/forgot_pass")
                 .send({
@@ -120,7 +120,7 @@ describe("Loyalty", () => {
                     done();
                 });
         });
-        it("8. should update/restore password", (done) => {
+        it("8. should update/restore password - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("auth/forgot_pass")
                 .send({
@@ -136,7 +136,7 @@ describe("Loyalty", () => {
                     done();
                 });
         });
-        it("9. should authenticate user", (done) => {
+        it("9. should authenticate user - 200 Authenticate", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate")
                 .send({
@@ -154,7 +154,7 @@ describe("Loyalty", () => {
                     done();
                 });
         });
-        it("10. should read balance", (done) => {
+        it("10. should read balance - 200 Balance", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("loyalty/balance")
                 .set('Authorization', 'Bearer ' + newCustomer.authToken)
@@ -167,7 +167,7 @@ describe("Loyalty", () => {
                     done();
                 });
         });
-        it("11. should read balance", (done) => {
+        it("11. should read balance - 200 Balance", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("loyalty/balance")
                 .set('Authorization', 'Bearer ' + newUser.authToken)
@@ -180,7 +180,7 @@ describe("Loyalty", () => {
                     done();
                 });
         });
-        it("12. should read transactions", (done) => {
+        it("12. should read transactions - 200 Transactions", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("loyalty/transactions")
                 .set('Authorization', 'Bearer ' + newUser.authToken)

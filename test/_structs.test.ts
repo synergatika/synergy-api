@@ -6,9 +6,7 @@ var defaultCustomer = {
     password: "customer10",
     authToken: '',
     _id: '',
-
 };
-
 var defaultMerchant = {
     name: "Merchant 10",
     email: "merchant10@gmail.com",

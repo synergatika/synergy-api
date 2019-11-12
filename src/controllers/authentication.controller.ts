@@ -513,7 +513,6 @@ class AuthenticationController implements Controller {
     let emailInfo = {
       to: data.user.email,
       subject: "",
-      // text: "",
       html: "<h3>Hello world?</h3><p>Test</p>",
       type: '',
       locals: {},
@@ -535,13 +534,12 @@ class AuthenticationController implements Controller {
     let error, results: object = {};
     [error, results] = await to(Promise.all([email.render(emailInfo.type, emailInfo.locals)])
       .then((template: object) => {
-        emailInfo.html = template.toString();
-        var mailOptions: nodemailer.SendMailOptions = {
+        const mailOptions: nodemailer.SendMailOptions = {
           from: process.env.EMAIL_FROM, //'Fred Foo ✔ <dimitris.sec@gmail.com>', // sender address
           to: 'dmytakis@gmail.com', // Dev
           //to: data.user.email, // Prod
           subject: emailInfo.subject, // Subject line
-          html: emailInfo.html // html body
+          html: template.toString() // html body
         };
         return Transporter.sendMail(mailOptions);
       })

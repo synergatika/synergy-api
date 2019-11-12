@@ -2,6 +2,13 @@ import * as mongoose from 'mongoose';
 import Transaction from '../loyaltyInterfaces/transaction.interface';
 import { object, string } from 'prop-types';
 
+const infoSchema = new mongoose.Schema({
+    from_name: String,
+    from_email: String,
+    to_email: String,
+    points: Number
+}, { _id: false });
+
 const receiptSchema = new mongoose.Schema({
     transactionHash: String,
     transactionIndex: Number,
@@ -22,10 +29,12 @@ const receiptSchema = new mongoose.Schema({
 }, { _id: false });
 
 const transactionSchema = new mongoose.Schema({
-    _from_name: String,
-    _from_email: String,
-    _to_email: String,
-    _points: Number,
+
+    from_id: String,
+    to_id: String,
+
+    info: infoSchema,
+
     tx: String,
     receipt: receiptSchema,
     logs: Array,

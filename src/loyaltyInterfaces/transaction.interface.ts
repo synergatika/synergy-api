@@ -1,10 +1,15 @@
 interface Transaction {
     _id: string;
 
-    _from_name: string;
-    _from_email: string;
-    _to_email: string;
-    _points: number;
+    from_id: string;
+    to_id: string;
+
+    info: {
+        from_name: string;
+        from_email: string;
+        to_email: string;
+        points: number;
+    };
 
     tx: string;
     receipt: {

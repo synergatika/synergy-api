@@ -42,7 +42,8 @@ class MerchantsController implements Controller {
         }).select({
             "id": 1, "email": 1,
             "name": 1, "imageURL": 1,
-            "contact": 1, "createdAt": 1
+            "createdAt": 1,
+            "contact": 1, "sector": 1
         }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
@@ -60,7 +61,8 @@ class MerchantsController implements Controller {
         }).select({
             "id": 1, "email": 1,
             "name": 1, "imageURL": 1,
-            "contact": 1, "createdAt": 1
+            "createdAt": 1,
+            "contact": 1, "sector": 1
         }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({

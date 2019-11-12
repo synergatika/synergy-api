@@ -153,7 +153,20 @@ describe("New Account", () => {
     });
 
     describe("Auth (/auth)", () => {
-        it("1. should create a new user (auto-registration as customer)", (done) => {
+        it("1. should NOT create a new user(customer) | as password is missing - 400 Bad Request", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .post("auth/register")
+                .send({
+                    email: newUser.email
+                })
+                .end((err, res) => {
+                    res.should.have.status(400);
+                    res.body.should.be.a('object');
+                    res.body.should.have.property('message');
+                    done();
+                })
+        });
+        it("2. should create a new user(customer) - 200 Email Sent", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/register")
                 .send(newUser)
@@ -166,7 +179,7 @@ describe("New Account", () => {
                     done();
                 })
         });
-        it("2. should verify a user's email address", (done) => {
+        it("3. should verify a user's email address - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/verify_email")
                 .send({
@@ -179,7 +192,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("3. should NOT create user | as there is already user with these email address)", (done) => {
+        it("4. should NOT create user | as there already exists - 404 Not Found", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/register")
                 .send(newUser)
@@ -190,7 +203,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("4. should NOT send a verfication email | as user has already verified email address", (done) => {
+        it("5. should NOT send a verfication email | it is verified - 404 Not Found", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("auth/verify_email/" + newUser.email)
                 .end((err, res) => {
@@ -200,7 +213,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("5. should NOT authenticate user | due to wrong credentials", (done) => {
+        it("6. should NOT authenticate user | wrong credentials - 404 Not Found", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate")
                 .send({
@@ -214,7 +227,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("6. should send a restoration email", (done) => {
+        it("7. should send a restoration email - 200 Email Sent", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("auth/forgot_pass/" + newUser.email)
                 .end((err, res) => {
@@ -226,7 +239,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("7. should NOT validate restoration token | as it is wrong", (done) => {
+        it("8. should NOT validate restoration token | it is wrong - 404 Not Found", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/forgot_pass")
                 .send({
@@ -239,7 +252,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("8. should validate restoration token", (done) => {
+        it("9. should validate restoration token - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/forgot_pass")
                 .send({
@@ -252,7 +265,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("9. should NOT update/restore password | as does not match with verification password", (done) => {
+        it("10. should NOT restore password | wrong verification password - 404 Not Found", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("auth/forgot_pass")
                 .send({
@@ -267,7 +280,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("10. should update/restore password", (done) => {
+        it("11. should restore password - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("auth/forgot_pass")
                 .send({
@@ -283,7 +296,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("11. should authenticate user", (done) => {
+        it("12. should authenticate user - 200 Authenticate", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate")
                 .send({
@@ -301,7 +314,7 @@ describe("New Account", () => {
                     done();
                 });
         });
-        it("12. should update user's password", (done) => {
+        it("13. should update user's password - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("auth/change_pass")
                 .set('Authorization', 'Bearer ' + newUser.authToken)

@@ -11,17 +11,12 @@ import validateEnv from '../src/utils/validateEnv';
 
 validateEnv();
 
-import userModel from '../src/models/user.model'
 import { defaultMerchant, newCustomer, newMerchant, defaultCustomer, offers } from './_structs.test'
-import * as mongoose from 'mongoose';
-import * as bcrypt from 'bcrypt';
-import { array } from 'prop-types';
-
 
 describe("Merchant", () => {
 
     describe("Auth (/auth)", () => {
-        it("1. should authenticate user (merchant)", (done) => {
+        it("1. should authenticate user (merchant) - 200 Authenticate", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate")
                 .send({
@@ -40,7 +35,7 @@ describe("Merchant", () => {
                     done();
                 });
         });
-        it("2. should NOT create a new merchant | as merchant cannot create merchant", (done) => {
+        it("2. should NOT create a new merchant | merchant cannot create merchant - 403 Forbidden", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/register/" + "merchant")
                 .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
@@ -54,7 +49,7 @@ describe("Merchant", () => {
                     done();
                 });
         });
-        it("3. should create a new customer", (done) => {
+        it("3. should create a new customer - 200 Email Sent", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/register/" + "customer")
                 .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
@@ -69,7 +64,7 @@ describe("Merchant", () => {
                     done();
                 });
         });
-        it("4. should NOT authenticate the new customer | as password is random and has not be changed", (done) => {
+        it("4. should NOT authenticate the new customer | password not verified - 204 Need Verification", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate/")
                 .send({
@@ -82,7 +77,7 @@ describe("Merchant", () => {
                     done();
                 });
         });
-        it("5. should set a new password", (done) => {
+        it("5. should set a new password - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("auth/set_pass/" + newCustomer.email)
                 .send({
@@ -96,7 +91,7 @@ describe("Merchant", () => {
                     done();
                 });
         });
-        it("6. should authenticate the new customer", (done) => {
+        it("6. should authenticate the new user (customer) - 200 Authenticate", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate/")
                 .send({
@@ -117,7 +112,7 @@ describe("Merchant", () => {
     });
 
     describe("Profile (/merchants)", () => {
-        it("1. should NOT update merchant's profile(info) | as it does not belong to logged in user", (done) => {
+        it("1. should NOT update merchant's profile(info) | not belong to user - 403 Forbidden", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("merchants/" + 'random_id')
                 .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
@@ -142,7 +137,7 @@ describe("Merchant", () => {
                     done();
                 });
         });
-        it("2. should NOT update merchant's profile(info) | as it does not belong to logged in user", (done) => {
+        it("2. should NOT update merchant's profile(info) | wrong jwt - 401 Unauthorized", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("merchants/" + defaultMerchant._id)
                 .set('Authorization', 'Bearer ' + 'random_jwt')
@@ -167,7 +162,7 @@ describe("Merchant", () => {
                     done();
                 });
         });
-        it("3. should update merchant's profile(info)", (done) => {
+        it("3. should update merchant's profile(info) - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("merchants/" + defaultMerchant._id)
                 .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
@@ -195,7 +190,7 @@ describe("Merchant", () => {
         });
     });
 
-    describe("Offers (/loyalty/offers)", () => {
+    describe("Offers (/loyalty/offers) - 201 Created", () => {
         it("1. should create a new offer", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/offers/")
@@ -212,7 +207,7 @@ describe("Merchant", () => {
 
                 });
         });
-        it("2. should NOT create a new offer | as user is not a merchant", (done) => {
+        it("2. should NOT create a new offer | user is not merchant - 403 Forbidden", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/offers/")
                 .set('Authorization', 'Bearer ' + defaultCustomer.authToken)
@@ -228,7 +223,7 @@ describe("Merchant", () => {
 
                 });
         });
-        it("3. should create a new offer", (done) => {
+        it("3. should create a new offer - 201 Created", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/offers/")
                 .set('Authorization', 'Bearer ' + defaultMerchant.authToken)

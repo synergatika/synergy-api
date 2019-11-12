@@ -14,7 +14,7 @@ import { defaultMerchant, newMerchant, offers } from './_structs.test'
 
 describe("Merchant", () => {
     describe("Offers (/loyalty/offers)", () => {
-        it("4. should update an offer", (done) => {
+        it("4. should update an offer - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("loyalty/offers/" + defaultMerchant._id + "/" + offers[0].offer_id)
                 .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
@@ -29,7 +29,7 @@ describe("Merchant", () => {
                     done();
                 });
         });
-        it("5. should NOT update offer | as it does not belong to logged in user", (done) => {
+        it("5. should NOT update offer | not belong to user - 403 Forbidden", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("loyalty/offers/" + defaultMerchant._id + "/" + offers[0].offer_id)
                 .set('Authorization', 'Bearer ' + newMerchant.authToken)
@@ -44,7 +44,7 @@ describe("Merchant", () => {
                     done();
                 });
         });
-        it("6. should delete an offer", (done) => {
+        it("6. should delete an offer - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .delete("loyalty/offers/" + defaultMerchant._id + "/" + offers[1].offer_id)
                 .set('Authorization', 'Bearer ' + defaultMerchant.authToken)

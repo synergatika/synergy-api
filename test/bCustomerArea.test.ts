@@ -15,7 +15,7 @@ import { defaultCustomer } from './_structs.test'
 describe("Customer", () => {
 
     describe("Profile (/profile)", () => {
-        it("1. should authenticate user (customer)", (done) => {
+        it("1. should authenticate user (customer) - 200 Authenticate", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate")
                 .send({
@@ -33,7 +33,7 @@ describe("Customer", () => {
                     done();
                 });
         });
-        it("2. should read user's profile", (done) => {
+        it("2. should read user's profile - 200 Customer", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("profile")
                 .set('Authorization', 'Bearer ' + defaultCustomer.authToken)
@@ -45,7 +45,7 @@ describe("Customer", () => {
                     done();
                 });
         });
-        it("3. should NOT update customer's profile | as name is empty", (done) => {
+        it("3. should NOT update customer's profile | name is empty - 400 Bad Request", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("profile")
                 .set('Authorization', 'Bearer ' + defaultCustomer.authToken)
@@ -59,7 +59,7 @@ describe("Customer", () => {
                     done();
                 });
         });
-        it("4. should update customer's profile", (done) => {
+        it("4. should update customer's profile - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("profile")
                 .set('Authorization', 'Bearer ' + defaultCustomer.authToken)

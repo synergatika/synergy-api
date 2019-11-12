@@ -15,7 +15,7 @@ import { defaultMerchant, offers } from './_structs.test'
 
 describe("Without Login", () => {
     describe("Merchants (/merchants)", () => {
-        it("1. should read all merchants", (done) => {
+        it("1. should read all merchants - 200 Merchants", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("merchants/")
                 .end((err, res) => {
@@ -26,7 +26,7 @@ describe("Without Login", () => {
                     done();
                 });
         });
-        it("2. should read a merchant's info", (done) => {
+        it("2. should read a merchant's info - 200 Merchant", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("merchants/" + defaultMerchant._id)
                 .end((err, res) => {
@@ -37,7 +37,7 @@ describe("Without Login", () => {
                     done();
                 });
         });
-        it("3. should NOT read anything | as url does not exist", (done) => {
+        it("3. should NOT read anything | url not exist = 404 Not Found", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("random_url/")
                 .end((err, res) => {
@@ -48,7 +48,7 @@ describe("Without Login", () => {
         });
     });
     describe("Offers (/loyalty/offers)", () => {
-        it("1. should read all offers", (done) => {
+        it("1. should read all offers - 200 Offers", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("loyalty/offers/")
                 .end((err, res) => {
@@ -63,7 +63,7 @@ describe("Without Login", () => {
                     done();
                 });
         });
-        it("2. should read all merchant's offers", (done) => {
+        it("2. should read all merchant's offers - 200 Offers", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("loyalty/offers/" + defaultMerchant._id)
                 .end((err, res) => {

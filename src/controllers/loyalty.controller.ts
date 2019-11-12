@@ -21,7 +21,6 @@ import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../models/user.model';
 import transactionModel from '../models/transaction.model';
-import { newExpression } from 'babel-types';
 
 class LoyaltyController implements Controller {
     public path = '/loyalty';
@@ -54,7 +53,8 @@ class LoyaltyController implements Controller {
                 'account.address': data._to
             }]
         }).select({
-            "email": 1, "account": 1
+            "_id": 1, "email": 1,
+            "account": 1
         }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         else if (!user) {// Have to create a customer (/auth/register/customer) and then transfer points
@@ -69,11 +69,16 @@ class LoyaltyController implements Controller {
                         .then(async (result: any) => {
                             console.log("TEST: " + request.user.name, request.user.email);
                             await this.transaction.create({
-                                ...result, type: "EarnPoints", _from_name: request.user.name, _from_email: request.user.email, _to_email: user.email, _points: this.amountToPoints(data._amount)
+                                ...result, type: "EarnPoints",
+                                from_id: request.user._id, to_id: user._id,
+                                info: {
+                                    from_name: request.user.name, from_email: request.user.email,
+                                    to_email: user.email, points: this.amountToPoints(data._amount)
+                                }
                             });
-                            response.status(200).send({
+                            response.status(201).send({
                                 data: result,
-                                code: 200
+                                code: 201
                             });
                         })
                         .catch((error: Error) => {
@@ -114,11 +119,16 @@ class LoyaltyController implements Controller {
                     return instance.usePoints(data._points, user.account.address, _partner, serviceInstance.address)
                         .then(async (result: any) => {
                             await this.transaction.create({
-                                ...result, type: "RedeemPoints", _from_name: request.user.name, _from_email: request.user.email, _to_email: user.email, _points: data._points
+                                ...result, type: "RedeemPoints",
+                                from_id: request.user._id, to_id: user._id,
+                                info: {
+                                    from_name: request.user.name, from_email: request.user.email,
+                                    to_email: user.email, points: data._points
+                                }
                             });
-                            response.status(200).send({
+                            response.status(201).send({
                                 data: result,
-                                code: 200
+                                code: 201
                             });
                         })
                         .catch((error: Error) => {
@@ -159,12 +169,12 @@ class LoyaltyController implements Controller {
 
         let error: Error, transactions: any;
         [error, transactions] = await to(this.transaction.find({
-            _to_email: request.user.email, $or: [{ type: "EarnPoints" }, { type: "RedeemPoints" }]
+            to_id: request.user._id, $or: [{ type: "EarnPoints" }, { type: "RedeemPoints" }]
         }).select({
             "_id": 1, "type": 1,
-            "_from_name": 1, "_from_email": 1,
-            "_to_email": 1, "tx": 1,
-            "createdAt": 1, "points": 1
+            "from_id": 1, "to_id": 1,
+            "info": 1, "tx": 1,
+            "createdAt": 1
         }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         console.log(transactions);

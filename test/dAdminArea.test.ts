@@ -15,7 +15,7 @@ import { defaultAdmin, newMerchant } from './_structs.test'
 describe("Admin", () => {
 
     describe("Admin Auth (/auth)", () => {
-        it("1. should authenticate user", (done) => {
+        it("1. should authenticate user - 200 Authenticate", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate")
                 .send({
@@ -34,7 +34,7 @@ describe("Admin", () => {
                     done();
                 });
         });
-        it("2. should update password", (done) => {
+        it("2. should update password - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("auth/change_pass")
                 .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
@@ -49,7 +49,7 @@ describe("Admin", () => {
                     done();
                 });
         });
-        it("3. should authenticate user", (done) => {
+        it("3. should authenticate user - 200 Authenticate", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate")
                 .send({
@@ -68,7 +68,7 @@ describe("Admin", () => {
                     done();
                 });
         });
-        it("4. should update password", (done) => {
+        it("4. should update password - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("auth/change_pass")
                 .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
@@ -82,7 +82,7 @@ describe("Admin", () => {
                     done();
                 });
         });
-        it("5. should create a new merchant", (done) => {
+        it("5. should create a new merchant - 200 Email Sent", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/register/" + "merchant")
                 .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
@@ -98,7 +98,7 @@ describe("Admin", () => {
                     done();
                 });
         });
-        it("6. should NOT authenticate the new merchant | as password is empty", (done) => {
+        it("6. should NOT authenticate the new merchant | password is empty - 400 Bad Request", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate/")
                 .send({
@@ -111,7 +111,7 @@ describe("Admin", () => {
                     done();
                 });
         });
-        it("7. sould NOT authenticate the new merchant | as password is random and has not be changed", (done) => {
+        it("7. sould NOT authenticate the new merchant | password not verified - 204 Need Verification", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate/")
                 .send({
@@ -124,7 +124,7 @@ describe("Admin", () => {
                     done();
                 });
         });
-        it("8. should set a new password", (done) => {
+        it("8. should set a new password - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("auth/set_pass/" + newMerchant.email)
                 .send({
@@ -138,7 +138,7 @@ describe("Admin", () => {
                     done();
                 });
         });
-        it("9. should authenticate the new merchant", (done) => {
+        it("9. should authenticate the new merchant - 200 Authenticate", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate/")
                 .send({
