@@ -1,7 +1,7 @@
 import * as nodemailer from 'nodemailer'
 
 // create reusable transporter object using SMTP transport
-const transporter: nodemailer.Transporter = nodemailer.createTransport({
+export const transporter: nodemailer.Transporter = nodemailer.createTransport({
     //service: process.env.EMAIL_SERVICE,
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,

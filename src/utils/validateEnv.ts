@@ -4,8 +4,8 @@ import {
 
 export default function validateEnv() {
   cleanEnv(process.env, {
-    API_URL: url(),
-    APP_URL: url(),
+    API_URL: str(),
+    APP_URL: str(),
     DB_HOST: host(),
     DB_NAME: str(),
     DB_PASSWORD: str(),

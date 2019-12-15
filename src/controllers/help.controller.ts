@@ -7,6 +7,8 @@ const path = require('path');
 // Eth
 import { BlockchainService } from '../utils/blockchainService';
 
+import { transporter } from '../utils/mailer';
+
 // Exceptions
 import NotFoundException from '../exceptions/NotFound.exception';
 // Interfaces
@@ -41,7 +43,7 @@ class HelpController implements Controller {
 
     let start_time = new Date().getTime(), end_time = 0;
     let error, conn;
-    [error, conn] = await to(mongoose.connect('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME, {
+    [error, conn] = await to(mongoose.connect(`mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`, {
       useCreateIndex: true,
       useNewUrlParser: true,
       useUnifiedTopology: true,
@@ -57,7 +59,8 @@ class HelpController implements Controller {
         ethereum_api_address: serviceInstance.address.from,
         ethereum_api_url: ETH_REMOTE_API,
         ethereum_api_status: await serviceInstance.isConnected(),
-        ethereum_api_balance: parseInt(await serviceInstance.getBalance())
+        ethereum_api_balance: parseInt(await serviceInstance.getBalance()),
+        smtp_connection: await transporter.verify()
       },
       code: 200
     });
