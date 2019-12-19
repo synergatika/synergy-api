@@ -27,6 +27,19 @@ export class BlockchainService {
         return this.web3.eth.accounts.decrypt(encAccount, password);
     }
 
+    async isConnected(): Promise<boolean> {
+      var provider = new Web3.providers.HttpProvider(`http://${this.hostname}:8545`);
+      this.web3.setProvider(provider);
+      const balance = await this.web3.eth.getBalance(this.address.from);
+      return this.web3.currentProvider.connected;
+    }
+
+    async getBalance(): Promise<string> {
+      var provider = new Web3.providers.HttpProvider(`http://${this.hostname}:8545`);
+      this.web3.setProvider(provider);
+      return await this.web3.eth.getBalance(this.address.from);
+    }
+
     async getLoyaltyAppContract() {
         const PointsTokenStorageContract = this.loadProxyContract();
         const LoyaltyPointsContract = this.loadImplementationContract();

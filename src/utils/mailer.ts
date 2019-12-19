@@ -12,6 +12,7 @@ const transporter: nodemailer.Transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false
   }
+
 } as any);
 
 export default transporter;
