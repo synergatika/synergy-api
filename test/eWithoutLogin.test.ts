@@ -10,7 +10,7 @@ import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
 validateEnv();
 
-import { defaultMerchant, offers } from './_structs.test'
+import { defaultMerchant_1, offers } from './_structs.test'
 
 
 describe("Without Login", () => {
@@ -28,7 +28,7 @@ describe("Without Login", () => {
         });
         it("2. should read a merchant's info - 200 Merchant", (done) => {
             chai.request(`${process.env.API_URL}`)
-                .get("merchants/" + defaultMerchant._id)
+                .get("merchants/" + defaultMerchant_1._id)
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.body.should.be.a('object');
@@ -65,7 +65,7 @@ describe("Without Login", () => {
         });
         it("2. should read all merchant's offers - 200 Offers", (done) => {
             chai.request(`${process.env.API_URL}`)
-                .get("loyalty/offers/" + defaultMerchant._id)
+                .get("loyalty/offers/" + defaultMerchant_1._id)
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.body.should.be.a('object');

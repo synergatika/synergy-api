@@ -15,7 +15,7 @@ class App {
     allowedHeaders: ["Access-Control-Allow-Headers", "Authorization", "Origin", "X-Requested-With", "Content-Type", "Accept", "X-Access-Token"],
     credentials: true,
     methods: "GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE",
-    origin: `${process.env.APP_URL}`,
+    origin: '*',//`${process.env.APP_URL}`,
     preflightContinue: false
   };
 

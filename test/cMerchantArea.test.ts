@@ -11,7 +11,7 @@ import validateEnv from '../src/utils/validateEnv';
 
 validateEnv();
 
-import { defaultMerchant, newCustomer, newMerchant, defaultCustomer, offers } from './_structs.test'
+import { defaultMerchant_1, newCustomer, newMerchant, customer01, offers } from './_structs.test'
 
 describe("Merchant", () => {
 
@@ -20,8 +20,8 @@ describe("Merchant", () => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate")
                 .send({
-                    email: defaultMerchant.email,
-                    password: defaultMerchant.password
+                    email: defaultMerchant_1.email,
+                    password: defaultMerchant_1.password
                 })
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -30,15 +30,15 @@ describe("Merchant", () => {
                     res.body.data.should.be.a('object');
                     res.body.data.should.have.property('user');
                     res.body.data.should.have.property('token');
-                    defaultMerchant._id = res.body.data.user._id;
-                    defaultMerchant.authToken = res.body.data.token.token;
+                    defaultMerchant_1._id = res.body.data.user._id;
+                    defaultMerchant_1.authToken = res.body.data.token.token;
                     done();
                 });
         });
         it("2. should NOT create a new merchant | merchant cannot create merchant - 403 Forbidden", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/register/" + "merchant")
-                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
                 .send({
                     name: newMerchant.name,
                     email: newMerchant.email
@@ -52,7 +52,7 @@ describe("Merchant", () => {
         it("3. should create a new customer - 200 Email Sent", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/register/" + "customer")
-                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
                 .send({
                     name: newCustomer.name,
                     email: newCustomer.email
@@ -115,7 +115,7 @@ describe("Merchant", () => {
         it("1. should NOT update merchant's profile(info) | not belong to user - 403 Forbidden", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("merchants/" + 'random_id')
-                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
                 .send({
                     name: "Merchant One",
                     imageURL: "http://merchant_image.gr",
@@ -139,7 +139,7 @@ describe("Merchant", () => {
         });
         it("2. should NOT update merchant's profile(info) | wrong jwt - 401 Unauthorized", (done) => {
             chai.request(`${process.env.API_URL}`)
-                .put("merchants/" + defaultMerchant._id)
+                .put("merchants/" + defaultMerchant_1._id)
                 .set('Authorization', 'Bearer ' + 'random_jwt')
                 .send({
                     name: "Merchant One",
@@ -164,21 +164,21 @@ describe("Merchant", () => {
         });
         it("3. should update merchant's profile(info) - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
-                .put("merchants/" + defaultMerchant._id)
-                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                .put("merchants/" + defaultMerchant_1._id)
+                .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
                 .send({
-                    name: "New Merchant Name",
-                    imageURL: "http://url_merchant.gr",
+                    name: defaultMerchant_1.name,
+                    imageURL: defaultMerchant_1.imageURL,
                     contact: {
-                        phone: 2105555555,
-                        websiteURL: 'www.merchant_shop.gr',
+                        phone: defaultMerchant_1.contact.phone,
+                        websiteURL: defaultMerchant_1.contact.websiteURL,
                         address: {
-                            street: "My Street",
-                            zipCode: 10000,
+                            street: defaultMerchant_1.contact.address.street,
+                            zipCode: defaultMerchant_1.contact.address.zipCode,
                             city: "Athens"
                         }
                     },
-                    sector: "Durables"
+                    sector: defaultMerchant_1.sector,
                 })
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -194,7 +194,7 @@ describe("Merchant", () => {
         it("1. should create a new offer", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/offers/")
-                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
                 .send({
                     description: '2 + 1 Beers',
                     cost: 1300,
@@ -210,7 +210,7 @@ describe("Merchant", () => {
         it("2. should NOT create a new offer | user is not merchant - 403 Forbidden", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/offers/")
-                .set('Authorization', 'Bearer ' + defaultCustomer.authToken)
+                .set('Authorization', 'Bearer ' + customer01.authToken)
                 .send({
                     description: 'Free meals at Sundays',
                     cost: 2000,
@@ -226,7 +226,7 @@ describe("Merchant", () => {
         it("3. should create a new offer - 201 Created", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .post("loyalty/offers/")
-                .set('Authorization', 'Bearer ' + defaultMerchant.authToken)
+                .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
                 .send({
                     description: 'Free meals at Sundays',
                     cost: 2000,

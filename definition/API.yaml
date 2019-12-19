@@ -303,6 +303,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Updated'
+        '204':
+          $ref: '#/components/responses/No_User'        
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -325,6 +327,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Updated'
+        '204':
+          $ref: '#/components/responses/No_User'  
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -895,16 +899,7 @@ components:
               code:
                 type: number
                 default: 200
-    Need_Verification:
-      description: Password or Email has not been verified
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Need_Verification"
-          example:
-            code: 204
-            message: "Please update your password1"
-            
+
     # Create, Updated, Email Send, Error
     Created:
       description: Expected response to valid request
@@ -924,6 +919,24 @@ components:
           example:
             code: 200
             message: "User's Profile successfully updated!"
+    Need_Verification:
+      description: Password or Email has not been verified
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Need_Verification"
+          example:
+            code: 204
+            message: "Please update your password1"    
+    No_User:
+      description: Expected response to valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/No_User"
+          example:
+            code: 204
+            message: "No User Found!"
     Email_Sent:
       description: Expected response to valid request
       content:
@@ -931,6 +944,7 @@ components:
           schema:
             $ref: "#/components/schemas/Email_Sent"
           example:
+            code: 200
             message: "An email has been sent. Follow the link to verify your address!"
     Bad_Request:
       description: Bad Request (400)
@@ -1394,6 +1408,17 @@ components:
           format: int32
         message:
           type: string
+    No_User:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string   
     Email_Sent:
       type: object
       required:

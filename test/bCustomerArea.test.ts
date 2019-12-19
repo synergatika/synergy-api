@@ -10,7 +10,7 @@ import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
 validateEnv();
 
-import { defaultCustomer } from './_structs.test'
+import { customer01 } from './_structs.test'
 
 describe("Customer", () => {
 
@@ -19,8 +19,8 @@ describe("Customer", () => {
             chai.request(`${process.env.API_URL}`)
                 .post("auth/authenticate")
                 .send({
-                    email: defaultCustomer.email,
-                    password: defaultCustomer.password
+                    email: customer01.email,
+                    password: customer01.password
                 })
                 .end((err, res) => {
                     res.should.have.status(200);
@@ -29,14 +29,14 @@ describe("Customer", () => {
                     res.body.data.should.be.a('object');
                     res.body.data.should.have.property('user');
                     res.body.data.should.have.property('token');
-                    defaultCustomer.authToken = res.body.data.token.token;
+                    customer01.authToken = res.body.data.token.token;
                     done();
                 });
         });
         it("2. should read user's profile - 200 Customer", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .get("profile")
-                .set('Authorization', 'Bearer ' + defaultCustomer.authToken)
+                .set('Authorization', 'Bearer ' + customer01.authToken)
                 .end((err, res) => {
                     res.should.have.status(200);
                     res.body.should.be.a('object');
@@ -48,7 +48,7 @@ describe("Customer", () => {
         it("3. should NOT update customer's profile | name is empty - 400 Bad Request", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("profile")
-                .set('Authorization', 'Bearer ' + defaultCustomer.authToken)
+                .set('Authorization', 'Bearer ' + customer01.authToken)
                 .send({
                     imageURL: "http://customer_image.com"
                 })
@@ -62,7 +62,7 @@ describe("Customer", () => {
         it("4. should update customer's profile - 200 Updated", (done) => {
             chai.request(`${process.env.API_URL}`)
                 .put("profile")
-                .set('Authorization', 'Bearer ' + defaultCustomer.authToken)
+                .set('Authorization', 'Bearer ' + customer01.authToken)
                 .send({
                     imageURL: "http://customer_image.com",
                     name: "Random Name"

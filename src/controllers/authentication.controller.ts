@@ -198,7 +198,8 @@ class AuthenticationController implements Controller {
       email: data.email
     }).select({
       "_id": 1, "email": 1, "password": 1,
-      "email_verified": 1, "pass_verified": 1
+      "email_verified": 1, "pass_verified": 1,
+      "access": 1, "imageURL": 1, "name": 1
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
@@ -256,11 +257,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         _id: user._id
       }, {
-        $set: {
-          account: account,
-          password: hashedPassword
-        }
-      }).catch());
+          $set: {
+            account: account,
+            password: hashedPassword
+          }
+        }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your password has been Updated",
@@ -290,12 +291,12 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           email: email
         }, {
-          $set: {
-            account: account,
-            pass_verified: true,
-            password: hashedPassword
-          }
-        }).catch());
+            $set: {
+              account: account,
+              pass_verified: true,
+              password: hashedPassword
+            }
+          }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
           message: "Success! Your password has been Updated",
@@ -319,11 +320,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-        $set: {
-          verificationToken: token.token,
-          verificationExpiration: token.expiresAt
-        }
-      }).catch());
+          $set: {
+            verificationToken: token.token,
+            verificationExpiration: token.expiresAt
+          }
+        }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
@@ -346,14 +347,14 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         verificationToken: data.token
       }, {
-        $set: {
-          email_verified: true,
-        },
-        $unset: {
-          verificationToken: "",
-          verificationExpiration: "",
-        }
-      }).catch());
+          $set: {
+            email_verified: true,
+          },
+          $unset: {
+            verificationToken: "",
+            verificationExpiration: "",
+          }
+        }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your Email Address has been Verified",
@@ -374,11 +375,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-        $set: {
-          restorationToken: token.token,
-          restorationExpiration: token.expiresAt
-        }
-      }).catch());
+          $set: {
+            restorationToken: token.token,
+            restorationExpiration: token.expiresAt
+          }
+        }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
@@ -459,18 +460,18 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           restorationToken: data.token
         }, {
-          $set: {
-            password: hashedPassword,
-            account: account
-          },
-          $push: {
-            previousAccounts: user.account
-          },
-          $unset: {
-            restorationToken: "",
-            restorationExpiration: ""
-          }
-        }).catch());
+            $set: {
+              password: hashedPassword,
+              account: account
+            },
+            $push: {
+              previousAccounts: user.account
+            },
+            $unset: {
+              restorationToken: "",
+              restorationExpiration: ""
+            }
+          }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
 
         request.params.accesss = user.access;
@@ -544,7 +545,7 @@ class AuthenticationController implements Controller {
         return Transporter.sendMail(mailOptions);
       })
     );
-
+    console.log(error);
     if (error) next(new NotFoundException('Sending Email Fail'));
     else if (data.state === '1') { // Email Verification
       response.status(response.locals.statusCode || 200).send({
