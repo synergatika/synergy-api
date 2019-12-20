@@ -7,7 +7,7 @@ const path = require('path');
 // Eth
 import { BlockchainService } from '../utils/blockchainService';
 
-import { transporter } from '../utils/mailer';
+import Transporter from '../utils/mailer';
 
 // Exceptions
 import NotFoundException from '../exceptions/NotFound.exception';
@@ -60,7 +60,7 @@ class HelpController implements Controller {
         ethereum_api_url: ETH_REMOTE_API,
         ethereum_api_status: await serviceInstance.isConnected(),
         ethereum_api_balance: parseInt(await serviceInstance.getBalance()),
-        smtp_connection: await transporter.verify()
+        smtp_connection: await Transporter.verify()
       },
       code: 200
     });

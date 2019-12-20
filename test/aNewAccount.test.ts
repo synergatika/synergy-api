@@ -158,6 +158,7 @@ describe("New Account", () => {
   before(() => {
     return bcrypt.hash(defaultMerchant_1.password, 10, (err, hash) => {
       return userModel.create({
+        name: defaultMerchant_1.name,
         email: defaultMerchant_1.email,
         imageURL: defaultMerchant_1.imageURL,
         access: 'merchant',
@@ -174,6 +175,7 @@ describe("New Account", () => {
   before(() => {
     return bcrypt.hash(defaultMerchant_2.password, 10, (err, hash) => {
       return userModel.create({
+        name: defaultMerchant_1.name,
         email: defaultMerchant_2.email,
         imageURL: defaultMerchant_2.imageURL,
         access: 'merchant',
