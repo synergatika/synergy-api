@@ -39,7 +39,12 @@ class HelpController implements Controller {
       ETH_API_ACCOUNT_PRIVKEY
     } = process.env;
 
-    const serviceInstance = new BlockchainService(ETH_REMOTE_API, path.join(__dirname, ETH_CONTRACTS_PATH), ETH_API_ACCOUNT_PRIVKEY);
+    let serviceInstance = null;
+    try {
+      serviceInstance = new BlockchainService(ETH_REMOTE_API, path.join(__dirname, ETH_CONTRACTS_PATH), ETH_API_ACCOUNT_PRIVKEY);
+    } catch (error) {
+      console.error('Blockchain connection is limited');
+    }
 
     let start_time = new Date().getTime(), end_time = 0;
     let error, conn;
@@ -50,20 +55,38 @@ class HelpController implements Controller {
       useFindAndModify: false
     }).catch());
     end_time = new Date().getTime();
-    if (error) next(new NotFoundException('Error Connection Fail'));
-    response.status(200).send({
-      data: {
-        db_connection_status: "OK",
-        db_time_to_connect: (end_time - start_time) + "ms",
-        api_version: API_VERSION,
-        ethereum_api_address: serviceInstance.address.from,
-        ethereum_api_url: ETH_REMOTE_API,
-        ethereum_api_status: await serviceInstance.isConnected(),
-        ethereum_api_balance: parseInt(await serviceInstance.getBalance()),
-        smtp_connection: await Transporter.verify()
-      },
-      code: 200
-    });
+
+    const result: any = {
+      api_version: API_VERSION
+    };
+
+    if (serviceInstance == null) {
+      result['ethereum_api_status'] = false;
+    } else {
+      result['ethereum_api_status'] = true;
+      result['ethereum_api_address'] = serviceInstance.address.from;
+      result['ethereum_api_url'] = ETH_REMOTE_API;
+      result['ethereum_api_status'] = await serviceInstance.isConnected();
+      result['ethereum_api_balance'] = parseInt(await serviceInstance.getBalance());
+    }
+
+    if (error) {
+      result['db_connection_status'] = false;
+    } else {
+      result['db_connection_status'] = true;
+      result['db_time_to_connect'] = (end_time - start_time) + "ms";
+    }
+
+    let smtpIsOnline = false;
+    try {
+      smtpIsOnline = await Transporter.verify();
+    } catch (error) {
+      console.error('SMTP connection is limited');
+    }
+
+    result['smtp_status'] = smtpIsOnline;
+
+    response.status(200).send(result);
   }
 }
 export default HelpController;

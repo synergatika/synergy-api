@@ -7,6 +7,7 @@ import errorMiddleware from './middleware/error.middleware'
 
 import * as cors from 'cors';
 
+const Sentry = require('@sentry/node');
 
 class App {
   public app: express.Application;
@@ -20,6 +21,7 @@ class App {
   };
 
   constructor(controllers: Controller[]) {
+    Sentry.init({ dsn: process.env.SENTRY_URI });
     this.app = express();
 
     this.connectToTheDatabase();

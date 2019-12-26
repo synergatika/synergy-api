@@ -24,5 +24,6 @@ export default function validateEnv() {
     PORT: port({ default: 3000 }),
     TOKEN_EXPIRATION: num({ default: 5 }),
     TOKEN_LENGTH: num({ default: 32 }),
+    SENTRY_URI: str(),
   });
 }
