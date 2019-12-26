@@ -1,10 +1,6 @@
 import * as nodemailer from 'nodemailer'
 
-// create reusable transporter object using SMTP transport
-const transporter: nodemailer.Transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE,
-  //host: process.env.EMAIL_HOST,
-  //port: process.env.EMAIL_PORT,
+var options: any = {
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
@@ -12,7 +8,17 @@ const transporter: nodemailer.Transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false
   }
+}
 
-} as any);
+if (process.env.EMAIL_SERVICE != null)
+{
+  options.service = process.env.EMAIL_SERVICE;
+} else {
+  options.host = process.env.EMAIL_HOST;
+  options.port = process.env.EMAIL_PORT;
+}
+
+// create reusable transporter object using SMTP transport
+const transporter: nodemailer.Transporter = nodemailer.createTransport(options);
 
 export default transporter;
