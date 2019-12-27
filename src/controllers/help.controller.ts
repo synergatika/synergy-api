@@ -26,25 +26,43 @@ class HelpController implements Controller {
     this.router.get(`${this.path}`, this.establishing);
   }
 
-  private establishing = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  private checkEthereum = async (result: any) => {
     const {
-      API_VERSION,
-      DB_HOST,
-      DB_PORT,
-      DB_NAME,
-      DB_USER,
-      DB_PASSWORD,
       ETH_REMOTE_API,
       ETH_CONTRACTS_PATH,
       ETH_API_ACCOUNT_PRIVKEY
     } = process.env;
 
+    let start_time = new Date().getTime(), end_time = 0;
     let serviceInstance = null;
     try {
       serviceInstance = new BlockchainService(ETH_REMOTE_API, path.join(__dirname, ETH_CONTRACTS_PATH), ETH_API_ACCOUNT_PRIVKEY);
+      result['ethereum_time_to_connect'] = Number(end_time - start_time);
+      if (serviceInstance == null) {
+        result['ethereum_api_status'] = false;
+      } else {
+        result['ethereum_api_status'] = true;
+        result['ethereum_api_address'] = serviceInstance.address.from;
+        result['ethereum_api_url'] = ETH_REMOTE_API;
+        result['ethereum_api_status'] = await serviceInstance.isConnected();
+        result['ethereum_api_balance'] = parseInt(await serviceInstance.getBalance());
+      }
     } catch (error) {
       console.error('Blockchain connection is limited');
     }
+    end_time = new Date().getTime();
+
+    return result;
+  }
+
+  private checkMongoDB = async (result: any) => {
+    const {
+      DB_HOST,
+      DB_PORT,
+      DB_NAME,
+      DB_USER,
+      DB_PASSWORD
+    } = process.env;
 
     let start_time = new Date().getTime(), end_time = 0;
     let error, conn;
@@ -56,35 +74,53 @@ class HelpController implements Controller {
     }).catch());
     end_time = new Date().getTime();
 
-    const result: any = {
-      api_version: API_VERSION
-    };
-
-    if (serviceInstance == null) {
-      result['ethereum_api_status'] = false;
-    } else {
-      result['ethereum_api_status'] = true;
-      result['ethereum_api_address'] = serviceInstance.address.from;
-      result['ethereum_api_url'] = ETH_REMOTE_API;
-      result['ethereum_api_status'] = await serviceInstance.isConnected();
-      result['ethereum_api_balance'] = parseInt(await serviceInstance.getBalance());
-    }
-
+    result['db_time_to_connect'] = Number(end_time - start_time);
     if (error) {
       result['db_connection_status'] = false;
     } else {
       result['db_connection_status'] = true;
-      result['db_time_to_connect'] = (end_time - start_time) + "ms";
     }
 
+    return result;
+  }
+
+  private checkSMTP = async (result: any) => {
+    const {
+      EMAIL_HOST,
+      EMAIL_PORT,
+      EMAIL_USER,
+      EMAIL_FROM
+    } = process.env;
+
+    let start_time = new Date().getTime(), end_time = 0;
     let smtpIsOnline = false;
     try {
       smtpIsOnline = await Transporter.verify();
     } catch (error) {
       console.error('SMTP connection is limited');
     }
+    end_time = new Date().getTime();
 
+    result['smtp_time_to_connect'] = Number(end_time - start_time);
     result['smtp_status'] = smtpIsOnline;
+    if (smtpIsOnline == false) {
+      result['smtp_email_host'] = EMAIL_HOST;
+      result['smtp_email_port'] = Number(EMAIL_PORT);
+      result['smtp_email_user'] = EMAIL_USER;
+      result['smtp_email_from'] = EMAIL_FROM;
+    }
+
+    return result;
+  }
+
+  private establishing = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    let result: any = {
+      api_version: process.env.API_VERSION
+    };
+
+    result = await this.checkEthereum(result);
+    result = await this.checkMongoDB(result);
+    result = await this.checkSMTP(result);
 
     response.status(200).send(result);
   }
