@@ -37,7 +37,6 @@ class HelpController implements Controller {
     let serviceInstance = null;
     try {
       serviceInstance = new BlockchainService(ETH_REMOTE_API, path.join(__dirname, ETH_CONTRACTS_PATH), ETH_API_ACCOUNT_PRIVKEY);
-      result['ethereum_time_to_connect'] = Number(end_time - start_time);
       if (serviceInstance == null) {
         result['ethereum_api_status'] = false;
       } else {
@@ -51,6 +50,7 @@ class HelpController implements Controller {
       console.error('Blockchain connection is limited');
     }
     end_time = new Date().getTime();
+    result['ethereum_time_to_connect'] = Number(end_time - start_time);
 
     return result;
   }
