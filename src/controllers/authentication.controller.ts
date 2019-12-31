@@ -509,15 +509,15 @@ class AuthenticationController implements Controller {
     };
     if (data.state === '1') { // Email Verification
       emailInfo.type = 'verification',
-        emailInfo.locals = { email: data.user.email, token: data.token, link: `${process.env.APP_URL}` + 'verify/' + data.token },
+        emailInfo.locals = { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/verify-email/' + data.token },
         emailInfo.subject = "Email Verification";
     } else if (data.state === '2') { // Password Restoration
       emailInfo.type = 'restoration',
-        emailInfo.locals = { email: data.user.email, token: data.token, link: `${process.env.APP_URL}` + 'restore/' + data.token },
+        emailInfo.locals = { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/reset-password/' + data.token },
         emailInfo.subject = "Password Restoration";
     } else if (data.state === '3') { // Email Invitation
       emailInfo.type = 'registration',
-        emailInfo.locals = { email: data.user.email, password: data.user.password },
+        emailInfo.locals = { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/login/', password: data.user.password },
         emailInfo.subject = "New Account";
     }
 

@@ -4,6 +4,7 @@ import * as mongoose from 'mongoose';
 import Controller from './interfaces/controller.interface';
 import * as cookieParser from 'cookie-parser';
 import errorMiddleware from './middleware/error.middleware'
+var path = require('path');
 
 import * as cors from 'cors';
 
@@ -38,6 +39,7 @@ class App {
 
   private initializeMiddlewares() {
     this.app.use(bodyParser.json());
+    this.app.use('/assets', express.static(path.join(__dirname, '../assets')));
     this.app.use(cookieParser());
     this.app.use(cors(this.options));
   }
