@@ -8,6 +8,7 @@ import MerchantsController from './controllers/merchants.controller';
 import OffersController from './controllers/offers.controller';
 import CampaignsController from './controllers/campaigns.controller'
 import LoyaltyController from './controllers/loyalty.controller';
+import PostAndEventsController from './controllers/community.controller';
 import HelpController from './controllers/help.controller';
 
 import validateEnv from './utils/validateEnv';
@@ -22,6 +23,7 @@ const app = new App(
     new OffersController(),
     new CampaignsController(),
     new LoyaltyController(),
+    new PostAndEventsController(),
     new HelpController()
   ],
 );

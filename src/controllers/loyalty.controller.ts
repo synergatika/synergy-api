@@ -68,7 +68,6 @@ class LoyaltyController implements Controller {
         .then((instance) => {
           return instance.earnPoints(this.amountToPoints(data._amount), user.account.address, _partner, serviceInstance.address)
             .then(async (result: any) => {
-              console.log("TEST: " + request.user.name, request.user.email);
               await this.transaction.create({
                 ...result, type: "EarnPoints",
                 from_id: request.user._id, to_id: user._id,
@@ -83,12 +82,10 @@ class LoyaltyController implements Controller {
               });
             })
             .catch((error: Error) => {
-              console.log(error);
               next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + user + "/n" + request.user))
             })
         })
         .catch((error) => {
-          console.log(error);
           next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + user + "/n" + request.user))
         })
     }
@@ -97,7 +94,7 @@ class LoyaltyController implements Controller {
   private redeemToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RedeemPointsDto = request.body;
     const _partner = (serviceInstance.unlockWallet(request.user.account, data.password)).address;
-    console.log(request.headers);
+
     let error: Error, user: User;
     [error, user] = await to(this.user.findOne({
       $or: [{
@@ -134,12 +131,10 @@ class LoyaltyController implements Controller {
               });
             })
             .catch((error: Error) => {
-              console.log(error);
               next(new UnprocessableEntityException('Blockchain Error'))
             })
         })
         .catch((error) => {
-          console.log(error);
           next(new UnprocessableEntityException('Blockchain Error'))
         });
     }
@@ -147,25 +142,21 @@ class LoyaltyController implements Controller {
 
   private readBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const _member = request.user.account.address;
-    console.log(_member);
+
     await serviceInstance.getLoyaltyAppContract()
       .then((instance) => {
         return instance.members(_member)
           .then((results: any) => {
-            console.log(results);
-
             response.status(200).send({
               data: results,
               code: 200
             });
           })
           .catch((error: Error) => {
-            console.log(error);
             next(new UnprocessableEntityException('Blockchain Error'))
           })
       })
       .catch((error) => {
-        console.log(error);
         next(new UnprocessableEntityException('Blockchain Error'))
       })
   }
@@ -185,30 +176,28 @@ class LoyaltyController implements Controller {
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     else if (!user) {
-      response.status(204).send({
-        message: "User is not registered! Please repeat!",
+      response.status(200).send({
+        message: "user_not_exists",
         code: 204
       });
+    } else {
+      await serviceInstance.getLoyaltyAppContract()
+        .then((instance) => {
+          return instance.members(user.account.address)
+            .then((results: any) => {
+              response.status(200).send({
+                data: results,
+                code: 200
+              });
+            })
+            .catch((error: Error) => {
+              next(new UnprocessableEntityException('Blockchain Error'))
+            })
+        })
+        .catch((error) => {
+          next(new UnprocessableEntityException('Blockchain Error'))
+        })
     }
-    await serviceInstance.getLoyaltyAppContract()
-      .then((instance) => {
-        return instance.members(user.account.address)
-          .then((results: any) => {
-            console.log(results);
-            response.status(200).send({
-              data: results,
-              code: 200
-            });
-          })
-          .catch((error: Error) => {
-            console.log(error);
-            next(new UnprocessableEntityException('Blockchain Error'))
-          })
-      })
-      .catch((error) => {
-        console.log(error);
-        next(new UnprocessableEntityException('Blockchain Error'))
-      })
   }
 
   private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -224,9 +213,8 @@ class LoyaltyController implements Controller {
       "from_id": 1, "to_id": 1,
       "info": 1, "tx": 1,
       "createdAt": 1
-    }).catch());
+    }).sort('-createdAt').catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
-    console.log(transactions);
     response.status(200).send({
       data: transactions,
       code: 200
@@ -245,12 +233,10 @@ class LoyaltyController implements Controller {
             });
           })
           .catch((error: Error) => {
-            console.log(error);
             next(new UnprocessableEntityException('Blockchain Error'))
           })
       })
       .catch((error) => {
-        console.log(error);
         next(new UnprocessableEntityException('Blockchain Error'))
       })
   }
@@ -266,12 +252,10 @@ class LoyaltyController implements Controller {
             });
           })
           .catch((error: Error) => {
-            console.log(error);
             next(new UnprocessableEntityException('Blockchain Error'))
           })
       })
       .catch((error) => {
-        console.log(error);
         next(new UnprocessableEntityException('Blockchain Error'))
       })
   }

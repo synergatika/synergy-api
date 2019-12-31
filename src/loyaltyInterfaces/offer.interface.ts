@@ -2,6 +2,6 @@ interface Offer {
     offer_id: string;
     description: string;
     cost: number;
-    expiresAt: Date;
+    expiresAt: number;
 }
-export default Offer;  
+export default Offer;

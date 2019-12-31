@@ -39,10 +39,16 @@ class OffersController implements Controller {
   }
 
   private readAllOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
     let error: Error, offers: Offer[];
     [error, offers] = await to(this.user.aggregate([{
       $unwind: '$offers'
+    }, {
+      $match: {
+        'offers.expiresAt': { $gt: seconds }
+      }
     }, {
       $project: {
         _id: false,
@@ -89,14 +95,20 @@ class OffersController implements Controller {
 
   private readOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
     let error: Error, offers: Offer[];
     [error, offers] = await to(this.user.aggregate([{
-      $match: {
-        _id: new ObjectId(merchant_id)
-      }
-    }, {
       $unwind: '$offers'
+    }, {
+      $match: {
+        $and: [{
+          _id: new ObjectId(merchant_id)
+        }, {
+          'offers.expiresAt': { $gt: seconds }
+        }]
+      }
     }, {
       $project: {
         _id: false,

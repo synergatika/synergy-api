@@ -8,7 +8,7 @@ class OfferDto {
   public cost: number;
 
   @IsString()
-  public expiresAt: Date;
+  public expiresAt: number;
 }
 
 export default OfferDto;

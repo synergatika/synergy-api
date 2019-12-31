@@ -150,20 +150,16 @@ class AuthenticationController implements Controller {
         .then((instance) => {
           return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
             .then(async (result: any) => {
-              console.log(result);
               await this.transaction.create({
                 ...result, type: "RegisterMember"
               });
-              console.log("OK - Member: " + newAccount.address);
               next();
             })
             .catch((error: Error) => {
-              console.log(error);
               next(new UnprocessableEntityException('Blockchain Error'))
             })
         })
         .catch((error: Error) => {
-          console.log(error);
           next(new UnprocessableEntityException('Blockchain Error'))
         })
     } else if (access === 'merchant') {
@@ -171,20 +167,16 @@ class AuthenticationController implements Controller {
         .then((instance) => {
           return instance.registerPartner(newAccount.address, serviceInstance.address)
             .then(async (result: any) => {
-              console.log(result);
               await this.transaction.create({
                 ...result, type: "RegisterPartner"
               });
-              console.log("OK - Partner: " + newAccount.address);
               next();
             })
             .catch((error: Error) => {
-              console.log(error);
               next(new UnprocessableEntityException('Blockchain Error'))
             })
         })
         .catch((error: Error) => {
-          console.log(error);
           next(new UnprocessableEntityException('Blockchain Error'))
         })
     }
@@ -216,14 +208,15 @@ class AuthenticationController implements Controller {
               code: 200
             });
           } else {
-            response.status(204).send({
-              message: "Please, update your password.",
+            response.status(200).send({
+              message: 'need_password_verification',
               code: 204
             });
           }
         } else {
           request.params.email = data.email;
           response.locals = {
+            message: 'need_email_verification',
             statusCode: 204
           }
           next();
@@ -417,20 +410,16 @@ class AuthenticationController implements Controller {
         .then((instance) => {
           return instance.recoverPoints(data.oldAccount.address, data.account.address, serviceInstance.address)
             .then(async (result: any) => {
-              console.log(result);
               await this.transaction.create({
                 ...result, type: "RecoverPoints"
               });
-              console.log("OK - New Account: " + data.account.address + " | Old Account: " + data.oldAccount.address);
               next();
             })
             .catch((error: Error) => {
-              console.log(error);
               next(new UnprocessableEntityException('Blockchain Error'))
             })
         })
         .catch((error: Error) => {
-          console.log(error);
           next(new UnprocessableEntityException('Blockchain Error'))
         });
     } else if (access === 'merchant') {
@@ -545,14 +534,13 @@ class AuthenticationController implements Controller {
         return Transporter.sendMail(mailOptions);
       })
     );
-    console.log(error);
     if (error) next(new NotFoundException('Sending Email Fail'));
     else if (data.state === '1') { // Email Verification
-      response.status(response.locals.statusCode || 200).send({
+      response.status(200).send({
         // -- For Testing Purposes Only -- //
         tempData: { "token": data.token },
         // -- ////////////|\\\\\\\\\\\\ -- //
-        message: "Please, follow your link to Validate your Email.",
+        message: response.locals.message || "Please, follow your link to Validate your Email.",
         code: response.locals.statusCode || 200
       });
     } else if (data.state === '2') { // Password Restoration

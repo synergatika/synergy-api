@@ -2,6 +2,20 @@ import * as mongoose from 'mongoose';
 import User from '../usersInterfaces/user.interface';
 import { object } from 'prop-types';
 
+const postSchema = new mongoose.Schema({
+  content: String,
+  type: {
+    type: String,
+    enum: ['post', 'event'],
+    default: 'post'
+  },
+  access: {
+    type: String,
+    enum: ['public', 'private', 'partners'],
+    default: 'public'
+  },
+}, {timestamps: true})
+
 const campaignSchema = new mongoose.Schema({
   description: String,
   state: {
@@ -15,7 +29,7 @@ const campaignSchema = new mongoose.Schema({
 const offerSchema = new mongoose.Schema({
   description: String,
   cost: Number,
-  expiresAt: Date
+  expiresAt: Number
 }, { timestamps: true });
 
 const addressSchema = new mongoose.Schema({
@@ -69,6 +83,7 @@ const userSchema = new mongoose.Schema({
   // auth: authSchema,
   offers: [offerSchema],
   campaigns: [campaignSchema],
+  posts: [postSchema],
   previousAccounts: [Object]
 }, {
   timestamps: true
