@@ -40,6 +40,12 @@ export class BlockchainService {
       return await this.web3.eth.getBalance(this.address.from);
     }
 
+    async getLoyaltyAppAddress() {
+      const PointsTokenStorageContract = this.loadProxyContract();
+      const proxy = await PointsTokenStorageContract.deployed();
+      return (proxy != null) ? proxy.address : null;
+    }
+
     async getLoyaltyAppContract() {
         const PointsTokenStorageContract = this.loadProxyContract();
         const LoyaltyPointsContract = this.loadImplementationContract();

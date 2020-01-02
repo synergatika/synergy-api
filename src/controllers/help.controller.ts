@@ -52,6 +52,7 @@ class HelpController implements Controller {
         result['ethereum_api_url'] = ETH_REMOTE_API;
         result['ethereum_api_address'] = serviceInstance.address.from;
         if (status) {
+          result['ethereum_loyalty_app_address'] = await serviceInstance.getLoyaltyAppAddress();
           result['ethereum_api_balance'] = parseInt(await serviceInstance.getBalance());
         }
       }
