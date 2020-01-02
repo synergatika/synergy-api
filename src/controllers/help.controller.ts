@@ -33,6 +33,12 @@ class HelpController implements Controller {
       ETH_API_ACCOUNT_PRIVKEY
     } = process.env;
 
+    const timeOutPromise = new Promise(function(resolve, reject) {
+      setTimeout(() => {
+        resolve(false);
+      }, 5000);
+    });
+
     let start_time = new Date().getTime(), end_time = 0;
     let serviceInstance = null;
     try {
@@ -40,13 +46,17 @@ class HelpController implements Controller {
       if (serviceInstance == null) {
         result['ethereum_api_status'] = false;
       } else {
-        result['ethereum_api_status'] = true;
-        result['ethereum_api_address'] = serviceInstance.address.from;
+        const status = await Promise.race([timeOutPromise, serviceInstance.isConnected()]);
+
+        result['ethereum_api_status'] = status;
         result['ethereum_api_url'] = ETH_REMOTE_API;
-        result['ethereum_api_status'] = await serviceInstance.isConnected();
-        result['ethereum_api_balance'] = parseInt(await serviceInstance.getBalance());
+        result['ethereum_api_address'] = serviceInstance.address.from;
+        if (status) {
+          result['ethereum_api_balance'] = parseInt(await serviceInstance.getBalance());
+        }
       }
     } catch (error) {
+      result['ethereum_api_status'] = false;
       console.error('Blockchain connection is limited');
     }
     end_time = new Date().getTime();
@@ -64,14 +74,22 @@ class HelpController implements Controller {
       DB_PASSWORD
     } = process.env;
 
+    const timeOutPromise = new Promise(function(resolve, reject) {
+      setTimeout(() => {
+        resolve([true, null]);
+      }, 5000);
+    });
+
     let start_time = new Date().getTime(), end_time = 0;
     let error, conn;
-    [error, conn] = await to(mongoose.connect(`mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`, {
+    [error, conn] = await Promise.race([to(mongoose.connect(`mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`, {
       useCreateIndex: true,
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      useFindAndModify: false
-    }).catch());
+      useFindAndModify: false,
+      reconnectTries: 5,
+      reconnectInterval: 500, // in ms
+    }).catch()), timeOutPromise]) as any;
     end_time = new Date().getTime();
 
     result['db_time_to_connect'] = Number(end_time - start_time);
