@@ -123,6 +123,8 @@ class HelpController implements Controller {
     result = await this.checkSMTP(result);
 
     response.status(200).send(result);
+
+    next();
   }
 }
 export default HelpController;
