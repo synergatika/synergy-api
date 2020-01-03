@@ -7,7 +7,7 @@
     "lint": "npx tslint -e **/node_modules/** -e **/dist/** -t codeFrame **/*.ts ",
     "watch": "npx webpack --watch",
     "start": "npx webpack && node ./dist/App.js",
-    "test": "./ci/test"
+    "test": "npx mocha --timeout 30000 -b -r ts-node/register ./test/*.test.ts"
   },
   "author": "",
   "license": "AGPL-v3",
