@@ -27,6 +27,9 @@ const DEFAULT_PARAMS: webpack.Configuration = {
   resolve: {
     extensions: ['.ts', '.js']
   },
+  optimization: {
+    minimize: false
+  },
   module: {
     rules: [
       {
