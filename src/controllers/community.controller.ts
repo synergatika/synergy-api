@@ -61,6 +61,10 @@ class PostAndEventsController implements Controller {
         content: '$posts.content',
         createdAt: '$posts.createdAt'
       }
+    }, {
+      $sort: {
+        createdAt: -1
+      }
     }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
@@ -89,6 +93,10 @@ class PostAndEventsController implements Controller {
         type: '$posts.type',
         content: '$posts.content',
         createdAt: '$posts.createdAt'
+      }
+    }, {
+      $sort: {
+        createdAt: -1
       }
     }
     ]).exec().catch());
@@ -147,7 +155,12 @@ class PostAndEventsController implements Controller {
         type: '$posts.type',
         createdAt: '$posts.createdAt'
       }
-    }]).exec().catch());
+    }, {
+      $sort: {
+        createdAt: -1
+      }
+    }
+    ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: posts,
@@ -179,7 +192,12 @@ class PostAndEventsController implements Controller {
         type: '$posts.type',
         createdAt: '$posts.createdAt'
       }
-    }]).exec().catch());
+    }, {
+      $sort: {
+        createdAt: -1
+      }
+    }
+    ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: posts,

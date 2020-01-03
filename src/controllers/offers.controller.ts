@@ -61,6 +61,10 @@ class OffersController implements Controller {
         expiresAt: '$offers.expiresAt',
         createdAt: '$offers.createdAt'
       }
+    }, {
+      $sort: {
+        createdAt: -1
+      }
     }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
@@ -120,7 +124,12 @@ class OffersController implements Controller {
         expiresAt: '$offers.expiresAt',
         createdAt: '$offers.createdAt'
       }
-    }]).exec().catch());
+    }, {
+      $sort: {
+        createdAt: -1
+      }
+    }
+    ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: offers,

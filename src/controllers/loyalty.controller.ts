@@ -33,8 +33,8 @@ class LoyaltyController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/earn`, authMiddleware, accessMiddleware.confirmPassword,/*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), this.earnToken);
-    this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.confirmPassword, validationBodyMiddleware(RedeemPointsDto), this.redeemToken);
+    this.router.post(`${this.path}/earn`, authMiddleware, /*accessMiddleware.confirmPassword,*//*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), this.earnToken);
+    this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, /*accessMiddleware.confirmPassword,*/ validationBodyMiddleware(RedeemPointsDto), this.redeemToken);
     this.router.get(`${this.path}/balance`, authMiddleware, this.readBalance);
     this.router.get(`${this.path}/points/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, this.readCustomerBalance);
     this.router.get(`${this.path}/transactions`, authMiddleware, this.readTransactions);
@@ -44,7 +44,7 @@ class LoyaltyController implements Controller {
 
   private earnToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: EarnPointsDto = request.body;
-    const _partner = (serviceInstance.unlockWallet(request.user.account, data.password)).address;
+    const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
 
     let error: Error, user: User;
     [error, user] = await to(this.user.findOne({
@@ -93,7 +93,7 @@ class LoyaltyController implements Controller {
 
   private redeemToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RedeemPointsDto = request.body;
-    const _partner = (serviceInstance.unlockWallet(request.user.account, data.password)).address;
+    const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
 
     let error: Error, user: User;
     [error, user] = await to(this.user.findOne({

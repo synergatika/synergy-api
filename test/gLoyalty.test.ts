@@ -31,22 +31,6 @@ describe("Loyalty (/loyalty)", () => {
           done();
         });
     });
-    it("2. should NOT earn points | password is wrong - 403 Forbidden", (done) => {
-      chai.request(`${process.env.API_URL}`)
-        .post("loyalty/earn")
-        .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
-        .send({
-          password: 'random_pass',
-          _to: newCustomer_1.email,
-          _amount: 100
-        })
-        .end((err, res) => {
-          res.should.have.status(403);
-          res.body.should.have.property('message');
-          res.body.should.be.a('object');
-          done();
-        });
-    });
   });
   describe("Points - From DefaultMerchant_3 to NewCustomer_1", () => {
     it("1. should read customer's balance - 200 Balance", (done) => {
