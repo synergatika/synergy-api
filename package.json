@@ -8,7 +8,7 @@
     "watch": "npx webpack --watch",
     "start": "npx webpack && node ./dist/App.js",
     "test": "npx mocha --timeout 30000 -b -r ts-node/register ./test/*.test.ts",
-    "citest": "./ci/test"
+    "citest": "./ci/test.sh"
   },
   "author": "",
   "license": "AGPL-v3",
