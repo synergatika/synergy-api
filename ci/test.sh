@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/bin/bash
 
 sudo apt install g++-7
 
