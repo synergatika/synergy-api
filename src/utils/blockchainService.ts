@@ -8,7 +8,10 @@ export class BlockchainService {
     public instance: any;
 
     constructor(private hostname: string, private path: string, private_key: string) {
-        this.web3 = new Web3(Web3.givenProvider || `ws://${hostname}:8546`);
+        const {
+          ETH_REMOTE_WS
+        } = process.env;
+        this.web3 = new Web3(Web3.givenProvider || `ws://${hostname}:${ETH_REMOTE_WS}`);
         this.loadAdmin(private_key);
     }
 
@@ -28,20 +31,21 @@ export class BlockchainService {
     }
 
     async isConnected(): Promise<boolean> {
-      var provider = new Web3.providers.HttpProvider(`http://${this.hostname}:8545`);
+      var provider = this.getHttpProvider();
       this.web3.setProvider(provider);
       const balance = await this.web3.eth.getBalance(this.address.from);
       return this.web3.currentProvider.connected;
     }
 
     async getBalance(): Promise<string> {
-      var provider = new Web3.providers.HttpProvider(`http://${this.hostname}:8545`);
+      var provider = this.getHttpProvider();
       this.web3.setProvider(provider);
       return await this.web3.eth.getBalance(this.address.from);
     }
 
     async getLoyaltyAppAddress() {
       const PointsTokenStorageContract = this.loadProxyContract();
+      if (PointsTokenStorageContract == null) return null;
       const proxy = await PointsTokenStorageContract.deployed();
       return (proxy != null) ? proxy.address : null;
     }
@@ -63,21 +67,35 @@ export class BlockchainService {
     }
 
     private loadProxyContract() {
-        var PointsTokenStorageProxyData = fs.readFileSync(`${this.path}/PointsTokenStorageProxy.json`);
-        var PointsTokenStorageProxyDataParsed = JSON.parse(PointsTokenStorageProxyData);
-        var provider = new Web3.providers.HttpProvider(`http://${this.hostname}:8545`);
-        var PointsTokenStorageContract = contract(PointsTokenStorageProxyDataParsed);
-        PointsTokenStorageContract.setProvider(provider);
-        return PointsTokenStorageContract;
+        const contractAsset = fs.existsSync(`${this.path}/PointsTokenStorageProxy.json`);
+        if (contractAsset) {
+          var PointsTokenStorageProxyData = fs.readFileSync(`${this.path}/PointsTokenStorageProxy.json`);
+          var PointsTokenStorageProxyDataParsed = JSON.parse(PointsTokenStorageProxyData);
+          var provider = this.getHttpProvider();
+          var PointsTokenStorageContract = contract(PointsTokenStorageProxyDataParsed);
+          PointsTokenStorageContract.setNetworkType(process.env.ETH_REMOTE_NETWORK_TYPE);
+          PointsTokenStorageContract.setProvider(provider);
+          return PointsTokenStorageContract;
+        } else {
+          return null;
+        }
     }
 
     private loadImplementationContract() {
         var LoyaltyPointsData = fs.readFileSync(`${this.path}/LoyaltyPoints.json`);
         var LoyaltyPointsParsed = JSON.parse(LoyaltyPointsData);
-        var provider = new Web3.providers.HttpProvider(`http://${this.hostname}:8545`);
+        var provider = this.getHttpProvider();
         var LoyaltyPointsContract = contract(LoyaltyPointsParsed);
+        LoyaltyPointsContract.setNetworkType(process.env.ETH_REMOTE_NETWORK_TYPE);
         LoyaltyPointsContract.setProvider(provider);
         return LoyaltyPointsContract;
+    }
+
+    private getHttpProvider() {
+      const {
+        ETH_REMOTE_REST
+      } = process.env;
+      return new Web3.providers.HttpProvider(`http://${this.hostname}:${ETH_REMOTE_REST}`);
     }
 }
 

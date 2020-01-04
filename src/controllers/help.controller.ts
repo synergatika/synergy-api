@@ -30,7 +30,10 @@ class HelpController implements Controller {
     const {
       ETH_REMOTE_API,
       ETH_CONTRACTS_PATH,
-      ETH_API_ACCOUNT_PRIVKEY
+      ETH_API_ACCOUNT_PRIVKEY,
+      ETH_REMOTE_WS,
+      ETH_REMOTE_REST,
+      ETH_REMOTE_NETWORK_TYPE
     } = process.env;
 
     const timeOutPromise = new Promise(function(resolve, reject) {
@@ -50,6 +53,9 @@ class HelpController implements Controller {
 
         result['ethereum_api_status'] = status;
         result['ethereum_api_url'] = ETH_REMOTE_API;
+        result['ethereum_api_ws_port'] = Number(ETH_REMOTE_WS);
+        result['ethereum_api_rpc_port'] = Number(ETH_REMOTE_REST);
+        result['ethereum_api_type'] = ETH_REMOTE_NETWORK_TYPE;
         result['ethereum_api_address'] = serviceInstance.address.from;
         if (status) {
           result['ethereum_loyalty_app_address'] = await serviceInstance.getLoyaltyAppAddress();
@@ -57,6 +63,7 @@ class HelpController implements Controller {
         }
       }
     } catch (error) {
+      console.log(error);
       result['ethereum_api_status'] = false;
       console.error('Blockchain connection is limited');
     }

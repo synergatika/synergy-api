@@ -17,6 +17,8 @@ export default function validateEnv() {
     EMAIL_PORT: port({ default: 587}),
     EMAIL_USER: email(),
     ETH_API_ACCOUNT_PRIVKEY: str(),
+    ETH_REMOTE_WS: num({ default: 8546 }),
+    ETH_REMOTE_REST: num({ default: 8545 }),
     ETH_CONTRACTS_PATH: str(),
     ETH_REMOTE_API: host({ default: 'localhost' }),
     JWT_EXPIRATION: num(),
