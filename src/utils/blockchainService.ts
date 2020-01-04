@@ -58,6 +58,11 @@ export class BlockchainService {
         return await LoyaltyPointsContract.at(proxy.address);
     }
 
+    async unlockAdminAtNode() {
+      const status = await this.web3.eth.personal.unlockAccount(this.address.from, "", 600);
+      return status;
+    }
+
     private loadAdmin(privateKey: string) {
         const account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
         this.web3.eth.accounts.wallet.add(account);
