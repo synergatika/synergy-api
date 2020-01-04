@@ -59,6 +59,7 @@
     "@types/supertest": "2.0.8",
     "@types/webpack": "4.1.4",
     "awesome-typescript-loader": "5.2.1",
+    "ts-node/register": "0.10.0",
     "chai": "4.2.0",
     "chai-http": "4.3.0",
     "mocha": "5.2.0",
