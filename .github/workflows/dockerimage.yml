@@ -19,7 +19,7 @@ jobs:
       with:
         node-version: 10.x
 
-    - run: npm run test
+    - run: npm run citest
       env:
         CI: true
         APP: dev
