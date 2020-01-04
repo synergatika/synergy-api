@@ -29,3 +29,5 @@ node ./dist/App.js &
 npx mocha --timeout 30000 -b -r ts-node/register ./test/*.test.ts
 
 sed -i -e 's/tempData: { .* },//g' src/controllers/authentication.controller.ts
+
+rm -rf contracts
