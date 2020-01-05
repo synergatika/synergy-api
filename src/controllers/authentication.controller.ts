@@ -145,6 +145,7 @@ class AuthenticationController implements Controller {
     const access = request.params.access;
 
     const newAccount = serviceInstance.unlockWallet(data.account, data.user.password);
+
     if ((!access) || (access === 'customer')) {
       await serviceInstance.getLoyaltyAppContract()
         .then((instance) => {

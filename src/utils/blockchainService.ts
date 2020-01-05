@@ -55,6 +55,7 @@ export class BlockchainService {
         const LoyaltyPointsContract = this.loadImplementationContract();
 
         const proxy = await PointsTokenStorageContract.deployed();
+        await this.unlockAdminAtNode();
         return await LoyaltyPointsContract.at(proxy.address);
     }
 
