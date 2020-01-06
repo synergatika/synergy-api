@@ -7,7 +7,11 @@ const path = require('path');
 // Eth
 import { BlockchainService } from '../utils/blockchainService';
 
-import Transporter from '../utils/mailer';
+// Email
+import * as nodemailer from 'nodemailer';
+import Transporter from '../utils/mailer'
+const Email = require('email-templates');
+const email = new Email();
 
 // Exceptions
 import NotFoundException from '../exceptions/NotFound.exception';
@@ -134,6 +138,27 @@ class HelpController implements Controller {
       result['smtp_email_port'] = Number(EMAIL_PORT);
       result['smtp_email_user'] = EMAIL_USER;
       result['smtp_email_from'] = EMAIL_FROM;
+    } else {
+      let emailInfo = {
+        to: 'synergatika@gmail.com',
+        subject: "Test email",
+        html: "<h3>Hello world?</h3><p>Test</p>",
+        type: 'verification',
+        locals: { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/verify-email/' + '#gibberish' },
+      };
+      let error, results: object = {};
+      [error, results] = await to(Promise.all([email.render(emailInfo.type, emailInfo.locals)])
+        .then((template: object) => {
+          const mailOptions: nodemailer.SendMailOptions = {
+            from: process.env.EMAIL_FROM,
+            to: emailInfo.to, // Prod
+            subject: emailInfo.subject, // Subject line
+            html: template.toString() // html body
+          };
+          return Transporter.sendMail(mailOptions);
+        })
+      );
+
     }
 
     return result;

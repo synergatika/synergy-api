@@ -510,16 +510,16 @@ class AuthenticationController implements Controller {
     };
     if (data.state === '1') { // Email Verification
       emailInfo.type = 'verification',
-        emailInfo.locals = { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/verify-email/' + data.token },
-        emailInfo.subject = "Email Verification";
+      emailInfo.locals = { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/verify-email/' + data.token },
+      emailInfo.subject = "Email Verification";
     } else if (data.state === '2') { // Password Restoration
       emailInfo.type = 'restoration',
-        emailInfo.locals = { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/reset-password/' + data.token },
-        emailInfo.subject = "Password Restoration";
+      emailInfo.locals = { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/reset-password/' + data.token },
+      emailInfo.subject = "Password Restoration";
     } else if (data.state === '3') { // Email Invitation
       emailInfo.type = 'registration',
-        emailInfo.locals = { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/login/', password: data.user.password },
-        emailInfo.subject = "New Account";
+      emailInfo.locals = { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/login/', password: data.user.password },
+      emailInfo.subject = "New Account";
     }
 
     let error, results: object = {};
