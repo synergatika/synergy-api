@@ -15,6 +15,10 @@ RUN npm install
 # Bundle app source
 COPY . .
 
+RUN sed -i -e 's/tempData: { .* },//g' src/controllers/authentication.controller.ts
+RUN sed -i -e "s/to: 'dmytakis@gmail.com', \/\/ Dev//g" src/controllers/authentication.controller.ts
+RUN sed -i -e "s/\/\/to: data.user.email, \/\/ Prod/to: data.user.email,/g" src/controllers/authentication.controller.ts
+
 RUN npx webpack
 
 EXPOSE 3000
