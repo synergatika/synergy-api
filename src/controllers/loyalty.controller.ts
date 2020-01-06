@@ -44,6 +44,7 @@ class LoyaltyController implements Controller {
 
   private earnToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: EarnPointsDto = request.body;
+    data._amount = Math.round(data._amount);
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
 
     let error: Error, user: User;
@@ -93,6 +94,7 @@ class LoyaltyController implements Controller {
 
   private redeemToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RedeemPointsDto = request.body;
+    data._points = Math.round(data._points);
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
 
     let error: Error, user: User;
