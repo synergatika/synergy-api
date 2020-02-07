@@ -24,7 +24,8 @@ var defaultMerchant_1 = {
   address: {
     street: "Solonos 136",
     city: "Athens",
-    postCode: 10677
+    postCode: 10677,
+		coordinates: ['37.985560', '23.732720']
   },
   authToken: '',
   _id: '',
@@ -44,7 +45,8 @@ var defaultMerchant_2 = {
   address: {
     street: "Akakiou 1 - 3 & Ipeirou 60",
     city: "Athens",
-    postCode: 10439
+    postCode: 10439,
+		coordinates: ['37.990800', '23.725320']
   },
   authToken: '',
   _id: '',
@@ -64,7 +66,8 @@ var defaultMerchant_3 = {
   address: {
     street: "Nileos 35",
     city: "Athens",
-    postCode: 11851
+    postCode: 11851,
+	coordinates: ['37.975040', '23.716560']
   },
   authToken: '',
   _id: '',

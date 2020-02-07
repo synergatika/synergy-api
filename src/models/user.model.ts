@@ -70,7 +70,8 @@ const eventSchema = new mongoose.Schema({
 const addressSchema = new mongoose.Schema({
   street: String,
   postCode: String,
-  city: String
+  city: String,
+  coordinates: [String]
 }, { _id: false });
 
 const contactSchema = new mongoose.Schema({

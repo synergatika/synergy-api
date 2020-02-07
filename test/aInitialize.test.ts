@@ -194,6 +194,8 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('street', defaultMerchant_1.address.street)
         .field('postCode', defaultMerchant_1.address.postCode)
         .field('city', defaultMerchant_1.address.city)
+        .field('lat', defaultMerchant_1.address.coordinates[0])
+        .field('long', defaultMerchant_1.address.coordinates[1])
         .field('sector', defaultMerchant_1.sector)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_1.imageFile}`),
           `${defaultMerchant_1.imageFile}`)
@@ -294,6 +296,8 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('street', defaultMerchant_2.address.street)
         .field('postCode', defaultMerchant_2.address.postCode)
         .field('city', defaultMerchant_2.address.city)
+        .field('lat', defaultMerchant_2.address.coordinates[0])
+        .field('long', defaultMerchant_2.address.coordinates[1])
         .field('sector', defaultMerchant_2.sector)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_2.imageFile}`),
           `${defaultMerchant_2.imageFile}`)
@@ -395,6 +399,8 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('street', defaultMerchant_3.address.street)
         .field('postCode', defaultMerchant_3.address.postCode)
         .field('city', defaultMerchant_3.address.city)
+        .field('lat', defaultMerchant_3.address.coordinates[0])
+        .field('long', defaultMerchant_3.address.coordinates[1])
         .field('sector', defaultMerchant_3.sector)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_3.imageFile}`),
           `${defaultMerchant_3.imageFile}`)

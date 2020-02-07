@@ -114,6 +114,7 @@ class MerchantsController implements Controller {
           'address.city': data.city,
           'address.postCode': data.postCode,
           'address.street': data.street,
+          'address.coordinates': [data.lat, data.long],
         }
       }, {
         "fields": { "name": 1, "imageURL": 1 },

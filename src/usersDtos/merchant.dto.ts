@@ -58,6 +58,12 @@ class MerchantDto {
   public postCode: string;
 
   @IsString()
+  public lat: string;
+
+  @IsString()
+  public long: string;
+
+  @IsString()
   public phone: string;
 
   @IsOptional()

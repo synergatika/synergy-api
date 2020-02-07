@@ -43,16 +43,20 @@ class MicrocreditController implements Controller {
     const data: RedeemTokensDto = request.body;
     data._points = Math.round(data._points);
 
+    console.log(data);
+
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateMany({
-      _id: merchant_id,
-      'microcredit._id': campaign_id,
-      'microcredit.backers.backer_id': (customer._id).toString()
+      _id: new ObjectId(merchant_id),
+      'microcredit._id': new ObjectId(campaign_id),
+      'microcredit.backers._id': data.support_id,
+      'microcredit.backers.status': 'confirmation',
+      // 'microcredit.backers.backer_id': (customer._id).toString()
     }, {
         $inc: {
           'microcredit.$.backers.$[d].redeemedTokens': data._points
         }
-      }, { "arrayFilters": [{ "d.backer_id": (customer._id).toString() }] }).catch());
+      }, { "arrayFilters": [{ "d._id": data.support_id }] }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
 
     response.status(200).send({

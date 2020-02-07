@@ -70,7 +70,8 @@ class MicrocreditBackersController implements Controller {
     }, {
       $project: {
         _id: false,
-        supoort_id: '$microcredit.backers._id',
+        campaign_id: '$microcredit._id',
+        support_id: '$microcredit.backers._id',
         backer_id: '$microcredit.backers.backer_id',
         initialTokens: '$microcredit.backers.initialTokens',
         redeemedTokens: '$microcredit.backers.redeemedTokens',
@@ -84,7 +85,7 @@ class MicrocreditBackersController implements Controller {
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
-      data: backer[0],
+      data: backer,
       code: 200
     });
   }

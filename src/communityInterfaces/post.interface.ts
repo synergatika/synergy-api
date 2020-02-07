@@ -9,6 +9,6 @@ interface Post {
   content: string;
   access: string;
 
-  createdAt: Date
+  createdAt: Date;
 }
 export default Post;

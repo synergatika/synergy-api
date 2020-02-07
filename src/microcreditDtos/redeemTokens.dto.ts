@@ -9,6 +9,10 @@ class RedeemTokensDto {
 
   @IsNumber()
   public _points: number;
+
+  @IsOptional()
+  @IsString()
+  public support_id: string;
 }
 
 export default RedeemTokensDto;
