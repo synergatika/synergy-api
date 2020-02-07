@@ -10,7 +10,8 @@ import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
 validateEnv();
 
-import { newUser } from './_structs.test';
+import { imagesLocation, newUser } from './_structs.test';
+const fs = require('fs');
 
 describe("Customer", () => {
 
@@ -49,9 +50,11 @@ describe("Customer", () => {
       chai.request(`${process.env.API_URL}`)
         .put("profile")
         .set('Authorization', 'Bearer ' + newUser.authToken)
-        .send({
-          imageURL: "https://image.businessinsider.com/57bd7eefce38f252008b8864?width=766&format=jpeg"
-        })
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${newUser.imageFile}`),
+          `${newUser.imageFile}`)
+        // .send({
+        //   imageURL: "https://image.businessinsider.com/57bd7eefce38f252008b8864?width=766&format=jpeg"
+        // })
         .end((err, res) => {
           res.should.have.status(400);
           res.body.should.be.a('object');
@@ -63,10 +66,13 @@ describe("Customer", () => {
       chai.request(`${process.env.API_URL}`)
         .put("profile")
         .set('Authorization', 'Bearer ' + newUser.authToken)
-        .send({
-          imageURL: "https://image.businessinsider.com/57bd7eefce38f252008b8864?width=766&format=jpeg",
-          name: "Demo User"
-        })
+        .field('name', "Demo User")
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${newUser.imageFile}`),
+          `${newUser.imageFile}`)
+        // .send({
+        //   imageURL: "https://image.businessinsider.com/57bd7eefce38f252008b8864?width=766&format=jpeg",
+        //   name: "Demo User"
+        // })
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');

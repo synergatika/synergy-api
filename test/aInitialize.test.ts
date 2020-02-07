@@ -5,17 +5,21 @@ import chaiAsPromised from 'chai-as-promised';
 chai.should();
 chai.use(require('chai-as-promised'));
 chai.use(require('chai-http'));
-
 import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
 validateEnv();
 import userModel from '../src/models/user.model';
-import transactionModel from '../src/models/transaction.model';
-import { defaultAdmin, defaultMerchant_1, defaultMerchant_2, defaultMerchant_3 } from './_structs.test';
+import registrationTransactionModel from '../src/models/registration.transaction.model';
+import loyaltyTransactionModel from '../src/models/loyalty.transaction.model';
+import { imagesLocation, defaultAdmin, defaultMerchant_1, defaultMerchant_2, defaultMerchant_3 } from './_structs.test';
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
 var path = require('path');
-
+// Image Upload & Remove
+const fs = require('fs')
+// const { promisify } = require('util')
+// const unlinkAsync = promisify(fs.unlink);
+var rimraf = require("rimraf");
 // Eth
 import { BlockchainService } from '../src/utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
@@ -61,10 +65,25 @@ describe("Initialize DB & Drop past Collections", () => {
     }
   });
   before(() => {
-    return transactionModel.deleteMany({});
+    return registrationTransactionModel.deleteMany({});
+  });
+  before(() => {
+    return loyaltyTransactionModel.deleteMany({});
   });
   before(() => {
     return userModel.deleteMany({});
+  });
+  before(() => {
+    return rimraf.sync(path.join(__dirname, '../assets/profile/'));
+  });
+  before(() => {
+    return fs.mkdirSync(path.join(__dirname, '../assets/profile/'));
+  });
+  before(() => {
+    return rimraf.sync(path.join(__dirname, '../assets/items/'));
+  });
+  before(() => {
+    return fs.mkdirSync(path.join(__dirname, '../assets/items/'));
   });
   before(() => {
     return userModel.create({
@@ -103,7 +122,7 @@ describe("Initialize DB & Drop past Collections", () => {
   describe("Registration - Default Merchant 1", () => {
     it("1.1 should create a new merchant - 200 Email Sent", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("auth/register/" + "merchant")
+        .post("auth/register/merchant")
         .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
         .send({
           name: defaultMerchant_1.name,
@@ -169,22 +188,30 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .put("merchants/" + defaultMerchant_1._id)
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
-        .send({
-          name: defaultMerchant_1.name,
-          imageURL: defaultMerchant_1.imageURL,
-          contact: {
-            phone: defaultMerchant_1.contact.phone,
-            websiteURL: defaultMerchant_1.contact.websiteURL,
-            address: {
-              street: defaultMerchant_1.contact.address.street,
-              zipCode: defaultMerchant_1.contact.address.zipCode,
-              city: defaultMerchant_1.contact.address.city
-            }
-          },
-          sector: defaultMerchant_1.sector,
-        })
+        .field('name', defaultMerchant_1.name)
+        .field('phone', defaultMerchant_1.contact.phone)
+        .field('websiteURL', defaultMerchant_1.contact.websiteURL)
+        .field('street', defaultMerchant_1.address.street)
+        .field('postCode', defaultMerchant_1.address.postCode)
+        .field('city', defaultMerchant_1.address.city)
+        .field('sector', defaultMerchant_1.sector)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_1.imageFile}`),
+          `${defaultMerchant_1.imageFile}`)
+        // .send({
+        //   name: defaultMerchant_1.name,
+        //   imageURL: defaultMerchant_1.imageURL,
+        //   contact: {
+        //     phone: defaultMerchant_1.contact.phone,
+        //     websiteURL: defaultMerchant_1.contact.websiteURL
+        //   },
+        //   address: {
+        //     street: defaultMerchant_1.address.street,
+        //     postCode: defaultMerchant_1.address.postCode,
+        //     city: defaultMerchant_1.address.city
+        //   }
+        //   sector: defaultMerchant_1.sector,
+        // })
         .end((err, res) => {
-          res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('data');
           res.body.data.should.be.a('object');
@@ -261,20 +288,29 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .put("merchants/" + defaultMerchant_2._id)
         .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
-        .send({
-          name: defaultMerchant_2.name,
-          imageURL: defaultMerchant_2.imageURL,
-          contact: {
-            phone: defaultMerchant_2.contact.phone,
-            websiteURL: defaultMerchant_2.contact.websiteURL,
-            address: {
-              street: defaultMerchant_2.contact.address.street,
-              zipCode: defaultMerchant_2.contact.address.zipCode,
-              city: defaultMerchant_2.contact.address.city
-            }
-          },
-          sector: defaultMerchant_2.sector,
-        })
+        .field('name', defaultMerchant_2.name)
+        .field('phone', defaultMerchant_2.contact.phone)
+        .field('websiteURL', defaultMerchant_2.contact.websiteURL)
+        .field('street', defaultMerchant_2.address.street)
+        .field('postCode', defaultMerchant_2.address.postCode)
+        .field('city', defaultMerchant_2.address.city)
+        .field('sector', defaultMerchant_2.sector)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_2.imageFile}`),
+          `${defaultMerchant_2.imageFile}`)
+        // .send({
+        //   name: defaultMerchant_2.name,
+        //   imageURL: defaultMerchant_2.imageURL,
+        //   contact: {
+        //     phone: defaultMerchant_2.contact.phone,
+        //     websiteURL: defaultMerchant_2.contact.websiteURL
+        //   },
+        //   address: {
+        //     street: defaultMerchant_2.contact.address.street,
+        //     postCode: defaultMerchant_2.contact.address.postCode,
+        //     city: defaultMerchant_2.contact.address.city
+        //   },
+        //   sector: defaultMerchant_2.sector,
+        // })
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -353,20 +389,29 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .put("merchants/" + defaultMerchant_3._id)
         .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
-        .send({
-          name: defaultMerchant_3.name,
-          imageURL: defaultMerchant_3.imageURL,
-          contact: {
-            phone: defaultMerchant_3.contact.phone,
-            websiteURL: defaultMerchant_3.contact.websiteURL,
-            address: {
-              street: defaultMerchant_3.contact.address.street,
-              zipCode: defaultMerchant_3.contact.address.zipCode,
-              city: defaultMerchant_3.contact.address.city
-            }
-          },
-          sector: defaultMerchant_3.sector,
-        })
+        .field('name', defaultMerchant_3.name)
+        .field('phone', defaultMerchant_3.contact.phone)
+        .field('websiteURL', defaultMerchant_3.contact.websiteURL)
+        .field('street', defaultMerchant_3.address.street)
+        .field('postCode', defaultMerchant_3.address.postCode)
+        .field('city', defaultMerchant_3.address.city)
+        .field('sector', defaultMerchant_3.sector)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_3.imageFile}`),
+          `${defaultMerchant_3.imageFile}`)
+        // .send({
+        //   name: defaultMerchant_3.name,
+        //   imageURL: defaultMerchant_3.imageURL,
+        //   contact: {
+        //     phone: defaultMerchant_3.contact.phone,
+        //     websiteURL: defaultMerchant_3.contact.websiteURL
+        //   },
+        //   address: {
+        //     street: defaultMerchant_3.contact.address.street,
+        //     postCode: defaultMerchant_3.contact.address.postCode,
+        //     city: defaultMerchant_3.contact.address.city
+        //   },
+        //   sector: defaultMerchant_3.sector,
+        // })
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -376,6 +421,7 @@ describe("Initialize DB & Drop past Collections", () => {
         });
     });
   });
+
   describe("Offers - Default Merchant 1", () => {
     var _date_1 = new Date();
     var _newDate1 = _date_1.setDate(_date_1.getDate() + 7);
@@ -386,11 +432,17 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .post("loyalty/offers/")
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
-        .send({
-          description: 'One Year Free Hosting',
-          cost: 2000,
-          expiresAt: _newDate1.toString()
-        })
+        .field('title', 'Hostess')
+        .field('description', 'One Year Free Hosting')
+        .field('cost', 2000)
+        .field('expiresAt', _newDate1.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_a.jfif`),
+          `offer_a.jfif`)
+        // .send({
+        //   description: 'One Year Free Hosting',
+        //   cost: 2000,
+        //   expiresAt: _newDate1.toString()
+        // })
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -402,11 +454,12 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .post("loyalty/offers/")
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
-        .send({
-          description: 'Free Wordpress Website',
-          cost: 5000,
-          expiresAt: _newDate2.toString()
-        })
+        .field('title', 'WP Free')
+        .field('description', 'Free Wordpress Website')
+        .field('cost', 5000)
+        .field('expiresAt', _newDate2.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_b.jfif`),
+          `offer_b.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -424,11 +477,12 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .post("loyalty/offers/")
         .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
-        .send({
-          description: 'Free land Analysis up to 500 square meters',
-          cost: 10000,
-          expiresAt: _newDate1.toString()
-        })
+        .field('title', 'Land Free')
+        .field('description', 'Free land Analysis up to 500 square meters')
+        .field('cost', 10000)
+        .field('expiresAt', _newDate1.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_c.jfif`),
+          `offer_c.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -440,11 +494,12 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .post("loyalty/offers/")
         .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
-        .send({
-          description: 'Free land Analysis up to 1500 square meters',
-          cost: 20000,
-          expiresAt: _newDate2.toString()
-        })
+        .field('title', 'More Land')
+        .field('description', 'Free land Analysis up to 1500 square meters')
+        .field('cost', 20000)
+        .field('expiresAt', _newDate2.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_d.jfif`),
+          `offer_d.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -453,7 +508,6 @@ describe("Initialize DB & Drop past Collections", () => {
         });
     });
   });
-
   describe("Offers - Default Merchant 3", () => {
     var _date_1 = new Date();
     var _newDate1 = _date_1.setMonth(_date_1.getMonth() + 1);
@@ -463,11 +517,12 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .post("loyalty/offers/")
         .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
-        .send({
-          description: 'An Easter Wine Basket',
-          cost: 500,
-          expiresAt: _newDate1.toString()
-        })
+        .field('title', 'Basket Time')
+        .field('description', 'An Easter Wine Basket')
+        .field('cost', 500)
+        .field('expiresAt', _newDate1.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_b.jfif`),
+          `offer_b.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -479,11 +534,46 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .post("loyalty/offers/")
         .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
-        .send({
-          description: 'One kilo of apples',
-          cost: 100,
-          expiresAt: _newDate2.toString()
-        })
+        .field('title', 'Apples')
+        .field('description', 'One kilo of appless')
+        .field('cost', 100)
+        .field('expiresAt', _newDate2.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_d.jfif`),
+          `offer_d.jfif`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          done();
+        });
+    });
+  });
+
+  describe("Posts - Default Merchant 1", () => {
+    it("7.1 should create a new post", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("posts/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
+        .field('title', 'My First')
+        .field('content', 'This is a Public Post by Sociality. Everyone can see it.')
+        .field('access', 'public')
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}post_a.jfif`),
+          `post_a.jfif`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          done();
+
+        });
+    });
+    it("7.2 should create a new post", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("posts/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
+        .field('title', 'Private!!!')
+        .field('content', 'This is a partners post by Sociality. Only registered users can see it.')
+        .field('access', 'public')
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}post_b.jfif`),
+          `post_b.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -492,16 +582,16 @@ describe("Initialize DB & Drop past Collections", () => {
         });
     });
   });
-  describe("Posts / Events - Default Merchant 1", () => {
-    it("7.1 should create a new post/event", (done) => {
+  describe("Posts - Default Merchant 2", () => {
+    it("8.1 should create a new post", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("community/")
-        .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
-        .send({
-          content: 'This is a Public Post by Sociality. Everyone can see it.',
-          type: 'post',
-          access: 'public'
-        })
+        .post("posts/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
+        .field('title', 'One Post!')
+        .field('content', 'This is a Public Post by Commonspace. Everyone can see it.')
+        .field('access', 'partners')
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}post_a.jfif`),
+          `post_a.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -509,31 +599,15 @@ describe("Initialize DB & Drop past Collections", () => {
 
         });
     });
-    it("7.2 should create a new post/event", (done) => {
+    it("8.2 should create a new post", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("community/")
-        .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
-        .send({
-          content: 'This is a Private Event by Sociality. Only registered users can see it.',
-          type: 'event',
-          access: 'private'
-        })
-        .end((err, res) => {
-          res.should.have.status(201);
-          res.body.should.be.a('object');
-          done();
-
-        });
-    });
-    it("7.3 should create a new post/event", (done) => {
-      chai.request(`${process.env.API_URL}`)
-        .post("community/")
-        .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
-        .send({
-          content: 'This is another Public Post by Sociality. Everyone can see it.',
-          type: 'post',
-          access: 'public'
-        })
+        .post("posts/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
+        .field('title', 'Sec Post!')
+        .field('content', 'This is a private Post by Commonspace. Everyone can see it.')
+        .field('access', 'private')
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}post_b.jfif`),
+          `post_b.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -542,48 +616,16 @@ describe("Initialize DB & Drop past Collections", () => {
         });
     });
   });
-  describe("Posts / Events - Default Merchant 2", () => {
-    it("8.1 should create a new post/event", (done) => {
+  describe("Posts - Default Merchant 3", () => {
+    it("9.1 should create a new post", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("community/")
-        .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
-        .send({
-          content: 'This is a Public Event by Commonspace. Everyone can see it.',
-          type: 'event',
-          access: 'public'
-        })
-        .end((err, res) => {
-          res.should.have.status(201);
-          res.body.should.be.a('object');
-          done();
-
-        });
-    });
-    it("8.2 should create a new post/event", (done) => {
-      chai.request(`${process.env.API_URL}`)
-        .post("community/")
-        .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
-        .send({
-          content: 'This is a Private Event by Commonspace. Only registered users can see it.',
-          type: 'event',
-          access: 'private'
-        })
-        .end((err, res) => {
-          res.should.have.status(201);
-          res.body.should.be.a('object');
-          done();
-
-        });
-    });
-    it("8.3 should create a new post/event", (done) => {
-      chai.request(`${process.env.API_URL}`)
-        .post("community/")
-        .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
-        .send({
-          content: 'This is an Only For Partners Post by Commonspace. Only stores\' owners can see it.',
-          type: 'post',
-          access: 'partners'
-        })
+        .post("posts/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
+        .field('title', 'One Post!')
+        .field('content', 'This is a partners Post by Synallois. Only registered users can see it.')
+        .field('access', 'public')
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}post_a.jfif`),
+          `post_a.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -592,16 +634,18 @@ describe("Initialize DB & Drop past Collections", () => {
         });
     });
   });
-  describe("Posts / Events - Default Merchant 3", () => {
-    it("9.1 should create a new post/event", (done) => {
+  describe("Events - Default Merchant 1", () => {
+    it("10.1 should create a new event", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("community/")
-        .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
-        .send({
-          content: 'This is a Public Post by Synallois. Only registered users can see it.',
-          type: 'post',
-          access: 'private'
-        })
+        .post("events/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
+        .field('title', 'One Post!')
+        .field('description', 'This is a Public Event by Commonspace. Everyone can see it.')
+        .field('access', 'public')
+        .field('location', 'Salonika')
+        .field('dateTime', '2045 - 01 - 30')
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}event_c.jfif`),
+          `event_c.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -609,15 +653,17 @@ describe("Initialize DB & Drop past Collections", () => {
 
         });
     });
-    it("9.2 should create a new post/event", (done) => {
+    it("10.2 should create a new event", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("community/")
-        .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
-        .send({
-          content: 'This is a Private Event by Synallois. Only registered users can see it.',
-          type: 'event',
-          access: 'private'
-        })
+        .post("events/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
+        .field('title', 'Sec Event!')
+        .field('description', 'This is a private Event by Soc. Everyone can see it.')
+        .field('access', 'public')
+        .field('location', 'Athens')
+        .field('dateTime', '2045 - 01 - 30')
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}event_a.jfif`),
+          `event_a.jfif`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -625,15 +671,122 @@ describe("Initialize DB & Drop past Collections", () => {
 
         });
     });
-    it("9.3 should create a new post/event", (done) => {
+  });
+  describe("Events - Default Merchant 2", () => {
+    it("11.1 should create a new event", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("community/")
+        .post("events/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
+        .field('title', 'Sec Post!')
+        .field('description', 'This is a private Event by Commonspace. Everyone can see it.')
+        .field('access', 'private')
+        .field('location', 'Athens')
+        .field('dateTime', '2065 - 01 - 30')
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}event_b.jfif`),
+          `event_b.jfif`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          done();
+
+        });
+    });
+  });
+
+  describe("Microcredit Campaigns - Default Merchant 1", () => {
+    var _date_1 = new Date();
+    var _newDate1 = _date_1.setDate(_date_1.getDate() + 7);
+    var _date_2 = new Date();
+    var _newDate2 = _date_2.setDate(_date_2.getDate() + 15);
+    var _date_3 = new Date();
+    var _newDate3 = _date_3.setDate(_date_3.getDate() + 105);
+
+    it("12.1 should create a new microcredit campaign", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/campaigns/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
+        .field('title', 'Big Campaign!')
+        .field('terms', 'Terms about it')
+        .field('access', 'public')
+        .field('description', 'Description: What exactly this campaign is about')
+        .field('category', 'Technology')
+        .field('quantitative', 'true')
+        .field('minAllowed', '10')
+        .field('maxAllowed', '20')
+        .field('maxAmount', '1000')
+        .field('redeemStarts', _newDate2.toString())
+        .field('redeemEnds', _newDate3.toString())
+        .field('expiresAt', _newDate1.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}microcredit_a.png`),
+          `microcredit_a.png`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          done();
+
+        });
+    });
+  });
+  describe("Microcredit Campaigns - Default Merchant 2", () => {
+    var _date_1 = new Date();
+    var _newDate1 = _date_1.setDate(_date_1.getDate() + 50);
+    var _date_2 = new Date();
+    var _newDate2 = _date_2.setDate(_date_2.getDate() + 45);
+    var _date_3 = new Date();
+    var _newDate3 = _date_3.setDate(_date_3.getDate() + 200);
+
+    it("13.1 should create a new microcredit campaign", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/campaigns/")
+        .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
+        .field('title', 'Yeah! Campaign!')
+        .field('terms', 'Terms about it')
+        .field('access', 'public')
+        .field('description', 'Description: What exactly this campaign is about')
+        .field('category', 'Technology')
+        .field('quantitative', 'false')
+        .field('minAllowed', '0')
+        .field('maxAllowed', '0')
+        .field('maxAmount', '1000')
+        .field('redeemStarts', _newDate2.toString())
+        .field('redeemEnds', _newDate3.toString())
+        .field('expiresAt', _newDate1.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}microcredit_b.png`),
+          `microcredit_b.png`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          done();
+
+        });
+    });
+  });
+  describe("Microcredit Campaigns - Default Merchant 3", () => {
+    var _date_1 = new Date();
+    var _newDate1 = _date_1.setDate(_date_1.getDate() + 100);
+    var _date_2 = new Date();
+    var _newDate2 = _date_2.setDate(_date_2.getDate() + 200);
+    var _date_3 = new Date();
+    var _newDate3 = _date_3.setDate(_date_3.getDate() + 400);
+
+    it("14.1 should create a new microcredit campaign", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/campaigns/")
         .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
-        .send({
-          content: 'This is a Public Post by Synallois. Everyone can see it.',
-          type: 'post',
-          access: 'public'
-        })
+        .field('title', 'Big New Campaign!')
+        .field('terms', 'Terms about it')
+        .field('access', 'public')
+        .field('description', 'Description: What exactly this campaign is about')
+        .field('category', 'Durables')
+        .field('quantitative', 'true')
+        .field('minAllowed', '5')
+        .field('maxAllowed', '20')
+        .field('maxAmount', '5000')
+        .field('redeemStarts', _newDate2.toString())
+        .field('redeemEnds', _newDate3.toString())
+        .field('expiresAt', _newDate1.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}microcredit_c.jpg`),
+          `microcredit_c.jpg`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');

@@ -35,7 +35,7 @@ describe("Loyalty (/loyalty)", () => {
   describe("Points - From DefaultMerchant_3 to NewCustomer_1", () => {
     it("1. should read customer's balance - 200 Balance", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .get("loyalty/points/" + newCustomer_1.email)
+        .get("loyalty/balance/" + newCustomer_1.email)
         .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
         .end((err, res) => {
           res.should.have.status(200);
@@ -238,7 +238,7 @@ describe("Loyalty (/loyalty)", () => {
   describe("Points - From DefaultMerchant_1 to NewUser", () => {
     it("1. should read customer's balance - 200 Balance", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .get("loyalty/points/" + newUser.email)
+        .get("loyalty/balance/" + newUser.email)
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
         .end((err, res) => {
           res.should.have.status(200);

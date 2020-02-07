@@ -11,7 +11,8 @@ import validateEnv from '../src/utils/validateEnv';
 
 validateEnv();
 
-import { defaultMerchant_1, defaultMerchant_2, newCustomer_1, newCustomer_2, newMerchant } from './_structs.test';
+import { imagesLocation, defaultMerchant_1, defaultMerchant_2, newCustomer_1, newCustomer_2, newMerchant } from './_structs.test';
+const fs = require('fs');
 
 describe("Merchant", () => {
 
@@ -62,6 +63,7 @@ describe("Merchant", () => {
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
+
           newCustomer_1.tempPass = res.body.tempData.password;
           done();
         });
@@ -183,20 +185,29 @@ describe("Merchant", () => {
       chai.request(`${process.env.API_URL}`)
         .put("merchants/" + 'random_id')
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
-        .send({
-          name: "Merchant One",
-          imageURL: "http://merchant_image.gr",
-          contact: {
-            phone: 2105555555,
-            websiteURL: 'merchant_shop.gr',
-            address: {
-              street: "My Street",
-              zipCode: 10000,
-              city: "Athens"
-            }
-          },
-          sector: "Durables"
-        })
+        .field('name', defaultMerchant_1.name)
+        .field('phone', defaultMerchant_1.contact.phone)
+        .field('websiteURL', defaultMerchant_1.contact.websiteURL)
+        .field('street', defaultMerchant_1.address.street)
+        .field('postCode', defaultMerchant_1.address.postCode)
+        .field('city', defaultMerchant_1.address.city)
+        .field('sector', defaultMerchant_1.sector)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_1.imageFile}`),
+          `${defaultMerchant_1.imageFile}`)
+        // .send({
+        //   name: "Merchant One",
+        //   imageURL: "http://merchant_image.gr",
+        //   contact: {
+        //     phone: 2105555555,
+        //     websiteURL: 'merchant_shop.gr'
+        //   },
+        //   address: {
+        //     street: "My Street",
+        //     postCode: 10000,
+        //     city: "Athens"
+        //   },
+        //   sector: "Durables"
+        // })
         .end((err, res) => {
           res.should.have.status(403);
           res.body.should.be.a('object');
@@ -208,20 +219,29 @@ describe("Merchant", () => {
       chai.request(`${process.env.API_URL}`)
         .put("merchants/" + defaultMerchant_1._id)
         .set('Authorization', 'Bearer ' + 'random_jwt')
-        .send({
-          name: "Merchant One",
-          imageURL: "http://merchant_image.gr",
-          contact: {
-            phone: 2105555555,
-            websiteURL: 'merchant_shop.gr',
-            address: {
-              street: "My Street",
-              zipCode: 10000,
-              city: "Athens"
-            }
-          },
-          sector: "Durables"
-        })
+        .field('name', defaultMerchant_1.name)
+        .field('phone', defaultMerchant_1.contact.phone)
+        .field('websiteURL', defaultMerchant_1.contact.websiteURL)
+        .field('street', defaultMerchant_1.address.street)
+        .field('postCode', defaultMerchant_1.address.postCode)
+        .field('city', defaultMerchant_1.address.city)
+        .field('sector', defaultMerchant_1.sector)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_1.imageFile}`),
+          `${defaultMerchant_1.imageFile}`)
+        // .send({
+        //   name: "Merchant One",
+        //   imageURL: "http://merchant_image.gr",
+        //   contact: {
+        //     phone: 2105555555,
+        //     websiteURL: 'merchant_shop.gr'
+        //   },
+        //   address: {
+        //     street: "My Street",
+        //     postCode: 10000,
+        //     city: "Athens"
+        //   },
+        //   sector: "Durables"
+        // })
         .end((err, res) => {
           res.should.have.status(401);
           res.body.should.be.a('object');
@@ -233,20 +253,29 @@ describe("Merchant", () => {
       chai.request(`${process.env.API_URL}`)
         .put("merchants/" + defaultMerchant_1._id)
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
-        .send({
-          name: defaultMerchant_1.name,
-          imageURL: defaultMerchant_1.imageURL,
-          contact: {
-            phone: defaultMerchant_1.contact.phone,
-            websiteURL: defaultMerchant_1.contact.websiteURL,
-            address: {
-              street: defaultMerchant_1.contact.address.street,
-              zipCode: defaultMerchant_1.contact.address.zipCode,
-              city: defaultMerchant_1.contact.address.city
-            }
-          },
-          sector: defaultMerchant_1.sector,
-        })
+        .field('name', defaultMerchant_1.name)
+        .field('phone', defaultMerchant_1.contact.phone)
+        .field('websiteURL', defaultMerchant_1.contact.websiteURL)
+        .field('street', defaultMerchant_1.address.street)
+        .field('postCode', defaultMerchant_1.address.postCode)
+        .field('city', defaultMerchant_1.address.city)
+        .field('sector', defaultMerchant_1.sector)
+        .attach('imageURL', fs.readFileSync('/mnt/c/Users/Dimitris Sociality/Downloads/sociality.png'),
+          'sociality.png')
+        // .send({
+        //   name: defaultMerchant_1.name,
+        //   imageURL: defaultMerchant_1.imageURL,
+        //   contact: {
+        //     phone: defaultMerchant_1.contact.phone,
+        //     websiteURL: defaultMerchant_1.contact.websiteURL
+        //   },
+        //   address: {
+        //     street: defaultMerchant_1.address.street,
+        //     postCode: defaultMerchant_1.address.postCode,
+        //     city: defaultMerchant_1.address.city
+        //   },
+        //   sector: defaultMerchant_1.sector,
+        // })
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -266,6 +295,7 @@ describe("Merchant", () => {
         .post("loyalty/offers/")
         .set('Authorization', 'Bearer ' + newCustomer_1.authToken)
         .send({
+          title: 'Offer',
           description: 'Free One Year Support',
           cost: 4000,
           expiresAt: _newDate.toString()
@@ -296,14 +326,14 @@ describe("Merchant", () => {
         });
     });
   });
-  describe("Post & Events (/community)", () => {
-    it("1. should NOT create a new offer | user is not merchant - 403 Forbidden", (done) => {
+  describe("Post (/posts)", () => {
+    it("1. should NOT create a new post | user is not merchant - 403 Forbidden", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("community/")
+        .post("posts/")
         .set('Authorization', 'Bearer ' + newCustomer_2.authToken)
         .send({
+          title: 'Random',
           content: 'Random content',
-          type: 'event',
           access: 'public'
         })
         .end((err, res) => {
@@ -313,13 +343,15 @@ describe("Merchant", () => {
 
         });
     });
-    it("2. should NOT create a new event | content is missing - 400 Bad Request", (done) => {
+    it("2. should NOT create a new event | description is missing - 400 Bad Request", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("community/")
+        .post("events/")
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
         .send({
-          type: 'event',
-          access: 'public'
+          title: 'event',
+          access: 'public',
+          location: 'Athens',
+          dateTime: '2035 - 05 - 01'
         })
         .end((err, res) => {
           res.should.have.status(400);

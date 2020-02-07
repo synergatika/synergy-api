@@ -67,7 +67,6 @@ class HelpController implements Controller {
         }
       }
     } catch (error) {
-      console.log(error);
       result['ethereum_api_status'] = false;
       console.error('Blockchain connection is limited');
     }

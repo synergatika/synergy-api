@@ -10,6 +10,7 @@ import RequestWithUser from '../interfaces/requestWithUser.interface';
 import userModel from '../models/user.model';
 
 async function authMiddleware(request: RequestWithUser, response: Response, next: NextFunction) {
+
   const token = request.headers;
   if (token && token.authorization) {
     const secret = process.env.JWT_SECRET;
@@ -20,7 +21,8 @@ async function authMiddleware(request: RequestWithUser, response: Response, next
         "_id": 1, "name": 1,
         "email": 1, "password": 1,
         "account": 1, "access": 1,
-        "email_verified": 1, "pass_verified": 1
+        "email_verified": 1, "pass_verified": 1,
+        "imageURL": 1
       });
       if (user) {
         request.user = user;

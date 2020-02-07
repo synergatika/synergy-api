@@ -15,11 +15,32 @@ import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
+import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../models/user.model';
+
+//Path
+var path = require('path');
+
+// Upload File
+import multer from 'multer';
+var storage = multer.diskStorage({
+  destination: function(req: RequestWithUser, file, cb) {
+    cb(null, path.join(__dirname, '../assets/items'));
+  },
+  filename: function(req: RequestWithUser, file, cb) {
+    cb(null, (req.user._id).toString() + '_' + new Date().getTime());
+  }
+});
+var upload = multer({ storage: storage });
+
+// Remove File
+const fs = require('fs')
+const { promisify } = require('util')
+const unlinkAsync = promisify(fs.unlink);
 
 class OffersController implements Controller {
   public path = '/loyalty/offers';
@@ -32,9 +53,9 @@ class OffersController implements Controller {
 
   private initializeRoutes() {
     this.router.get(`${this.path}/`, this.readAllOffers);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, validationBodyMiddleware(OfferDto), this.createOffer);
+    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), this.createOffer);
     this.router.get(`${this.path}/:merchant_id`, validationParamsMiddleware(MerchantID), this.readOffersByStore);
-    this.router.put(`${this.path}/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, validationBodyMiddleware(OfferDto), this.updateOffer);
+    this.router.put(`${this.path}/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), this.updateOffer);
     this.router.delete(`${this.path}/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, this.deleteOffer);
   }
 
@@ -52,13 +73,17 @@ class OffersController implements Controller {
     }, {
       $project: {
         _id: false,
-        merchant_name: '$name',
         merchant_id: '$_id',
+        merchant_name: '$name',
         merchant_imageURL: '$imageURL',
+
         offer_id: '$offers._id',
-        cost: '$offers.cost',
+        offer_imageURL: '$offers.imageURL',
+        title: '$offers.title',
         description: '$offers.description',
+        cost: '$offers.cost',
         expiresAt: '$offers.expiresAt',
+
         createdAt: '$offers.createdAt'
       }
     }, {
@@ -84,8 +109,10 @@ class OffersController implements Controller {
     }, {
         $push: {
           offers: {
-            "cost": data.cost,
+            "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
+            "title": data.title,
             "description": data.description,
+            "cost": data.cost,
             "expiresAt": data.expiresAt
           }
         }
@@ -116,12 +143,17 @@ class OffersController implements Controller {
     }, {
       $project: {
         _id: false,
-        merchant_name: '$name',
         merchant_id: '$_id',
+        merchant_name: '$name',
+        merchant_imageURL: '$imageURL',
+
         offer_id: '$offers._id',
+        offer_imageURL: '$offers.imageURL',
+        title: '$offers.title',
         cost: '$offers.cost',
         description: '$offers.description',
         expiresAt: '$offers.expiresAt',
+
         createdAt: '$offers.createdAt'
       }
     }, {
@@ -142,6 +174,29 @@ class OffersController implements Controller {
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
     const data: OfferDto = request.body;
 
+    const previousImage: Offer[] = await (this.user.aggregate([{
+      $unwind: '$offers'
+    }, {
+      $match:
+      {
+        $and: [{
+          _id: new ObjectId(merchant_id)
+        }, {
+          'offers._id': new ObjectId(offer_id)
+        }]
+      }
+    }, {
+      $project: {
+        _id: false,
+        offer_imageURL: '$offers.imageURL',
+      }
+    }]));
+
+    if (previousImage[0].offer_imageURL && request.file) {
+      var imageFile = (previousImage[0].offer_imageURL).split('assets/items/');
+      await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    }
+
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne(
       {
@@ -150,6 +205,8 @@ class OffersController implements Controller {
       }, {
         '$set': {
           'offers.$._id': offer_id,
+          'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : previousImage[0].offer_imageURL,
+          'offers.$.title': data.title,
           'offers.$.description': data.description,
           'offers.$.cost': data.cost,
           'offers.$.expiresAt': data.expiresAt
@@ -166,6 +223,29 @@ class OffersController implements Controller {
   private deleteOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const merchant_id: OfferID["merchant_id"] = request.params.merchant_id;
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
+
+    const previousImage: Offer[] = await (this.user.aggregate([{
+      $unwind: '$offers'
+    }, {
+      $match:
+      {
+        $and: [{
+          _id: new ObjectId(merchant_id)
+        }, {
+          'offers._id': new ObjectId(offer_id)
+        }]
+      }
+    }, {
+      $project: {
+        _id: false,
+        offer_imageURL: '$offers.imageURL',
+      }
+    }]));
+
+    if (previousImage[0].offer_imageURL) {
+      var imageFile = (previousImage[0].offer_imageURL).split('assets/items/');
+      await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne({

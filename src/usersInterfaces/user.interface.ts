@@ -4,6 +4,9 @@ interface User {
 
   email: string;
   password: string;
+
+  card: string;
+
   account: {
     version: number;
     id: string;
@@ -15,6 +18,7 @@ interface User {
   email_verified: boolean;
   pass_verified: boolean;
   createdAt: Date;
+  imageURL: string;
 
   previousAccounts: Object;
 }

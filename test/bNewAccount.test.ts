@@ -12,7 +12,6 @@ import validateEnv from '../src/utils/validateEnv';
 validateEnv();
 
 import userModel from '../src/models/user.model';
-import transactionModel from '../src/models/transaction.model';
 import { newUser } from './_structs.test';
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';

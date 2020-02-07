@@ -8,7 +8,7 @@ info:
     name: MIT
 
 servers:
-  - url: http://localhost:3000 #http://synergy.synergatika.com/v1
+  - url: http://localhost:3000 #http://api.synergatika.gr
 
 paths:
   # Paths: Authentication
@@ -23,8 +23,8 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Authenticate'
-        '204':
-         $ref: '#/components/responses/Need_Verification'
+        '202':
+         $ref: '#/components/responses/Action_Required'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '404':
@@ -76,7 +76,7 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /auth/set_pass: 
+  /auth/set_pass:
     put:
       summary: "An invited user changes the password"
       operationId: changePassMiddle
@@ -203,7 +203,7 @@ paths:
           $ref: '#/components/responses/Not_Found'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-  
+
   # Paths: Profile & Merchant
   /profile:
     get:
@@ -295,7 +295,7 @@ paths:
       summary: ""
       operationId: earnToken
       security:
-        - bearerAuth: []      
+        - bearerAuth: []
       tags:
         - loyalty
       requestBody:
@@ -304,7 +304,7 @@ paths:
         '200':
           $ref: '#/components/responses/Updated'
         '204':
-          $ref: '#/components/responses/No_User'        
+          $ref: '#/components/responses/No_User'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -328,7 +328,7 @@ paths:
         '200':
           $ref: '#/components/responses/Updated'
         '204':
-          $ref: '#/components/responses/No_User'  
+          $ref: '#/components/responses/No_User'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
@@ -354,6 +354,26 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
+  /loyalty/points/{_to}:
+    get:
+      summary: ""
+      operationId: readCustomerBalance
+      parameters:
+        - $ref: '#/components/parameters/_to'
+      security:
+        - bearerAuth: []
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Balance'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
   /loyalty/transactions:
     get:
       summary: ""
@@ -373,7 +393,7 @@ paths:
   # Paths: Loyalty - Offers
   /loyalty/offers:
     get:
-      summary: "Read offers from every store"
+      summary: "Read Offers from every store"
       operationId: readAllOffers
       tags:
         - loyalty
@@ -405,7 +425,7 @@ paths:
 
   /loyalty/offers/{merchant_id}:
     get:
-      summary: "Read offers for a specific store"
+      summary: "Read Offers for a specific store"
       operationId: readOffersByStore
       parameters:
         - $ref: '#/components/parameters/merchant_id'
@@ -465,10 +485,143 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
+# Paths: Community - Posts & Events
+  /community/public:
+    get:
+      summary: "Read public Posts and Events from every store"
+      operationId: readPublicPostsAndEvents
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Posts'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+  /community/private:
+    get:
+      summary: "Read private Posts and Events from every store"
+      operationId: readPrivatePostsAndEvents
+      security:
+        - bearerAuth: []
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Posts'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+  /community:
+    post:
+      summary: "Create a new Post/Event"
+      operationId: createPostOrEvent
+      security:
+        - bearerAuth: []
+      tags:
+        - community
+      requestBody:
+        $ref: '#/components/requestBodies/PostRequestBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /community/public/{merchant_id}:
+    get:
+      summary: "Read public Posts and Events for a specific store"
+      operationId: readPublicPostsAndEventsByStore
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Posts'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /community/private/{merchant_id}:
+    get:
+      summary: "Read private posts and events for a specific store"
+      operationId: readPrivatePostsAndEventsByStore
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Posts'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /community/{merchant_id}/{post_id}:
+    put:
+      summary: "Update a Post or an Event"
+      operationId: updatePostOrEvent
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/post_id'
+      tags:
+        - community
+      requestBody:
+        $ref: '#/components/requestBodies/OfferRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/Updated'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+    delete:
+      summary: "Delete a Post or an Event"
+      operationId: deletePostOrEvent
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/post_id'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Updated'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
   # Paths: Microfund - Campaigns
   /microfund/campaigns:
     get:
-      summary: "Read campaigns from every store"
+      summary: "Read Campaigns from every store"
       operationId: readAllCampaigns
       tags:
         - microfund
@@ -478,7 +631,7 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
     post:
-      summary: "Create a new campaign"
+      summary: "Create a new Campaign"
       operationId: createCampaign
       security:
         - bearerAuth: []
@@ -500,7 +653,7 @@ paths:
 
   /microfund/campaigns/{merchant_id}:
     get:
-      summary: "Read campaigns for a specific store"
+      summary: "Read Campaigns for a specific store"
       operationId: readCampaignsByStore
       parameters:
         - $ref: '#/components/parameters/merchant_id'
@@ -516,7 +669,7 @@ paths:
 
   /microfund/campaigns/{merchant_id}/{campaign_id}:
     get:
-      summary: "Read a campaign"
+      summary: "Read a Campaign"
       operationId: readACampaign
       parameters:
         - $ref: '#/components/parameters/merchant_id'
@@ -554,7 +707,7 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
     delete:
-      summary: "Delete an Campaign"
+      summary: "Delete a Campaign"
       operationId: deleteCampaign
       security:
         - bearerAuth: []
@@ -600,6 +753,14 @@ paths:
 
 components:
   parameters:
+    _to:
+      in: path
+      name: _to
+      schema:
+        type: string
+        format: email
+      required: true
+      description: "Email/Address of Customer"
     merchant_id:
       in: path
       name: merchant_id
@@ -616,6 +777,14 @@ components:
         format: uuid
       required: true
       description: "ID of the selected offer"
+    post_id:
+      in: path
+      name: post_id
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "ID of the selected post/event"
     campaign_id:
       in: path
       name: campaign_id
@@ -691,19 +860,21 @@ components:
       description: ""
       required: true
       content:
-        application/json:
+        multipart/form-data:
+        # application/x-www-form-urlencoded: # application/json:
           schema:
             $ref: '#/components/schemas/CustomerDto'
     MerchantRequestBody:
       description: ""
       required: true
       content:
-        application/json:
+        multipart/form-data:
+        # application/x-www-form-urlencoded: # application/json:
           schema:
             $ref: '#/components/schemas/MerchantDto'
 
     # Loyalty
-    EarnTokenRequestBody:      
+    EarnTokenRequestBody:
       description: ""
       required: true
       content:
@@ -712,7 +883,7 @@ components:
             oneOf:
               - $ref: '#/components/schemas/EarnPointsEmailDto'
               - $ref: '#/components/schemas/EarnPointsAddressDto'
-        
+
     RedeemTokenRequestBody:
       description: ""
       required: true
@@ -730,6 +901,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/OfferDto'
+
+    # Community
+    PostRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PostDto'
 
     # Microfund
     CampaignRequestBody:
@@ -793,7 +973,7 @@ components:
               code:
                 type: number
                 default: 200
-          
+
     # Loyalty - Offers
     Offers:
       description: Expected response to a valid request
@@ -811,6 +991,7 @@ components:
             data:
               - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
                 merchant_name: "Merchant 1"
+                merchant_imageURL: "www.images/assets/merchant1.png"
                 offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
                 createdAt: "2019-09-10"
                 cost: 1000
@@ -818,13 +999,14 @@ components:
                 expiresAt: "2019-11-15"
               - merchant_id: "67a85f64-5r717-4562-b3fc-2c963f66afa6"
                 merchant_name: "Merchant 2"
+                merchant_imageURL: "www.images/assets/merchant2.png"
                 offer_id: "55454564-5rre7-4ert62-b3fc-c9rtret3f6r9"
                 createdAt: "2019-09-15"
                 cost: 2000
                 description: "1+1 Burger"
                 expiresAt: "2019-11-10"
             code: 200
-                  
+
     Balance:
       description: Expected response to a valid request
       content:
@@ -841,8 +1023,8 @@ components:
             memberAddress: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5'
             points: 50
             isRegistered: true
-      
-    Transactions:        
+
+    Transactions:
       description: Expected response to a valid request
       content:
         application/json:
@@ -872,7 +1054,38 @@ components:
                 tx: '0x54d7e1737e95f4c805f6df5c9cc1c5fdab69d916feb770b4391e4aab0ab4c762'
                 points: 40
                 createdAt: '2019-11-10'
-            code: 200          
+            code: 200
+
+    # Community - Posts
+    Posts:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Posts"
+              code:
+                type: number
+                default: 200
+          example:
+            data:
+              - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 1"
+                merchant_imageURL: "www.images/assets/merchant1.png"
+                offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-10"
+                type: 'event'
+                content: "This is a public event"
+              - merchant_id: "67a85f64-5r717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 2"
+                merchant_imageURL: "www.images/assets/merchant2.png"
+                offer_id: "55454564-5rre7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-15"
+                type: 'post'
+                content: "These are my thoughts"
+            code: 200
 
     # Microfund - Campaigns
     Campaign:
@@ -919,15 +1132,15 @@ components:
           example:
             code: 200
             message: "User's Profile successfully updated!"
-    Need_Verification:
+    Action_Required:
       description: Password or Email has not been verified
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Need_Verification"
+            $ref: "#/components/schemas/Action_Required"
           example:
-            code: 204
-            message: "Please update your password1"    
+            code: 202
+            message: "need_email_verification"
     No_User:
       description: Expected response to valid request
       content:
@@ -1081,9 +1294,7 @@ components:
           type: string
         imageURL:
           type: string
-          format: uri
-      required:
-        - name
+          format: binary
     MerchantDto:
       type: object
       properties:
@@ -1091,40 +1302,37 @@ components:
           type: string
         imageURL:
           type: string
-          format: uri
+          format: binary
         sector:
           type: string
           enum: [None, B2B Services & Other Goods and Services, Durables, Durables (Technology), Education, Food, Hotels, cafes and restaurants, Recreation and Culture]
-        contact:
-          type: object
-          properties:
-            phone:
-              type: number
-              format: int64
-            websiteURL:
-              type: string
-              format: uri
-            address:
-              type: object
-              properties:
-                street:
-                  type: string
-                zipCode:
-                  type: number
-                  format: int64
-                city:
-                  type: string
-              required:
-                - street
-                - zipCode
-                - city
-          required:
-            - phone
-            - address
+        # contact:
+        #   type: object
+        #   properties:
+        phone:
+          type: number
+          format: int64
+        websiteURL:
+          type: string
+          format: uri
+        # address:
+        #   type: object
+        #   properties:
+        street:
+          type: string
+        postCode:
+          type: number
+          format: int64
+        city:
+          type: string
       required:
         - name
         - imageURL
         - sector
+        - street
+        - postCode
+        - city
+        - phone
     # Request - Loyalty
     EarnPointsEmailDto:
       type: object
@@ -1173,7 +1381,7 @@ components:
           format: address
         _points:
           type: number
-    
+
     OfferDto:
       type: object
       properties:
@@ -1184,6 +1392,18 @@ components:
         expiresAt:
           type: string
           format: date
+
+    PostDto:
+      type: object
+      properties:
+        content:
+          type: string
+        type:
+          type: string
+          enum: [event, post]
+        access:
+          type: string
+          enum: [public, private, partners]
 
     # Request - Microfund
     CampaignDto:
@@ -1214,6 +1434,11 @@ components:
         email:
           type: string
           format: email
+        name:
+          type: string
+        imageURL:
+          type: string
+          format: uri
         access:
           type: string
           enum: [customer, merchant, admin]
@@ -1269,16 +1494,15 @@ components:
             websiteURL:
               type: string
               format: uri
-            address:
-              type: object
-              properties:
-                street:
-                  type: string
-                zipCode:
-                  type: number
-                  format: int64
-                city:
-                  type: string
+        address:
+          type: object
+          properties:
+            street:
+              type: string
+            postCode:
+              type: string
+            city:
+              type: string
     Merchants:
       type: array
       items:
@@ -1295,7 +1519,7 @@ components:
           type: number
         isRegistered:
           type: boolean
-   
+
     Transaction:
       type: object
       properties:
@@ -1328,12 +1552,12 @@ components:
           type: string
         createdAt:
           type: string
-          format: date    
+          format: date
     Transactions:
       type: array
       items:
-        $ref: '#/components/schemas/Transaction'            
-    
+        $ref: '#/components/schemas/Transaction'
+
     Offer:
       type: object
       properties:
@@ -1342,6 +1566,9 @@ components:
         merchant_id:
           type: string
           format: uuid
+        merchant_imageURL:
+          type: string
+          format: uri
         offer_id:
           type: string
           format: uuid
@@ -1359,6 +1586,34 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/Offer'
+
+    # Response - Community Post & Events
+    Post:
+      type: object
+      properties:
+        merchant_name:
+          type: string
+        merchant_id:
+          type: string
+          format: uuid
+        merchant_imageURL:
+          type: string
+          format: uri
+        post_id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date
+        content:
+          type: string
+        type:
+          type: string
+          enum: [post, event]
+    Posts:
+      type: array
+      items:
+        $ref: '#/components/schemas/Post'
 
     # Response - Microfund Campaigns
     Campaign:
@@ -1385,7 +1640,7 @@ components:
       items:
         $ref: '#/components/schemas/Campaign'
 
-    # Response - Typical Responses (Created, Updated, Email Sent, Need Verification, Error)
+    # Response - Typical Responses (Created, Updated, Email Sent, Action Required, Error)
     Created:
       type: object
       required:
@@ -1418,7 +1673,7 @@ components:
           type: integer
           format: int32
         message:
-          type: string   
+          type: string
     Email_Sent:
       type: object
       required:
@@ -1441,7 +1696,8 @@ components:
           format: int32
         message:
           type: string
-    Need_Verification:
+
+    Action_Required:
       type: object
       required:
         - code
@@ -1452,7 +1708,8 @@ components:
           format: int32
         message:
           type: string
-          
+          enum: [need_email_verification, need_password_verification]
+
   securitySchemes:
     bearerAuth:            # arbitrary name for the security scheme
       type: http

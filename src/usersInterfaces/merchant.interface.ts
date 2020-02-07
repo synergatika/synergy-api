@@ -1,19 +1,19 @@
 import User from './user.interface'
 
 interface Merchant extends User {
-    name: string;
-    imageURL: string;
+  name: string;
+  imageURL: string;
 
-    contact: {
-        phone: number;
-        websiteURL: string;
-        address: {
-            street: string;
-            city: string;
-            zipCode: number;
-        }
-    }
-    sector: string;
+  contact: {
+    phone: number;
+    websiteURL: string;
+  };
+  address: {
+    street: string;
+    city: string;
+    postCode: string;
+  };
+  sector: string;
 }
 
 export default Merchant;

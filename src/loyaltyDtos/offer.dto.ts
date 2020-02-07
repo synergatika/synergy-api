@@ -1,10 +1,17 @@
-import { IsString, IsNumber } from 'class-validator';
+import { IsString, IsNumber, IsOptional } from 'class-validator';
 
 class OfferDto {
+  @IsOptional()
+  @IsString()
+  public imageURL: string;
+
+  @IsString()
+  public title: string;
+
   @IsString()
   public description: string;
 
-  @IsNumber()
+  @IsString()
   public cost: number;
 
   @IsString()

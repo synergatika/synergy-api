@@ -10,7 +10,7 @@ import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
 validateEnv();
 
-import { defaultMerchant_1, offers, posts } from './_structs.test'
+import { defaultMerchant_1, offers, posts, events } from './_structs.test'
 
 
 describe("Without Login", () => {
@@ -59,7 +59,6 @@ describe("Without Login", () => {
           for (i = 0; i < (res.body.data).length; i++) {
             offers.push((res.body.data)[i]);
           }
-
           done();
         });
     });
@@ -73,10 +72,10 @@ describe("Without Login", () => {
         });
     });
   });
-  describe("Post & Events (/community)", () => {
-    it("1. should read all posts/events - 200 Posts/Events", (done) => {
+  describe("Posts (/posts)", () => {
+    it("1. should read all posts - 200 Posts", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .get("community/public/")
+        .get("posts/public/")
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -85,13 +84,37 @@ describe("Without Login", () => {
           for (i = 0; i < (res.body.data).length; i++) {
             posts.push((res.body.data)[i]);
           }
-
           done();
         });
     });
-    it("2. should read all merchant's posts/events - 200 Posts/Events", (done) => {
+    it("2. should read all merchant's posts - 200 Posts", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .get("community/public/" + defaultMerchant_1._id)
+        .get("posts/public/" + defaultMerchant_1._id)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          done();
+        });
+    });
+  });
+  describe("Events (/events)", () => {
+    it("1. should read all events - 200 Events", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .get("events/public/")
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+
+          let i = 0;
+          for (i = 0; i < (res.body.data).length; i++) {
+            events.push((res.body.data)[i]);
+          }
+          done();
+        });
+    });
+    it("2. should read all merchant's events - 200 Events", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .get("events/public/" + defaultMerchant_1._id)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');

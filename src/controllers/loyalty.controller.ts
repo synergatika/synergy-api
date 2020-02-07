@@ -6,21 +6,25 @@ import { BlockchainService } from '../utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
 // Dtos
-import EarnPointsDto from '../loyaltyDtos/earnPoints.dto'
-import RedeemPointsDto from '../loyaltyDtos/usePoints.dto'
+import EarnPointsDto from '../loyaltyDtos/earnPoints.dto';
+import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto';
+import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
+import LoyaltyTransaction from '../loyaltyInterfaces/transaction.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
+import validationParamsMiddleware from '../middleware/params.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
+import customerMiddleware from '../middleware/customer.middleware';
 // Models
 import userModel from '../models/user.model';
-import transactionModel from '../models/transaction.model';
+import transactionModel from '../models/loyalty.transaction.model';
 
 class LoyaltyController implements Controller {
   public path = '/loyalty';
@@ -33,10 +37,12 @@ class LoyaltyController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/earn`, authMiddleware, /*accessMiddleware.confirmPassword,*//*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), this.earnToken);
-    this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, /*accessMiddleware.confirmPassword,*/ validationBodyMiddleware(RedeemPointsDto), this.redeemToken);
+    this.router.post(`${this.path}/earn`, authMiddleware, /*accessMiddleware.confirmPassword,*//*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), customerMiddleware, this.earnToken);
+    this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, /*accessMiddleware.confirmPassword,*/ validationBodyMiddleware(RedeemPointsDto), customerMiddleware, this.redeemToken);
     this.router.get(`${this.path}/balance`, authMiddleware, this.readBalance);
-    this.router.get(`${this.path}/points/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, this.readCustomerBalance);
+    this.router.get(`${this.path}/balance/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readCustomerBalance);
+    this.router.get(`${this.path}/badge`, authMiddleware, this.readBadge);
+    this.router.get(`${this.path}/badge/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readCustomerBadge);
     this.router.get(`${this.path}/transactions`, authMiddleware, this.readTransactions);
     this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
     this.router.get(`${this.path}/transactions_info`, authMiddleware, this.transactionInfoLength);
@@ -46,100 +52,64 @@ class LoyaltyController implements Controller {
     const data: EarnPointsDto = request.body;
     data._amount = Math.round(data._amount);
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
+    const customer = response.locals.customer;
 
-    let error: Error, user: User;
-    [error, user] = await to(this.user.findOne({
-      $or: [{
-        email: data._to
-      }, {
-        'account.address': data._to
-      }]
-    }).select({
-      "_id": 1, "email": 1,
-      "account": 1
-    }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
-    else if (!user) {// Have to create a customer (/auth/register/customer) and then transfer points
-      response.status(204).send({
-        message: "User is not registered! Please create a new customer's account!",
-        code: 204
-      });
-    } else {
-      await serviceInstance.getLoyaltyAppContract()
-        .then((instance) => {
-          return instance.earnPoints(this.amountToPoints(data._amount), user.account.address, _partner, serviceInstance.address)
-            .then(async (result: any) => {
-              await this.transaction.create({
-                ...result, type: "EarnPoints",
-                from_id: request.user._id, to_id: user._id,
-                info: {
-                  from_name: request.user.name, from_email: request.user.email,
-                  to_email: user.email, points: this.amountToPoints(data._amount)
-                }
-              });
-              response.status(201).send({
-                data: result,
-                code: 201
-              });
-            })
-            .catch((error: Error) => {
-              next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + user + "/n" + request.user))
-            })
-        })
-        .catch((error) => {
-          next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + user + "/n" + request.user))
-        })
-    }
+    await serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.earnPoints(this.amountToPoints(data._amount), customer.account.address, _partner, serviceInstance.address)
+          .then(async (result: any) => {
+            await this.transaction.create({
+              ...result, type: "EarnPoints",
+              from_id: request.user._id, to_id: customer._id,
+              info: {
+                from_name: request.user.name, from_email: request.user.email,
+                to_email: customer.email, points: this.amountToPoints(data._amount)
+              }
+            });
+            response.status(201).send({
+              data: result,
+              code: 201
+            });
+          })
+          .catch((error: Error) => {
+            next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + customer + "/n" + request.user))
+          })
+      })
+      .catch((error) => {
+        next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + customer + "/n" + request.user))
+      })
   }
 
   private redeemToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RedeemPointsDto = request.body;
     data._points = Math.round(data._points);
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
+    const customer = response.locals.customer;
 
-    let error: Error, user: User;
-    [error, user] = await to(this.user.findOne({
-      $or: [{
-        email: data._to
-      }, {
-        'account.address': (data._to)
-      }]
-    }).select({
-      "_id": 1,
-      "email": 1, "account": 1
-    }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
-    else if (!user) {
-      response.status(204).send({
-        message: "User is not registered! Please repeat!",
-        code: 204
+    await serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.usePoints(data._points, customer.account.address, _partner, serviceInstance.address)
+          .then(async (result: any) => {
+            await this.transaction.create({
+              ...result, type: "RedeemPoints",
+              from_id: request.user._id, to_id: customer._id,
+              info: {
+                from_name: request.user.name, from_email: request.user.email,
+                to_email: customer.email, points: data._points, offer_id: data.offer_id
+              }
+            });
+            response.status(201).send({
+              data: result,
+              code: 201
+            });
+          })
+          .catch((error: Error) => {
+            next(new UnprocessableEntityException('Blockchain Error'))
+          })
+      })
+      .catch((error) => {
+        next(new UnprocessableEntityException('Blockchain Error'))
       });
-    } else {
-      await serviceInstance.getLoyaltyAppContract()
-        .then((instance) => {
-          return instance.usePoints(data._points, user.account.address, _partner, serviceInstance.address)
-            .then(async (result: any) => {
-              await this.transaction.create({
-                ...result, type: "RedeemPoints",
-                from_id: request.user._id, to_id: user._id,
-                info: {
-                  from_name: request.user.name, from_email: request.user.email,
-                  to_email: user.email, points: data._points
-                }
-              });
-              response.status(201).send({
-                data: result,
-                code: 201
-              });
-            })
-            .catch((error: Error) => {
-              next(new UnprocessableEntityException('Blockchain Error'))
-            })
-        })
-        .catch((error) => {
-          next(new UnprocessableEntityException('Blockchain Error'))
-        });
-    }
   }
 
   private readBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -150,7 +120,10 @@ class LoyaltyController implements Controller {
         return instance.members(_member)
           .then((results: any) => {
             response.status(200).send({
-              data: results,
+              data: {
+                address: results.address,
+                points: results.points
+              },
               code: 200
             });
           })
@@ -164,47 +137,80 @@ class LoyaltyController implements Controller {
   }
 
   private readCustomerBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const customer: User = response.locals.customer;
 
-    let error: Error, user: User;
-    [error, user] = await to(this.user.findOne({
-      $or: [{
-        email: request.params._to
-      }, {
-        'account.address': (request.params._to)
-      }]
-    }).select({
-      "_id": 1,
-      "email": 1, "account": 1
-    }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
-    else if (!user) {
-      response.status(200).send({
-        message: "user_not_exists",
-        code: 204
-      });
-    } else {
-      await serviceInstance.getLoyaltyAppContract()
-        .then((instance) => {
-          return instance.members(user.account.address)
-            .then((results: any) => {
-              response.status(200).send({
-                data: results,
-                code: 200
-              });
-            })
-            .catch((error: Error) => {
-              next(new UnprocessableEntityException('Blockchain Error'))
-            })
-        })
-        .catch((error) => {
-          next(new UnprocessableEntityException('Blockchain Error'))
-        })
-    }
+    await serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.members(customer.account.address)
+          .then((results: any) => {
+            response.status(200).send({
+              data: {
+                address: results.address,
+                points: results.points
+              },
+              code: 200
+            });
+          })
+          .catch((error: Error) => {
+            next(new UnprocessableEntityException('Blockchain Error'))
+          })
+      })
+      .catch((error) => {
+        next(new UnprocessableEntityException('Blockchain Error'))
+      })
+  }
+
+  private readBadge = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const _member = request.user.account.address;
+
+    await serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.getLoyaltyScore(_member)
+          .then((results: any) => {
+            response.status(200).send({
+              data: {
+                address: _member,
+                points: results
+              },
+              code: 200
+            });
+          })
+          .catch((error: Error) => {
+            next(new UnprocessableEntityException('Blockchain Error'))
+          })
+      })
+      .catch((error) => {
+        next(new UnprocessableEntityException('Blockchain Error'))
+      })
+  }
+
+  private readCustomerBadge = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const customer: User = response.locals.customer;
+
+    await serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.getLoyaltyScore(customer.account.address)
+          .then((results: any) => {
+            response.status(200).send({
+              data: {
+                address: customer.account.address,
+                points: results
+              },
+              code: 200
+            });
+          })
+          .catch((error: Error) => {
+            next(new UnprocessableEntityException('Blockchain Error'))
+          })
+      })
+      .catch((error) => {
+        next(new UnprocessableEntityException('Blockchain Error'))
+      })
   }
 
   private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
-    let error: Error, transactions: any;
+    let error: Error, transactions: LoyaltyTransaction[];
     [error, transactions] = await to(this.transaction.find({
       $and: [
         { $or: [{ to_id: request.user._id }, { from_id: request.user._id }] },

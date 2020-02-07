@@ -1,15 +1,15 @@
-import { IsString, IsEmail, IsOptional } from 'class-validator';
+import { IsString, IsEmail, Length, IsOptional } from 'class-validator';
 
 class RegisterWithOutPasswordDto {
+  @IsOptional()
   @IsString()
-  public name: string;
-
-  @IsEmail()
+  // @IsEmail()
   public email: string;
 
   @IsOptional()
   @IsString()
-  public sector: string;
+  // @Length(16, 16)
+  public card: string;
 }
 
 export default RegisterWithOutPasswordDto;

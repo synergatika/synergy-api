@@ -9,7 +9,7 @@ info:
 
 servers:
   - url: http://synergy.synergatika.com/v1
-  
+
 paths:
   # Auth Paths
   /auth/authenticate:
@@ -23,9 +23,9 @@ paths:
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
-        '201': 
+        '201':
           $ref: '#/components/responses/AuthenticateRes'
-        
+
   /auth/register:
     post:
       summary: "Register new user"
@@ -37,7 +37,7 @@ paths:
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
-        '201': 
+        '201':
           $ref: '#/components/responses/CreateResponse'
 
   /auth/checkVerifyToken:
@@ -51,9 +51,9 @@ paths:
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
-        '200': 
-          $ref: '#/components/responses/UpdateResponse'   
-          
+        '200':
+          $ref: '#/components/responses/UpdateResponse'
+
   /auth/refreshToken:
     post:
       summary: "Refresh token"
@@ -65,7 +65,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '201':
           $ref: '#/components/responses/RefreshTokenRes'
-  
+
   /auth/changePass:
     put:
       summary: "A logged in user changes her/his/its password"
@@ -77,9 +77,9 @@ paths:
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
-        '200': 
+        '200':
           $ref: '#/components/responses/UpdateResponse'
-          
+
   /auth/forgotPass:
     post:
       summary: "A user forgets her/his/its password"
@@ -90,10 +90,10 @@ paths:
         $ref: '#/components/requestBodies/ForgotPassRequestBody'
       responses:
         default:
-          $ref: '#/components/responses/UnexpectedError'  
-        '200': 
+          $ref: '#/components/responses/UnexpectedError'
+        '200':
           $ref: '#/components/responses/UpdateResponse'
-          
+
   /auth/checkRestoreToken:
     put:
       summary: "Check if Token to restore Password is valid"
@@ -101,13 +101,13 @@ paths:
       tags:
         - authentication
       requestBody:
-        $ref: '#/components/requestBodies/CheckTokenRequestBody' 
+        $ref: '#/components/requestBodies/CheckTokenRequestBody'
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
-        '200': 
+        '200':
           $ref: '#/components/responses/UpdateResponse'
-          
+
   /auth/restorePassword:
     put:
       summary: "User update her/his/its password"
@@ -117,9 +117,9 @@ paths:
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
-        '200': 
+        '200':
           $ref: '#/components/responses/UpdateResponse'
-          
+
   # Profile & Merchant Paths
   /profile:
     get:
@@ -132,7 +132,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/User'
-          
+
     put:
       summary: "Update user's profile info (only for customers)"
       operationId: updateUserProfile
@@ -171,7 +171,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Merchant'
-          
+
     put:
       summary: "Update merchant information"
       operationId: updateMerchantInfo
@@ -225,7 +225,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/TransactionResponse'
-          
+
   /loyalty/balance:
     get:
       summary: "Returns logged in user's balance"
@@ -254,14 +254,14 @@ paths:
     post:
       summary: "Add a new offer"
       operationId: postAnOffer
-      tags: 
+      tags:
         - loyalty
       responses:
         default:
           $ref: '#/components/responses/UnexpectedError'
         '201':
           $ref: '#/components/responses/CreateResponse'
-          
+
   /loyalty/offers/{merchant_id}:
     get:
       summary: "Return offers for a specific store"
@@ -275,7 +275,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Offers'
-          
+
   /loyalty/offers/{merchant_id}/{offer_id}:
     put:
       summary: "Update an Offer"
@@ -317,7 +317,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Campaigns'
-          
+
     post:
       summary: "Create a new campaign"
       operationId: createCampaign
@@ -326,7 +326,7 @@ paths:
       responses:
         '201':
           $ref: '#/components/responses/CreateResponse'
- 
+
   /microfund/campaigns/{merchant_id}:
     get:
       summary: "Read all campaigns by Store"
@@ -366,7 +366,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Campaign'
-  
+
     delete:
       summary: "Delete a campaign"
       operationId: "deleteCampaign"
@@ -393,7 +393,7 @@ paths:
           $ref: '#/components/responses/UnexpectedError'
         '200':
           $ref: '#/components/responses/Update'
-          
+
 components:
   parameters:
     user_id:
@@ -420,7 +420,7 @@ components:
         format: uuid
       required: true
       description: "ID of the selected offer"
-    campaign_id: 
+    campaign_id:
       in: path
       name: campaign_id
       schema:
@@ -480,7 +480,7 @@ components:
             $ref: '#/components/schemas/CheckTokenRequest'
           example:
             token: 'jefg98845tjrekjgf55ttgrt'
-    # Transaction RequestBodies        
+    # Transaction RequestBodies
     TransactionRequestBody:
       description: ""
       required: true
@@ -499,7 +499,7 @@ components:
     # Auth's section
     AuthenticateRes:
       description: Expected response to a valide request
-      content: 
+      content:
         application/json:
           schema:
             allOf:
@@ -512,7 +512,7 @@ components:
           schema:
             $ref: "#/components/schemas/Access"
     # User's section - Profile, Merchant's Info
-    User: 
+    User:
       description: Expected response to a valid request
       content:
         application/json:
@@ -537,7 +537,7 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Offers"
-          example: 
+          example:
             - id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
               cost: 1000
               description: "Get 10% discount"
@@ -547,11 +547,11 @@ components:
     EarnResponse:
       description: 'Earn points'
       content:
-        application/json:    
+        application/json:
           schema:
             $ref: "#/components/schemas/EarnResponse"
           example:
-            points: 
+            points:
               balance: 1300
               earned: 13
             code: 0
@@ -563,7 +563,7 @@ components:
           schema:
             $ref: "#/components/schemas/RedeemResponse"
           example:
-            points: 
+            points:
               balance: 1287
               redeemed: 13
             code: 0
@@ -579,19 +579,19 @@ components:
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/Balance"      
-    # Microfund        
-    Campaign: 
+            $ref: "#/components/schemas/Balance"
+    # Microfund
+    Campaign:
       description: Expected response to a valide request
       content:
         application/json:
-          schema: 
+          schema:
             $ref: "#/components/schemas/Campaign"
-    Campaigns: 
+    Campaigns:
       description: Expected response to a valide request
       content:
         application/json:
-          schema: 
+          schema:
             $ref: "#/components/schemas/Campaigns"
     # Typical create or update and error responses
     CreateResponse:
@@ -600,31 +600,31 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Created"
-          example: 
+          example:
             code: 100
-            message: "Campaign successfully created!"          
+            message: "Campaign successfully created!"
     UpdateResponse:
       description: Expected response to valid request
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Updated"
-          example: 
+          example:
             code: 100
-            message: "User's Profile successfully updated!"          
+            message: "User's Profile successfully updated!"
     UnexpectedError:
       description: Unexpected error
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
-          example: 
+          example:
             code: 100
-            message: "Something wrong happes!"            
+            message: "Something wrong happes!"
 
   schemas:
     # Req: Auth Schemas
-    AuthenticationRequest: 
+    AuthenticationRequest:
       type: object
       required:
         - email
@@ -633,7 +633,7 @@ components:
         email:
           type: string
           format: email
-        password: 
+        password:
           type: string
           format: password
     RegistrationRequest:
@@ -642,7 +642,7 @@ components:
         - name
         - email
         - password
-      properties: 
+      properties:
         name:
           type: string
         email:
@@ -660,7 +660,7 @@ components:
         password:
           type: string
           format: password
-        new: 
+        new:
           type: string
           format: password
     ForgotPassRequest:
@@ -685,7 +685,7 @@ components:
         - amount
         - card_id
       properties:
-        card_id: 
+        card_id:
           type: string
         amount:
           type: number
@@ -697,7 +697,7 @@ components:
         - amount
         - email
       properties:
-        email: 
+        email:
           type: string
           format: email
         amount:
@@ -710,7 +710,7 @@ components:
         - amount
         - address
       properties:
-        address: 
+        address:
           type: string
         amount:
           type: number
@@ -723,20 +723,20 @@ components:
         bearer:
           type: string
           format: uuid
-        type: 
+        type:
           type: string
           enum: [customer, merchant]
         access:
           type: string
           enum: [user, admin]
     # Res: Customers & Merchants Schemas
-    User: 
+    User:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        name: 
+        name:
           type: string
         imageURL:
           type: string
@@ -753,7 +753,7 @@ components:
         email:
           type: string
           format: email
-        name: 
+        name:
           type: string
         imageURL:
           type: string
@@ -763,16 +763,16 @@ components:
           format: date
         contact:
           type: object
-          properties: 
-            phone: 
+          properties:
+            phone:
               type: number
               format: int64
-            address: 
+            address:
               type: object
               properties:
                 street:
                   type: string
-                zipCode:
+                postCode:
                   type: number
                   format: int64
                 city:
@@ -809,7 +809,7 @@ components:
       required:
         - points
         - code
-        - message      
+        - message
       properties:
         points:
           type: object
@@ -866,7 +866,7 @@ components:
           minimum: 0
         description:
           type: string
-    Offers:    
+    Offers:
       type: array
       items:
         $ref: "#/components/schemas/Offer"
@@ -877,7 +877,7 @@ components:
         id:
           type: string
           format: uuid
-        state: 
+        state:
           type: string
           enum: [draft, checking, public, passProtected, expired]
         description:
@@ -889,7 +889,7 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/Campaign"
-    # Res: Typical Create, Update, Error Schema   
+    # Res: Typical Create, Update, Error Schema
     Created:
       type: object
       required:
