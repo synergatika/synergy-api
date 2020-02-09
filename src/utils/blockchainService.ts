@@ -59,16 +59,37 @@ export class BlockchainService {
     return await LoyaltyPointsContract.at(proxy.address);
   }
 
-  // async startNewMicrocredit(address projectRaiseBy,
-  //   uint projectMinimunAmount,
-  //   uint projectMaximunAmount,
-  //   uint projectMaxBackerAmount,
-  //   uint projectExpiredAt,
-  //   uint projectAvailableAt,
-  //   uint projectStartedAt,
-  //   bool projectUseToken, ) {
-  //   return await Project.new(accounts[0], 0, 0, 1000, 0, 0, 0, true);
-  // }
+  async getMicrocredit(address: any) {
+    const Project = this.loadImplementationMicrocreditContract();
+    await this.unlockAdminAtNode();
+    return await Project.at(address);
+  }
+
+  async startNewMicrocredit(
+    projectRaiseBy: any,
+    projectMinimunAmount: Number,
+    projectMaximunAmount: Number,
+    projectMaxBackerAmount: Number,
+    projectMinBackerAmount: Number,
+    projectExpiredAt: Number,
+    projectAvailableAt: Number,
+    projectStartedAt: Number,
+    projectUseToken: boolean) {
+
+      const Project = this.loadImplementationMicrocreditContract();
+      await this.unlockAdminAtNode();
+      return await Project.new(
+        projectRaiseBy,
+        projectMinimunAmount,
+        projectMaximunAmount,
+        projectMaxBackerAmount,
+        projectMinBackerAmount,
+        projectExpiredAt,
+        projectAvailableAt,
+        projectStartedAt,
+        projectUseToken
+      );
+  }
 
   async unlockAdminAtNode() {
     const status = await this.web3.eth.personal.unlockAccount(this.address.from, "", 600);
