@@ -259,6 +259,8 @@ describe("Merchant", () => {
         .field('street', defaultMerchant_1.address.street)
         .field('postCode', defaultMerchant_1.address.postCode)
         .field('city', defaultMerchant_1.address.city)
+        .field('lat', defaultMerchant_1.address.coordinates[0])
+        .field('long', defaultMerchant_1.address.coordinates[1])
         .field('sector', defaultMerchant_1.sector)
         .attach('imageURL', fs.readFileSync('/mnt/c/Users/Dimitris Sociality/Downloads/sociality.png'),
           'sociality.png')
@@ -277,6 +279,7 @@ describe("Merchant", () => {
         //   sector: defaultMerchant_1.sector,
         // })
         .end((err, res) => {
+          console.log(res.body);
           res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('data');

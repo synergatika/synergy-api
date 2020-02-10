@@ -8,7 +8,7 @@ import MerchantsController from './controllers/merchants.controller';
 import OffersController from './controllers/offers.controller';
 import MicrocreditController from './controllers/microcredit.controller';
 import MicrocreditCampaignsController from './controllers/microcredit_campaigns.controller';
-import MicrocreditBackersController from './controllers/microcredit_backers.controller';
+import MicrocreditSupportsController from './controllers/microcredit_supports.controller';
 import LoyaltyController from './controllers/loyalty.controller';
 import PostsController from './controllers/posts.controller';
 import EventsController from './controllers/events.controller';
@@ -28,7 +28,7 @@ const app = new App(
     new OffersController(),
     new MicrocreditController(),
     new MicrocreditCampaignsController(),
-    new MicrocreditBackersController(),
+    new MicrocreditSupportsController(),
     new CommunityController(),
     new PostsController(),
     new EventsController(),

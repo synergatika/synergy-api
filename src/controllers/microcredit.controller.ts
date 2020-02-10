@@ -3,15 +3,15 @@ import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 
 // Dtos
-import CampaignDto from '../microcreditDtos/campaign.dto';
-import RedeemTokensDto from '../microcreditDtos/redeemTokens.dto';
 import MerchantID from '../usersDtos/merchant_id.params.dto';
 import CampaignID from '../microcreditDtos/campaign_id.params.dto';
+import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
+import EarnTokensDto from '../microcreditDtos/earnTokens.dto';
+import RedeemTokensDto from '../microcreditDtos/redeemTokens.dto';
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
-import Campaign from '../microcreditInterfaces/campaign.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 // Middleware
@@ -33,34 +33,94 @@ class MicrocreditController implements Controller {
   }
 
   private initializeRoutes() {
+    this.router.post(`${this.path}/earn/:merchant_id/:campaign_id`, authMiddleware, validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto), this.earnTokens);
+    this.router.post(`${this.path}/earn/:merchant_id/:campaign_id/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), validationParamsMiddleware(IdentifierDto), validationBodyMiddleware(EarnTokensDto), customerMiddleware, this.earnTokensByMerchant);
     this.router.post(`${this.path}/redeem/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), validationBodyMiddleware(RedeemTokensDto), customerMiddleware, this.redeemTokens);
+  }
+
+  private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+    const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+    const data: EarnTokensDto = request.body;
+    const user: User = request.user;
+
+    let error: Error, results: any; // {"n": 1, "nModified": 1, "ok": 1}
+    [error, results] = await to(this.user.findOneAndUpdate({
+      _id: merchant_id,
+      'microcredit._id': campaign_id
+    }, {
+        $push: {
+          'microcredit.$.supports': {
+            "backer_id": user._id,
+            "initialTokens": data._amount,
+            "redeemedTokens": 0
+          }
+        }
+      }, { new: true }).catch());
+
+    const currentCampaign = results.microcredit[results.microcredit.map(function(e: any) { return e._id; }).indexOf(campaign_id)];
+    const currentSupport = currentCampaign.supports[currentCampaign["supports"].length - 1];
+
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    response.status(201).send({
+      data: {
+        support_id: currentSupport._id,
+        backer_id: currentSupport.backer_id,
+        amount: currentSupport.initialTokens,
+        payment: currentSupport._id,
+      },
+      code: 201
+    });
+  }
+
+  private earnTokensByMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+    const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+    const data: EarnTokensDto = request.body;
+    const customer: User = response.locals.customer;
+
+    let error: Error, results: Object; // {"n": 1, "nModified": 1, "ok": 1}
+    [error, results] = await to(this.user.updateOne({
+      _id: merchant_id,
+      'microcredit._id': campaign_id
+    }, {
+        $push: {
+          'microcredit.$.supports': {
+            'backer_id': customer._id,
+            'initialTokens': data._amount,
+            "redeemedTokens": 0
+          }
+        }
+      }).catch());
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    response.status(201).send({
+      message: "Success! Backer added €" + data._amount + " for token, for Campaign " + campaign_id + "!",
+      code: 201
+    });
   }
 
   private redeemTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
-    const customer: User = response.locals.customer;
     const data: RedeemTokensDto = request.body;
-    data._points = Math.round(data._points);
-
-    console.log(data);
+    const customer: User = response.locals.customer;
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateMany({
       _id: new ObjectId(merchant_id),
       'microcredit._id': new ObjectId(campaign_id),
-      'microcredit.backers._id': data.support_id,
-      'microcredit.backers.status': 'confirmation',
-      // 'microcredit.backers.backer_id': (customer._id).toString()
+      'microcredit.supports._id': data.support_id,
+      // 'microcredit.supports.status': 'confirmation',
+      // 'microcredit.supports.backer_id': (customer._id).toString()
     }, {
         $inc: {
-          'microcredit.$.backers.$[d].redeemedTokens': data._points
+          'microcredit.$.supports.$[d].redeemedTokens': Math.round(data._tokens)
         }
       }, { "arrayFilters": [{ "d._id": data.support_id }] }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
 
     response.status(200).send({
-      message: "Success! Backer use " + data._points + " token, for Campaign " + campaign_id + " !",
+      message: "Success! Backer use " + Math.round(data._tokens) + " token, for Campaign " + campaign_id + "!",
       code: 200
     });
   }

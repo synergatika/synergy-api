@@ -6,9 +6,9 @@ import { BlockchainService } from '../utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
 // Dtos
+import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
 import EarnPointsDto from '../loyaltyDtos/earnPoints.dto';
 import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto';
-import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
 // Interfaces
@@ -37,18 +37,19 @@ class LoyaltyController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/earn`, authMiddleware, /*accessMiddleware.confirmPassword,*//*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), customerMiddleware, this.earnToken);
-    this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, /*accessMiddleware.confirmPassword,*/ validationBodyMiddleware(RedeemPointsDto), customerMiddleware, this.redeemToken);
+    this.router.post(`${this.path}/earn`, authMiddleware, /*accessMiddleware.confirmPassword,*//*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), customerMiddleware, this.earnTokens);
+    this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, /*accessMiddleware.confirmPassword,*/ validationBodyMiddleware(RedeemPointsDto), customerMiddleware, this.redeemTokens);
     this.router.get(`${this.path}/balance`, authMiddleware, this.readBalance);
-    this.router.get(`${this.path}/balance/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readCustomerBalance);
+    this.router.get(`${this.path}/balance/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBalanceByMerchant);
     this.router.get(`${this.path}/badge`, authMiddleware, this.readBadge);
-    this.router.get(`${this.path}/badge/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readCustomerBadge);
+    this.router.get(`${this.path}/badge/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBadgeByMerchant);
     this.router.get(`${this.path}/transactions`, authMiddleware, this.readTransactions);
+
     this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
     this.router.get(`${this.path}/transactions_info`, authMiddleware, this.transactionInfoLength);
   }
 
-  private earnToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: EarnPointsDto = request.body;
     data._amount = Math.round(data._amount);
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
@@ -80,7 +81,7 @@ class LoyaltyController implements Controller {
       })
   }
 
-  private redeemToken = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private redeemTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RedeemPointsDto = request.body;
     data._points = Math.round(data._points);
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
@@ -136,7 +137,7 @@ class LoyaltyController implements Controller {
       })
   }
 
-  private readCustomerBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private readBalanceByMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const customer: User = response.locals.customer;
 
     await serviceInstance.getLoyaltyAppContract()
@@ -184,7 +185,7 @@ class LoyaltyController implements Controller {
       })
   }
 
-  private readCustomerBadge = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private readBadgeByMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const customer: User = response.locals.customer;
 
     await serviceInstance.getLoyaltyAppContract()

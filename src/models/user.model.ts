@@ -2,9 +2,9 @@ import * as mongoose from 'mongoose';
 import User from '../usersInterfaces/user.interface';
 import { object } from 'prop-types';
 
-const backerSchema = new mongoose.Schema({
+const microcreditSupportSchema = new mongoose.Schema({
   backer_id: String,
-  payment_id: String,
+  payment: String,
   initialTokens: Number,
   redeemedTokens: Number,
   status: {
@@ -14,7 +14,7 @@ const backerSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-const microcreditSchema = new mongoose.Schema({
+const microcreditCampaignSchema = new mongoose.Schema({
   title: String,
   terms: String,
   description: String,
@@ -31,7 +31,7 @@ const microcreditSchema = new mongoose.Schema({
   redeemEnds: Number,
   expiresAt: Number,
 
-  backers: [backerSchema]
+  supports: [microcreditSupportSchema]
 
 }, { timestamps: true });
 
@@ -132,7 +132,7 @@ const userSchema = new mongoose.Schema({
   offers: [offerSchema],
   posts: [postSchema],
   events: [eventSchema],
-  microcredit: [microcreditSchema],
+  microcredit: [microcreditCampaignSchema],
   previousAccounts: [Object]
 }, {
     timestamps: true

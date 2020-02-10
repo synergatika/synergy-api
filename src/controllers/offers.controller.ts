@@ -10,9 +10,9 @@ import OfferID from '../loyaltyDtos/offer_id.params.dto'
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
-import Offer from '../loyaltyInterfaces/offer.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
+import Offer from '../loyaltyInterfaces/offer.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationBodyAndFileMiddleware from '../middleware/body_file.validation';

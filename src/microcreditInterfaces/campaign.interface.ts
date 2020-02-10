@@ -20,7 +20,7 @@ interface Campaign {
   redeemEnds: Date,
   expiresAt: Date,
 
-  backers: object;
+  supports: object;
 
   createdAt: Date
 }

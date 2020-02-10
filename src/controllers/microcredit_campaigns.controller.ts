@@ -10,9 +10,9 @@ import CampaignID from '../microcreditDtos/campaign_id.params.dto'
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
-import MicrocreditCampaign from '../microcreditInterfaces/campaign.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
+import Campaign from '../microcreditInterfaces/campaign.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
@@ -66,7 +66,7 @@ class MicrocreditCampaignsController implements Controller {
   private readPrivateCampaigns = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
 
-    let error: Error, campaigns: MicrocreditCampaign[];
+    let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
@@ -114,7 +114,7 @@ class MicrocreditCampaignsController implements Controller {
 
   private readPublicCampaigns = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
 
-    let error: Error, campaigns: MicrocreditCampaign[];
+    let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
@@ -196,7 +196,7 @@ class MicrocreditCampaignsController implements Controller {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
 
-    let error: Error, campaigns: MicrocreditCampaign[];
+    let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
@@ -248,7 +248,7 @@ class MicrocreditCampaignsController implements Controller {
   private readPublicCampaignsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
 
-    let error: Error, campaigns: MicrocreditCampaign[];
+    let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
@@ -302,7 +302,7 @@ class MicrocreditCampaignsController implements Controller {
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
     const data: CampaignDto = request.body;
 
-    const previousImage: MicrocreditCampaign[] = await (this.user.aggregate([{
+    const previousImage: Campaign[] = await (this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match:
@@ -360,7 +360,7 @@ class MicrocreditCampaignsController implements Controller {
     const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
-    const previousImage: MicrocreditCampaign[] = await (this.user.aggregate([{
+    const previousImage: Campaign[] = await (this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match:
@@ -404,7 +404,7 @@ class MicrocreditCampaignsController implements Controller {
     const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
-    let error: Error, campaigns: MicrocreditCampaign[];
+    let error: Error, campaigns: Campaign[];
 
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
@@ -441,7 +441,7 @@ class MicrocreditCampaignsController implements Controller {
         redeemEnds: '$microcredit.redeemEnds',
         expiresAt: '$microcredit.expiresAt',
 
-        backers: '$microcredit.backers',
+        supports: '$microcredit.supports',
         createdAt: '$microcredit.createdAt'
       }
     }]).exec().catch());

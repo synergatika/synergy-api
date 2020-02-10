@@ -8,7 +8,7 @@ class RedeemTokensDto {
   public _to: string;
 
   @IsNumber()
-  public _points: number;
+  public _tokens: number;
 
   @IsOptional()
   @IsString()
