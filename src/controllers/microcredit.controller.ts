@@ -88,7 +88,8 @@ class MicrocreditController implements Controller {
           'microcredit.$.supports': {
             'backer_id': customer._id,
             'initialTokens': data._amount,
-            "redeemedTokens": 0
+            "redeemedTokens": 0,
+            "status": data.paid ? 'confirmation' : 'order'
           }
         }
       }).catch());

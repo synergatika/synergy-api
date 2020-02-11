@@ -452,6 +452,41 @@ class MicrocreditCampaignsController implements Controller {
       code: 200
     });
   }
+
+  private readCampaignTotal = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+    const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+
+    let error: Error, campaigns: Campaign[];
+
+    [error, campaigns] = await to(this.user.aggregate([{
+      $unwind: '$microcredit'
+    }, {
+      $unwind: '$microcredit.supports'
+    }, {
+      $match: {
+        $and: [{
+          _id: new ObjectId(merchant_id)
+        }, {
+          'microcredit._id': new ObjectId(campaign_id)
+        }, {
+          'microcredit.supports.status': 'confirmation'
+        }]
+      }
+    }, {
+      "$group": {
+        "_id": null,
+        "initialTokens": { "$sum": "$microcredit.supports.initialTokens" },
+        "redeemedTokens": { "$sum": "$microcredit.supports.redeemedTokens" }
+      }
+    }]).exec().catch());
+
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    response.status(200).send({
+      data: campaigns,
+      code: 200
+    });
+  }
 }
 
 export default MicrocreditCampaignsController;
