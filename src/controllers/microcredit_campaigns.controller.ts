@@ -153,9 +153,21 @@ class MicrocreditCampaignsController implements Controller {
       }
     }
     ]).exec().catch());
+
+    const match: any = [];
+    const campaignsTokens: any = await this.merge(campaigns, match);
+    console.log(campaignsTokens);
+    // {
+    //   _id: new ObjectId(merchant_id)
+    // }, {
+    //   'microcredit._id': new ObjectId(campaign_id)
+    // },
+
+
+
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
-      data: campaigns,
+      data: campaignsTokens, //campaigns,
       code: 200
     });
   }
@@ -290,9 +302,38 @@ class MicrocreditCampaignsController implements Controller {
       }
     }
     ]).exec().catch());
+
+    const match: any = [{
+      _id: new ObjectId(merchant_id)
+    }];
+    const campaignsTokens: any = await this.merge(campaigns, match);
+    console.log(campaignsTokens);
+    // const tokens: {
+    //   confirmationTokens: {
+    //     _id: string,
+    //     initialTokens: number,
+    //     redeemedTokens: number
+    //   }[],
+    //   orderTokens: {
+    //     _id: string,
+    //     initialTokens: number,
+    //     redeemedTokens: number
+    //   }[]
+    // } = await this.readAllCampaignsTotal();
+    //
+    // const campaignsTokens = campaigns.map((a: any) =>
+    //   Object.assign({}, a,
+    //     {
+    //       confirmedTokens: (tokens.confirmationTokens).find((b: any) => (b._id).toString() === (a.campaign_id).toString()),
+    //       orderedTokens: (tokens.orderTokens).find((c: any) => (c._id).toString() === (a.campaign_id).toString()),
+    //     }
+    //   )
+    // );
+    // console.log(campaignsTokens);
+
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
-      data: campaigns,
+      data: campaignsTokens, //campaigns,
       code: 200
     });
   }
@@ -446,47 +487,234 @@ class MicrocreditCampaignsController implements Controller {
       }
     }]).exec().catch());
 
+    const match: any = [{
+      _id: new ObjectId(merchant_id)
+    }, {
+      'microcredit._id': new ObjectId(campaign_id)
+    }];
+    const campaignsTokens: any = await this.merge(campaigns, match);
+    console.log(campaignsTokens[0]);
+
+    // let tokens: {
+    //   initialTokens: number,
+    //   redeemedTokens: number
+    // };
+    // tokens = await this.readACampaignTotal(merchant_id, campaign_id);
+    // console.log(tokens);
+
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
-      data: campaigns[0],
+      data: campaignsTokens[0], //campaigns[0],
       code: 200
     });
   }
 
-  private readCampaignTotal = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
-    const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+  private merge = async (campaigns: Campaign[], match: any) => {
 
-    let error: Error, campaigns: Campaign[];
+    let x = [...match];
+    let y = [...match];
 
-    [error, campaigns] = await to(this.user.aggregate([{
+    x.push({
+      'microcredit.supports.status': 'order'
+    });
+    const confirmedTokens: any = await this.readTotalTokens(x);
+
+    y.push({
+      'microcredit.supports.status': 'confirmation'
+    });
+    const orderedTokens: any = await this.readTotalTokens(y);
+
+    const campaignsTokens = campaigns.map((a: any) =>
+      Object.assign({}, a,
+        {
+          confirmedTokens: (confirmedTokens).find((b: any) => (b._id).toString() === (a.campaign_id).toString()),
+          orderedTokens: (orderedTokens).find((c: any) => (c._id).toString() === (a.campaign_id).toString()),
+        }
+      )
+    );
+    return campaignsTokens;
+  }
+
+  private readTotalTokens = async (match: any) => {
+    let error: Error, tokens: {
+      _id: string,
+      initialTokens: number,
+      redeemedTokens: number
+    }[];
+
+    [error, tokens] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $unwind: '$microcredit.supports'
     }, {
       $match: {
-        $and: [{
-          _id: new ObjectId(merchant_id)
-        }, {
-          'microcredit._id': new ObjectId(campaign_id)
-        }, {
-          'microcredit.supports.status': 'confirmation'
-        }]
+        $and: match
       }
     }, {
       "$group": {
-        "_id": null,
-        "initialTokens": { "$sum": "$microcredit.supports.initialTokens" },
-        "redeemedTokens": { "$sum": "$microcredit.supports.redeemedTokens" }
+        '_id': '$microcredit._id',
+        'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+        'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
       }
     }]).exec().catch());
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
-    response.status(200).send({
-      data: campaigns,
-      code: 200
-    });
+    return tokens;
   }
+
 }
 
 export default MicrocreditCampaignsController;
+  //
+  // private readAllCampaignsTotal = async () => {
+  //   let error: Error, orderTokens: {
+  //     _id: string,
+  //     initialTokens: number,
+  //     redeemedTokens: number
+  //   }[], confirmationTokens: {
+  //     _id: string,
+  //     initialTokens: number,
+  //     redeemedTokens: number
+  //   }[];
+  //
+  //   [error, orderTokens] = await to(this.user.aggregate([{
+  //     $unwind: '$microcredit'
+  //   }, {
+  //     $unwind: '$microcredit.supports'
+  //   }, {
+  //     $match: {
+  //       'microcredit.supports.status': 'order'
+  //     }
+  //   }, {
+  //     "$group": {
+  //       '_id': '$microcredit._id',
+  //       'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+  //       'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
+  //     }
+  //   }]).exec().catch());
+  //
+  //   [error, confirmationTokens] = await to(this.user.aggregate([{
+  //     $unwind: '$microcredit'
+  //   }, {
+  //     $unwind: '$microcredit.supports'
+  //   }, {
+  //     $match: {
+  //       'microcredit.supports.status': 'confirmation'
+  //     }
+  //   }, {
+  //     "$group": {
+  //       '_id': '$microcredit._id',
+  //       'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+  //       'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
+  //     }
+  //   }]).exec().catch());
+  //
+  //   return {
+  //     orderTokens,
+  //     confirmationTokens
+  //   };
+  // }
+  //
+  // private readCampaignsTotalByStore = async (merchant_id: string) => {
+  //   let error: Error, orderTokens: {
+  //     _id: string,
+  //     initialTokens: number,
+  //     redeemedTokens: number
+  //   }[], confirmationTokens: {
+  //     _id: string,
+  //     initialTokens: number,
+  //     redeemedTokens: number
+  //   }[];
+  //
+  //   [error, orderTokens] = await to(this.user.aggregate([{
+  //     $unwind: '$microcredit'
+  //   }, {
+  //     $unwind: '$microcredit.supports'
+  //   }, {
+  //     $match: {
+  //       $and: [{
+  //         _id: new ObjectId(merchant_id)
+  //       }, {
+  //         'microcredit.supports.status': 'order'
+  //       }]
+  //     }
+  //   }, {
+  //     "$group": {
+  //       '_id': '$microcredit._id',
+  //       'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+  //       'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
+  //     }
+  //   }]).exec().catch());
+  //
+  //   [error, confirmationTokens] = await to(this.user.aggregate([{
+  //     $unwind: '$microcredit'
+  //   }, {
+  //     $unwind: '$microcredit.supports'
+  //   }, {
+  //     $match: {
+  //       $and: [{
+  //         _id: new ObjectId(merchant_id)
+  //       }, {
+  //         'microcredit.supports.status': 'confirmation'
+  //       }]
+  //     }
+  //   }, {
+  //     "$group": {
+  //       '_id': '$microcredit._id',
+  //       'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+  //       'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
+  //     }
+  //   }]).exec().catch());
+  //
+  //   return {
+  //     orderTokens,
+  //     confirmationTokens
+  //   };
+  // }
+  //
+  // private readACampaignTotal = async (merchant_id: string, campaign_id: string) => {
+  //   //    const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+  //   //    const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+  //
+  //   let error: Error, tokens: {
+  //     _id: string,
+  //     initialTokens: number,
+  //     redeemedTokens: number
+  //   }[];
+  //
+  //   [error, tokens] = await to(this.user.aggregate([{
+  //     $unwind: '$microcredit'
+  //   }, {
+  //     $unwind: '$microcredit.supports'
+  //   }, {
+  //     $match: {
+  //       $and: [{
+  //         _id: new ObjectId(merchant_id)
+  //       }, {
+  //         'microcredit._id': new ObjectId(campaign_id)
+  //       }, {
+  //         'microcredit.supports.status': 'confirmation'
+  //       }]
+  //     }
+  //   }, {
+  //     "$group": {
+  //       '_id': '$microcredit._id',
+  //       'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+  //       'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
+  //     }
+  //   }]).exec().catch());
+  //
+  //   return {
+  //     campaign_id: tokens[0]._id,
+  //     initialTokens: tokens[0].initialTokens,
+  //     redeemedTokens: tokens[0].redeemedTokens
+  //   };
+  //   // if (error) next(new UnprocessableEntityException('DB ERROR'));
+  //
+  //   // response.status(200).send({
+  //   //   data: {
+  //   //     initialTokens: tokens[0].initialTokens,
+  //   //     redeemedTokens: tokens[0].redeemedTokens
+  //   //   },
+  //   //   code: 200
+  //   // });
+  // }
