@@ -12,6 +12,7 @@ interface Merchant extends User {
     street: string;
     city: string;
     postCode: string;
+    coordinates: [string];
   };
   sector: string;
 }

@@ -22,8 +22,12 @@ import accessMiddleware from '../middleware/access.middleware';
 // Models
 import userModel from '../models/user.model';
 
+
 //Path
 var path = require('path');
+// Blockchain Service
+import { BlockchainService } from '../utils/blockchainService';
+const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
 // Upload File
 import multer from 'multer';
@@ -55,7 +59,7 @@ class MicrocreditCampaignsController implements Controller {
   private initializeRoutes() {
     this.router.get(`${this.path}/public`, this.readPublicCampaigns);
     this.router.get(`${this.path}/private`, authMiddleware, this.readPrivateCampaigns);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(CampaignDto), this.createCampaign);
+    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(CampaignDto), this.createCampaign, this.registerMicrocredit);
     this.router.get(`${this.path}/public/:merchant_id`, validationParamsMiddleware(MerchantID), this.readPublicCampaignsByStore);
     this.router.get(`${this.path}/private/:merchant_id`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivateCampaignsByStore);
     this.router.get(`${this.path}/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, this.readCampaign);
@@ -79,6 +83,7 @@ class MicrocreditCampaignsController implements Controller {
         merchant_id: '$_id',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
+        merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
         campaign_imageURL: '$microcredit.imageURL',
@@ -127,6 +132,7 @@ class MicrocreditCampaignsController implements Controller {
         merchant_id: '$_id',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
+        merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
         campaign_imageURL: '$microcredit.imageURL',
@@ -175,8 +181,8 @@ class MicrocreditCampaignsController implements Controller {
   private createCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: CampaignDto = request.body;
     const user: User = request.user;
-    let error: Error, results: Object; // {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne({
+    let error: Error, results: any; // {"n": 1, "nModified": 1, "ok": 1}
+    [error, results] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
         $push: {
@@ -194,14 +200,70 @@ class MicrocreditCampaignsController implements Controller {
             "redeemStarts": data.redeemStarts,
             "redeemEnds": data.redeemEnds,
             "expiresAt": data.expiresAt,
+            "address": '',
+            "transactionHash": ''
           }
         }
-      }).catch());
+      }, { new: true }).catch());
+
+    const currentCampaign = results.microcredit[results["microcredit"].length - 1];
+    console.log(currentCampaign);
+    //const currentSupport = currentCampaign.supports[currentCampaign["supports"].length - 1];
+
     if (error) next(new UnprocessableEntityException('DB ERROR'));
-    response.status(201).send({
-      message: "Success! A new Microcredit Campaign has been created!",
-      code: 201
-    });
+    response.locals = {
+      campaign: currentCampaign
+    }
+    // response.status(201).send({
+    //   message: "Success! A new Microcredit Campaign has been created!",
+    //   code: 201
+    // });
+    next();
+  }
+
+  private registerMicrocredit = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: CampaignDto = request.body;
+    const user: User = request.user;
+    const campaign_id: Campaign["campaign_id"] = response.locals.campaign._id;
+
+    await serviceInstance.startNewMicrocredit(
+      user.account.address,
+      1,
+      data.maxAmount,
+      data.maxAllowed,
+      data.minAllowed,
+      data.redeemEnds,
+      data.redeemStarts,
+      parseInt(((new Date()).getTime() / 1000).toString()),
+      false //true
+    ).then(async (result: any) => {
+      console.log("Results");
+      console.log(result);
+
+      let x: any = await this.user.updateOne(
+        {
+          _id: user._id,
+          'microcredit._id': campaign_id
+        }, {
+          '$set': {
+            'microcredit.$.address': result.address,
+            'microcredit.$.transactionHash': result.transactionHash,
+          }
+        });
+      console.log(x);
+      console.log(result.address); console.log(result.transactionHash);
+      response.status(201).send({
+        message: "Success! A new Microcredit Campaign has been created!",
+        code: 201
+      })
+    })
+      .catch((error: Error) => {
+        console.log("Error");
+        console.log(error);
+        next(new UnprocessableEntityException(error.message))
+      })
+
+
   }
 
   private readPrivateCampaignsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -224,6 +286,7 @@ class MicrocreditCampaignsController implements Controller {
         merchant_id: '$_id',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
+        merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
         campaign_imageURL: '$microcredit.imageURL',
@@ -276,6 +339,7 @@ class MicrocreditCampaignsController implements Controller {
         merchant_name: '$name',
         merchant_id: '$_id',
         merchant_imageURL: '$imageURL',
+        merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
         campaign_imageURL: '$microcredit.imageURL',
@@ -307,29 +371,6 @@ class MicrocreditCampaignsController implements Controller {
       _id: new ObjectId(merchant_id)
     }];
     const campaignsTokens: any = await this.merge(campaigns, match);
-    console.log(campaignsTokens);
-    // const tokens: {
-    //   confirmationTokens: {
-    //     _id: string,
-    //     initialTokens: number,
-    //     redeemedTokens: number
-    //   }[],
-    //   orderTokens: {
-    //     _id: string,
-    //     initialTokens: number,
-    //     redeemedTokens: number
-    //   }[]
-    // } = await this.readAllCampaignsTotal();
-    //
-    // const campaignsTokens = campaigns.map((a: any) =>
-    //   Object.assign({}, a,
-    //     {
-    //       confirmedTokens: (tokens.confirmationTokens).find((b: any) => (b._id).toString() === (a.campaign_id).toString()),
-    //       orderedTokens: (tokens.orderTokens).find((c: any) => (c._id).toString() === (a.campaign_id).toString()),
-    //     }
-    //   )
-    // );
-    // console.log(campaignsTokens);
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -464,6 +505,7 @@ class MicrocreditCampaignsController implements Controller {
         merchant_name: '$name',
         merchant_id: '$_id',
         merchant_imageURL: '$imageURL',
+        merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
         campaign_imageURL: '$microcredit.imageURL',

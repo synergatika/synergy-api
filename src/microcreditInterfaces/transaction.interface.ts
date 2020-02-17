@@ -1,17 +1,6 @@
 interface MicrocreditTransaction {
   _id: string;
 
-  from_id: string;
-  to_id: string;
-
-  info: {
-    from_name: string;
-    from_email: string;
-    to_email: string;
-    points: number;
-    offer_id: string;
-  };
-
   tx: string;
   receipt: {
     transactionHash: string,
@@ -31,7 +20,18 @@ interface MicrocreditTransaction {
     s: string,
     rawLogs: []
   };
-  logs: [];
+  logs: {
+    logIndex: number,
+    transactionIndex: number,
+    transactionHash: string,
+    blockHash: string,
+    blockNumber: number,
+    address: string,
+    type: string,
+    id: string,
+    event: string,
+    args: []
+  }[];
   type: string;
 
   createdAt: Date;

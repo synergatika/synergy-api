@@ -75,20 +75,20 @@ export class BlockchainService {
     projectAvailableAt: Number,
     projectStartedAt: Number,
     projectUseToken: boolean) {
-
-      const Project = this.loadImplementationMicrocreditContract();
-      await this.unlockAdminAtNode();
-      return await Project.new(
-        projectRaiseBy,
-        projectMinimunAmount,
-        projectMaximunAmount,
-        projectMaxBackerAmount,
-        projectMinBackerAmount,
-        projectExpiredAt,
-        projectAvailableAt,
-        projectStartedAt,
-        projectUseToken
-      );
+    console.log(this.address);
+    const Project = this.loadImplementationMicrocreditContract();
+    await this.unlockAdminAtNode();
+    return await Project.new(
+      projectRaiseBy,
+      projectMinimunAmount,
+      projectMaximunAmount,
+      projectMaxBackerAmount,
+      projectMinBackerAmount,
+      projectExpiredAt,
+      projectAvailableAt,
+      projectStartedAt,
+      projectUseToken, this.address
+    );
   }
 
   async unlockAdminAtNode() {

@@ -119,6 +119,8 @@ class AuthenticationController implements Controller {
     const emailPatern = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(identifier);
     const cardPatern = /^\d{16}$/.test(identifier);
 
+    console.log("Identifier");
+    console.log(identifier);
     if (emailPatern) {
       let error: Error, user: User;
       [error, user] = await to(this.user.findOne({ email: identifier })
@@ -127,16 +129,20 @@ class AuthenticationController implements Controller {
         }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       else if (!user) {
+        console.log("10");
         response.status(200).send({
           message: "email_none",
           code: 204
         });
       } else if (user && user.card) {
+        console.log(user.card);
+        console.log("11");
         response.status(200).send({
           message: "email_both",
           code: 204
         });
       } else if (user && !user.card) {
+        console.log("12");
         response.status(200).send({
           message: "email_no_card",
           code: 204
@@ -150,16 +156,19 @@ class AuthenticationController implements Controller {
         }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       else if (!user) {
+        console.log("20");
         response.status(200).send({
           message: "card_none",
           code: 204
         });
       } else if (user && user.email) {
+        console.log("21");
         response.status(200).send({
           message: "card_both",
           code: 204
         });
       } else if (user && !user.email) {
+        console.log("22");
         response.status(200).send({
           message: "card_no_email",
           code: 204
@@ -186,10 +195,12 @@ class AuthenticationController implements Controller {
         email_verified: false, pass_verified: true
       }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
+      console.log(results);
 
       request.params.email = data.email;
       response.locals = {
         user: {
+          user_id: results._id,
           access: 'customer',
           email: data.email,
           password: data.password
@@ -296,6 +307,7 @@ class AuthenticationController implements Controller {
 
       response.locals = {
         user: {
+          user_id: user._id,
           access: 'customer',
           email: data.email,
           password: tempPassword || data.card
@@ -328,6 +340,7 @@ class AuthenticationController implements Controller {
 
       response.locals = {
         user: {
+          user_id: user._id,
           access: 'merchant',
           email: data.email,
           password: tempPassword
@@ -349,7 +362,8 @@ class AuthenticationController implements Controller {
           return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
             .then(async (result: any) => {
               await this.transaction.create({
-                ...result, type: "RegisterMember"
+                ...result,
+                data: { user_id: data.user.user_id }, type: "RegisterMember"
               });
               next();
             })
@@ -366,7 +380,8 @@ class AuthenticationController implements Controller {
           return instance.registerPartner(newAccount.address, serviceInstance.address)
             .then(async (result: any) => {
               await this.transaction.create({
-                ...result, type: "RegisterPartner"
+                ...result,
+                data: { user_id: data.user.user_id }, type: "RegisterPartner"
               });
               next();
             })
@@ -664,6 +679,7 @@ class AuthenticationController implements Controller {
 
         response.locals = {
           user: {
+            user_id: user._id,
             access: user.access,
             email: user.email,
             password: data.newPassword

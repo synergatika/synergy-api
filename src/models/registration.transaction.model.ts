@@ -2,13 +2,6 @@ import * as mongoose from 'mongoose';
 import RegistrationTransaction from '../authInterfaces/transaction.interface';
 import { object, string } from 'prop-types';
 
-const infoSchema = new mongoose.Schema({
-  from_name: String,
-  from_email: String,
-  to_email: String,
-  points: Number
-}, { _id: false });
-
 const receiptSchema = new mongoose.Schema({
   transactionHash: String,
   transactionIndex: Number,
@@ -30,10 +23,9 @@ const receiptSchema = new mongoose.Schema({
 
 const registrationTransactionSchema = new mongoose.Schema({
 
-  from_id: String,
-  to_id: String,
-
-  info: infoSchema,
+  data: {
+    user_id: String
+  },
 
   tx: String,
   receipt: receiptSchema,

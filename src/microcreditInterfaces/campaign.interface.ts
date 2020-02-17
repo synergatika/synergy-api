@@ -1,7 +1,12 @@
+import Support from './support.interface';
+
 interface Campaign {
   merchant_name: string,
   merchant_id: string,
   merchant_imageURL: string,
+  merchant_payment: {
+
+  }
 
   campaign_id: string,
   campaign_imageURL: string,
@@ -20,7 +25,10 @@ interface Campaign {
   redeemEnds: Date,
   expiresAt: Date,
 
-  supports: object;
+  address: string,
+  transactionHash: string,
+
+  supports: Support[];
 
   createdAt: Date
 }

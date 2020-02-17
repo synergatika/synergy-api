@@ -12,6 +12,7 @@ const microcreditSupportSchema = new mongoose.Schema({
     enum: ['order', 'confirmation', 'complete'],
     default: 'order'
   },
+  contractIndex: Number
 }, { timestamps: true });
 
 const microcreditCampaignSchema = new mongoose.Schema({
@@ -30,6 +31,9 @@ const microcreditCampaignSchema = new mongoose.Schema({
   redeemStarts: Number,
   redeemEnds: Number,
   expiresAt: Number,
+
+  address: String,
+  transactionHash: String,
 
   supports: [microcreditSupportSchema]
 
@@ -80,7 +84,7 @@ const contactSchema = new mongoose.Schema({
 }, { _id: false });
 
 const paymentSchema = new mongoose.Schema({
-  paypal: String,
+  Paypal: String,
   NationalBank: String,
   PiraeusBank: String,
   AlphaBank: String,

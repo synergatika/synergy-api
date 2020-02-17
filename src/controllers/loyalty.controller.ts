@@ -228,7 +228,6 @@ class LoyaltyController implements Controller {
       data: transactions,
       code: 200
     });
-
   }
 
   private partnersInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
