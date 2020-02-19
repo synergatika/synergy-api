@@ -21,7 +21,8 @@ const emailService = new EmailService();
 // Dtos
 import AuthenticationDto from '../authDtos/authentication.dto';
 import RegisterWithPasswordDto from '../authDtos/registerWithPassword.dto';
-import RegisterWithOutPasswordDto from '../authDtos/registerWithOutPassword.dto';
+import RegisterCustomerDto from '../authDtos/registerCustomer.dto';
+import RegisterMerchantDto from '../authDtos/registerMerchant.dto';
 // import RegisterOnlyCardDto from '../authDtos/registerOnlyCard.dto';
 import CheckTokenDto from '../authDtos/checkToken.dto'
 import ChangePassInDto from '../authDtos/changePassIn.dto'
@@ -50,6 +51,21 @@ import authMiddleware from '../middleware/auth.middleware';
 import userModel from '../models/user.model';
 import transactionModel from '../models/registration.transaction.model';
 
+//Path
+var path = require('path');
+
+// Upload File
+import multer from 'multer';
+var storage = multer.diskStorage({
+  destination: function (req: RequestWithUser, file, cb) {
+    cb(null, path.join(__dirname, '../assets/profile'));
+  },
+  filename: function (req: RequestWithUser, file, cb) {
+    cb(null, (req.user._id).toString() + '_' + new Date().getTime());
+  }
+});
+var upload = multer({ storage: storage });
+
 class AuthenticationController implements Controller {
   public path = '/auth';
   public router = express.Router();
@@ -73,9 +89,9 @@ class AuthenticationController implements Controller {
       validationBodyMiddleware(EmailDto), this.link_email, emailService.userRegistration, this.sendResponse)
 
 
-    this.router.post(`${this.path}/register/customer`, authMiddleware, accessMiddleware.registerCustomer, validationBodyMiddleware(RegisterWithOutPasswordDto),
+    this.router.post(`${this.path}/register/customer`, authMiddleware, accessMiddleware.registerCustomer, validationBodyMiddleware(RegisterCustomerDto),
       this.registerCustomer, this.registerAccount, emailService.userRegistration, this.sendResponse);//this.emailSender);
-    this.router.post(`${this.path}/register/merchant`, authMiddleware, accessMiddleware.registerMerchant, validationBodyMiddleware(RegisterWithOutPasswordDto),
+    this.router.post(`${this.path}/register/merchant`, authMiddleware, accessMiddleware.registerMerchant, upload.single('imageURL'), validationBodyMiddleware(RegisterMerchantDto),
       this.registerMerchant, this.registerAccount, emailService.userRegistration, this.sendResponse);//this.emailSender);
     //this.emailSender);
     // this.router.post(`${this.path}/register_card`, authMiddleware, accessMiddleware.registerWithoutPass, validationBodyMiddleware(RegisterOnlyCardDto),
@@ -119,8 +135,6 @@ class AuthenticationController implements Controller {
     const emailPatern = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(identifier);
     const cardPatern = /^\d{16}$/.test(identifier);
 
-    console.log("Identifier");
-    console.log(identifier);
     if (emailPatern) {
       let error: Error, user: User;
       [error, user] = await to(this.user.findOne({ email: identifier })
@@ -129,20 +143,16 @@ class AuthenticationController implements Controller {
         }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       else if (!user) {
-        console.log("10");
         response.status(200).send({
           message: "email_none",
           code: 204
         });
       } else if (user && user.card) {
-        console.log(user.card);
-        console.log("11");
         response.status(200).send({
           message: "email_both",
           code: 204
         });
       } else if (user && !user.card) {
-        console.log("12");
         response.status(200).send({
           message: "email_no_card",
           code: 204
@@ -156,19 +166,16 @@ class AuthenticationController implements Controller {
         }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       else if (!user) {
-        console.log("20");
         response.status(200).send({
           message: "card_none",
           code: 204
         });
       } else if (user && user.email) {
-        console.log("21");
         response.status(200).send({
           message: "card_both",
           code: 204
         });
       } else if (user && !user.email) {
-        console.log("22");
         response.status(200).send({
           message: "card_no_email",
           code: 204
@@ -195,7 +202,6 @@ class AuthenticationController implements Controller {
         email_verified: false, pass_verified: true
       }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
-      console.log(results);
 
       request.params.email = data.email;
       response.locals = {
@@ -214,23 +220,27 @@ class AuthenticationController implements Controller {
     const email: EmailDto["email"] = request.params.email;
     const data: CardDto = request.body;
 
-    if (!await this.user.findOne({ email: email })) {
-      next(new NotFoundException('A user with these credentials does not exists!'));
-    } else if (await this.user.findOne({ card: data.card })) {
-      next(new NotFoundException('A user with these credentials alaready  exists!'));
+    let error: Error, user: User;
+    [error, user] = await to(this.user.findOne({ email: email }).catch());
+    if (!user) { next(new NotFoundException('A user with these credentials(Email) does not exists!')); }
+    else if (await this.user.findOne({ card: data.card })) {
+      next(new NotFoundException('A user with these credentials(Card) already exists!'));
     } else {
       let error: Error, results: Object;
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-          $set: {
-            card: data.card
-          }
-        }).catch());
+        $set: {
+          card: data.card
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
-
-
+      response.status(200).send({
+        message: "A card has been linked to customer's email.",
+        code: 200
+      });
     }
+
   }
 
   private link_email = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -239,40 +249,40 @@ class AuthenticationController implements Controller {
 
     let error: Error, user: User;
     [error, user] = await to(this.user.findOne({ card: card }).catch());
-    if (!user) next(new NotFoundException('A user with these credentials does not exists!'));
+    if (!user) { next(new NotFoundException('A user with these credentials(Card) does not exists!')); }
+    else if (await this.user.findOne({ email: data.email })) {
+      next(new NotFoundException('A user with these credentials(Email) already exists!'));
+    }
     else {
-      if (await this.user.findOne({ email: data.email })) next(new NotFoundException('A user with these credentials alaready  exists!'));
-      else {
-        const tempPassword = this.generateToken(10, 1).token;
-        const hashedPassword = await bcrypt.hash(tempPassword, 10);
-        const account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, user.card)).privateKey, tempPassword)
+      const tempPassword = this.generateToken(10, 1).token;
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      const account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, user.card)).privateKey, tempPassword)
 
-        let error: Error, results: Object;
-        [error, results] = await to(this.user.updateOne({
-          card: card
-        }, {
-            $set: {
-              email: data.email,
-              password: hashedPassword,
-              account: account
-            }
-          }).catch());
+      let error: Error, results: Object;
+      [error, results] = await to(this.user.updateOne({
+        card: card
+      }, {
+        $set: {
+          email: data.email,
+          password: hashedPassword,
+          account: account
+        }
+      }).catch());
 
-        if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) next(new UnprocessableEntityException('DB ERROR'));
 
-        response.locals = {
-          user: {
-            email: data.email,
-            password: tempPassword
-          }, token: null
-        };
-        next();
-      }
+      response.locals = {
+        user: {
+          email: data.email,
+          password: tempPassword
+        }, token: null
+      };
+      next();
     }
   }
 
   private registerCustomer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const data: RegisterWithOutPasswordDto = request.body;
+    const data: RegisterCustomerDto = request.body;
 
     let authData = {};
     let tempPassword: string = '';
@@ -289,13 +299,13 @@ class AuthenticationController implements Controller {
 
         authData = {
           ...data,
-          ...{ access: 'customer', password: hashedPassword, account: account, email_verified: true, pass_verified: false }
+          ...{ access: 'customer', password: hashedPassword, account: account, createdBy: request.user._id, email_verified: true, pass_verified: false }
         };
       } else {
         account = serviceInstance.createWallet(data.card);
         authData = {
           ...data,
-          ...{ access: 'customer', account: account, email_verified: false, pass_verified: false }
+          ...{ access: 'customer', account: account, createdBy: request.user._id, email_verified: false, pass_verified: false }
         };
       }
 
@@ -321,7 +331,7 @@ class AuthenticationController implements Controller {
   }
 
   private registerMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const data: RegisterWithOutPasswordDto = request.body;
+    const data: RegisterMerchantDto = request.body;
 
     if (await this.user.findOne({ email: data.email })) {
       next(new NotFoundException('A user with these credentials already exists!'));
@@ -332,9 +342,31 @@ class AuthenticationController implements Controller {
 
       let error: Error, user: User;
       [error, user] = await to(this.user.create({
-        ...data, access: 'merchant',
+        email: data.email,
+        name: data.name,
+        imageURL: `${process.env.API_URL}assets/profile/${request.file.filename}`,
+        address: {
+          street: data.street,
+          city: data.city,
+          postCode: data.postCode,
+          coordinates: [data.lat, data.long]
+        },
+        contact: {
+          phone: data.phone,
+          websiteURL: data.websiteURL
+        },
+        payments: {
+          nationalBank: data.nationalBank,
+          pireausBank: data.pireausBank,
+          eurobank: data.eurobank,
+          alphaBank: data.alphaBank,
+          paypal: data.paypal
+        },
+        // ...data,
+        sector: data.sector, access: 'merchant',
         password: hashedPassword, account: account,
-        email_verified: true, pass_verified: false
+        createdBy: request.user._id,
+        email_verified: true, pass_verified: false,
       }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
 
@@ -463,11 +495,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         _id: user._id
       }, {
-          $set: {
-            account: account,
-            password: hashedPassword
-          }
-        }).catch());
+        $set: {
+          account: account,
+          password: hashedPassword
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your password has been Updated",
@@ -497,12 +529,12 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           email: email
         }, {
-            $set: {
-              account: account,
-              pass_verified: true,
-              password: hashedPassword
-            }
-          }).catch());
+          $set: {
+            account: account,
+            pass_verified: true,
+            password: hashedPassword
+          }
+        }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
           message: "Success! Your password has been Updated",
@@ -526,11 +558,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-          $set: {
-            verificationToken: token.token,
-            verificationExpiration: token.expiresAt
-          }
-        }).catch());
+        $set: {
+          verificationToken: token.token,
+          verificationExpiration: token.expiresAt
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
@@ -546,6 +578,7 @@ class AuthenticationController implements Controller {
 
   private checkVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: CheckTokenDto = request.body;
+
     const now = new Date();
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
@@ -554,14 +587,14 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         verificationToken: data.token
       }, {
-          $set: {
-            email_verified: true,
-          },
-          $unset: {
-            verificationToken: "",
-            verificationExpiration: "",
-          }
-        }).catch());
+        $set: {
+          email_verified: true,
+        },
+        $unset: {
+          verificationToken: "",
+          verificationExpiration: "",
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your Email Address has been Verified",
@@ -582,11 +615,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-          $set: {
-            restorationToken: token.token,
-            restorationExpiration: token.expiresAt
-          }
-        }).catch());
+        $set: {
+          restorationToken: token.token,
+          restorationExpiration: token.expiresAt
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
@@ -647,6 +680,7 @@ class AuthenticationController implements Controller {
 
   private changePassOutside = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: ChangePassOutDto = request.body;
+
     const now = new Date();
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
@@ -654,6 +688,7 @@ class AuthenticationController implements Controller {
 
       let error: Error, user: User;
       [error, user] = await to(this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } }).catch());
+
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       else if (user) {
         const hashedPassword = await bcrypt.hash(data.newPassword, 10);
@@ -663,18 +698,18 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           restorationToken: data.token
         }, {
-            $set: {
-              password: hashedPassword,
-              account: account
-            },
-            $push: {
-              previousAccounts: user.account
-            },
-            $unset: {
-              restorationToken: "",
-              restorationExpiration: ""
-            }
-          }).catch());
+          $set: {
+            password: hashedPassword,
+            account: account
+          },
+          $push: {
+            previousAccounts: user.account
+          },
+          $unset: {
+            restorationToken: "",
+            restorationExpiration: ""
+          }
+        }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
 
         response.locals = {

@@ -74,8 +74,8 @@ export class BlockchainService {
     projectExpiredAt: Number,
     projectAvailableAt: Number,
     projectStartedAt: Number,
+    projectFinishedAt: Number,
     projectUseToken: boolean) {
-    console.log(this.address);
     const Project = this.loadImplementationMicrocreditContract();
     await this.unlockAdminAtNode();
     return await Project.new(
@@ -87,6 +87,7 @@ export class BlockchainService {
       projectExpiredAt,
       projectAvailableAt,
       projectStartedAt,
+      //  projectFinishedAt,
       projectUseToken, this.address
     );
   }
@@ -150,10 +151,6 @@ export class BlockchainService {
 // const service = new BlockchainService("localhost", "contracts", "0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3");
 // const password = 'qwerty1@';
 // const account = service.createWallet(password);
-
-// console.log(account)
-
-// console.log(service.unlockWallet(account, password))
 
 // const instance = await service.getLoyaltyAppContract();
 // const result = instance.partnersInfo(0);

@@ -1,11 +1,6 @@
 import { NextFunction, Response } from 'express';
-import * as bcrypt from 'bcrypt';
 import to from 'await-to-ts'
 
-// Dtos
-import EarnPointsDto from '../loyaltyDtos/earnPoints.dto';
-import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto';
-import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces

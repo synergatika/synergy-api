@@ -11,7 +11,7 @@ class EventDto {
   @IsString()
   public description: string;
 
-  @IsEnum(['public', 'private'])
+  @IsEnum(['public', 'private', 'partners'])
   public access: string;
 
   @IsString()

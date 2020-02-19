@@ -4,7 +4,6 @@ import { object } from 'prop-types';
 
 const microcreditSupportSchema = new mongoose.Schema({
   backer_id: String,
-  payment: String,
   initialTokens: Number,
   redeemedTokens: Number,
   status: {
@@ -12,7 +11,9 @@ const microcreditSupportSchema = new mongoose.Schema({
     enum: ['order', 'confirmation', 'complete'],
     default: 'order'
   },
-  contractIndex: Number
+  method: String,
+  contractIndex: Number,
+  contractRef: String
 }, { timestamps: true });
 
 const microcreditCampaignSchema = new mongoose.Schema({
@@ -30,13 +31,13 @@ const microcreditCampaignSchema = new mongoose.Schema({
 
   redeemStarts: Number,
   redeemEnds: Number,
+  startsAt: Number,
   expiresAt: Number,
 
   address: String,
   transactionHash: String,
 
   supports: [microcreditSupportSchema]
-
 }, { timestamps: true });
 
 const offerSchema = new mongoose.Schema({
@@ -64,7 +65,7 @@ const eventSchema = new mongoose.Schema({
   imageURL: String,
   access: {
     type: String,
-    enum: ['public', 'private'],
+    enum: ['public', 'private', 'partners'],
     default: 'public'
   },
   location: String,
@@ -83,12 +84,12 @@ const contactSchema = new mongoose.Schema({
   websiteURL: String
 }, { _id: false });
 
-const paymentSchema = new mongoose.Schema({
-  Paypal: String,
-  NationalBank: String,
-  PiraeusBank: String,
-  AlphaBank: String,
-  Eurobank: String
+const paymentsSchema = new mongoose.Schema({
+  nationalBank: String,
+  piraeusBank: String,
+  eurobank: String,
+  alphaBank: String,
+  paypal: String
 }, { _id: false });
 
 const authSchema = new mongoose.Schema({
@@ -123,7 +124,7 @@ const userSchema = new mongoose.Schema({
 
   contact: contactSchema,
   address: addressSchema,
-  payment: paymentSchema,
+  payments: paymentsSchema,
 
   email_verified: Boolean,
   pass_verified: Boolean,
@@ -137,10 +138,14 @@ const userSchema = new mongoose.Schema({
   posts: [postSchema],
   events: [eventSchema],
   microcredit: [microcreditCampaignSchema],
-  previousAccounts: [Object]
+  previousAccounts: [Object],
+  createdBy: {
+    type: String,
+    default: 'itself'
+  }
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 export default userModel;

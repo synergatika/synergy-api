@@ -7,9 +7,9 @@ import CustomerDto from '../usersDtos/customer.dto'
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
+import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 import Customer from '../usersInterfaces/customer.interface';
-import RequestWithUser from '../interfaces/requestWithUser.interface';
 // Middleware
 import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
 import authMiddleware from '../middleware/auth.middleware';
@@ -32,8 +32,8 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage });
 
 // Remove File
-const fs = require('fs')
-const { promisify } = require('util')
+const fs = require('fs');
+const { promisify } = require('util');
 const unlinkAsync = promisify(fs.unlink);
 
 class CustomersController implements Controller {

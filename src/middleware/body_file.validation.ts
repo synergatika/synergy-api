@@ -4,10 +4,9 @@ import * as express from 'express';
 
 //Path
 var path = require('path');
-
 // Remove File
-const fs = require('fs')
-const { promisify } = require('util')
+const fs = require('fs');
+const { promisify } = require('util');
 const unlinkSync = promisify(fs.unlink);
 
 // Exceptions

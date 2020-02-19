@@ -60,12 +60,12 @@ class LoyaltyController implements Controller {
         return instance.earnPoints(this.amountToPoints(data._amount), customer.account.address, _partner, serviceInstance.address)
           .then(async (result: any) => {
             await this.transaction.create({
-              ...result, type: "EarnPoints",
+              ...result,
               from_id: request.user._id, to_id: customer._id,
               info: {
                 from_name: request.user.name, from_email: request.user.email,
                 to_email: customer.email, points: this.amountToPoints(data._amount)
-              }
+              }, type: "EarnPoints"
             });
             response.status(201).send({
               data: result,
@@ -92,12 +92,12 @@ class LoyaltyController implements Controller {
         return instance.usePoints(data._points, customer.account.address, _partner, serviceInstance.address)
           .then(async (result: any) => {
             await this.transaction.create({
-              ...result, type: "RedeemPoints",
+              ...result,
               from_id: request.user._id, to_id: customer._id,
               info: {
                 from_name: request.user.name, from_email: request.user.email,
                 to_email: customer.email, points: data._points, offer_id: data.offer_id
-              }
+              }, type: "RedeemPoints"
             });
             response.status(201).send({
               data: result,

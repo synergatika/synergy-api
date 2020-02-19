@@ -82,9 +82,11 @@ class EmailService {
       type: 'restoration',
       locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/reset-password/${data.token}` },
     }
+
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
     if (error) next(new NotFoundException('Sending Email Fail'));
+
     response.status(200).send({
       // -- For Testing Purposes Only -- //
       tempData: { "token": data.token },

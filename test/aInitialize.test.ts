@@ -124,10 +124,23 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .post("auth/register/merchant")
         .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
-        .send({
-          name: defaultMerchant_1.name,
-          email: defaultMerchant_1.email
-        })
+        .field('email', defaultMerchant_1.email)
+        .field('name', defaultMerchant_1.name)
+        .field('phone', defaultMerchant_1.contact.phone)
+        .field('websiteURL', defaultMerchant_1.contact.websiteURL)
+        .field('street', defaultMerchant_1.address.street)
+        .field('postCode', defaultMerchant_1.address.postCode)
+        .field('city', defaultMerchant_1.address.city)
+        .field('lat', defaultMerchant_1.address.coordinates[0])
+        .field('long', defaultMerchant_1.address.coordinates[1])
+        .field('sector', defaultMerchant_1.sector)
+        .field('nationalBank', defaultMerchant_1.payments.nationalBank)
+        .field('pireausBank', defaultMerchant_1.payments.pireausBank)
+        .field('eurobank', defaultMerchant_1.payments.eurobank)
+        .field('alphaBank', defaultMerchant_1.payments.alphaBank)
+        .field('paypal', defaultMerchant_1.payments.paypal)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_1.imageFile}`),
+          `${defaultMerchant_1.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -197,6 +210,11 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('lat', defaultMerchant_1.address.coordinates[0])
         .field('long', defaultMerchant_1.address.coordinates[1])
         .field('sector', defaultMerchant_1.sector)
+        .field('nationalBank', defaultMerchant_1.payments.nationalBank)
+        .field('pireausBank', defaultMerchant_1.payments.pireausBank)
+        .field('eurobank', defaultMerchant_1.payments.eurobank)
+        .field('alphaBank', defaultMerchant_1.payments.alphaBank)
+        .field('paypal', defaultMerchant_1.payments.paypal)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_1.imageFile}`),
           `${defaultMerchant_1.imageFile}`)
         // .send({
@@ -226,10 +244,23 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .post("auth/register/" + "merchant")
         .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
-        .send({
-          name: defaultMerchant_2.name,
-          email: defaultMerchant_2.email
-        })
+        .field('email', defaultMerchant_2.email)
+        .field('name', defaultMerchant_2.name)
+        .field('phone', defaultMerchant_2.contact.phone)
+        .field('websiteURL', defaultMerchant_2.contact.websiteURL)
+        .field('street', defaultMerchant_2.address.street)
+        .field('postCode', defaultMerchant_2.address.postCode)
+        .field('city', defaultMerchant_2.address.city)
+        .field('lat', defaultMerchant_2.address.coordinates[0])
+        .field('long', defaultMerchant_2.address.coordinates[1])
+        .field('sector', defaultMerchant_2.sector)
+        .field('nationalBank', defaultMerchant_2.payments.nationalBank)
+        .field('pireausBank', defaultMerchant_2.payments.pireausBank)
+        .field('eurobank', defaultMerchant_2.payments.eurobank)
+        .field('alphaBank', defaultMerchant_2.payments.alphaBank)
+        .field('paypal', defaultMerchant_2.payments.paypal)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_2.imageFile}`),
+          `${defaultMerchant_2.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -299,6 +330,11 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('lat', defaultMerchant_2.address.coordinates[0])
         .field('long', defaultMerchant_2.address.coordinates[1])
         .field('sector', defaultMerchant_2.sector)
+        .field('nationalBank', defaultMerchant_2.payments.nationalBank)
+        .field('pireausBank', defaultMerchant_2.payments.pireausBank)
+        .field('eurobank', defaultMerchant_2.payments.eurobank)
+        .field('alphaBank', defaultMerchant_2.payments.alphaBank)
+        .field('paypal', defaultMerchant_2.payments.paypal)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_2.imageFile}`),
           `${defaultMerchant_2.imageFile}`)
         // .send({
@@ -329,10 +365,23 @@ describe("Initialize DB & Drop past Collections", () => {
       chai.request(`${process.env.API_URL}`)
         .post("auth/register/" + "merchant")
         .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
-        .send({
-          name: defaultMerchant_3.name,
-          email: defaultMerchant_3.email
-        })
+        .field('email', defaultMerchant_3.email)
+        .field('name', defaultMerchant_3.name)
+        .field('phone', defaultMerchant_3.contact.phone)
+        .field('websiteURL', defaultMerchant_3.contact.websiteURL)
+        .field('street', defaultMerchant_3.address.street)
+        .field('postCode', defaultMerchant_3.address.postCode)
+        .field('city', defaultMerchant_3.address.city)
+        .field('lat', defaultMerchant_3.address.coordinates[0])
+        .field('long', defaultMerchant_3.address.coordinates[1])
+        .field('sector', defaultMerchant_3.sector)
+        .field('nationalBank', defaultMerchant_3.payments.nationalBank)
+        .field('pireausBank', defaultMerchant_3.payments.pireausBank)
+        .field('eurobank', defaultMerchant_3.payments.eurobank)
+        .field('alphaBank', defaultMerchant_3.payments.alphaBank)
+        .field('paypal', defaultMerchant_3.payments.paypal)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_3.imageFile}`),
+          `${defaultMerchant_3.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -402,6 +451,11 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('lat', defaultMerchant_3.address.coordinates[0])
         .field('long', defaultMerchant_3.address.coordinates[1])
         .field('sector', defaultMerchant_3.sector)
+        .field('nationalBank', defaultMerchant_3.payments.nationalBank)
+        .field('pireausBank', defaultMerchant_3.payments.pireausBank)
+        .field('eurobank', defaultMerchant_3.payments.eurobank)
+        .field('alphaBank', defaultMerchant_3.payments.alphaBank)
+        .field('paypal', defaultMerchant_3.payments.paypal)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_3.imageFile}`),
           `${defaultMerchant_3.imageFile}`)
         // .send({
@@ -701,11 +755,13 @@ describe("Initialize DB & Drop past Collections", () => {
 
   describe("Microcredit Campaigns - Default Merchant 1", () => {
     var _date_1 = new Date();
-    var _newDate1 = _date_1.setDate(_date_1.getDate() + 7);
+    var _newDate1 = _date_1.setDate(_date_1.getDate() + 1);
     var _date_2 = new Date();
-    var _newDate2 = _date_2.setDate(_date_2.getDate() + 15);
+    var _newDate2 = _date_2.setDate(_date_2.getDate() + 300);
     var _date_3 = new Date();
-    var _newDate3 = _date_3.setDate(_date_3.getDate() + 105);
+    var _newDate3 = _date_3.setDate(_date_3.getDate() + 200);
+    var _date_4 = new Date();
+    var _newDate4 = _date_4.setDate(_date_4.getDate() + 400);
 
     it("12.1 should create a new microcredit campaign", (done) => {
       chai.request(`${process.env.API_URL}`)
@@ -720,9 +776,10 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('minAllowed', '10')
         .field('maxAllowed', '20')
         .field('maxAmount', '1000')
-        .field('redeemStarts', (Math.round(_newDate2 / 1000)).toString())
-        .field('redeemEnds', (Math.round(_newDate3 / 1000)).toString())
-        .field('expiresAt', (Math.round(_newDate1 / 1000)).toString())
+        .field('redeemStarts', (Math.round(_newDate1 / 1000)).toString())
+        .field('redeemEnds', (Math.round(_newDate4 / 1000)).toString())
+        .field('startsAt', (Math.round(_newDate1 / 1000)).toString())
+        .field('expiresAt', (Math.round(_newDate3 / 1000)).toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}microcredit_a.png`),
           `microcredit_a.png`)
         .end((err, res) => {
@@ -735,11 +792,13 @@ describe("Initialize DB & Drop past Collections", () => {
   });
   describe("Microcredit Campaigns - Default Merchant 2", () => {
     var _date_1 = new Date();
-    var _newDate1 = _date_1.setDate(_date_1.getDate() + 50);
+    var _newDate1 = _date_1.setDate(_date_1.getDate() + 7);
     var _date_2 = new Date();
-    var _newDate2 = _date_2.setDate(_date_2.getDate() + 45);
+    var _newDate2 = _date_2.setDate(_date_2.getDate() + 20);
     var _date_3 = new Date();
     var _newDate3 = _date_3.setDate(_date_3.getDate() + 200);
+    var _date_4 = new Date();
+    var _newDate4 = _date_4.setDate(_date_4.getDate() + 400);
 
     it("13.1 should create a new microcredit campaign", (done) => {
       chai.request(`${process.env.API_URL}`)
@@ -756,7 +815,8 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('maxAmount', '1000')
         .field('redeemStarts', (Math.round(_newDate2 / 1000)).toString())
         .field('redeemEnds', (Math.round(_newDate3 / 1000)).toString())
-        .field('expiresAt', (Math.round(_newDate1 / 1000)).toString())
+        .field('startsAt', (Math.round(_newDate1 / 1000)).toString())
+        .field('expiresAt', (Math.round(_newDate2 / 1000)).toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}microcredit_b.png`),
           `microcredit_b.png`)
         .end((err, res) => {
@@ -771,9 +831,11 @@ describe("Initialize DB & Drop past Collections", () => {
     var _date_1 = new Date();
     var _newDate1 = _date_1.setDate(_date_1.getDate() + 100);
     var _date_2 = new Date();
-    var _newDate2 = _date_2.setDate(_date_2.getDate() + 200);
+    var _newDate2 = _date_2.setDate(_date_2.getDate() + 150);
     var _date_3 = new Date();
-    var _newDate3 = _date_3.setDate(_date_3.getDate() + 400);
+    var _newDate3 = _date_3.setDate(_date_3.getDate() + 200);
+    var _date_4 = new Date();
+    var _newDate4 = _date_4.setDate(_date_4.getDate() + 400);
 
     it("14.1 should create a new microcredit campaign", (done) => {
       chai.request(`${process.env.API_URL}`)
@@ -790,7 +852,8 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('maxAmount', '5000')
         .field('redeemStarts', (Math.round(_newDate2 / 1000)).toString())
         .field('redeemEnds', (Math.round(_newDate3 / 1000)).toString())
-        .field('expiresAt', (Math.round(_newDate1 / 1000)).toString())
+        .field('startsAt', (Math.round(_newDate1 / 1000)).toString())
+        .field('expiresAt', (Math.round(_newDate2 / 1000)).toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}microcredit_c.jpg`),
           `microcredit_c.jpg`)
         .end((err, res) => {

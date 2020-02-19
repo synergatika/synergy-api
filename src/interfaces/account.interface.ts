@@ -1,8 +1,7 @@
 interface Account {
-    version: number;
-    id: string;
-    address: string;
-    crypto: Object;
-
+  version: number;
+  id: string;
+  address: string;
+  crypto: Object;
 }
-export default Account;  
+export default Account;

@@ -16,8 +16,7 @@ describe("Merchant", () => {
   describe("Offers (/loyalty/offers)", () => {
     it("1. should update an offer - 200 Updated", (done) => {
       var _date = new Date();
-      var _newDate = _date.setMonth(_date.getMonth() + 3);
-
+      var _newDate = (_date.setMonth(_date.getMonth() + 3)) / 1000;
       chai.request(`${process.env.API_URL}`)
         .put("loyalty/offers/" + defaultMerchant_3._id + "/" + offers[0].offer_id)
         .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
@@ -35,7 +34,7 @@ describe("Merchant", () => {
     });
     it("2. should NOT update offer | not belong to user - 403 Forbidden", (done) => {
       var _date = new Date();
-      var _newDate = _date.setMonth(_date.getMonth() + 6);
+      var _newDate = (_date.setMonth(_date.getMonth() + 6)) / 1000;
 
       chai.request(`${process.env.API_URL}`)
         .put("loyalty/offers/" + defaultMerchant_3._id + "/" + offers[0].offer_id)

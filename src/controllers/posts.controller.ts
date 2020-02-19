@@ -10,15 +10,16 @@ import PostID from '../communityDtos/post_id.params.dto'
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
-import Post from '../communityInterfaces/post.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
+import Post from '../communityInterfaces/post.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
 import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
+import itemsMiddleware from '../middleware/items.middleware';
 // Models
 import userModel from '../models/user.model';
 
@@ -39,8 +40,8 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage });
 
 // Remove File
-const fs = require('fs')
-const { promisify } = require('util')
+const fs = require('fs');
+const { promisify } = require('util');
 const unlinkAsync = promisify(fs.unlink);
 
 class PostsController implements Controller {
@@ -58,8 +59,9 @@ class PostsController implements Controller {
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(PostDto), this.createPost);
     this.router.get(`${this.path}/public/:merchant_id`, validationParamsMiddleware(MerchantID), this.readPublicPostsByStore);
     this.router.get(`${this.path}/private/:merchant_id`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivatePostsByStore);
-    this.router.put(`${this.path}/:merchant_id/:post_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(PostDto), this.updatePost);
-    this.router.delete(`${this.path}/:merchant_id/:post_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, this.deletePost);
+    this.router.get(`${this.path}/:merchant_id/:post_id`, validationParamsMiddleware(PostID), this.readPost);
+    this.router.put(`${this.path}/:merchant_id/:post_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(PostDto), itemsMiddleware.postMiddleware, this.updatePost);
+    this.router.delete(`${this.path}/:merchant_id/:post_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, itemsMiddleware.postMiddleware, this.deletePost);
   }
 
   private readPrivatePosts = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -240,31 +242,51 @@ class PostsController implements Controller {
     });
   }
 
+  private readPost = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const merchant_id: PostID["merchant_id"] = request.params.merchant_id;
+    const post_id: PostID["post_id"] = request.params.post_id;
+
+    let error: Error, posts: Post[];
+    [error, posts] = await to(this.user.aggregate([{
+      $unwind: '$posts'
+    }, {
+      $match: {
+        $and: [
+          { _id: new ObjectId(merchant_id) },
+          { 'posts._id': new ObjectId(post_id) }
+        ]
+      }
+    }, {
+      $project: {
+        _id: false,
+        merchant_id: '$_id',
+        merchant_name: '$name',
+        merchant_imageURL: '$imageURL',
+
+        post_id: '$posts._id',
+        post_imageURL: '$posts.imageURL',
+        title: '$posts.title',
+        content: '$posts.content',
+
+        createdAt: '$posts.createdAt'
+      }
+    }
+    ]).exec().catch());
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    response.status(200).send({
+      data: posts[0],
+      code: 200
+    });
+  }
+
   private updatePost = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const merchant_id: PostID["merchant_id"] = request.params.merchant_id;
     const post_id: PostID["post_id"] = request.params.post_id;
     const data: PostDto = request.body;
 
-    const previousImage: Post[] = await (this.user.aggregate([{
-      $unwind: '$posts'
-    }, {
-      $match:
-      {
-        $and: [{
-          _id: new ObjectId(merchant_id)
-        }, {
-          'posts._id': new ObjectId(post_id)
-        }]
-      }
-    }, {
-      $project: {
-        _id: false,
-        post_imageURL: '$posts.imageURL',
-      }
-    }]));
-
-    if (previousImage[0].post_imageURL && request.file) {
-      var imageFile = (previousImage[0].post_imageURL).split('assets/items/');
+    const currentPost: Post = response.locals.post;
+    if (currentPost.post_imageURL && request.file) {
+      var imageFile = (currentPost.post_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
 
@@ -276,7 +298,7 @@ class PostsController implements Controller {
       }, {
         '$set': {
           'posts.$._id': post_id,
-          'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : previousImage[0].post_imageURL,
+          'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentPost.post_imageURL,
           'posts.$.title': data.title,
           'posts.$.content': data.content,
           'posts.$.access': data.access,
@@ -294,26 +316,9 @@ class PostsController implements Controller {
     const merchant_id: PostID["merchant_id"] = request.params.merchant_id;
     const post_id: PostID["post_id"] = request.params.post_id;
 
-    const previousImage: Post[] = await (this.user.aggregate([{
-      $unwind: '$posts'
-    }, {
-      $match:
-      {
-        $and: [{
-          _id: new ObjectId(merchant_id)
-        }, {
-          'posts._id': new ObjectId(post_id)
-        }]
-      }
-    }, {
-      $project: {
-        _id: false,
-        post_imageURL: '$posts.imageURL',
-      }
-    }]));
-
-    if (previousImage[0].post_imageURL) {
-      var imageFile = (previousImage[0].post_imageURL).split('assets/items/');
+    const currentPost: Post = response.locals.post;
+    if (currentPost.post_imageURL) {
+      var imageFile = (currentPost.post_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
 

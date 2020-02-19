@@ -14,6 +14,13 @@ interface Merchant extends User {
     postCode: string;
     coordinates: [string];
   };
+  payment: {
+    nationalBank: string,
+    pireausBank: string,
+    eurobank: string,
+    alphaBank: string,
+    paypal: string,
+  }
   sector: string;
 }
 

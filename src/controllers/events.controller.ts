@@ -9,16 +9,17 @@ import EventID from '../communityDtos/event_id.params.dto'
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
-import Controller from '../interfaces/controller.interface';
-import Event from '../communityInterfaces/event.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
+import Controller from '../interfaces/controller.interface';
 import User from '../usersInterfaces/user.interface';
+import Event from '../communityInterfaces/event.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
 import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
+import itemsMiddleware from '../middleware/items.middleware';
 // Models
 import userModel from '../models/user.model';
 
@@ -39,8 +40,8 @@ var storage = multer.diskStorage({
 var upload = multer({ storage: storage });
 
 // Remove File
-const fs = require('fs')
-const { promisify } = require('util')
+const fs = require('fs');
+const { promisify } = require('util');
 const unlinkAsync = promisify(fs.unlink);
 
 class EventsController implements Controller {
@@ -58,19 +59,23 @@ class EventsController implements Controller {
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(EventDto), this.createEvent);
     this.router.get(`${this.path}/public/:merchant_id`, validationParamsMiddleware(MerchantID), this.readPublicEventsByStore);
     this.router.get(`${this.path}/private/:merchant_id`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivateEventsByStore);
-    this.router.put(`${this.path}/:merchant_id/:event_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(EventDto), this.updateEvent);
-    this.router.delete(`${this.path}/:merchant_id/:event_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, this.deleteEvent);
+    this.router.get(`${this.path}/:merchant_id/:event_id`, validationParamsMiddleware(EventID), this.readEvent);
+    this.router.put(`${this.path}/:merchant_id/:event_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(EventDto), itemsMiddleware.eventMiddleware, this.updateEvent);
+    this.router.delete(`${this.path}/:merchant_id/:event_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, itemsMiddleware.eventMiddleware, this.deleteEvent);
   }
 
   private readPrivateEvents = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
+
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
       $unwind: '$events'
     }, {
       $match: {
-        'events.access': { $in: ['public', 'private'] }
+        'events.access': { $in: ['public', 'private', access] }
       }
     }, {
       $project: {
@@ -103,6 +108,8 @@ class EventsController implements Controller {
   }
 
   private readPublicEvents = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
 
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
@@ -171,6 +178,9 @@ class EventsController implements Controller {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
 
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
       $unwind: '$events'
@@ -214,6 +224,9 @@ class EventsController implements Controller {
   private readPublicEventsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
 
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
       $unwind: '$events'
@@ -254,31 +267,54 @@ class EventsController implements Controller {
     });
   }
 
+  private readEvent = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const merchant_id: EventID["merchant_id"] = request.params.merchant_id;
+    const event_id: EventID["event_id"] = request.params.event_id;
+
+    let error: Error, events: Event[];
+    [error, events] = await to(this.user.aggregate([{
+      $unwind: '$events'
+    }, {
+      $match: {
+        $and: [
+          { _id: new ObjectId(merchant_id) },
+          { 'events._id': new ObjectId(event_id) }
+        ]
+      }
+    }, {
+      $project: {
+        _id: false,
+        merchant_id: '$_id',
+        merchant_name: '$name',
+        merchant_imageURL: '$imageURL',
+
+        event_id: '$events._id',
+        event_imageURL: '$events.imageURL',
+        title: '$events.title',
+        description: '$events.description',
+        access: '$events.access',
+        location: '$events.location',
+        dateTime: '$events.dateTime',
+
+        createdAt: '$posts.createdAt'
+      }
+    }
+    ]).exec().catch());
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    response.status(200).send({
+      data: events[0],
+      code: 200
+    });
+  }
+
   private updateEvent = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const merchant_id: EventID["merchant_id"] = request.params.merchant_id;
     const event_id: EventID["event_id"] = request.params.event_id;
     const data: EventDto = request.body;
 
-    const previousImage: Event[] = await (this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match:
-      {
-        $and: [{
-          _id: new ObjectId(merchant_id)
-        }, {
-          'events._id': new ObjectId(event_id)
-        }]
-      }
-    }, {
-      $project: {
-        _id: false,
-        event_imageURL: '$events.imageURL',
-      }
-    }]));
-
-    if (previousImage[0].event_imageURL && request.file) {
-      var imageFile = (previousImage[0].event_imageURL).split('assets/items/');
+    const currentEvent: Event = response.locals.event;
+    if (currentEvent.event_imageURL && request.file) {
+      var imageFile = (currentEvent.event_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
 
@@ -290,7 +326,7 @@ class EventsController implements Controller {
       }, {
         '$set': {
           'events.$._id': event_id,
-          'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : previousImage[0].event_imageURL,
+          'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentEvent.event_imageURL,
           'events.$.title': data.title,
           'events.$.description': data.description,
           'events.$.access': data.access,
@@ -310,26 +346,9 @@ class EventsController implements Controller {
     const merchant_id: EventID["merchant_id"] = request.params.merchant_id;
     const event_id: EventID["event_id"] = request.params.event_id;
 
-    const previousImage: Event[] = await (this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match:
-      {
-        $and: [{
-          _id: new ObjectId(merchant_id)
-        }, {
-          'events._id': new ObjectId(event_id)
-        }]
-      }
-    }, {
-      $project: {
-        _id: false,
-        event_imageURL: '$events.imageURL',
-      }
-    }]));
-
-    if (previousImage[0].event_imageURL) {
-      var imageFile = (previousImage[0].event_imageURL).split('assets/items/');
+    const currentEvent: Event = response.locals.event;
+    if (currentEvent.event_imageURL) {
+      var imageFile = (currentEvent.event_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
 

@@ -2,6 +2,10 @@ import * as mongoose from 'mongoose';
 import LoyaltyTransaction from '../loyaltyInterfaces/transaction.interface';
 import { object, string } from 'prop-types';
 
+const dataSchema = new mongoose.Schema({
+
+}, { _id: false });
+
 const infoSchema = new mongoose.Schema({
   from_name: String,
   from_email: String,
@@ -42,6 +46,7 @@ const loyaltyTransactionSchema = new mongoose.Schema({
     type: String,
     enum: ['EarnPoints', 'RedeemPoints'],
   },
+  data: dataSchema
 }, {
     timestamps: true
   });

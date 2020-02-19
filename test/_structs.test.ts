@@ -25,7 +25,14 @@ var defaultMerchant_1 = {
     street: "Solonos 136",
     city: "Athens",
     postCode: 10677,
-		coordinates: ['37.985560', '23.732720']
+    coordinates: ['37.985560', '23.732720']
+  },
+  payments: {
+    nationalBank: 'GR5001415913618373112749987',
+    pireausBank: 'GR9701168245531283734574714',
+    eurobank: 'GR6201018963613623796349221',
+    alphaBank: 'GR7901047254398567169526453',
+    paypal: '/sociality'
   },
   authToken: '',
   _id: '',
@@ -46,7 +53,14 @@ var defaultMerchant_2 = {
     street: "Akakiou 1 - 3 & Ipeirou 60",
     city: "Athens",
     postCode: 10439,
-		coordinates: ['37.990800', '23.725320']
+    coordinates: ['37.990800', '23.725320']
+  },
+  payments: {
+    nationalBank: 'GR5001415913454543543543534',
+    pireausBank: 'GR9701168245531283734575555',
+    eurobank: 'GR6201018963613623796373661',
+    alphaBank: 'GR7901047254398567169512345',
+    paypal: '/com'
   },
   authToken: '',
   _id: '',
@@ -67,7 +81,14 @@ var defaultMerchant_3 = {
     street: "Nileos 35",
     city: "Athens",
     postCode: 11851,
-	coordinates: ['37.975040', '23.716560']
+    coordinates: ['37.975040', '23.716560']
+  },
+  payments: {
+    nationalBank: 'GR5001415913618373112123456',
+    pireausBank: 'GR9701168245531283734574725',
+    eurobank: 'GR6201018963613623796349216',
+    alphaBank: 'GR7901047254398567169526883',
+    paypal: '/syna'
   },
   authToken: '',
   _id: '',
@@ -82,6 +103,7 @@ var newUser = { // Auto Registered
   authToken: '',
   imageFile: "face1.png"
 };
+
 var newCustomer_1 = { // Registerd by Merchant
   name: "Customer 1",
   email: "customer1@email.com",

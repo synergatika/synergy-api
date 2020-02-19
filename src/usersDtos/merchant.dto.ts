@@ -40,14 +40,13 @@ class MerchantDto {
   @IsString()
   public name: string;
 
-  @IsEnum(Sector)
-  public sector: Sector;
-
   @IsOptional()
   @IsString()
   public imageURL: string;
 
-  //public contact: Contact;
+  @IsEnum(Sector)
+  public sector: Sector;
+
   @IsString()
   public street: string;
 
@@ -70,6 +69,25 @@ class MerchantDto {
   @IsString()
   public websiteURL: string;
 
+  @IsOptional()
+  @IsString()
+  public nationalBank: string;
+
+  @IsOptional()
+  @IsString()
+  public pireausBank: string;
+
+  @IsOptional()
+  @IsString()
+  public eurobank: string;
+
+  @IsOptional()
+  @IsString()
+  public alphaBank: string;
+
+  @IsOptional()
+  @IsString()
+  public paypal: string;
 }
 
 export default MerchantDto;

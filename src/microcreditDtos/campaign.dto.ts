@@ -36,6 +36,8 @@ class CampaignDto {
   @IsString()
   public redeemEnds: number;
   @IsString()
+  public startsAt: number;
+  @IsString()
   public expiresAt: number;
 }
 

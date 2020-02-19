@@ -10,8 +10,7 @@ var options: any = {
   }
 }
 
-if (process.env.EMAIL_SERVICE != null)
-{
+if (process.env.EMAIL_SERVICE != null) {
   options.service = process.env.EMAIL_SERVICE;
 } else {
   options.host = process.env.EMAIL_HOST;

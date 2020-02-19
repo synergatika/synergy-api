@@ -194,20 +194,6 @@ describe("Merchant", () => {
         .field('sector', defaultMerchant_1.sector)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_1.imageFile}`),
           `${defaultMerchant_1.imageFile}`)
-        // .send({
-        //   name: "Merchant One",
-        //   imageURL: "http://merchant_image.gr",
-        //   contact: {
-        //     phone: 2105555555,
-        //     websiteURL: 'merchant_shop.gr'
-        //   },
-        //   address: {
-        //     street: "My Street",
-        //     postCode: 10000,
-        //     city: "Athens"
-        //   },
-        //   sector: "Durables"
-        // })
         .end((err, res) => {
           res.should.have.status(403);
           res.body.should.be.a('object');
@@ -228,20 +214,6 @@ describe("Merchant", () => {
         .field('sector', defaultMerchant_1.sector)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}${defaultMerchant_1.imageFile}`),
           `${defaultMerchant_1.imageFile}`)
-        // .send({
-        //   name: "Merchant One",
-        //   imageURL: "http://merchant_image.gr",
-        //   contact: {
-        //     phone: 2105555555,
-        //     websiteURL: 'merchant_shop.gr'
-        //   },
-        //   address: {
-        //     street: "My Street",
-        //     postCode: 10000,
-        //     city: "Athens"
-        //   },
-        //   sector: "Durables"
-        // })
         .end((err, res) => {
           res.should.have.status(401);
           res.body.should.be.a('object');
@@ -262,24 +234,14 @@ describe("Merchant", () => {
         .field('lat', defaultMerchant_1.address.coordinates[0])
         .field('long', defaultMerchant_1.address.coordinates[1])
         .field('sector', defaultMerchant_1.sector)
+        .field('nationalBank', defaultMerchant_1.payments.nationalBank)
+        .field('pireausBank', defaultMerchant_1.payments.pireausBank)
+        .field('eurobank', defaultMerchant_1.payments.eurobank)
+        .field('alphaBank', defaultMerchant_1.payments.alphaBank)
+        .field('paypal', defaultMerchant_1.payments.paypal)
         .attach('imageURL', fs.readFileSync('/mnt/c/Users/Dimitris Sociality/Downloads/sociality.png'),
           'sociality.png')
-        // .send({
-        //   name: defaultMerchant_1.name,
-        //   imageURL: defaultMerchant_1.imageURL,
-        //   contact: {
-        //     phone: defaultMerchant_1.contact.phone,
-        //     websiteURL: defaultMerchant_1.contact.websiteURL
-        //   },
-        //   address: {
-        //     street: defaultMerchant_1.address.street,
-        //     postCode: defaultMerchant_1.address.postCode,
-        //     city: defaultMerchant_1.address.city
-        //   },
-        //   sector: defaultMerchant_1.sector,
-        // })
         .end((err, res) => {
-          console.log(res.body);
           res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('data');

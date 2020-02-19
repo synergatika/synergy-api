@@ -25,18 +25,18 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/profile'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
 });
 var upload = multer({ storage: storage });
 
 // Remove File
-const fs = require('fs')
-const { promisify } = require('util')
+const fs = require('fs');
+const { promisify } = require('util');
 const unlinkAsync = promisify(fs.unlink);
 
 class MerchantsController implements Controller {
@@ -82,7 +82,8 @@ class MerchantsController implements Controller {
       "id": 1, "email": 1,
       "name": 1, "imageURL": 1,
       "createdAt": 1, "sector": 1,
-      "contact": 1, "address": 1
+      "contact": 1, "address": 1,
+      "payment": 1
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -105,21 +106,26 @@ class MerchantsController implements Controller {
     [error, merchant] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-        $set: {
-          name: data.name,
-          imageURL: (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL,
-          sector: data.sector,
-          'contact.phone': data.phone,
-          'contact.websiteURL': data.websiteURL,
-          'address.city': data.city,
-          'address.postCode': data.postCode,
-          'address.street': data.street,
-          'address.coordinates': [data.lat, data.long],
-        }
-      }, {
-        "fields": { "name": 1, "imageURL": 1 },
-        "new": true
-      }).catch());
+      $set: {
+        name: data.name,
+        imageURL: (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL,
+        sector: data.sector,
+        'address.city': data.city,
+        'address.postCode': data.postCode,
+        'address.street': data.street,
+        'address.coordinates': [data.lat, data.long],
+        'contact.phone': data.phone,
+        'contact.websiteURL': data.websiteURL,
+        'payments.nationalBank': data.nationalBank,
+        'payments.pireausBank': data.pireausBank,
+        'payments.eurobank': data.eurobank,
+        'payments.alphaBank': data.alphaBank,
+        'payments.paypal': data.paypal
+      }
+    }, {
+      "fields": { "name": 1, "imageURL": 1 },
+      "new": true
+    }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
 
     response.status(200).send({
