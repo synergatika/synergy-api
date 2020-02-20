@@ -11,5 +11,6 @@ interface Offer {
   expiresAt: Date;
 
   createdAt: Date;
+  updatedAt: Date;
 }
 export default Offer;

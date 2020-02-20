@@ -54,18 +54,38 @@ class PostsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/public`, this.readPublicPosts);
-    this.router.get(`${this.path}/private`, authMiddleware, this.readPrivatePosts);
+    this.router.get(`${this.path}/public/:offset?`, this.readPublicPosts);
+    this.router.get(`${this.path}/private/:offset?`, authMiddleware, this.readPrivatePosts);
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(PostDto), this.createPost);
-    this.router.get(`${this.path}/public/:merchant_id`, validationParamsMiddleware(MerchantID), this.readPublicPostsByStore);
-    this.router.get(`${this.path}/private/:merchant_id`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivatePostsByStore);
+    this.router.get(`${this.path}/public/:merchant_id/:offset?`, validationParamsMiddleware(MerchantID), this.readPublicPostsByStore);
+    this.router.get(`${this.path}/private/:merchant_id/:offset?`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivatePostsByStore);
     this.router.get(`${this.path}/:merchant_id/:post_id`, validationParamsMiddleware(PostID), this.readPost);
     this.router.put(`${this.path}/:merchant_id/:post_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(PostDto), itemsMiddleware.postMiddleware, this.updatePost);
     this.router.delete(`${this.path}/:merchant_id/:post_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, itemsMiddleware.postMiddleware, this.deletePost);
   }
 
+  // offset: [number, number, number] = [items per page, current page, active or all]
+  private offsetParams = (params: string) => {
+    if (!params) return { limit: Number.MAX_SAFE_INTEGER, skip: 0, greater: 0 }
+    const splittedParams: string[] = params.split("-");
+
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    return {
+      limit: (parseInt(splittedParams[0]) === 0) ? Number.MAX_SAFE_INTEGER : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])) + parseInt(splittedParams[0]),
+      skip: (parseInt(splittedParams[0]) === 0) ? 0 : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])),
+      greater: (parseInt(splittedParams[2]) === 1) ? seconds : 0
+    };
+  }
+
   private readPrivatePosts = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
+
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, posts: Post[];
     [error, posts] = await to(this.user.aggregate([{
@@ -84,15 +104,19 @@ class PostsController implements Controller {
         post_id: '$posts._id',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
+        subtitle: '$posts.subtitle',
         content: '$posts.content',
 
-        createdAt: '$posts.createdAt'
+        createdAt: '$posts.createdAt',
+        updatedAt: '$posts.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -102,6 +126,11 @@ class PostsController implements Controller {
   }
 
   private readPublicPosts = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, posts: Post[];
     [error, posts] = await to(this.user.aggregate([{
@@ -120,15 +149,19 @@ class PostsController implements Controller {
         post_id: '$posts._id',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
+        subtitle: '$posts.subtitle',
         content: '$posts.content',
 
-        createdAt: '$posts.createdAt'
+        createdAt: '$posts.createdAt',
+        updatedAt: '$posts.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -165,6 +198,11 @@ class PostsController implements Controller {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
 
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
+
     let error: Error, posts: Post[];
     [error, posts] = await to(this.user.aggregate([{
       $unwind: '$posts'
@@ -185,15 +223,19 @@ class PostsController implements Controller {
         post_id: '$posts._id',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
+        subtitle: '$posts.subtitle',
         content: '$posts.content',
 
-        createdAt: '$posts.createdAt'
+        createdAt: '$posts.createdAt',
+        updatedAt: '$posts.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -204,6 +246,11 @@ class PostsController implements Controller {
 
   private readPublicPostsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
+
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, posts: Post[];
     [error, posts] = await to(this.user.aggregate([{
@@ -225,15 +272,19 @@ class PostsController implements Controller {
         post_id: '$posts._id',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
+        subtitle: '$posts.subtitle',
         content: '$posts.content',
 
-        createdAt: '$posts.createdAt'
+        createdAt: '$posts.createdAt',
+        updatedAt: '$posts.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -266,6 +317,7 @@ class PostsController implements Controller {
         post_id: '$posts._id',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
+        subtitle: '$posts.subtitle',
         content: '$posts.content',
 
         createdAt: '$posts.createdAt'

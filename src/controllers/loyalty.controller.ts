@@ -43,10 +43,25 @@ class LoyaltyController implements Controller {
     this.router.get(`${this.path}/balance/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBalanceByMerchant);
     this.router.get(`${this.path}/badge`, authMiddleware, this.readBadge);
     this.router.get(`${this.path}/badge/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBadgeByMerchant);
-    this.router.get(`${this.path}/transactions`, authMiddleware, this.readTransactions);
+    this.router.get(`${this.path}/transactions/:offset?`, authMiddleware, this.readTransactions);
 
     this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
     this.router.get(`${this.path}/transactions_info`, authMiddleware, this.transactionInfoLength);
+  }
+
+  // offset: [number, number, number] = [items per page, current page, active or all]
+  private offsetParams = (params: string) => {
+    if (!params) return { limit: Number.MAX_SAFE_INTEGER, skip: 0, greater: 0 }
+    const splittedParams: string[] = params.split("-");
+
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    return {
+      limit: (parseInt(splittedParams[0]) === 0) ? Number.MAX_SAFE_INTEGER : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])) + parseInt(splittedParams[0]),
+      skip: (parseInt(splittedParams[0]) === 0) ? 0 : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])),
+      greater: (parseInt(splittedParams[2]) === 1) ? seconds : 0
+    };
   }
 
   private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -211,6 +226,11 @@ class LoyaltyController implements Controller {
 
   private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
+
     let error: Error, transactions: LoyaltyTransaction[];
     [error, transactions] = await to(this.transaction.find({
       $and: [
@@ -222,7 +242,9 @@ class LoyaltyController implements Controller {
       "from_id": 1, "to_id": 1,
       "info": 1, "tx": 1,
       "createdAt": 1
-    }).sort('-createdAt').catch());
+    }).sort('-createdAt')
+      .limit(offset.limit).skip(offset.skip)
+      .catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: transactions,

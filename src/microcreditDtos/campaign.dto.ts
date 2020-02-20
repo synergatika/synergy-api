@@ -23,7 +23,8 @@ class CampaignDto {
 
   @IsString()
   public quantitative: boolean;
-
+  @IsString()
+  public stepAmount: number;
   @IsString()
   public minAllowed: number;
   @IsString()

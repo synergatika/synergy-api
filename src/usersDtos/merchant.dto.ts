@@ -48,6 +48,9 @@ class MerchantDto {
   public sector: Sector;
 
   @IsString()
+  public description: string;
+
+  @IsString()
   public street: string;
 
   @IsString()
@@ -58,6 +61,9 @@ class MerchantDto {
 
   @IsString()
   public lat: string;
+
+  @IsString()
+  public timetable: string;
 
   @IsString()
   public long: string;

@@ -26,6 +26,10 @@ class RegisterMerchantDto {
   @IsEnum(Sector)
   public sector: Sector;
 
+  @IsOptional()
+  @IsString()
+  public description: string;
+
   @IsString()
   public street: string;
 
@@ -40,6 +44,10 @@ class RegisterMerchantDto {
 
   @IsString()
   public long: string;
+
+  @IsOptional()
+  @IsString()
+  public timetable: string;
 
   @IsString()
   public phone: string;

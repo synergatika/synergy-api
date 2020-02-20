@@ -6,6 +6,7 @@ interface PostEvent {
   post_event_id: string;
   post_event_imageURL: string;
   title: string;
+  subtitle: string;
   content: string;
   access: string;
   type: string;

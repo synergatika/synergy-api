@@ -54,28 +54,48 @@ class EventsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/public`, this.readPublicEvents);
-    this.router.get(`${this.path}/private`, authMiddleware, this.readPrivateEvents);
+    this.router.get(`${this.path}/public/:offset?`, this.readPublicEvents);
+    this.router.get(`${this.path}/private/:offset?`, authMiddleware, this.readPrivateEvents);
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(EventDto), this.createEvent);
-    this.router.get(`${this.path}/public/:merchant_id`, validationParamsMiddleware(MerchantID), this.readPublicEventsByStore);
-    this.router.get(`${this.path}/private/:merchant_id`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivateEventsByStore);
+    this.router.get(`${this.path}/public/:merchant_id/:offset?`, validationParamsMiddleware(MerchantID), this.readPublicEventsByStore);
+    this.router.get(`${this.path}/private/:merchant_id/:offset?`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivateEventsByStore);
     this.router.get(`${this.path}/:merchant_id/:event_id`, validationParamsMiddleware(EventID), this.readEvent);
     this.router.put(`${this.path}/:merchant_id/:event_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(EventDto), itemsMiddleware.eventMiddleware, this.updateEvent);
     this.router.delete(`${this.path}/:merchant_id/:event_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, itemsMiddleware.eventMiddleware, this.deleteEvent);
   }
 
-  private readPrivateEvents = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const access = (request.user.access === 'merchant') ? 'partners' : 'random';
+  // offset: [number, number, number] = [items per page, current page, active or all]
+  private offsetParams = (params: string) => {
+    if (!params) return { limit: Number.MAX_SAFE_INTEGER, skip: 0, greater: 0 }
+    const splittedParams: string[] = params.split("-");
 
     const now = new Date();
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    return {
+      limit: (parseInt(splittedParams[0]) === 0) ? Number.MAX_SAFE_INTEGER : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])) + parseInt(splittedParams[0]),
+      skip: (parseInt(splittedParams[0]) === 0) ? 0 : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])),
+      greater: (parseInt(splittedParams[2]) === 1) ? seconds : 0
+    };
+  }
+
+  private readPrivateEvents = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const access = (request.user.access === 'merchant') ? 'partners' : 'random';
+
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
       $unwind: '$events'
     }, {
       $match: {
-        'events.access': { $in: ['public', 'private', access] }
+        $and: [
+          { 'events.access': { $in: ['public', 'private', access] } },
+          { 'events.dateTime': { $gt: offset.greater } }
+        ]
       }
     }, {
       $project: {
@@ -87,18 +107,22 @@ class EventsController implements Controller {
         event_id: '$events._id',
         event_imageURL: '$events.imageURL',
         title: '$events.title',
+        subtitle: '$events.subtitle',
         description: '$events.description',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
 
-        createdAt: '$events.createdAt'
+        createdAt: '$events.createdAt',
+        updatedAt: '$events.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -108,15 +132,21 @@ class EventsController implements Controller {
   }
 
   private readPublicEvents = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const now = new Date();
-    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
       $unwind: '$events'
     }, {
       $match: {
-        'events.access': 'public'
+        $and: [
+          { 'events.access': 'public' },
+          { 'events.dateTime': { $gt: offset.greater } }
+        ]
       }
     }, {
       $project: {
@@ -128,18 +158,22 @@ class EventsController implements Controller {
         event_id: '$events._id',
         event_imageURL: '$events.imageURL',
         title: '$events.title',
+        subtitle: '$events.subtitle',
         description: '$events.description',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
 
-        createdAt: '$events.createdAt'
+        createdAt: '$events.createdAt',
+        updatedAt: '$events.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -178,8 +212,10 @@ class EventsController implements Controller {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
 
-    const now = new Date();
-    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
@@ -188,7 +224,8 @@ class EventsController implements Controller {
       $match: {
         $and: [
           { _id: new ObjectId(merchant_id) },
-          { 'events.access': { $in: ['public', 'private', access] } }
+          { 'events.access': { $in: ['public', 'private', access] } },
+          { 'events.dateTime': { $gt: offset.greater } }
         ]
       }
     }, {
@@ -199,20 +236,24 @@ class EventsController implements Controller {
         merchant_imageURL: '$imageURL',
 
         event_id: '$events._id',
-        event_imageURL: '$events._id',
+        event_imageURL: '$events.imageURL',
         title: '$events.title',
+        subtitle: '$events.subtitle',
         description: '$events.description',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
 
-        createdAt: '$events.createdAt'
+        createdAt: '$events.createdAt',
+        updatedAt: '$events.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -224,8 +265,10 @@ class EventsController implements Controller {
   private readPublicEventsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
 
-    const now = new Date();
-    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
@@ -234,7 +277,8 @@ class EventsController implements Controller {
       $match: {
         $and: [
           { _id: new ObjectId(merchant_id) },
-          { 'events.access': 'public' }
+          { 'events.access': 'public' },
+          { 'events.dateTime': { $gt: offset.greater } }
         ]
       }
     }, {
@@ -247,18 +291,22 @@ class EventsController implements Controller {
         event_id: '$events._id',
         event_imageURL: '$events.imageURL',
         title: '$events.title',
+        subtitle: '$events.subtitle',
         description: '$events.description',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
 
-        createdAt: '$events.createdAt'
+        createdAt: '$events.createdAt',
+        updatedAt: '$events.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -291,6 +339,7 @@ class EventsController implements Controller {
         event_id: '$events._id',
         event_imageURL: '$events.imageURL',
         title: '$events.title',
+        subtitle: '$events.subtitle',
         description: '$events.description',
         access: '$events.access',
         location: '$events.location',

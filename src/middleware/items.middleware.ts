@@ -159,7 +159,17 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
       campaign_id: '$microcredit._id',
       campaign_imageURL: '$microcredit.imageURL',
       title: '$microcredit.title',
-      address: '$microcredit.address'
+      address: '$microcredit.address',
+
+      quantitative: '$microcredit.quantitative',
+      maxAmount: '$microcredit.maxAmount',
+      maxAllowed: '$microcredit.maxAllowed',
+      minAllowed: '$microcredit.minAllowed',
+
+      redeemStarts: '$microcredit.redeemStarts',
+      redeemEnds: '$microcredit.redeemEnds',
+      startsAt: '$microcredit.startsAt',
+      expiresAt: '$microcredit.expiresAt'
     }
   }]).exec().catch());
 

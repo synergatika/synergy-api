@@ -11,7 +11,11 @@ const microcreditSupportSchema = new mongoose.Schema({
     enum: ['order', 'confirmation', 'complete'],
     default: 'order'
   },
-  method: String,
+  method: {
+    type: String,
+    enum: ['nationalBank', 'pireausBank', 'eurobank', 'alphaBank', 'paypal', 'store'],
+    default: 'store'
+  },
   contractIndex: Number,
   contractRef: String
 }, { timestamps: true });
@@ -25,6 +29,7 @@ const microcreditCampaignSchema = new mongoose.Schema({
   access: String,
 
   quantitative: Boolean,
+  stepAmount: Number,
   minAllowed: Number,
   maxAllowed: Number,
   maxAmount: Number,
@@ -33,6 +38,12 @@ const microcreditCampaignSchema = new mongoose.Schema({
   redeemEnds: Number,
   startsAt: Number,
   expiresAt: Number,
+
+  status: {
+    type: String,
+    enum: ['draft', 'published'],
+    default: 'draft'
+  },
 
   address: String,
   transactionHash: String,
@@ -50,6 +61,7 @@ const offerSchema = new mongoose.Schema({
 
 const postSchema = new mongoose.Schema({
   title: String,
+  subtitle: String,
   content: String,
   imageURL: String,
   access: {
@@ -61,6 +73,7 @@ const postSchema = new mongoose.Schema({
 
 const eventSchema = new mongoose.Schema({
   title: String,
+  subtitle: String,
   description: String,
   imageURL: String,
   access: {
@@ -121,9 +134,11 @@ const userSchema = new mongoose.Schema({
     enum: ['None', 'B2B Services & Other Goods and Services', 'Durables', 'Durables (Technology)', 'Education', 'Food', 'Hotels, cafes and restaurants', 'Recreation and Culture'],
     default: 'None'
   },
+  description: String,
 
   contact: contactSchema,
   address: addressSchema,
+  timetable: String,
   payments: paymentsSchema,
 
   email_verified: Boolean,
@@ -144,8 +159,8 @@ const userSchema = new mongoose.Schema({
     default: 'itself'
   }
 }, {
-  timestamps: true
-});
+    timestamps: true
+  });
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 export default userModel;

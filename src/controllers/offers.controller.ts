@@ -53,24 +53,41 @@ class OffersController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/`, this.readAllOffers);
+    this.router.get(`${this.path}/:offset?`, this.readAllOffers);
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), this.createOffer);
-    this.router.get(`${this.path}/:merchant_id`, validationParamsMiddleware(MerchantID), this.readOffersByStore);
+    this.router.get(`${this.path}/:merchant_id/:offset?`, validationParamsMiddleware(MerchantID), this.readOffersByStore);
     this.router.get(`${this.path}/:merchant_id/:offer_id`, validationParamsMiddleware(OfferID), this.readOffer);
     this.router.put(`${this.path}/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), itemsMiddleware.offerMiddleware, this.updateOffer);
     this.router.delete(`${this.path}/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, itemsMiddleware.offerMiddleware, this.deleteOffer);
   }
 
-  private readAllOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  private offsetParams = (params: string) => {
+    if (!params) return { limit: Number.MAX_SAFE_INTEGER, skip: 0, greater: 0 };
+    const splittedParams: string[] = params.split("-");
+
     const now = new Date();
     const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    return {
+      limit: (parseInt(splittedParams[0]) === 0) ? Number.MAX_SAFE_INTEGER : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])) + parseInt(splittedParams[0]),
+      skip: (parseInt(splittedParams[0]) === 0) ? 0 : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])),
+      greater: (parseInt(splittedParams[2]) === 1) ? seconds : 0
+    };
+  }
+
+  private readAllOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const params: string = request.params.offset;
+
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, offers: Offer[];
     [error, offers] = await to(this.user.aggregate([{
       $unwind: '$offers'
     }, {
       $match: {
-        'offers.expiresAt': { $gt: seconds }
+        'offers.expiresAt': { $gt: offset.greater } // (offset[2] === 1) ? seconds : 0
       }
     }, {
       $project: {
@@ -86,13 +103,16 @@ class OffersController implements Controller {
         cost: '$offers.cost',
         expiresAt: '$offers.expiresAt',
 
-        createdAt: '$offers.createdAt'
+        createdAt: '$offers.createdAt',
+        updatedAt: '$offers.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -128,19 +148,21 @@ class OffersController implements Controller {
 
   private readOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
-    const now = new Date();
-    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, offers: Offer[];
     [error, offers] = await to(this.user.aggregate([{
       $unwind: '$offers'
     }, {
       $match: {
-        $and: [{
-          _id: new ObjectId(merchant_id)
-        }, {
-          'offers.expiresAt': { $gt: seconds }
-        }]
+        $and: [
+          { _id: new ObjectId(merchant_id) },
+          { 'offers.expiresAt': { $gt: offset.greater } }
+        ]
       }
     }, {
       $project: {
@@ -156,13 +178,16 @@ class OffersController implements Controller {
         description: '$offers.description',
         expiresAt: '$offers.expiresAt',
 
-        createdAt: '$offers.createdAt'
+        createdAt: '$offers.createdAt',
+        updatedAt: '$offers.updatedAt'
       }
     }, {
       $sort: {
-        createdAt: -1
+        updatedAt: -1
       }
-    }
+    },
+    { $limit: offset.limit },
+    { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -180,11 +205,10 @@ class OffersController implements Controller {
       $unwind: '$offers'
     }, {
       $match: {
-        $and: [{
-          _id: new ObjectId(merchant_id)
-        }, {
-          'offers._id': new ObjectId(offer_id)
-        }]
+        $and: [
+          { _id: new ObjectId(merchant_id) },
+          { 'offers._id': new ObjectId(offer_id) }
+        ]
       }
     }, {
       $project: {

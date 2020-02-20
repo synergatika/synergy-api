@@ -25,10 +25,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function (req: RequestWithUser, file, cb) {
+  destination: function(req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/profile'));
   },
-  filename: function (req: RequestWithUser, file, cb) {
+  filename: function(req: RequestWithUser, file, cb) {
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
 });
@@ -49,22 +49,46 @@ class MerchantsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}`, this.readMerchants);
+    this.router.get(`${this.path}/:offset?`, this.readMerchants);
     this.router.get(`${this.path}/:merchant_id`, validationParamsMiddleware(MerchantID), this.readMerchantInfo);
     this.router.put(`${this.path}/:merchant_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(MerchantID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(MerchantDto), this.updateMerchantInfo);
   }
 
-  private readMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    let error: Error, merchants: Merchant[];
+  // offset: [number, number, number] = [items per page, current page, active or all]
+  private offsetParams = (params: string) => {
+    if (!params) return { limit: Number.MAX_SAFE_INTEGER, skip: 0, greater: 0 }
+    const splittedParams: string[] = params.split("-");
 
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    return {
+      limit: (parseInt(splittedParams[0]) === 0) ? Number.MAX_SAFE_INTEGER : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])) + parseInt(splittedParams[0]),
+      skip: (parseInt(splittedParams[0]) === 0) ? 0 : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])),
+      greater: (parseInt(splittedParams[2]) === 1) ? seconds : 0
+    };
+  }
+
+  private readMerchants = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+
+    const params: string = request.params.offset;
+    const offset: {
+      limit: number, skip: number, greater: number
+    } = this.offsetParams(params);
+
+    let error: Error, merchants: Merchant[];
     [error, merchants] = await to(this.user.find({
       access: 'merchant'
     }).select({
       "id": 1, "email": 1,
       "name": 1, "imageURL": 1,
+      "createdAt": 1,
+      "sector": 1, "description": 1,
       "contact": 1, "address": 1,
-      "createdAt": 1, "sector": 1
-    }).catch());
+      "payment": 1, "timetable": 1
+    }).sort('-createdAt')
+      .limit(offset.limit).skip(offset.skip)
+      .catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: merchants,
@@ -81,9 +105,10 @@ class MerchantsController implements Controller {
     }).select({
       "id": 1, "email": 1,
       "name": 1, "imageURL": 1,
-      "createdAt": 1, "sector": 1,
+      "createdAt": 1,
+      "sector": 1, "description": 1,
       "contact": 1, "address": 1,
-      "payment": 1
+      "payment": 1, "timetable": 1
     }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -106,26 +131,28 @@ class MerchantsController implements Controller {
     [error, merchant] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-      $set: {
-        name: data.name,
-        imageURL: (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL,
-        sector: data.sector,
-        'address.city': data.city,
-        'address.postCode': data.postCode,
-        'address.street': data.street,
-        'address.coordinates': [data.lat, data.long],
-        'contact.phone': data.phone,
-        'contact.websiteURL': data.websiteURL,
-        'payments.nationalBank': data.nationalBank,
-        'payments.pireausBank': data.pireausBank,
-        'payments.eurobank': data.eurobank,
-        'payments.alphaBank': data.alphaBank,
-        'payments.paypal': data.paypal
-      }
-    }, {
-      "fields": { "name": 1, "imageURL": 1 },
-      "new": true
-    }).catch());
+        $set: {
+          name: data.name,
+          imageURL: (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL,
+          sector: data.sector,
+          'address.city': data.city,
+          'address.postCode': data.postCode,
+          'address.street': data.street,
+          'address.coordinates': [data.lat, data.long],
+          'contact.phone': data.phone,
+          'contact.websiteURL': data.websiteURL,
+          'payments.nationalBank': data.nationalBank,
+          'payments.pireausBank': data.pireausBank,
+          'payments.eurobank': data.eurobank,
+          'payments.alphaBank': data.alphaBank,
+          'payments.paypal': data.paypal,
+          'payments.timetable': data.timetable,
+          'payments.description': data.description
+        }
+      }, {
+        "fields": { "name": 1, "imageURL": 1 },
+        "new": true
+      }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
 
     response.status(200).send({

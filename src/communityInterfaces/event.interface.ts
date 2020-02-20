@@ -6,11 +6,13 @@ interface Event {
   event_id: string;
   event_imageURL: string;
   title: string;
+  subtitle: string;
   description: string;
   access: string;
   location: string;
   dateTime: string;
 
   createdAt: Date;
+  updatedAt: Date;
 }
 export default Event;

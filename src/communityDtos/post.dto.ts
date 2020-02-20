@@ -8,6 +8,10 @@ class PostDto {
   @IsString()
   public title: string;
 
+  @IsOptional()
+  @IsString()
+  public subtitle: string;
+
   @IsString()
   public content: string;
 

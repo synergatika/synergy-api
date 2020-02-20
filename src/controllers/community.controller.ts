@@ -36,12 +36,12 @@ class CommunityController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/public`, this.readPublicPostsEvents);
-    this.router.get(`${this.path}/private`, authMiddleware, this.readPrivatePostsEvents);
-    this.router.get(`${this.path}/public/:merchant_id`, validationParamsMiddleware(MerchantID), this.readPublicPostsEventsByStore);
-    this.router.get(`${this.path}/private/:merchant_id`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivatePostsEventsByStore);
+    this.router.get(`${this.path}/public/:offset?`, this.readPublicPostsEvents);
+    this.router.get(`${this.path}/private/:offset?`, authMiddleware, this.readPrivatePostsEvents);
+    this.router.get(`${this.path}/public/:merchant_id/:offset?`, validationParamsMiddleware(MerchantID), this.readPublicPostsEventsByStore);
+    this.router.get(`${this.path}/private/:merchant_id/:offset?`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivatePostsEventsByStore);
 
-    this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.inviteAFriend, this.emailSender);
+    //this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.inviteAFriend, this.emailSender);
     //   this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, /*accessMiddleware.confirmPassword,*/ validationBodyMiddleware(RedeemPointsDto), this.redeemToken);
     /*  this.router.get(`${this.path}/balance`, authMiddleware, this.readBalance);
       this.router.get(`${this.path}/points/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, this.readCustomerBalance);
@@ -50,8 +50,40 @@ class CommunityController implements Controller {
       this.router.get(`${this.path}/transactions_info`, authMiddleware, this.transactionInfoLength);*/
   }
 
+  // offset: [number, number, number] = [items per page, current page, active or all]
+  private offsetParams = (params: string) => {
+    if (!params) return { index: 0, count: Number.MAX_SAFE_INTEGER, greater: 0 }
+    const splittedParams: string[] = params.split("-");
+
+    const now = new Date();
+    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+
+    return {
+      index: parseInt(splittedParams[0]) * parseInt(splittedParams[1]),
+      count: (parseInt(splittedParams[0]) === 0) ? Number.MAX_SAFE_INTEGER : parseInt(splittedParams[0]),
+      greater: (parseInt(splittedParams[2]) === 1) ? seconds : 0
+    };
+  }
+
+  private sortPostsEvents = (a: PostEvent, b: PostEvent) => {
+    const timestampA = a.createdAt;
+    const timestampB = b.createdAt;
+
+    let comparison = 0;
+    if (timestampA > timestampB) {
+      comparison = 1;
+    } else if (timestampA < timestampB) {
+      comparison = -1;
+    }
+    return comparison;
+  }
 
   private readPublicPostsEvents = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+
+    const params: string = request.params.offset;
+    const offset: {
+      index: number, count: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
     [error, posts] = await to(this.user.aggregate([{
@@ -71,6 +103,7 @@ class CommunityController implements Controller {
         post_event_imageURL: '$posts.imageURL',
         type: 'post',
         title: '$posts.title',
+        subtitle: '$posts.subtitle',
         content: '$posts.content',
         access: '$posts.access',
 
@@ -87,7 +120,10 @@ class CommunityController implements Controller {
       $unwind: '$events'
     }, {
       $match: {
-        'events.access': 'public'
+        $and: [
+          { 'events.access': 'public' },
+          { 'events.dateTime': { $gt: offset.greater } }
+        ]
       }
     }, {
       $project: {
@@ -100,6 +136,7 @@ class CommunityController implements Controller {
         post_event_imageURL: '$events.imageURL',
         type: 'event',
         title: '$events.title',
+        subtitle: '$events.subtitle',
         content: '$events.description',
         access: '$events.access',
         location: '$events.location',
@@ -113,15 +150,22 @@ class CommunityController implements Controller {
       }
     }
     ]).exec().catch());
+
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
-      data: [...posts, ...events],
+      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count), //    singers.sort(compare);
       code: 200
     });
+    //products.slice(index,index+count)
   }
 
   private readPrivatePostsEvents = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
+
+    const params: string = request.params.offset;
+    const offset: {
+      index: number, count: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
     [error, posts] = await to(this.user.aggregate([{
@@ -141,6 +185,7 @@ class CommunityController implements Controller {
         post_event_imageURL: '$posts.imageURL',
         type: 'post',
         title: '$posts.title',
+        subtitle: '$posts.subtitle',
         content: '$posts.content',
         access: '$posts.access',
 
@@ -157,7 +202,10 @@ class CommunityController implements Controller {
       $unwind: '$events'
     }, {
       $match: {
-        'events.access': { $in: ['public', 'private', access] }
+        $and: [
+          { 'events.access': { $in: ['public', 'private', access] } },
+          { 'events.dateTime': { $gt: offset.greater } }
+        ]
       }
     }, {
       $project: {
@@ -170,6 +218,7 @@ class CommunityController implements Controller {
         post_event_imageURL: '$events.imageURL',
         type: 'event',
         title: '$events.title',
+        subtitle: '$events.subtitle',
         content: '$events.description',
         access: '$events.access',
         location: '$events.location',
@@ -185,13 +234,18 @@ class CommunityController implements Controller {
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
-      data: [...posts, ...events],
+      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
     });
   }
 
   private readPublicPostsEventsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
+
+    const params: string = request.params.offset;
+    const offset: {
+      index: number, count: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
     [error, posts] = await to(this.user.aggregate([{
@@ -214,6 +268,7 @@ class CommunityController implements Controller {
         post_event_imageURL: '$posts.imageURL',
         type: 'post',
         title: '$posts.title',
+        subtitle: '$posts.subtitle',
         content: '$posts.content',
         access: '$posts.access',
 
@@ -232,7 +287,8 @@ class CommunityController implements Controller {
       $match: {
         $and: [
           { _id: new ObjectId(merchant_id) },
-          { 'events.access': 'public' }
+          { 'events.access': 'public' },
+          { 'events.dateTime': { $gt: offset.greater } }
         ]
       }
     }, {
@@ -246,6 +302,7 @@ class CommunityController implements Controller {
         post_event_imageURL: '$events.imageURL',
         type: 'event',
         title: '$events.title',
+        subtitle: '$events.subtitle',
         content: '$events.description',
         access: '$events.access',
         location: '$events.location',
@@ -261,7 +318,7 @@ class CommunityController implements Controller {
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
-      data: [...posts, ...events],
+      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
     });
   }
@@ -269,6 +326,11 @@ class CommunityController implements Controller {
   private readPrivatePostsEventsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
+
+    const params: string = request.params.offset;
+    const offset: {
+      index: number, count: number, greater: number
+    } = this.offsetParams(params);
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
     [error, posts] = await to(this.user.aggregate([{
@@ -291,6 +353,7 @@ class CommunityController implements Controller {
         post_event_imageURL: '$posts.imageURL',
         type: 'post',
         title: '$posts.title',
+        subtitle: '$posts.subtitle',
         content: '$posts.content',
         access: '$posts.access',
 
@@ -309,7 +372,8 @@ class CommunityController implements Controller {
       $match: {
         $and: [
           { _id: new ObjectId(merchant_id) },
-          { 'events.access': { $in: ['public', 'private', access] } }
+          { 'events.access': { $in: ['public', 'private', access] } },
+          { 'events.dateTime': { $gt: offset.greater } }
         ]
       }
     }, {
@@ -323,12 +387,13 @@ class CommunityController implements Controller {
         post_event_imageURL: '$events.imageURL',
         type: 'event',
         title: '$events.title',
+        subtitle: '$events.subtitle',
         content: '$events.description',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
 
-        createdAt: '$posts.createdAt'
+        createdAt: '$events.createdAt'
       }
     }, {
       $sort: {
@@ -338,7 +403,7 @@ class CommunityController implements Controller {
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
-      data: [...posts, ...events],
+      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
     });
   }
