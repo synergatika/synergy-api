@@ -11,7 +11,7 @@ interface PostEvent {
   access: string;
   type: string;
   location: string;
-  dateTime: string;
+  dateTime: number;
 
   createdAt: Date;
 }

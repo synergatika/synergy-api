@@ -106,6 +106,9 @@ describe("Merchant", () => {
   });
   describe("Events (/events)", () => {
     it("1. should update an event - 200 Updated", (done) => {
+      var _date_1 = new Date();
+      var _newDate1 = _date_1.setDate(_date_1.getDate() + 4);
+
       chai.request(`${process.env.API_URL}`)
         .put("events/" + defaultMerchant_1._id + "/" + events[0].event_id)
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
@@ -114,7 +117,7 @@ describe("Merchant", () => {
           description: 'Updated Event',
           access: 'private',
           location: 'Salonika',
-          dateTime: '2036-01-02'
+          dateTime: _newDate1.toString()
         })
         .end((err, res) => {
           res.should.have.status(200);
@@ -122,7 +125,10 @@ describe("Merchant", () => {
           done();
         });
     });
-    it("2. should NOT update offer | not belong to user - 403 Forbidden", (done) => {
+    it("2. should NOT update event | not belong to user - 403 Forbidden", (done) => {
+      var _date_1 = new Date();
+      var _newDate1 = _date_1.setDate(_date_1.getDate() + 4);
+
       chai.request(`${process.env.API_URL}`)
         .put("events/" + defaultMerchant_1._id + "/" + events[0].event_id)
         .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
@@ -131,7 +137,7 @@ describe("Merchant", () => {
           description: 'Updated Event',
           access: 'private',
           location: 'Salonika',
-          dateTime: '2036-01-02'
+          dateTime: _newDate1.toString()
         })
         .end((err, res) => {
           res.should.have.status(403);

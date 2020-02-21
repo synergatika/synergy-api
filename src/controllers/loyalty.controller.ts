@@ -9,6 +9,7 @@ const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.j
 import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
 import EarnPointsDto from '../loyaltyDtos/earnPoints.dto';
 import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto';
+import Activity from '../loyaltyInterfaces/activity.interface';
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
 // Interfaces
@@ -37,13 +38,16 @@ class LoyaltyController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/earn`, authMiddleware, /*accessMiddleware.confirmPassword,*//*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), customerMiddleware, this.earnTokens);
+    this.router.post(`${this.path}/earn`, authMiddleware, /*accessMiddleware.confirmPassword,*//*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), customerMiddleware, this.readLastYearActivityByMerchant, this.earnTokens);
     this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, /*accessMiddleware.confirmPassword,*/ validationBodyMiddleware(RedeemPointsDto), customerMiddleware, this.redeemTokens);
     this.router.get(`${this.path}/balance`, authMiddleware, this.readBalance);
     this.router.get(`${this.path}/balance/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBalanceByMerchant);
     this.router.get(`${this.path}/badge`, authMiddleware, this.readBadge);
     this.router.get(`${this.path}/badge/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBadgeByMerchant);
     this.router.get(`${this.path}/transactions/:offset?`, authMiddleware, this.readTransactions);
+
+    this.router.get(`${this.path}/level/:_to`, customerMiddleware, this.readLastYearActivity);
+
 
     this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
     this.router.get(`${this.path}/transactions_info`, authMiddleware, this.transactionInfoLength);
@@ -66,20 +70,23 @@ class LoyaltyController implements Controller {
 
   private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: EarnPointsDto = request.body;
-    data._amount = Math.round(data._amount);
+    const _amount = Math.round(data._amount);
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
     const customer = response.locals.customer;
-
+    const _points: number = _amount * response.locals.activity.rate;
+    console.log(customer._id, typeof (customer._id))
+    console.log(((customer._id).toString()).substring(0, 4) + "****************" + ((customer._id).toString()).substring(20, 24));
     await serviceInstance.getLoyaltyAppContract()
       .then((instance) => {
-        return instance.earnPoints(this.amountToPoints(data._amount), customer.account.address, _partner, serviceInstance.address)
+        return instance.earnPoints(_points, customer.account.address, _partner, serviceInstance.address)
           .then(async (result: any) => {
             await this.transaction.create({
               ...result,
               from_id: request.user._id, to_id: customer._id,
               info: {
                 from_name: request.user.name, from_email: request.user.email,
-                to_email: customer.email, points: this.amountToPoints(data._amount)
+                to_email: customer.email,
+                points: _points, amount: _amount
               }, type: "EarnPoints"
             });
             response.status(201).send({
@@ -290,9 +297,141 @@ class LoyaltyController implements Controller {
       })
   }
 
-  private amountToPoints(_amount: number): number {
-    const _points: number = _amount;
-    return _points;
+  private activityToBagde(activity: Activity): Activity {
+
+    const badge_1: string[] = (`${process.env.BADGE1}`).split("-");
+    const badge_2: string[] = (`${process.env.BADGE2}`).split("-");
+    const badge_3: string[] = (`${process.env.BADGE3}`).split("-");
+
+    let badge: string, rate: number;
+    if (activity.amount > parseInt(badge_3[0]) && activity.stores > parseInt(badge_3[1]) && activity.transactions > parseInt(badge_3[2])) {
+      rate = parseInt(badge_3[3]);
+      badge = badge_3[4];
+    } else if (activity.amount > parseInt(badge_2[0]) && activity.stores > parseInt(badge_2[1]) && activity.transactions > parseInt(badge_2[2])) {
+      rate = parseInt(badge_2[3]);
+      badge = badge_2[4];
+    } else {
+      rate = parseInt(badge_1[3]);
+      badge = badge_1[4];
+    }
+
+    return {
+      amount: activity.amount,
+      stores: activity.stores,
+      transactions: activity.transactions,
+      rate: rate,
+      badge: badge
+    };
+  }
+
+  private readLastYearActivityByMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+
+    const customer: User = response.locals.customer;
+
+    var _now: number = Date.now();
+    var _date = new Date(_now);
+    _date.setDate(1);
+    _date.setHours(0, 0, 0, 0);
+    _date.setMonth(_date.getMonth() - 12);
+
+
+    let error: Error, activity: Activity[];
+    [error, activity] = await to(this.transaction.aggregate([{
+      $match: {
+        $and: [
+          { 'to_id': (customer._id).toString() },
+          { 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
+          { 'type': "EarnPoints" }
+        ]
+      }
+    },
+    {
+      $group: {
+        _id: '$to_id',
+        amount: { $sum: "$info.amount" },
+        stores: { "$addToSet": "$from_id" },
+        transactions: { "$addToSet": "$_id" }
+      }
+    },
+    {
+      "$project": {
+        "amount": 1,
+        "stores": { "$size": "$stores" },
+        "transactions": { "$size": "$transactions" },
+      }
+    }]).exec().catch());
+
+    if (error) { next(new UnprocessableEntityException('DB ERROR')); }
+    else if (activity.length) {
+      response.locals["activity"] = this.activityToBagde(activity[0]);
+    } else {
+      response.locals["activity"] = {
+        points: 0,
+        stores: 0,
+        transactions: 0,
+        rate: 2,
+        badge: 'Supporter'
+      }
+    }
+    next();
+  }
+
+  private readLastYearActivity = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+
+    const customer: User = response.locals.customer;
+
+    var _now: number = Date.now();
+    var _date = new Date(_now);
+    _date.setDate(1);
+    _date.setHours(0, 0, 0, 0);
+    _date.setMonth(_date.getMonth() - 12);
+
+
+    let error: Error, activity: any[];
+    [error, activity] = await to(this.transaction.aggregate([{
+      $match: {
+        $and: [
+          { 'to_id': (customer._id).toString() },
+          { 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
+          { 'type': "EarnPoints" }
+        ]
+      }
+    },
+    {
+      $group: {
+        _id: '$to_id',
+        amount: { $sum: "$info.amount" },
+        stores: { "$addToSet": "$from_id" },
+        transactions: { "$addToSet": "$_id" }
+      }
+    },
+    {
+      "$project": {
+        "amount": 1,
+        "stores": { "$size": "$stores" },
+        "transactions": { "$size": "$transactions" },
+      }
+    }]).exec().catch());
+
+    if (error) { next(new UnprocessableEntityException('DB ERROR')); }
+    else if (activity.length) {
+      response.status(200).send({
+        data: this.activityToBagde(activity[0]),
+        code: 200
+      });
+    } else {
+      response.status(200).send({
+        data: {
+          points: 0,
+          stores: 0,
+          transactions: 0,
+          rate: 2,
+          badge: 'Supporter'
+        },
+        code: 200
+      });
+    }
+    next();
   }
 }
 

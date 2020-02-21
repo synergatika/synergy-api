@@ -47,6 +47,7 @@ class MerchantDto {
   @IsEnum(Sector)
   public sector: Sector;
 
+  @IsOptional()
   @IsString()
   public description: string;
 
@@ -62,6 +63,7 @@ class MerchantDto {
   @IsString()
   public lat: string;
 
+  @IsOptional()
   @IsString()
   public timetable: string;
 

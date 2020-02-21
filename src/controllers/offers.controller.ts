@@ -29,10 +29,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/items'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
 });
@@ -53,9 +53,9 @@ class OffersController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/:offset?`, this.readAllOffers);
+    this.router.get(`${this.path}/public/:offset`, this.readAllOffers);
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), this.createOffer);
-    this.router.get(`${this.path}/:merchant_id/:offset?`, validationParamsMiddleware(MerchantID), this.readOffersByStore);
+    this.router.get(`${this.path}/public/:merchant_id/:offset`, validationParamsMiddleware(MerchantID), this.readOffersByStore);
     this.router.get(`${this.path}/:merchant_id/:offer_id`, validationParamsMiddleware(OfferID), this.readOffer);
     this.router.put(`${this.path}/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), itemsMiddleware.offerMiddleware, this.updateOffer);
     this.router.delete(`${this.path}/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, itemsMiddleware.offerMiddleware, this.deleteOffer);
@@ -129,16 +129,16 @@ class OffersController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-        $push: {
-          offers: {
-            "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
-            "title": data.title,
-            "description": data.description,
-            "cost": data.cost,
-            "expiresAt": data.expiresAt
-          }
+      $push: {
+        offers: {
+          "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
+          "title": data.title,
+          "description": data.description,
+          "cost": data.cost,
+          "expiresAt": data.expiresAt
         }
-      }).catch());
+      }
+    }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(201).send({
       message: "Success! A new offer has been created!",
@@ -252,15 +252,15 @@ class OffersController implements Controller {
         _id: merchant_id,
         'offers._id': offer_id
       }, {
-        '$set': {
-          'offers.$._id': offer_id,
-          'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentOffer.offer_imageURL,
-          'offers.$.title': data.title,
-          'offers.$.description': data.description,
-          'offers.$.cost': data.cost,
-          'offers.$.expiresAt': data.expiresAt
-        }
-      }).catch());
+      '$set': {
+        'offers.$._id': offer_id,
+        'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentOffer.offer_imageURL,
+        'offers.$.title': data.title,
+        'offers.$.description': data.description,
+        'offers.$.cost': data.cost,
+        'offers.$.expiresAt': data.expiresAt
+      }
+    }).catch());
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -283,12 +283,12 @@ class OffersController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: merchant_id
     }, {
-        $pull: {
-          offers: {
-            _id: offer_id
-          }
+      $pull: {
+        offers: {
+          _id: offer_id
         }
-      }).catch());
+      }
+    }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Offer " + offer_id + " has been deleted!",

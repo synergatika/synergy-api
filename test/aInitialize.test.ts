@@ -695,6 +695,9 @@ describe("Initialize DB & Drop past Collections", () => {
     });
   });
   describe("Events - Default Merchant 1", () => {
+    var _date_1 = new Date();
+    var _newDate1 = _date_1.setDate(_date_1.getDate() + 4);
+
     it("10.1 should create a new event", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("events/")
@@ -703,7 +706,7 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('description', 'This is a Public Event by Commonspace. Everyone can see it.')
         .field('access', 'public')
         .field('location', 'Salonika')
-        .field('dateTime', '2045 - 01 - 30')
+        .field('dateTime', _newDate1.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}event_c.jfif`),
           `event_c.jfif`)
         .end((err, res) => {
@@ -714,6 +717,9 @@ describe("Initialize DB & Drop past Collections", () => {
         });
     });
     it("10.2 should create a new event", (done) => {
+      var _date_1 = new Date();
+      var _newDate1 = _date_1.setDate(_date_1.getDate() + 4);
+
       chai.request(`${process.env.API_URL}`)
         .post("events/")
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
@@ -721,7 +727,7 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('description', 'This is a private Event by Soc. Everyone can see it.')
         .field('access', 'public')
         .field('location', 'Athens')
-        .field('dateTime', '2045 - 01 - 30')
+        .field('dateTime', _newDate1.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}event_a.jfif`),
           `event_a.jfif`)
         .end((err, res) => {
@@ -733,6 +739,9 @@ describe("Initialize DB & Drop past Collections", () => {
     });
   });
   describe("Events - Default Merchant 2", () => {
+    var _date_1 = new Date();
+    var _newDate1 = _date_1.setDate(_date_1.getDate() + 1);
+
     it("11.1 should create a new event", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("events/")
@@ -741,7 +750,7 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('description', 'This is a private Event by Commonspace. Everyone can see it.')
         .field('access', 'private')
         .field('location', 'Athens')
-        .field('dateTime', '2065 - 01 - 30')
+        .field('dateTime', _newDate1.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}event_b.jfif`),
           `event_b.jfif`)
         .end((err, res) => {
@@ -786,7 +795,6 @@ describe("Initialize DB & Drop past Collections", () => {
           res.should.have.status(201);
           res.body.should.be.a('object');
           done();
-
         });
     });
   });

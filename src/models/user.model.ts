@@ -82,7 +82,7 @@ const eventSchema = new mongoose.Schema({
     default: 'public'
   },
   location: String,
-  dateTime: String
+  dateTime: Number
 }, { timestamps: true });
 
 const addressSchema = new mongoose.Schema({
@@ -159,8 +159,8 @@ const userSchema = new mongoose.Schema({
     default: 'itself'
   }
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 export default userModel;

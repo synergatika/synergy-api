@@ -29,10 +29,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/items'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
 
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
@@ -54,11 +54,11 @@ class EventsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/public/:offset?`, this.readPublicEvents);
-    this.router.get(`${this.path}/private/:offset?`, authMiddleware, this.readPrivateEvents);
+    this.router.get(`${this.path}/public/:offset`, this.readPublicEvents);
+    this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPrivateEvents);
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(EventDto), this.createEvent);
-    this.router.get(`${this.path}/public/:merchant_id/:offset?`, validationParamsMiddleware(MerchantID), this.readPublicEventsByStore);
-    this.router.get(`${this.path}/private/:merchant_id/:offset?`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivateEventsByStore);
+    this.router.get(`${this.path}/public/:merchant_id/:offset`, validationParamsMiddleware(MerchantID), this.readPublicEventsByStore);
+    this.router.get(`${this.path}/private/:merchant_id/:offset`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivateEventsByStore);
     this.router.get(`${this.path}/:merchant_id/:event_id`, validationParamsMiddleware(EventID), this.readEvent);
     this.router.put(`${this.path}/:merchant_id/:event_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(EventDto), itemsMiddleware.eventMiddleware, this.updateEvent);
     this.router.delete(`${this.path}/:merchant_id/:event_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, itemsMiddleware.eventMiddleware, this.deleteEvent);
@@ -190,17 +190,17 @@ class EventsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-        $push: {
-          events: {
-            "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-            "title": data.title,
-            "description": data.description,
-            "access": data.access,
-            "location": data.location,
-            "dateTime": data.dateTime
-          }
+      $push: {
+        events: {
+          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
+          "title": data.title,
+          "description": data.description,
+          "access": data.access,
+          "location": data.location,
+          "dateTime": data.dateTime
         }
-      }).catch());
+      }
+    }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(201).send({
       message: "Success! A new Event has been created!",
@@ -308,6 +308,7 @@ class EventsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
+
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: events,
@@ -373,16 +374,16 @@ class EventsController implements Controller {
         _id: merchant_id,
         'events._id': event_id
       }, {
-        '$set': {
-          'events.$._id': event_id,
-          'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentEvent.event_imageURL,
-          'events.$.title': data.title,
-          'events.$.description': data.description,
-          'events.$.access': data.access,
-          'events.$.location': data.location,
-          'events.$.dateTime': data.dateTime,
-        }
-      }).catch());
+      '$set': {
+        'events.$._id': event_id,
+        'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentEvent.event_imageURL,
+        'events.$.title': data.title,
+        'events.$.description': data.description,
+        'events.$.access': data.access,
+        'events.$.location': data.location,
+        'events.$.dateTime': data.dateTime,
+      }
+    }).catch());
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -405,12 +406,12 @@ class EventsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: merchant_id
     }, {
-        $pull: {
-          events: {
-            _id: event_id
-          }
+      $pull: {
+        events: {
+          _id: event_id
         }
-      }).catch());
+      }
+    }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been deleted!",

@@ -9,6 +9,7 @@ interface LoyaltyTransaction {
     from_email: string;
     to_email: string;
     points: number;
+    amount: number;
     offer_id: string;
   };
 

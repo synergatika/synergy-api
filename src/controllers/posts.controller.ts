@@ -14,7 +14,6 @@ import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 import Post from '../communityInterfaces/post.interface';
 // Middleware
-import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
 import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
 import authMiddleware from '../middleware/auth.middleware';
@@ -29,10 +28,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/items'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
 
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
@@ -54,11 +53,11 @@ class PostsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/public/:offset?`, this.readPublicPosts);
-    this.router.get(`${this.path}/private/:offset?`, authMiddleware, this.readPrivatePosts);
+    this.router.get(`${this.path}/public/:offset`, this.readPublicPosts);
+    this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPrivatePosts);
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(PostDto), this.createPost);
-    this.router.get(`${this.path}/public/:merchant_id/:offset?`, validationParamsMiddleware(MerchantID), this.readPublicPostsByStore);
-    this.router.get(`${this.path}/private/:merchant_id/:offset?`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivatePostsByStore);
+    this.router.get(`${this.path}/public/:merchant_id/:offset`, validationParamsMiddleware(MerchantID), this.readPublicPostsByStore);
+    this.router.get(`${this.path}/private/:merchant_id/:offset`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivatePostsByStore);
     this.router.get(`${this.path}/:merchant_id/:post_id`, validationParamsMiddleware(PostID), this.readPost);
     this.router.put(`${this.path}/:merchant_id/:post_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(PostDto), itemsMiddleware.postMiddleware, this.updatePost);
     this.router.delete(`${this.path}/:merchant_id/:post_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, itemsMiddleware.postMiddleware, this.deletePost);
@@ -178,15 +177,15 @@ class PostsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-        $push: {
-          posts: {
-            "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-            "title": data.title,
-            "content": data.content,
-            "access": data.access
-          }
+      $push: {
+        posts: {
+          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
+          "title": data.title,
+          "content": data.content,
+          "access": data.access
         }
-      }).catch());
+      }
+    }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(201).send({
       message: "Success! A new Post has been created!",
@@ -348,14 +347,14 @@ class PostsController implements Controller {
         _id: merchant_id,
         'posts._id': post_id
       }, {
-        '$set': {
-          'posts.$._id': post_id,
-          'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentPost.post_imageURL,
-          'posts.$.title': data.title,
-          'posts.$.content': data.content,
-          'posts.$.access': data.access,
-        }
-      }).catch());
+      '$set': {
+        'posts.$._id': post_id,
+        'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentPost.post_imageURL,
+        'posts.$.title': data.title,
+        'posts.$.content': data.content,
+        'posts.$.access': data.access,
+      }
+    }).catch());
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -378,12 +377,12 @@ class PostsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: merchant_id
     }, {
-        $pull: {
-          posts: {
-            _id: post_id
-          }
+      $pull: {
+        posts: {
+          _id: post_id
         }
-      }).catch());
+      }
+    }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Post " + post_id + " has been deleted!",

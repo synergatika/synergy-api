@@ -156,7 +156,7 @@ describe("Loyalty (/loyalty)", () => {
     });
     it("6. should read transactions - 200 Transactions", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .get("loyalty/transactions")
+        .get("loyalty/transactions" + "/0-0-0")
         .set('Authorization', 'Bearer ' + newCustomer_1.authToken)
         .end((err, res) => {
           res.should.have.status(200);
@@ -283,6 +283,63 @@ describe("Loyalty (/loyalty)", () => {
           res.body.data.should.have.property('receipt');
           done();
         });
+    });
+  });
+  describe("Points - From DefaultMerchant_3 to NewUser", () => {
+    it("1. should earn points - 201 Created", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("loyalty/earn")
+        .set('Authorization', 'Bearer ' + defaultMerchant_3.authToken)
+        .send({
+          password: defaultMerchant_3.password,
+          _to: newUser.email,
+          _amount: 200
+        })
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          res.body.data.should.have.property('receipt');
+          done();
+        });
+    });
+  });
+  describe("Points - From DefaultMerchant_2 to NewUser", () => {
+    it("1. should earn points - 201 Created", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("loyalty/earn")
+        .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
+        .send({
+          password: defaultMerchant_2.password,
+          _to: newUser.email,
+          _amount: 60
+        })
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          res.body.data.should.have.property('receipt');
+          done();
+        });
+    });
+    describe("Points - From DefaultMerchant_2 to NewUser", () => {
+      it("1. should earn points - 201 Created", (done) => {
+        chai.request(`${process.env.API_URL}`)
+          .post("loyalty/earn")
+          .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
+          .send({
+            password: defaultMerchant_2.password,
+            _to: newUser.email,
+            _amount: 96
+          })
+          .end((err, res) => {
+            res.should.have.status(201);
+            res.body.should.be.a('object');
+            res.body.should.have.property('data');
+            res.body.data.should.have.property('receipt');
+            done();
+          });
+      });
     });
   });
 });

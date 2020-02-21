@@ -22,7 +22,7 @@ class EventDto {
   public location: string;
 
   @IsString()
-  public dateTime: string;
+  public dateTime: number;
 }
 
 export default EventDto;

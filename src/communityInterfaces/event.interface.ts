@@ -10,7 +10,7 @@ interface Event {
   description: string;
   access: string;
   location: string;
-  dateTime: string;
+  dateTime: number;
 
   createdAt: Date;
   updatedAt: Date;

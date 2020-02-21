@@ -23,6 +23,7 @@ class CampaignDto {
 
   @IsString()
   public quantitative: boolean;
+  @IsOptional()
   @IsString()
   public stepAmount: number;
   @IsString()

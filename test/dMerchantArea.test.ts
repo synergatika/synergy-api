@@ -309,6 +309,9 @@ describe("Merchant", () => {
         });
     });
     it("2. should NOT create a new event | description is missing - 400 Bad Request", (done) => {
+      var _date_1 = new Date();
+      var _newDate1 = _date_1.setDate(_date_1.getDate() + 4);
+
       chai.request(`${process.env.API_URL}`)
         .post("events/")
         .set('Authorization', 'Bearer ' + defaultMerchant_1.authToken)
@@ -316,7 +319,7 @@ describe("Merchant", () => {
           title: 'event',
           access: 'public',
           location: 'Athens',
-          dateTime: '2035 - 05 - 01'
+          dateTime: _newDate1.toString()
         })
         .end((err, res) => {
           res.should.have.status(400);

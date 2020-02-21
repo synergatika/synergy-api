@@ -10,7 +10,8 @@ const infoSchema = new mongoose.Schema({
   from_name: String,
   from_email: String,
   to_email: String,
-  points: Number
+  points: Number,
+  amount: Number
 }, { _id: false });
 
 const receiptSchema = new mongoose.Schema({
@@ -48,8 +49,8 @@ const loyaltyTransactionSchema = new mongoose.Schema({
   },
   data: dataSchema
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const loyaltyTransactionModel = mongoose.model<LoyaltyTransaction & mongoose.Document>('LoyaltyTransaction', loyaltyTransactionSchema);
 export default loyaltyTransactionModel;
