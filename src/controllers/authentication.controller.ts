@@ -3,6 +3,9 @@ import * as express from 'express';
 import * as jwt from 'jsonwebtoken';
 import * as nodemailer from 'nodemailer';
 import to from 'await-to-ts';
+
+var latinize = require('latinize');
+
 var path = require('path');
 // import Promise from 'bluebird';
 
@@ -57,10 +60,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/profile'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
 });
@@ -230,10 +233,10 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-          $set: {
-            card: data.card
-          }
-        }).catch());
+        $set: {
+          card: data.card
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "A card has been linked to customer's email.",
@@ -262,12 +265,12 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         card: card
       }, {
-          $set: {
-            email: data.email,
-            password: hashedPassword,
-            account: account
-          }
-        }).catch());
+        $set: {
+          email: data.email,
+          password: hashedPassword,
+          account: account
+        }
+      }).catch());
 
       if (error) next(new UnprocessableEntityException('DB ERROR'));
 
@@ -330,6 +333,17 @@ class AuthenticationController implements Controller {
     }
   }
 
+
+  private latinize = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterMerchantDto = request.body;
+
+    let _slug = latinize((data.name).toLowerCase()).split(' ').join('_');
+    const slugs = await this.user.find({ $or: [{ 'slug': _slug }, { 'slug': { $regex: _slug + "-.*" } }] }).select({ "id": 1, "name": 1, "slug": 1 })
+
+    if (!slugs.length) return _slug;
+    else return _slug + "-" + (slugs.length + 1);
+  }
+
   private registerMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RegisterMerchantDto = request.body;
 
@@ -363,6 +377,7 @@ class AuthenticationController implements Controller {
           alphaBank: data.alphaBank,
           paypal: data.paypal
         },
+        slug: await this.latinize(request, response, next),
         // ...data,
         sector: data.sector, access: 'merchant',
         description: data.description,
@@ -497,11 +512,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         _id: user._id
       }, {
-          $set: {
-            account: account,
-            password: hashedPassword
-          }
-        }).catch());
+        $set: {
+          account: account,
+          password: hashedPassword
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your password has been Updated",
@@ -531,12 +546,12 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           email: email
         }, {
-            $set: {
-              account: account,
-              pass_verified: true,
-              password: hashedPassword
-            }
-          }).catch());
+          $set: {
+            account: account,
+            pass_verified: true,
+            password: hashedPassword
+          }
+        }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
           message: "Success! Your password has been Updated",
@@ -560,11 +575,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-          $set: {
-            verificationToken: token.token,
-            verificationExpiration: token.expiresAt
-          }
-        }).catch());
+        $set: {
+          verificationToken: token.token,
+          verificationExpiration: token.expiresAt
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
@@ -589,14 +604,14 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         verificationToken: data.token
       }, {
-          $set: {
-            email_verified: true,
-          },
-          $unset: {
-            verificationToken: "",
-            verificationExpiration: "",
-          }
-        }).catch());
+        $set: {
+          email_verified: true,
+        },
+        $unset: {
+          verificationToken: "",
+          verificationExpiration: "",
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your Email Address has been Verified",
@@ -617,11 +632,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-          $set: {
-            restorationToken: token.token,
-            restorationExpiration: token.expiresAt
-          }
-        }).catch());
+        $set: {
+          restorationToken: token.token,
+          restorationExpiration: token.expiresAt
+        }
+      }).catch());
       if (error) next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
@@ -700,18 +715,18 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           restorationToken: data.token
         }, {
-            $set: {
-              password: hashedPassword,
-              account: account
-            },
-            $push: {
-              previousAccounts: user.account
-            },
-            $unset: {
-              restorationToken: "",
-              restorationExpiration: ""
-            }
-          }).catch());
+          $set: {
+            password: hashedPassword,
+            account: account
+          },
+          $push: {
+            previousAccounts: user.account
+          },
+          $unset: {
+            restorationToken: "",
+            restorationExpiration: ""
+          }
+        }).catch());
         if (error) next(new UnprocessableEntityException('DB ERROR'));
 
         response.locals = {

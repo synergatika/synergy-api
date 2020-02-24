@@ -88,10 +88,12 @@ class CommunityController implements Controller {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_event_id: '$posts._id',
+        post_event_slug: '$posts.slug',
         post_event_imageURL: '$posts.imageURL',
         type: 'post',
         title: '$posts.title',
@@ -121,10 +123,12 @@ class CommunityController implements Controller {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_event_id: '$events._id',
+        post_event_slug: '$events.slug',
         post_event_imageURL: '$events.imageURL',
         type: 'event',
         title: '$events.title',
@@ -170,10 +174,12 @@ class CommunityController implements Controller {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_event_id: '$posts._id',
+        post_event_slug: '$posts.slug',
         post_event_imageURL: '$posts.imageURL',
         type: 'post',
         title: '$posts.title',
@@ -203,10 +209,12 @@ class CommunityController implements Controller {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_event_id: '$events._id',
+        post_event_slug: '$events.slug',
         post_event_imageURL: '$events.imageURL',
         type: 'event',
         title: '$events.title',
@@ -244,19 +252,31 @@ class CommunityController implements Controller {
       $unwind: '$posts'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'posts.access': 'public' }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'posts.access': 'public' }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'posts.access': 'public' }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_event_id: '$posts._id',
+        post_event_slug: '$posts.slug',
         post_event_imageURL: '$posts.imageURL',
         type: 'post',
         title: '$posts.title',
@@ -277,20 +297,33 @@ class CommunityController implements Controller {
       $unwind: '$events'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'events.access': 'public' },
-          { 'events.dateTime': { $gt: offset.greater } }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'events.access': 'public' },
+              { 'events.dateTime': { $gt: offset.greater } }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'events.access': 'public' },
+              { 'events.dateTime': { $gt: offset.greater } }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_event_id: '$events._id',
+        post_event_slug: '$events.slug',
         post_event_imageURL: '$events.imageURL',
         type: 'event',
         title: '$events.title',
@@ -329,19 +362,31 @@ class CommunityController implements Controller {
       $unwind: '$posts'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'posts.access': { $in: ['public', 'private', access] } }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'posts.access': { $in: ['public', 'private', access] } }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'posts.access': { $in: ['public', 'private', access] } }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_event_id: '$posts._id',
+        post_event_slug: '$posts.slug',
         post_event_imageURL: '$posts.imageURL',
         type: 'post',
         title: '$posts.title',
@@ -362,20 +407,33 @@ class CommunityController implements Controller {
       $unwind: '$events'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'events.access': { $in: ['public', 'private', access] } },
-          { 'events.dateTime': { $gt: offset.greater } }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'events.access': { $in: ['public', 'private', access] } },
+              { 'events.dateTime': { $gt: offset.greater } }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'events.access': { $in: ['public', 'private', access] } },
+              { 'events.dateTime': { $gt: offset.greater } }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_event_id: '$events._id',
+        post_event_slug: '$events.slug',
         post_event_imageURL: '$events.imageURL',
         type: 'event',
         title: '$events.title',

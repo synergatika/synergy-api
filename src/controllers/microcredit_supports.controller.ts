@@ -66,6 +66,7 @@ class MicrocreditSupportsController implements Controller {
     }, {
       $project: {
         _id: false,
+        merchant_id: '$_id',
         campaign_id: '$microcredit._id',
         support_id: '$microcredit.supports._id',
         backer_id: '$microcredit.supports.backer_id',
@@ -107,6 +108,7 @@ class MicrocreditSupportsController implements Controller {
     }, {
       $project: {
         _id: false,
+        merchant_id: '$_id',
         campaign_id: '$microcredit._id',
         support_id: '$microcredit.supports._id',
         backer_id: '$microcredit.supports.backer_id',
@@ -151,6 +153,7 @@ class MicrocreditSupportsController implements Controller {
     }, {
       $project: {
         _id: false,
+        merchant_id: '$_id',
         campaign_id: '$microcredit._id',
         support_id: '$microcredit.supports._id',
         backer_id: '$microcredit.supports.backer_id',
@@ -184,10 +187,10 @@ class MicrocreditSupportsController implements Controller {
       'microcredit._id': campaign_id,
       'microcredit.supports._id': { $in: payment_id }
     }, {
-        $set: {
-          'microcredit.$.supports.$[d].status': status
-        }
-      }, { "arrayFilters": [{ "d._id": { $in: payment_id } }] }).catch());
+      $set: {
+        'microcredit.$.supports.$[d].status': status
+      }
+    }, { "arrayFilters": [{ "d._id": { $in: payment_id } }] }).catch());
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     next();

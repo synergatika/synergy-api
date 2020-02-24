@@ -1,6 +1,7 @@
 import * as express from 'express';
 import to from 'await-to-ts';
 import { ObjectId } from 'mongodb';
+var latinize = require('latinize');
 
 // Dtos
 import CampaignDto from '../microcreditDtos/campaign.dto'
@@ -61,7 +62,7 @@ class MicrocreditCampaignsController implements Controller {
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(CampaignDto), this.createCampaign);
     this.router.get(`${this.path}/public/:merchant_id/:offset`, validationParamsMiddleware(MerchantID), this.readPublicCampaignsByStore);
     this.router.get(`${this.path}/private/:merchant_id/:offset`, authMiddleware, validationParamsMiddleware(MerchantID), this.readPrivateCampaignsByStore);
-    this.router.get(`${this.path}/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, this.readCampaign);
+    this.router.get(`${this.path}/:merchant_id/:campaign_id`, validationParamsMiddleware(CampaignID), this.readCampaign);
     this.router.put(`${this.path}/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(CampaignDto), itemsMiddleware.microcreditCampaign, this.updateCampaign);
     this.router.put(`${this.path}/:merchant_id/:campaign_id/publish`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, itemsMiddleware.microcreditCampaign, this.registerMicrocredit);
     this.router.delete(`${this.path}/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, itemsMiddleware.microcreditCampaign, this.deleteCampaign);
@@ -90,25 +91,26 @@ class MicrocreditCampaignsController implements Controller {
       limit: number, skip: number, greater: number
     } = this.offsetParams(params);
 
+    const matchArray = [{ 'microcredit.access': { $in: ['public', 'private'] } }, { 'microcredit.status': 'published' }];
+
     let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match: {
-        $and: [
-          { 'microcredit.access': { $in: ['public', 'private'] } },
-          { 'microcredit.status': 'published' }
-        ]
+        $and: matchArray
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
         merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
+        campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
         terms: '$microcredit.title',
@@ -117,6 +119,7 @@ class MicrocreditCampaignsController implements Controller {
         access: '$microcredit.access',
 
         quantitative: '$microcredit.quantitative',
+        stepAmount: '$microcredit.stepAmount',
         minAllowed: '$microcredit.minAllowed',
         maxAllowed: '$microcredit.maxAllowed',
         maxAmount: '$microcredit.maxAmount',
@@ -138,8 +141,11 @@ class MicrocreditCampaignsController implements Controller {
     { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
+
+    const campaignsTokens: any = await this.mergeOnlyID(campaigns, matchArray);
+
     response.status(200).send({
-      data: campaigns,
+      data: campaignsTokens, //campaigns,
       code: 200
     });
   }
@@ -151,25 +157,26 @@ class MicrocreditCampaignsController implements Controller {
       limit: number, skip: number, greater: number
     } = this.offsetParams(params);
 
+    const matchArray = [{ 'microcredit.access': 'public' }, { 'microcredit.status': 'draft' }];
+
     let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match: {
-        $and: [
-          { 'microcredit.access': 'public' },
-          { 'microcredit.status': 'published' }
-        ]
+        $and: matchArray
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
         merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
+        campaign_slug: 'microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
         terms: '$microcredit.title',
@@ -178,6 +185,7 @@ class MicrocreditCampaignsController implements Controller {
         access: '$microcredit.access',
 
         quantitative: '$microcredit.quantitative',
+        stepAmount: '$microcredit.stepAmount',
         minAllowed: '$microcredit.minAllowed',
         maxAllowed: '$microcredit.maxAllowed',
         maxAmount: '$microcredit.maxAmount',
@@ -198,21 +206,29 @@ class MicrocreditCampaignsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-
-    const campaignsTokens: any = await this.merge(campaigns, []);
-    // {
-    //   _id: new ObjectId(merchant_id)
-    // }, {
-    //   'microcredit._id': new ObjectId(campaign_id)
-    // },
-
-
-
     if (error) next(new UnprocessableEntityException('DB ERROR'));
+
+    const campaignsTokens: any = await this.mergeOnlyID(campaigns, matchArray);
+
     response.status(200).send({
       data: campaignsTokens, //campaigns,
       code: 200
     });
+  }
+
+  private latinize = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: CampaignDto = request.body;
+    const user: User = request.user;
+
+    let _slug = latinize((data.title).toLowerCase()).split(' ').join('_');
+    const slugs = await this.user.aggregate([
+      { $unwind: '$microcredit' },
+      { $match: { $and: [{ slug: (user._id) }, { $or: [{ 'microcredit.slug': _slug }, { 'microcredit.slug': { $regex: _slug + "-.*" } }] }] } },
+      { $project: { _id: '$_id', title: '$microcredit.title', slug: '$microcredit.slug' } }
+    ]);
+
+    if (!slugs.length) return _slug;
+    else return _slug + "-" + (slugs.length + 1);
   }
 
   private createCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -227,11 +243,13 @@ class MicrocreditCampaignsController implements Controller {
         microcredit: {
           "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
           "title": data.title,
+          "slug": await this.latinize(request, response, next),
           "terms": data.terms,
           "access": data.access,
           "description": data.description,
           "category": data.category,
           "quantitative": data.quantitative,
+          "stepAmount": data.stepAmount,
           "minAllowed": data.minAllowed,
           "maxAllowed": data.maxAllowed,
           "maxAmount": data.maxAmount,
@@ -278,7 +296,7 @@ class MicrocreditCampaignsController implements Controller {
             'microcredit._id': campaign_id
           }, {
           '$set': {
-            'microcredit.$.status': 'published',
+            'microcredit.$.status': 'draft', // published
             'microcredit.$.address': result.address,
             'microcredit.$.transactionHash': result.transactionHash,
           }
@@ -305,15 +323,29 @@ class MicrocreditCampaignsController implements Controller {
       limit: number, skip: number, greater: number
     } = this.offsetParams(params);
 
+    const matchArrayID = [
+      { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+      { 'microcredit.access': { $in: ['public', 'private', access] } },
+      { 'microcredit.status': { $in: ['published', status] } }
+    ]
+    const matchArraySlug = [
+      { slug: merchant_id },
+      { 'microcredit.access': { $in: ['public', 'private', access] } },
+      { 'microcredit.status': { $in: ['published', status] } }
+    ]
+
     let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'microcredit.access': { $in: ['public', 'private', access] } },
-          { 'microcredit.status': { $in: ['published', status] } }
+        $or: [
+          {
+            $and: matchArrayID
+          },
+          {
+            $and: matchArraySlug
+          }
         ]
       }
     }, {
@@ -321,10 +353,12 @@ class MicrocreditCampaignsController implements Controller {
         _id: false,
         merchant_id: '$_id',
         merchant_name: '$name',
+        merchant_slug: '$slug',
         merchant_imageURL: '$imageURL',
         merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
+        campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
         terms: '$microcredit.title',
@@ -333,6 +367,7 @@ class MicrocreditCampaignsController implements Controller {
         access: '$microcredit.access',
 
         quantitative: '$microcredit.quantitative',
+        stepAmount: '$microcredit.stepAmount',
         minAllowed: '$microcredit.minAllowed',
         maxAllowed: '$microcredit.maxAllowed',
         maxAmount: '$microcredit.maxAmount',
@@ -354,8 +389,12 @@ class MicrocreditCampaignsController implements Controller {
     { $skip: offset.skip }
     ]).exec().catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
+
+    const campaignsTokens: any = await this.mergeIDSlug(campaigns, matchArrayID, matchArraySlug);
+
+    if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
-      data: campaigns,
+      data: campaignsTokens, //campaigns,
       code: 200
     });
   }
@@ -368,26 +407,42 @@ class MicrocreditCampaignsController implements Controller {
       limit: number, skip: number, greater: number
     } = this.offsetParams(params);
 
+    const matchArrayID = [
+      { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+      { 'microcredit.access': 'public' },
+      { 'microcredit.status': 'draft' } //published
+    ];
+    const matchArraySlug = [
+      { slug: merchant_id },
+      { 'microcredit.access': 'public' },
+      { 'microcredit.status': 'draft' }//published
+    ];
+
     let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'microcredit.access': 'public' },
-          { 'microcredit.status': 'published' }
+        $or: [
+          {
+            $and: matchArrayID
+          },
+          {
+            $and: matchArraySlug
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
-        merchant_name: '$name',
         merchant_id: '$_id',
+        merchant_name: '$name',
+        merchant_slug: '$slug',
         merchant_imageURL: '$imageURL',
         merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
+        campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
         terms: '$microcredit.title',
@@ -396,6 +451,7 @@ class MicrocreditCampaignsController implements Controller {
         access: '$microcredit.access',
 
         quantitative: '$microcredit.quantitative',
+        stepAmount: '$microcredit.stepAmount',
         minAllowed: '$microcredit.minAllowed',
         maxAllowed: '$microcredit.maxAllowed',
         maxAmount: '$microcredit.maxAmount',
@@ -417,9 +473,7 @@ class MicrocreditCampaignsController implements Controller {
     { $skip: offset.skip }
     ]).exec().catch());
 
-    const campaignsTokens: any = await this.merge(campaigns, [{
-      _id: new ObjectId(merchant_id)
-    }]);
+    const campaignsTokens: any = await this.mergeIDSlug(campaigns, matchArrayID, matchArraySlug);
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -428,32 +482,47 @@ class MicrocreditCampaignsController implements Controller {
     });
   }
 
-  private readCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private readCampaign = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
-    let error: Error, campaigns: Campaign[];
+    const matchArrayID = [{
+      _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId()
+    }, {
+      'microcredit._id': ObjectId.isValid(campaign_id) ? new ObjectId(campaign_id) : new ObjectId()
+    }];
+    const matchArraySlug = [{
+      slug: merchant_id
+    }, {
+      'microcredit.slug': campaign_id
+    }]
 
+    let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match:
       {
-        $and: [{
-          _id: new ObjectId(merchant_id)
-        }, {
-          'microcredit._id': new ObjectId(campaign_id)
-        }]
+        $or: [
+          {
+            $and: matchArrayID
+          },
+          {
+            $and: matchArraySlug
+          }
+        ]
       }
     }, {
       $project: {
         _id: false,
         merchant_name: '$name',
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_imageURL: '$imageURL',
         merchant_payment: '$payment',
 
         campaign_id: '$microcredit._id',
+        campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
         terms: '$microcredit.title',
@@ -462,6 +531,7 @@ class MicrocreditCampaignsController implements Controller {
         access: '$microcredit.access',
 
         quantitative: '$microcredit.quantitative',
+        stepAmount: '$microcredit.stepAmount',
         minAllowed: '$microcredit.minAllowed',
         maxAllowed: '$microcredit.maxAllowed',
         maxAmount: '$microcredit.maxAmount',
@@ -476,11 +546,7 @@ class MicrocreditCampaignsController implements Controller {
       }
     }]).exec().catch());
 
-    const campaignsTokens: any = await this.merge(campaigns, [{
-      _id: new ObjectId(merchant_id)
-    }, {
-      'microcredit._id': new ObjectId(campaign_id)
-    }]);
+    const campaignsTokens: any = await this.mergeIDSlug(campaigns, matchArrayID, matchArraySlug);
     // let tokens: {
     //   initialTokens: number,
     //   redeemedTokens: number
@@ -564,29 +630,92 @@ class MicrocreditCampaignsController implements Controller {
     });
   }
 
-  private merge = async (campaigns: Campaign[], match: any) => {
+  private mergeIDSlug = async (campaigns: Campaign[], matchID: any, matchSlug: any) => {
+
+    let x1 = [...matchID];
+    let x2 = [...matchSlug];
+    let y1 = [...matchID];
+    let y2 = [...matchSlug];
+
+    x1.push({ 'microcredit.supports.status': 'order' });
+    x2.push({ 'microcredit.supports.status': 'order' });
+    const confirmedTokens: any = await this.readTotalTokensIDSlug(x1, x2);
+
+    y1.push({ 'microcredit.supports.status': 'confirmation' });
+    y2.push({ 'microcredit.supports.status': 'confirmation' });
+    const orderedTokens: any = await this.readTotalTokensIDSlug(y1, y2);
+
+    if (campaigns.length) {
+      const campaignsTokens = campaigns.map((a: any) =>
+        Object.assign({}, a,
+          {
+            confirmedTokens: (confirmedTokens).find((b: any) => (b._id).toString() === (a.campaign_id).toString()),
+            orderedTokens: (orderedTokens).find((c: any) => (c._id).toString() === (a.campaign_id).toString()),
+          }
+        )
+      );
+      return campaignsTokens;
+    } else {
+      return [];
+    }
+  }
+
+  private mergeOnlyID = async (campaigns: Campaign[], match: any) => {
 
     let x = [...match];
     let y = [...match];
 
     x.push({ 'microcredit.supports.status': 'order' });
-    const confirmedTokens: any = await this.readTotalTokens(x);
+    const confirmedTokens: any = await this.readTotalTokensOnlyID(x);
 
     y.push({ 'microcredit.supports.status': 'confirmation' });
-    const orderedTokens: any = await this.readTotalTokens(y);
+    const orderedTokens: any = await this.readTotalTokensOnlyID(y);
 
-    const campaignsTokens = campaigns.map((a: any) =>
-      Object.assign({}, a,
-        {
-          confirmedTokens: (confirmedTokens).find((b: any) => (b._id).toString() === (a.campaign_id).toString()),
-          orderedTokens: (orderedTokens).find((c: any) => (c._id).toString() === (a.campaign_id).toString()),
-        }
-      )
-    );
-    return campaignsTokens;
+    if (campaigns.length) {
+      const campaignsTokens = campaigns.map((a: any) =>
+        Object.assign({}, a,
+          {
+            confirmedTokens: (confirmedTokens).find((b: any) => (b._id).toString() === (a.campaign_id).toString()),
+            orderedTokens: (orderedTokens).find((c: any) => (c._id).toString() === (a.campaign_id).toString()),
+          }
+        )
+      );
+      return campaignsTokens;
+    } else {
+      return [];
+    }
   }
 
-  private readTotalTokens = async (match: any) => {
+  private readTotalTokensIDSlug = async (matchA: any, matchB: any) => {
+    let error: Error, tokens: {
+      _id: string,
+      initialTokens: number,
+      redeemedTokens: number
+    }[];
+
+    [error, tokens] = await to(this.user.aggregate([{
+      $unwind: '$microcredit'
+    }, {
+      $unwind: '$microcredit.supports'
+    }, {
+      $match: {
+        $or: [
+          { $and: matchA },
+          { $and: matchB }
+        ]
+      }
+    }, {
+      "$group": {
+        '_id': '$microcredit._id',
+        'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+        'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
+      }
+    }]).exec().catch());
+
+    return tokens;
+  }
+
+  private readTotalTokensOnlyID = async (match: any) => {
     let error: Error, tokens: {
       _id: string,
       initialTokens: number,
@@ -611,7 +740,6 @@ class MicrocreditCampaignsController implements Controller {
 
     return tokens;
   }
-
 }
 
 export default MicrocreditCampaignsController;

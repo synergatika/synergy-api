@@ -63,12 +63,12 @@ class MerchantDto {
   @IsString()
   public lat: string;
 
+  @IsString()
+  public long: string;
+
   @IsOptional()
   @IsString()
   public timetable: string;
-
-  @IsString()
-  public long: string;
 
   @IsString()
   public phone: string;

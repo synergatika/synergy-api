@@ -1,5 +1,6 @@
 import * as express from 'express';
 import to from 'await-to-ts'
+import { ObjectId } from 'mongodb';
 
 // Dtos
 import MerchantDto from '../usersDtos/merchant.dto';
@@ -82,7 +83,7 @@ class MerchantsController implements Controller {
     }).select({
       "id": 1, "email": 1,
       "name": 1, "imageURL": 1,
-      "createdAt": 1,
+      "createdAt": 1, "slug": 1,
       "sector": 1, "description": 1,
       "contact": 1, "address": 1,
       "payment": 1, "timetable": 1
@@ -101,15 +102,20 @@ class MerchantsController implements Controller {
 
     let error: Error, merchant: Merchant;
     [error, merchant] = await to(this.user.findOne({
-      _id: merchant_id
+      $or: [
+        { _id: ObjectId.isValid(merchant_id) ? merchant_id : new ObjectId() },
+        { slug: merchant_id }
+      ]
     }).select({
       "id": 1, "email": 1,
       "name": 1, "imageURL": 1,
-      "createdAt": 1,
+      "createdAt": 1, "slug": 1,
       "sector": 1, "description": 1,
       "contact": 1, "address": 1,
       "payment": 1, "timetable": 1
     }).catch());
+    console.log(error);
+
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: merchant,

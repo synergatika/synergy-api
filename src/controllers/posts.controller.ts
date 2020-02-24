@@ -1,6 +1,7 @@
 import * as express from 'express';
 import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
+var latinize = require('latinize');
 
 // Dtos
 import PostDto from '../communityDtos/post.dto'
@@ -98,9 +99,11 @@ class PostsController implements Controller {
         _id: false,
         merchant_id: '$_id',
         merchant_name: '$name',
+        merchant_slug: '$slug',
         merchant_imageURL: '$imageURL',
 
         post_id: '$posts._id',
+        post_slug: '$posts.slug',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
         subtitle: '$posts.subtitle',
@@ -143,9 +146,11 @@ class PostsController implements Controller {
         _id: false,
         merchant_id: '$_id',
         merchant_name: '$name',
+        merchant_slug: '$slug',
         merchant_imageURL: '$imageURL',
 
         post_id: '$posts._id',
+        post_slug: '$posts.slug',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
         subtitle: '$posts.subtitle',
@@ -169,6 +174,21 @@ class PostsController implements Controller {
     });
   }
 
+  private latinize = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: PostDto = request.body;
+    const user: User = request.user;
+
+    let _slug = latinize((data.title).toLowerCase()).split(' ').join('_');
+    const slugs = await this.user.aggregate([
+      { $unwind: '$posts' },
+      { $match: { $and: [{ slug: (user._id) }, { $or: [{ 'posts.slug': _slug }, { 'posts.slug': { $regex: _slug + "-.*" } }] }] } },
+      { $project: { _id: '$_id', title: '$posts.title', slug: '$posts.slug' } }
+    ]);
+
+    if (!slugs.length) return _slug;
+    else return _slug + "-" + (slugs.length + 1);
+  }
+
   private createPost = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: PostDto = request.body;
     const user: User = request.user;
@@ -181,6 +201,8 @@ class PostsController implements Controller {
         posts: {
           "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
           "title": data.title,
+          "subtitle": data.subtitle,
+          "slug": await this.latinize(request, response, next),
           "content": data.content,
           "access": data.access
         }
@@ -207,19 +229,31 @@ class PostsController implements Controller {
       $unwind: '$posts'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'posts.access': { $in: ['public', 'private', access] } }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'posts.access': { $in: ['public', 'private', access] } }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'posts.access': { $in: ['public', 'private', access] } }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_id: '$posts._id',
+        post_slug: '$posts.slug',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
         subtitle: '$posts.subtitle',
@@ -256,19 +290,32 @@ class PostsController implements Controller {
       $unwind: '$posts'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'posts.access': 'public' }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'posts.access': 'public' }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'posts.access': 'public' }
+            ]
+          }
         ]
+
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_id: '$posts._id',
+        post_slug: '$posts.slug',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
         subtitle: '$posts.subtitle',
@@ -301,19 +348,31 @@ class PostsController implements Controller {
       $unwind: '$posts'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'posts._id': new ObjectId(post_id) }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'posts._id': ObjectId.isValid(post_id) ? new ObjectId(post_id) : new ObjectId() }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'posts.slug': post_id }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         post_id: '$posts._id',
+        post_slug: '$posts.slug',
         post_imageURL: '$posts.imageURL',
         title: '$posts.title',
         subtitle: '$posts.subtitle',

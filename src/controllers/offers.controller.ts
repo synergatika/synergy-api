@@ -1,6 +1,7 @@
 import * as express from 'express';
 import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
+var latinize = require('latinize');
 
 // Dtos
 import OfferDto from '../loyaltyDtos/offer.dto'
@@ -93,10 +94,12 @@ class OffersController implements Controller {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         offer_id: '$offers._id',
+        offer_slug: '$offers.slug',
         offer_imageURL: '$offers.imageURL',
         title: '$offers.title',
         description: '$offers.description',
@@ -121,6 +124,21 @@ class OffersController implements Controller {
     });
   }
 
+  private latinize = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: OfferDto = request.body;
+    const user: User = request.user;
+
+    let _slug = latinize((data.title).toLowerCase()).split(' ').join('_');
+    const slugs = await this.user.aggregate([
+      { $unwind: '$offers' },
+      { $match: { $and: [{ slug: (user._id) }, { $or: [{ 'offers.slug': _slug }, { 'offers.slug': { $regex: _slug + "-.*" } }] }] } },
+      { $project: { _id: '$_id', title: '$offers.title', slug: '$offers.slug' } }
+    ]);
+
+    if (!slugs.length) return _slug;
+    else return _slug + "-" + (slugs.length + 1);
+  }
+
   private createOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: OfferDto = request.body;
     const user: User = request.user;
@@ -133,6 +151,7 @@ class OffersController implements Controller {
         offers: {
           "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
           "title": data.title,
+          "slug": await this.latinize(request, response, next),
           "description": data.description,
           "cost": data.cost,
           "expiresAt": data.expiresAt
@@ -159,19 +178,31 @@ class OffersController implements Controller {
       $unwind: '$offers'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'offers.expiresAt': { $gt: offset.greater } }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'offers.expiresAt': { $gt: offset.greater } }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'offers.expiresAt': { $gt: offset.greater } }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         offer_id: '$offers._id',
+        offer_slug: '$offers.slug',
         offer_imageURL: '$offers.imageURL',
         title: '$offers.title',
         cost: '$offers.cost',
@@ -205,19 +236,31 @@ class OffersController implements Controller {
       $unwind: '$offers'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'offers._id': new ObjectId(offer_id) }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'offers._id': ObjectId.isValid(offer_id) ? new ObjectId(offer_id) : new ObjectId() }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'offers.slug': offer_id }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         offer_id: '$offers._id',
+        offer_slug: '$offers.slug',
         offer_imageURL: '$offers.imageURL',
         title: '$offers.title',
         cost: '$offers.cost',

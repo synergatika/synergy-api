@@ -50,18 +50,40 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /auth/register/{access}:
+  /auth/register/customer:
     post:
-      summary: "Register/Invite a new user (only for admins or merchants)"
-      operationId: authRegisterWithoutPass
+      summary: "Register/Invite a new customer (only for admins or merchants)"
+      operationId: authRegisterCustomer
       security:
         - bearerAuth: []
       tags:
         - authentication
-      parameters:
-        - $ref: '#/components/parameters/access'
       requestBody:
-        $ref: '#/components/requestBodies/RegisterWithoutPassRequestBody'
+        $ref: '#/components/requestBodies/RegisterCustomerRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/Email_Sent'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+          
+  /auth/register/merchant:
+    post:
+      summary: "Register/Invite a new merchant (only for merchants)"
+      operationId: authRegisterMerchant
+      security:
+        - bearerAuth: []
+      tags:
+        - authentication
+      requestBody:
+        $ref: '#/components/requestBodies/RegisterMerchantRequestBody'
       responses:
         '200':
           $ref: '#/components/responses/Email_Sent'
@@ -203,7 +225,76 @@ paths:
           $ref: '#/components/responses/Not_Found'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
+          
+  /auth/check_identifier/{identifier}:
+    get:
+      summary: "Check if email or card is linked to any account"
+      operationId: checkIdentifier
+      parameters:
+        - $ref: '#/components/parameters/identifier'
+      tags:
+        - authentication
+      responses:
+        '200':
+          $ref: '#/components/responses/LinkAction'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
 
+  /auth/link_email/{card}:
+    put:
+      summary: "Check if email or card is linked to any account"
+      operationId: linkEmail
+      parameters:
+        - $ref: '#/components/parameters/card'
+      requestBody:
+        $ref: '#/components/requestBodies/EmailRequestBody'
+      tags:
+        - authentication
+      responses:
+        '200':
+          $ref: '#/components/responses/Email_Sent'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /auth/link_card/{email}:
+    put:
+      summary: "Check if email or card is linked to any account"
+      operationId: linkCard
+      parameters:
+        - $ref: '#/components/parameters/email'
+      requestBody:
+        $ref: '#/components/requestBodies/CardRequestBody'
+      tags:
+        - authentication
+      responses:
+        '200':
+          $ref: '#/components/responses/Updated'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/Not_Found'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
   # Paths: Profile & Merchant
   /profile:
     get:
@@ -239,10 +330,12 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /merchants:
+  /merchants/public/{offset}:
     get:
       summary: "Read all merchants' info (not require login)"
       operationId: readAllMerchants
+      parameters:
+        - $ref: '#/components/parameters/offset'
       tags:
         - merchants
       responses:
@@ -251,12 +344,12 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /merchants/{merchant_id}:
+  /merchants/{merchant_id_slug}:
     get:
       summary: "Read merchant's info (not require login)"
-      operationId: getMerchantInfo
+      operationId: readMerchantInfo
       parameters:
-        - $ref: '#/components/parameters/merchant_id'
+          - $ref: '#/components/parameters/merchant_id_slug'
       tags:
         - merchants
       responses:
@@ -266,6 +359,7 @@ paths:
           $ref: '#/components/responses/Bad_Request'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
+  /merchants/{merchant_id}:
     put:
       summary: "Update merchant's info"
       operationId: updateMerchantInfo
@@ -354,10 +448,10 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /loyalty/points/{_to}:
+  /loyalty/balance/{_to}:
     get:
       summary: ""
-      operationId: readCustomerBalance
+      operationId: readBalanceByMerchant
       parameters:
         - $ref: '#/components/parameters/_to'
       security:
@@ -374,10 +468,48 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /loyalty/transactions:
+  /loyalty/activity:
+    get:
+      summary: ""
+      operationId: readActivity
+      security:
+        - bearerAuth: []
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Activity'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /loyalty/activity/{_to}:
+    get:
+      summary: ""
+      operationId: readActivityByMerchant
+      parameters:
+        - $ref: '#/components/parameters/_to'
+      security:
+        - bearerAuth: []
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Activity'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+          
+  /loyalty/transactions/{offset}:
     get:
       summary: ""
       operationId: readTransactions
+      parameters:
+        - $ref: '#/components/parameters/offset'
       security:
         - bearerAuth: []
       tags:
@@ -391,10 +523,12 @@ paths:
           $ref: '#/components/responses/Unprocessable_Entity'
 
   # Paths: Loyalty - Offers
-  /loyalty/offers:
+  /loyalty/offers/public/{offset}:
     get:
       summary: "Read Offers from every store"
       operationId: readAllOffers
+      parameters:
+        - $ref: '#/components/parameters/offset'
       tags:
         - loyalty
       responses:
@@ -402,6 +536,8 @@ paths:
           $ref: '#/components/responses/Offers'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
+
+  /loyalty/offers:
     post:
       summary: "Create a new offer"
       operationId: createOffer
@@ -423,12 +559,13 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /loyalty/offers/{merchant_id}:
+  /loyalty/offers/public/{merchant_id_slug}/{offset}:
     get:
       summary: "Read Offers for a specific store"
       operationId: readOffersByStore
       parameters:
-        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offset'
       tags:
         - loyalty
       responses:
@@ -439,6 +576,23 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
+  /loyalty/offers/{merchant_id_slug}/{offer_id_slug}:
+    get:
+      summary: "Read a specific Offer"
+      operationId: readOffer
+      parameters:
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offer_id_slug'
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Offer'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+          
   /loyalty/offers/{merchant_id}/{offer_id}:
     put:
       summary: "Update an Offer"
@@ -486,21 +640,81 @@ paths:
           $ref: '#/components/responses/Unprocessable_Entity'
 
 # Paths: Community - Posts & Events
-  /community/public:
+  /community/public/{offset}:
     get:
       summary: "Read public Posts and Events from every store"
       operationId: readPublicPostsAndEvents
+      parameters:
+        - $ref: '#/components/parameters/offset'
       tags:
         - community
       responses:
         '200':
-          $ref: '#/components/responses/Posts'
+          $ref: '#/components/responses/PostsEvents'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-  /community/private:
+  /community/private/{offset}:
     get:
       summary: "Read private Posts and Events from every store"
       operationId: readPrivatePostsAndEvents
+      parameters:
+        - $ref: '#/components/parameters/offset'
+      security:
+        - bearerAuth: []
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/PostsEvents'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /community/public/{merchant_id_slug}/{offset}:
+    get:
+      summary: "Read public Posts and Events for a specific store"
+      operationId: readPublicPostsAndEventsByStore
+      parameters:
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offset'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/PostsEvents'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /community/private/{merchant_id_slug}/{offset}:
+    get:
+      summary: "Read private posts and events for a specific store"
+      operationId: readPrivatePostsAndEventsByStore
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offset'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/PostsEvents'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /posts/private/{offset}:
+    get:
+      summary: "Read private Posts from every store"
+      operationId: readPrivatePosts
+      parameters:
+        - $ref: '#/components/parameters/offset'
       security:
         - bearerAuth: []
       tags:
@@ -512,10 +726,27 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-  /community:
+
+  /posts/public/{offset}:
+    get:
+      summary: "Read Offers from every store"
+      operationId: readPublicPosts
+      parameters:
+        - $ref: '#/components/parameters/offset'
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Posts'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+  
+  /posts:
     post:
-      summary: "Create a new Post/Event"
-      operationId: createPostOrEvent
+      summary: "Create a new Post"
+      operationId: createPost
       security:
         - bearerAuth: []
       tags:
@@ -534,12 +765,13 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /community/public/{merchant_id}:
+  /posts/public/{merchant_id_slug}/{offset}:
     get:
-      summary: "Read public Posts and Events for a specific store"
-      operationId: readPublicPostsAndEventsByStore
+      summary: "Read public Posts for a specific store"
+      operationId: readPublicPostsByStore
       parameters:
-        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offset'
       tags:
         - community
       responses:
@@ -547,19 +779,18 @@ paths:
           $ref: '#/components/responses/Posts'
         '400':
           $ref: '#/components/responses/Bad_Request'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /community/private/{merchant_id}:
+  /posts/private/{merchant_id_slug}/{offset}:
     get:
-      summary: "Read private posts and events for a specific store"
-      operationId: readPrivatePostsAndEventsByStore
+      summary: "Read private Posts for a specific store"
+      operationId: readPrivatePostsByStore
       security:
         - bearerAuth: []
       parameters:
-        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offset'
       tags:
         - community
       responses:
@@ -572,10 +803,29 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /community/{merchant_id}/{post_id}:
+  /posts/{merchant_id_slug}/{post_id_slug}:
+   get:
+      summary: "Read a specific Post"
+      operationId: readPost
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/post_id_slug'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Post'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /posts/{merchant_id}/{post_id}:
     put:
       summary: "Update a Post or an Event"
-      operationId: updatePostOrEvent
+      operationId: updatePost
       security:
         - bearerAuth: []
       parameters:
@@ -598,7 +848,7 @@ paths:
           $ref: '#/components/responses/Unprocessable_Entity'
     delete:
       summary: "Delete a Post or an Event"
-      operationId: deletePostOrEvent
+      operationId: deletePost
       security:
         - bearerAuth: []
       parameters:
@@ -618,25 +868,206 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  # Paths: Microfund - Campaigns
-  /microfund/campaigns:
+  /events/private/{offset}:
     get:
-      summary: "Read Campaigns from every store"
-      operationId: readAllCampaigns
+      summary: "Read private Events from every store"
+      operationId: readPrivateEvents
+      parameters:
+        - $ref: '#/components/parameters/offset'
+      security:
+        - bearerAuth: []
       tags:
-        - microfund
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Events'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /events/public/{offset}:
+    get:
+      summary: "Read Events from every store"
+      operationId: readPublicEvents
+      parameters:
+        - $ref: '#/components/parameters/offset'
+      tags:
+        - loyalty
+      responses:
+        '200':
+          $ref: '#/components/responses/Events'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+  
+  /events:
+    post:
+      summary: "Create a new Event"
+      operationId: createEvent
+      security:
+        - bearerAuth: []
+      tags:
+        - community
+      requestBody:
+        $ref: '#/components/requestBodies/EventRequestBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /events/public/{merchant_id_slug}/{offset}:
+    get:
+      summary: "Read public Posts for a specific store"
+      operationId: readPublicEventsByStore
+      parameters:
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offset'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Events'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /events/private/{merchant_id_slug}/{offset}:
+    get:
+      summary: "Read private Posts for a specific store"
+      operationId: readPrivateEventsByStore
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offset'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Events'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /events/{merchant_id_slug}/{event_id_slug}:
+   get:
+      summary: "Read a specific Event"
+      operationId: readEvent
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/event_id_slug'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Event'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /events/{merchant_id}/{event_id}:
+    put:
+      summary: "Update a Event"
+      operationId: updateEvent
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/event_id'
+      tags:
+        - community
+      requestBody:
+        $ref: '#/components/requestBodies/OfferRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/Updated'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+    delete:
+      summary: "Delete an Event"
+      operationId: deleteEvent
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/event_id'
+      tags:
+        - community
+      responses:
+        '200':
+          $ref: '#/components/responses/Updated'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+          
+  # Paths: Microfund - Campaigns
+  /microcredit/campaigns/public/{offset}:
+    get:
+      summary: "Read Public Campaigns from every store"
+      operationId: readAllPublicMicrocreditCampaigns
+      parameters:
+        - $ref: '#/components/parameters/offset'
+      tags:
+        - microcredit
       responses:
         '200':
           $ref: '#/components/responses/Campaigns'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-    post:
-      summary: "Create a new Campaign"
-      operationId: createCampaign
+          
+  /microcredit/campaigns/private/{offset}:
+    get:
+      summary: "Read Private Campaigns from every store"
+      operationId: readAllPrivateMicrocreditCampaigns
+      parameters:
+        - $ref: '#/components/parameters/offset'
       security:
         - bearerAuth: []
       tags:
-        - microfund
+        - microcredit
+      responses:
+        '200':
+          $ref: '#/components/responses/Campaigns'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /microcredit/campaigns:          
+    post:
+      summary: "Create a new Microcredit Campaign"
+      operationId: createMicrocreditCampaign
+      security:
+        - bearerAuth: []
+      tags:
+        - microcredit
       requestBody:
         $ref: '#/components/requestBodies/CampaignRequestBody'
       responses:
@@ -651,31 +1082,49 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /microfund/campaigns/{merchant_id}:
+  /microcredit/campaigns/public/{merchant_id_slug}/{offset}:
     get:
-      summary: "Read Campaigns for a specific store"
-      operationId: readCampaignsByStore
+      summary: "Read Public Campaigns from every store"
+      operationId: readPublicMicrocreditCampaignsByStore
       parameters:
-        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offset'
       tags:
-        - microfund
+        - microcredit
       responses:
         '200':
           $ref: '#/components/responses/Campaigns'
-        '400':
-          $ref: '#/components/responses/Bad_Request'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-
-  /microfund/campaigns/{merchant_id}/{campaign_id}:
+          
+  /microcredit/campaigns/private/{merchant_id_slug}/{offset}:
+    get:
+      summary: "Read Private Campaigns from every store"
+      operationId: readPrivateMicrocreditCampaignsByStore
+      parameters:
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/offset'
+      security:
+        - bearerAuth: []
+      tags:
+        - microcredit
+      responses:
+        '200':
+          $ref: '#/components/responses/Campaigns'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+          
+  /microcredit/campaigns/{merchant_id_slug}/{campaign_id_slug}:
     get:
       summary: "Read a Campaign"
-      operationId: readACampaign
+      operationId: readAMicrocreditCampaign
       parameters:
-        - $ref: '#/components/parameters/merchant_id'
-        - $ref: '#/components/parameters/campaign_id'
+        - $ref: '#/components/parameters/merchant_id_slug'
+        - $ref: '#/components/parameters/campaign_id_slug'
       tags:
-        - microfund
+        - microcredit
       responses:
         '200':
           $ref: '#/components/responses/Campaign'
@@ -683,9 +1132,11 @@ paths:
           $ref: '#/components/responses/Bad_Request'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
+
+  /microcredit/campaigns/{merchant_id}/{campaign_id}:
     put:
-      summary: "Update an Campaign"
-      operationId: updateCampaign
+      summary: "Update a Microcredit Campaign"
+      operationId: updateMicrocreditCampaign
       security:
         - bearerAuth: []
       parameters:
@@ -707,15 +1158,15 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
     delete:
-      summary: "Delete a Campaign"
-      operationId: deleteCampaign
+      summary: "Delete a Microcredit Campaign"
+      operationId: deleteMicrocreditCampaign
       security:
         - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
       tags:
-        - microfund
+        - microcredit
       responses:
         '200':
           $ref: '#/components/responses/Updated'
@@ -728,17 +1179,17 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /microfund/campaigns/{merchant_id}/{campaign_id}/verify:
+  /microcredit/campaigns/{merchant_id}/{campaign_id}/publish:
     put:
-      summary: "Verify a Campaign (by Admin)"
-      operationId: verifyCampaign
+      summary: "Publish a Microcredit Campaign"
+      operationId: publishMicrocreditCampaign
       security:
         - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/merchant_id'
         - $ref: '#/components/parameters/campaign_id'
       tags:
-        - microfund
+        - microcredit
       responses:
         '200':
           $ref: '#/components/responses/Updated'
@@ -750,17 +1201,139 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
+  
+  /microcredit/supports:
+    get:
+      summary: "Read a All Backer's Supports"
+      operationId: readAllBackerSupports
+      security:
+        - bearerAuth: []
+      tags:
+        - microcredit
+      responses:
+        '200':
+          $ref: '#/components/responses/Supports'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'      
 
+  /microcredit/supports/{merchant_id}/{campaign_id}:
+    get:
+      summary: "Read All Supports for a Campaign"
+      operationId: readAllSupportsByCampaign
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/campaign_id'
+      security:
+        - bearerAuth: []
+      tags:
+        - microcredit
+      responses:
+        '200':
+          $ref: '#/components/responses/Supports'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'   
+
+  /microcredit/supports/{merchant_id}/{campaign_id}/{_to}:
+    get:
+      summary: "Read All Backer's Supports for a Campaign"
+      operationId: readBackerSupportsByCampaign
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/campaign_id'
+        - $ref: '#/components/parameters/_to'
+      security:
+        - bearerAuth: []
+      tags:
+        - microcredit
+      responses:
+        '200':
+          $ref: '#/components/responses/Supports'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'   
+
+  /microcredit/supports/{merchant_id}/{campaign_id}/{payment}:
+    put:
+      summary: "Update Support's status (order, confirmation)"
+      operationId: confirmSupportPayment
+      parameters:
+        - $ref: '#/components/parameters/merchant_id'
+        - $ref: '#/components/parameters/campaign_id'
+        - $ref: '#/components/parameters/payment'
+      security:
+        - bearerAuth: []
+      tags:
+        - microcredit
+      responses:
+        '200':
+          $ref: '#/components/responses/Supports'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'   
+          
 components:
   parameters:
+    identifier:
+      in: path
+      name: identifier
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "Customer's email or card"
+    email:
+      in: path
+      name: email
+      schema:
+        type: string
+        format: email
+      required: true
+      description: "Email for user's verification/restoration or Card linking"
+    card:
+      in: path
+      name: card
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "Card for Email Linking"
+    payment:
+      in: path
+      name: payment
+      schema:
+        type: boolean
+      required: true
+      description: "Payments to Be Confrirmed/Unconfirmed"
     _to:
       in: path
       name: _to
       schema:
         type: string
-        format: email
       required: true
-      description: "Email/Address of Customer"
+      description: "Email/Card of Customer"
+    offset:
+      in: path
+      name: offset
+      schema:
+        type: string
+      required: true
+      description: "Results per Page/Page Number/All or Active"
     merchant_id:
       in: path
       name: merchant_id
@@ -769,6 +1342,14 @@ components:
         format: uuid
       required: true
       description: "ID of the selected store"
+    merchant_id_slug:
+      in: path
+      name: merchant_id_slug
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "ID or Slug of the selected store"
     offer_id:
       in: path
       name: offer_id
@@ -777,6 +1358,14 @@ components:
         format: uuid
       required: true
       description: "ID of the selected offer"
+    offer_id_slug:
+      in: path
+      name: offer_id_slug
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "ID or Slug of the selected offer"
     post_id:
       in: path
       name: post_id
@@ -784,7 +1373,31 @@ components:
         type: string
         format: uuid
       required: true
-      description: "ID of the selected post/event"
+      description: "ID of the selected post"
+    post_id_slug:
+      in: path
+      name: post_id_slug
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "ID or Slug of the selected post"
+    event_id:
+      in: path
+      name: event_id
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "ID of the selected event"
+    event_id_slug:
+      in: path
+      name: event_id_slug
+      schema:
+        type: string
+        format: uuid
+      required: true
+      description: "ID or Slug of the selected post"
     campaign_id:
       in: path
       name: campaign_id
@@ -793,22 +1406,14 @@ components:
         format: uuid
       required: true
       description: "ID of the selected campaign"
-    access:
+    campaign_id_slug:
       in: path
-      name: access
+      name: campaign_id_slug
       schema:
         type: string
-        format: enum['customer', 'merchant']
+        format: uuid
       required: true
-      description: "Declare the type of user that will be created"
-    email:
-      in: path
-      name: email
-      schema:
-        type: string
-        format: email
-      required: true
-      description: "Declare the email address that will be used to verify email / restore password"
+      description: "ID or Slug of the selected campaign"
 
   requestBodies:
     # Auth
@@ -826,13 +1431,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/RegisterDto'
-    RegisterWithoutPassRequestBody:
+    RegisterCustomerRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/RegisterWithoutPassDto'
+            $ref: '#/components/schemas/RegisterCustomerDto'
+    RegisterMerchantRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RegisterMerchantDto'
     ChangePassInRequestBody:
       description: ""
       required: true
@@ -854,7 +1466,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ChangePassOutDto'
-
+    EmailRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EmailDto'
+    CardRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CardDto'    
     # Profile & Merchant
     CustomerRequestBody:
       description: ""
@@ -898,7 +1523,7 @@ components:
       description: ""
       required: true
       content:
-        application/json:
+        multipart/form-data: #application/json:
           schema:
             $ref: '#/components/schemas/OfferDto'
 
@@ -907,10 +1532,18 @@ components:
       description: ""
       required: true
       content:
-        application/json:
+        multipart/form-data: #application/json:
           schema:
             $ref: '#/components/schemas/PostDto'
 
+    EventRequestBody:
+      description: ""
+      required: true
+      content:
+        multipart/form-data: #application/json:
+          schema:
+            $ref: '#/components/schemas/EventDto'
+            
     # Microfund
     CampaignRequestBody:
       description: ""
@@ -975,6 +1608,28 @@ components:
                 default: 200
 
     # Loyalty - Offers
+    Offer: 
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Offer"
+              code:
+                type: number
+                default: 200
+          example:
+            data:
+              - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 1"
+                merchant_imageURL: "www.images/assets/merchant1.png"
+                offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-10"
+                cost: 1000
+                description: "Get 10% discount"
+                expiresAt: "2019-11-15"
     Offers:
       description: Expected response to a valid request
       content:
@@ -1020,9 +1675,26 @@ components:
                 type: number
                 default: 200
           example:
-            memberAddress: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5'
+            address: '0x2191eF87E392377ec08E7c08Eb105Ef5448eCED5'
             points: 50
-            isRegistered: true
+    Activity:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Activity"
+              code:
+                type: number
+                default: 200
+          example:
+            amount: 500
+            stores: 1
+            transactions: 20
+            rate: 2
+            badge: 'Helper'
 
     Transactions:
       description: Expected response to a valid request
@@ -1057,6 +1729,27 @@ components:
             code: 200
 
     # Community - Posts
+    Post: 
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Post"
+              code:
+                type: number
+                default: 200
+          example:
+            data:
+              - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 1"
+                merchant_imageURL: "www.images/assets/merchant1.png"
+                offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-10"
+                type: 'event'
+                content: "This is a public event"
     Posts:
       description: Expected response to a valid request
       content:
@@ -1087,6 +1780,89 @@ components:
                 content: "These are my thoughts"
             code: 200
 
+    # Community - Events
+    Event: 
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Event"
+              code:
+                type: number
+                default: 200
+          example:
+            data:
+              - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 1"
+                merchant_imageURL: "www.images/assets/merchant1.png"
+                offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-10"
+                type: 'event'
+                content: "This is a public event"
+    Events:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Events"
+              code:
+                type: number
+                default: 200
+          example:
+            data:
+              - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 1"
+                merchant_imageURL: "www.images/assets/merchant1.png"
+                offer_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-10"
+                type: 'event'
+                content: "This is a public event"
+              - merchant_id: "67a85f64-5r717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 2"
+                merchant_imageURL: "www.images/assets/merchant2.png"
+                offer_id: "55454564-5rre7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-15"
+                type: 'post'
+                content: "These are my thoughts"
+            code: 200
+            
+    # Community - PostsEvents
+    PostsEvents:
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/PostsEvents"
+              code:
+                type: number
+                default: 200
+          example:
+            data:
+              - merchant_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 1"
+                merchant_imageURL: "www.images/assets/merchant1.png"
+                post_event_id: "45454564-5rte7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-10"
+                type: 'event'
+                content: "This is a public event"
+              - merchant_id: "67a85f64-5r717-4562-b3fc-2c963f66afa6"
+                merchant_name: "Merchant 2"
+                merchant_imageURL: "www.images/assets/merchant2.png"
+                post_event_id: "55454564-5rre7-4ert62-b3fc-c9rtret3f6r9"
+                createdAt: "2019-09-15"
+                type: 'post'
+                content: "These are my thoughts"
+            code: 200
+            
     # Microfund - Campaigns
     Campaign:
       description: Expected response to a valid request
@@ -1112,7 +1888,20 @@ components:
               code:
                 type: number
                 default: 200
-
+    
+    Supports: 
+      description: Expected response to a valid request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/Supports"
+              code:
+                type: number
+                default: 200
+                
     # Create, Updated, Email Send, Error
     Created:
       description: Expected response to valid request
@@ -1132,6 +1921,16 @@ components:
           example:
             code: 200
             message: "User's Profile successfully updated!"
+    LinkAction:
+      description: Expected response to valid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/LinkAction"
+          example:
+            code: 200
+            message: "email_no_card"      
+            
     Action_Required:
       description: Password or Email has not been verified
       content:
@@ -1235,20 +2034,64 @@ components:
         - name
         - email
         - password
-    RegisterWithoutPassDto:
+    RegisterCustomerDto:
       type: object
       properties:
-        name:
+        card:
           type: string
+          format: uuid
         email:
           type: string
           format: email
+      minProperties: 1
+      maxProperties: 2
+    RegisterMerchantDto:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        description:
+          type: string
+        imageURL:
+          type: string
+          format: binary
         sector:
           type: string
           enum: [None, B2B Services & Other Goods and Services, Durables, Durables (Technology), Education, Food, Hotels, cafes and restaurants, Recreation and Culture]
-      required:
-        - name
-        - email
+        phone:
+          type: number
+          format: int64
+        websiteURL:
+          type: string
+          format: uri
+        street:
+          type: string
+        postCode:
+          type: number
+          format: int64
+        city:
+          type: string
+        lat:
+          type: number
+          format: float
+        long:
+          type: number
+          format: float
+        nationalBank:
+          type: string        
+        pireausBank:
+          type: string
+        eurobank:
+          type: string
+        alphaBank:
+          type: string
+        paypal:
+          type: string
+        timetable:
+          type: string    
     ChangePassInDto:
       type: object
       properties:
@@ -1285,7 +2128,19 @@ components:
         - token
         - newPassword
         - verPassword
-
+    EmailDto:
+      type: object
+      properties:
+        token:
+          type: string
+          format: email      
+    CardDto:
+      type: object
+      properties:
+        token:
+          type: string
+          format: uuid
+          
     # Request - Profile & Merchant
     CustomerDto:
       type: object
@@ -1300,24 +2155,20 @@ components:
       properties:
         name:
           type: string
+        description:
+          type: string
         imageURL:
           type: string
           format: binary
         sector:
           type: string
           enum: [None, B2B Services & Other Goods and Services, Durables, Durables (Technology), Education, Food, Hotels, cafes and restaurants, Recreation and Culture]
-        # contact:
-        #   type: object
-        #   properties:
         phone:
           type: number
           format: int64
         websiteURL:
           type: string
           format: uri
-        # address:
-        #   type: object
-        #   properties:
         street:
           type: string
         postCode:
@@ -1325,6 +2176,24 @@ components:
           format: int64
         city:
           type: string
+        lat:
+          type: number
+          format: float
+        long:
+          type: number
+          format: float
+        nationalBank:
+          type: string        
+        pireausBank:
+          type: string
+        eurobank:
+          type: string
+        alphaBank:
+          type: string
+        paypal:
+          type: string
+        timetable:
+          type: string        
       required:
         - name
         - imageURL
@@ -1385,35 +2254,89 @@ components:
     OfferDto:
       type: object
       properties:
+        imageURL:
+          type: string
+          format: binary
+        title:
+          type: string     
         description:
           type: string
         cost:
           type: number
         expiresAt:
-          type: string
-          format: date
+          type: number
 
     PostDto:
       type: object
       properties:
+        imageURL:
+          type: string
+          format: binary
+        title:
+          type: string
+        subtitle:
+          type: string
         content:
           type: string
-        type:
+        access: 
           type: string
-          enum: [event, post]
-        access:
+          enum: [public, private, partner]
+
+    EventDto:
+      type: object
+      properties:
+        imageURL:
           type: string
-          enum: [public, private, partners]
+          format: binary
+        title:
+          type: string
+        subtitle:
+          type: string
+        description:
+          type: string
+        access: 
+          type: string
+          enum: [public, private, partner]
+        dateTime:
+          type: number
+        location:
+          type: string
+          
 
     # Request - Microfund
     CampaignDto:
       type: object
       properties:
-        description:
+        imageURL:
           type: string
-        expiresAt:
+          format: binary
+        title:
           type: string
-          format: date
+        terms:
+          type: string
+        access:
+          type: string
+          enum: [public, private, partners]
+        descritpion:
+          type: string
+        category:
+          type: string
+        quantitative:
+          type: boolean
+        minAllowed:
+          type: number
+        maxAllowed: 
+          type: number
+        maxAmount:
+          type: number
+        redeemStarts:
+          type: number
+        redeemEnds:
+          type: number
+        startsAt:
+          type: number
+        expiresAt: 
+          type: number
 
     # Response - Auth
     TokenData:
@@ -1512,14 +2435,27 @@ components:
     Balance:
       type: object
       properties:
-        memberAddress:
+        address:
           type: string
           format: address
         points:
           type: number
-        isRegistered:
-          type: boolean
 
+    Activity:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: address
+        stores:
+          type: number
+        transactions:
+          type: boolean
+        rate:
+          type: number
+        badge:
+          type: string
+          enum: [Supporter, Helper, One of Us]
     Transaction:
       type: object
       properties:
@@ -1561,20 +2497,25 @@ components:
     Offer:
       type: object
       properties:
-        merchant_name:
-          type: string
         merchant_id:
           type: string
           format: uuid
+        merchant_name:
+          type: string
+        merchant_slug:
+          type: string
         merchant_imageURL:
           type: string
           format: uri
         offer_id:
           type: string
           format: uuid
-        createdAt:
+        offer_slug:
           type: string
-          format: date
+          format: uuid
+        imageURL:
+          type: string
+          format: uri
         description:
           type: string
         cost:
@@ -1582,6 +2523,10 @@ components:
         expiresAt:
           type: string
           format: date
+        createdAt:
+          type: string
+          format: date
+
     Offers:
       type: array
       items:
@@ -1591,55 +2536,254 @@ components:
     Post:
       type: object
       properties:
-        merchant_name:
-          type: string
         merchant_id:
           type: string
           format: uuid
+        merchant_name:
+          type: string
+        merchant_slug:
+          type: string
         merchant_imageURL:
           type: string
           format: uri
+        
         post_id:
           type: string
           format: uuid
+        post_slug:
+          type: string
+          format: uri
+        post_imageURL:
+          type: string
+          format: uri
+        title:
+          type: string
+        subtitle:
+          type: string
+        content:
+          type: string                 
+        access:
+          type: string
+          enum: [public, private, partners]
         createdAt:
           type: string
           format: date
-        content:
-          type: string
-        type:
-          type: string
-          enum: [post, event]
     Posts:
       type: array
       items:
         $ref: '#/components/schemas/Post'
 
+    Event:
+      type: object
+      properties:
+        merchant_id:
+          type: string
+          format: uuid
+        merchant_name:
+          type: string
+        merchant_slug:
+          type: string
+        merchant_imageURL:
+          type: string
+          format: uri
+        
+        event_id:
+          type: string
+          format: uuid
+        event_slug:
+          type: string
+          format: uri
+        event_imageURL:
+          type: string
+          format: uri
+        title:
+          type: string
+        subtitle:
+          type: string
+        content:
+          type: string                 
+        access:
+          type: string
+          enum: [public, private, partners]
+        dateTime:
+          type: number
+        location:
+          type: string
+        createdAt:
+          type: string
+          format: date
+    Events:
+      type: array
+      items:
+        $ref: '#/components/schemas/Event'        
+
+    PostEvent:
+      type: object
+      properties:
+        merchant_id:
+          type: string
+          format: uuid
+        merchant_name:
+          type: string
+        merchant_slug:
+          type: string
+        merchant_imageURL:
+          type: string
+          format: uri
+        
+        post_event_id:
+          type: string
+          format: uuid
+        post_event_slug:
+          type: string
+          format: uri
+        post_event_imageURL:
+          type: string
+          format: uri
+        title:
+          type: string
+        subtitle:
+          type: string
+        content:
+          type: string                 
+        access:
+          type: string
+          enum: [public, private, partners]
+        dateTime:
+          type: number
+        location:
+          type: string
+        createdAt:
+          type: string
+          format: date
+    PostsEvents:
+      type: array
+      items:
+        $ref: '#/components/schemas/PostEvent'  
+
     # Response - Microfund Campaigns
     Campaign:
       type: object
       properties:
-        merchant_name:
+        merchant_id: 
           type: string
+          format: uuid
+        merchant_name: 
+          type: string
+        merchant_slug:
+          type: string
+        merchant_imageURL: 
+          type: string
+          format: uri
+        merchant_payment: 
+          type: object
+          properties:
+            nationalBank:
+              type: string
+            pireausBank:
+              type: string
+            eurobank:
+              type: string
+            alphaBank:
+              type: string
+            paypal:
+              type: string              
+        campaign_id: 
+          type: string
+          format: uuid
+        campaign_slug: 
+          type: string
+          format: uuid
+        campaign_imageURL: 
+          type: string
+          format: uri
+        title: 
+          type: string
+        terms: 
+          type: string
+        description: 
+          type: string
+        category: 
+          type: string
+        access: 
+          type: string
+          enum: [public, private, partners]
+        quantitative: 
+          type: boolean
+        stepAmount:
+          type: number
+        minAllowed: 
+          type: number
+        maxAllowed: 
+          type: number
+        maxAmount: 
+          type: number
+        redeemStarts: 
+          type: number
+          format: Date
+        redeemEnds: 
+          type: number
+          format: Date
+        startsAt: 
+          type: number
+          format: Date
+        expiresAt: 
+          type: number
+          format: Date
+        confirmedTokens:
+          type: object
+          properties:
+            initialTokens:
+              type: number
+            redeemedTokens:
+              type: number
+        orderedTokens:
+          type: object
+          properties:
+            initialTokens:
+              type: number
+            redeemedTokens:
+              type: number
+        createdAt: 
+          type: string
+          format: Date
+
+    Campaigns:
+      type: array
+      items:
+        $ref: '#/components/schemas/Campaign'
+
+    Support:
+      type: object
+      properties:
         merchant_id:
           type: string
           format: uuid
         campaign_id:
           type: string
           format: uuid
-        createdAt:
+        support_id: 
           type: string
-          format: date
-        description:
+          format: uuid
+        backer_id: 
           type: string
-        expiresAt:
+          format: uuid
+        initialTokens: 
+          type: number
+        redeemedTokens: 
+          type: number
+        method: 
           type: string
-          format: date
-    Campaigns:
+          enum: [nationalBank, pireausBank, eurobank, alphaBank, paypal]
+        status: 
+          type: string
+          enum: [order, confirmation]
+
+    Supports:
       type: array
       items:
-        $ref: '#/components/schemas/Campaign'
-
+        $ref: '#/components/schemas/Support'
+        
     # Response - Typical Responses (Created, Updated, Email Sent, Action Required, Error)
     Created:
       type: object
@@ -1697,6 +2841,18 @@ components:
         message:
           type: string
 
+    LinkAction:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+          
     Action_Required:
       type: object
       required:

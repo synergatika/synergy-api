@@ -1,6 +1,7 @@
 import * as express from 'express';
 import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
+var latinize = require('latinize');
 
 // Dtos
 import EventDto from '../communityDtos/event.dto'
@@ -101,10 +102,12 @@ class EventsController implements Controller {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         event_id: '$events._id',
+        event_slug: '$events.slug',
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',
@@ -152,10 +155,12 @@ class EventsController implements Controller {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         event_id: '$events._id',
+        event_slug: '$events.slug',
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',
@@ -182,6 +187,21 @@ class EventsController implements Controller {
     });
   }
 
+  private latinize = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: EventDto = request.body;
+    const user: User = request.user;
+
+    let _slug = latinize((data.title).toLowerCase()).split(' ').join('_');
+    const slugs = await this.user.aggregate([
+      { $unwind: '$events' },
+      { $match: { $and: [{ slug: (user._id) }, { $or: [{ 'events.slug': _slug }, { 'events.slug': { $regex: _slug + "-.*" } }] }] } },
+      { $project: { _id: '$_id', title: '$events.title', slug: '$events.slug' } }
+    ]);
+
+    if (!slugs.length) return _slug;
+    else return _slug + "-" + (slugs.length + 1);
+  }
+
   private createEvent = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: EventDto = request.body;
     const user: User = request.user;
@@ -194,6 +214,7 @@ class EventsController implements Controller {
         events: {
           "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
           "title": data.title,
+          "slug": await this.latinize(request, response, next),
           "description": data.description,
           "access": data.access,
           "location": data.location,
@@ -222,20 +243,33 @@ class EventsController implements Controller {
       $unwind: '$events'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'events.access': { $in: ['public', 'private', access] } },
-          { 'events.dateTime': { $gt: offset.greater } }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'events.access': { $in: ['public', 'private', access] } },
+              { 'events.dateTime': { $gt: offset.greater } }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'events.access': { $in: ['public', 'private', access] } },
+              { 'events.dateTime': { $gt: offset.greater } }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         event_id: '$events._id',
+        event_slug: '$events.slug',
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',
@@ -275,20 +309,33 @@ class EventsController implements Controller {
       $unwind: '$events'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'events.access': 'public' },
-          { 'events.dateTime': { $gt: offset.greater } }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'events.access': 'public' },
+              { 'events.dateTime': { $gt: offset.greater } }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'events.access': 'public' },
+              { 'events.dateTime': { $gt: offset.greater } }
+            ]
+          }
         ]
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_imageURL: '$imageURL',
         merchant_name: '$name',
 
         event_id: '$events._id',
+        event_slug: '$event_slug',
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',
@@ -325,19 +372,32 @@ class EventsController implements Controller {
       $unwind: '$events'
     }, {
       $match: {
-        $and: [
-          { _id: new ObjectId(merchant_id) },
-          { 'events._id': new ObjectId(event_id) }
+        $or: [
+          {
+            $and: [
+              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { 'events._id': ObjectId.isValid(event_id) ? new ObjectId(event_id) : new ObjectId() }
+            ]
+          },
+          {
+            $and: [
+              { slug: merchant_id },
+              { 'events.slug': event_id }
+            ]
+          }
         ]
+
       }
     }, {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
 
         event_id: '$events._id',
+        event_slug: '$events.slug',
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',

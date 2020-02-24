@@ -38,15 +38,16 @@ class LoyaltyController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/earn`, authMiddleware, /*accessMiddleware.confirmPassword,*//*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), customerMiddleware, this.readLastYearActivityByMerchant, this.earnTokens);
+    this.router.post(`${this.path}/earn`, authMiddleware, /*accessMiddleware.confirmPassword,*//*accessMiddleware.onlyAsMerchant,*/ validationBodyMiddleware(EarnPointsDto), customerMiddleware, this.readActivityByMerchant, this.earnTokens);
     this.router.post(`${this.path}/redeem`, authMiddleware, accessMiddleware.onlyAsMerchant, /*accessMiddleware.confirmPassword,*/ validationBodyMiddleware(RedeemPointsDto), customerMiddleware, this.redeemTokens);
     this.router.get(`${this.path}/balance`, authMiddleware, this.readBalance);
     this.router.get(`${this.path}/balance/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBalanceByMerchant);
-    this.router.get(`${this.path}/badge`, authMiddleware, this.readBadge);
-    this.router.get(`${this.path}/badge/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBadgeByMerchant);
+    // this.router.get(`${this.path}/badge`, authMiddleware, this.readBadge);
+    //this.router.get(`${this.path}/badge/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBadgeByMerchant);
     this.router.get(`${this.path}/transactions/:offset?`, authMiddleware, this.readTransactions);
 
-    this.router.get(`${this.path}/level/:_to`, customerMiddleware, this.readLastYearActivity);
+    this.router.get(`${this.path}/activity`, authMiddleware, this.readActivity);
+    this.router.get(`${this.path}/activity/:_to`, customerMiddleware, this.readActivityByMerchant);
 
 
     this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
@@ -183,54 +184,6 @@ class LoyaltyController implements Controller {
       })
   }
 
-  private readBadge = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const _member = request.user.account.address;
-
-    await serviceInstance.getLoyaltyAppContract()
-      .then((instance) => {
-        return instance.getLoyaltyScore(_member)
-          .then((results: any) => {
-            response.status(200).send({
-              data: {
-                address: _member,
-                points: results
-              },
-              code: 200
-            });
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException('Blockchain Error'))
-          })
-      })
-      .catch((error) => {
-        next(new UnprocessableEntityException('Blockchain Error'))
-      })
-  }
-
-  private readBadgeByMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const customer: User = response.locals.customer;
-
-    await serviceInstance.getLoyaltyAppContract()
-      .then((instance) => {
-        return instance.getLoyaltyScore(customer.account.address)
-          .then((results: any) => {
-            response.status(200).send({
-              data: {
-                address: customer.account.address,
-                points: results
-              },
-              code: 200
-            });
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException('Blockchain Error'))
-          })
-      })
-      .catch((error) => {
-        next(new UnprocessableEntityException('Blockchain Error'))
-      })
-  }
-
   private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
     const params: string = request.params.offset;
@@ -259,43 +212,6 @@ class LoyaltyController implements Controller {
     });
   }
 
-  private partnersInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    await serviceInstance.getLoyaltyAppContract()
-      .then((instance) => {
-        return instance.partnersInfoLength()
-          .then((results: any) => {
-            response.status(200).send({
-              data: results,
-              code: 200
-            });
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException('Blockchain Error'))
-          })
-      })
-      .catch((error) => {
-        next(new UnprocessableEntityException('Blockchain Error'))
-      })
-  }
-
-  private transactionInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    await serviceInstance.getLoyaltyAppContract()
-      .then((instance) => {
-        return instance.transactionsInfoLength()
-          .then((results: any) => {
-            response.status(200).send({
-              data: results,
-              code: 200
-            });
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException('Blockchain Error'))
-          })
-      })
-      .catch((error) => {
-        next(new UnprocessableEntityException('Blockchain Error'))
-      })
-  }
 
   private activityToBagde(activity: Activity): Activity {
 
@@ -324,9 +240,9 @@ class LoyaltyController implements Controller {
     };
   }
 
-  private readLastYearActivityByMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private readActivityByMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
-    const customer: User = response.locals.customer;
+    const user: User = request.user;
 
     var _now: number = Date.now();
     var _date = new Date(_now);
@@ -339,7 +255,7 @@ class LoyaltyController implements Controller {
     [error, activity] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
-          { 'to_id': (customer._id).toString() },
+          { 'to_id': (user._id).toString() },
           { 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
           { 'type': "EarnPoints" }
         ]
@@ -376,7 +292,7 @@ class LoyaltyController implements Controller {
     next();
   }
 
-  private readLastYearActivity = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private readActivity = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
     const customer: User = response.locals.customer;
 
@@ -433,6 +349,94 @@ class LoyaltyController implements Controller {
     }
     next();
   }
+
+  private partnersInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    await serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.partnersInfoLength()
+          .then((results: any) => {
+            response.status(200).send({
+              data: results,
+              code: 200
+            });
+          })
+          .catch((error: Error) => {
+            next(new UnprocessableEntityException('Blockchain Error'))
+          })
+      })
+      .catch((error) => {
+        next(new UnprocessableEntityException('Blockchain Error'))
+      })
+  }
+
+  private transactionInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    await serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.transactionsInfoLength()
+          .then((results: any) => {
+            response.status(200).send({
+              data: results,
+              code: 200
+            });
+          })
+          .catch((error: Error) => {
+            next(new UnprocessableEntityException('Blockchain Error'))
+          })
+      })
+      .catch((error) => {
+        next(new UnprocessableEntityException('Blockchain Error'))
+      })
+  }
 }
 
 export default LoyaltyController;
+
+
+// private readBadge = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+//   const _member = request.user.account.address;
+
+//   await serviceInstance.getLoyaltyAppContract()
+//     .then((instance) => {
+//       return instance.getLoyaltyScore(_member)
+//         .then((results: any) => {
+//           response.status(200).send({
+//             data: {
+//               address: _member,
+//               points: results
+//             },
+//             code: 200
+//           });
+//         })
+//         .catch((error: Error) => {
+//           next(new UnprocessableEntityException('Blockchain Error'))
+//         })
+//     })
+//     .catch((error) => {
+//       next(new UnprocessableEntityException('Blockchain Error'))
+//     })
+// }
+
+// private readBadgeByMerchant = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+//   const customer: User = response.locals.customer;
+
+//   await serviceInstance.getLoyaltyAppContract()
+//     .then((instance) => {
+//       return instance.getLoyaltyScore(customer.account.address)
+//         .then((results: any) => {
+//           response.status(200).send({
+//             data: {
+//               address: customer.account.address,
+//               points: results
+//             },
+//             code: 200
+//           });
+//         })
+//         .catch((error: Error) => {
+//           next(new UnprocessableEntityException('Blockchain Error'))
+//         })
+//     })
+//     .catch((error) => {
+//       next(new UnprocessableEntityException('Blockchain Error'))
+//     })
+// }
+

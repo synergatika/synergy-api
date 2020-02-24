@@ -22,6 +22,7 @@ const microcreditSupportSchema = new mongoose.Schema({
 
 const microcreditCampaignSchema = new mongoose.Schema({
   title: String,
+  slug: String,
   terms: String,
   description: String,
   category: String,
@@ -53,6 +54,7 @@ const microcreditCampaignSchema = new mongoose.Schema({
 
 const offerSchema = new mongoose.Schema({
   title: String,
+  slug: String,
   description: String,
   imageURL: String,
   cost: Number,
@@ -61,6 +63,7 @@ const offerSchema = new mongoose.Schema({
 
 const postSchema = new mongoose.Schema({
   title: String,
+  slug: String,
   subtitle: String,
   content: String,
   imageURL: String,
@@ -73,6 +76,7 @@ const postSchema = new mongoose.Schema({
 
 const eventSchema = new mongoose.Schema({
   title: String,
+  slug: String,
   subtitle: String,
   description: String,
   imageURL: String,
@@ -114,6 +118,10 @@ const authSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema({
   name: String,
+  slug: {
+    type: String,
+    default: 'none'
+  },
   email: String,
   card: String,
   password: String,

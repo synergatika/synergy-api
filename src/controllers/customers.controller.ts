@@ -22,10 +22,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/profile'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
 });
@@ -83,14 +83,14 @@ class CustomersController implements Controller {
     [error, customer] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-        $set: {
-          name: data.name,
-          imageURL: (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL
-        }
-      }, {
-        "fields": { "name": 1, "imageURL": 1 },
-        "new": true
-      }).catch());
+      $set: {
+        name: data.name,
+        imageURL: (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL
+      }
+    }, {
+      "fields": { "name": 1, "imageURL": 1 },
+      "new": true
+    }).catch());
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
 
