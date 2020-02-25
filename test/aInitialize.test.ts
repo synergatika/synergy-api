@@ -495,7 +495,7 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('title', 'Hostess')
         .field('description', 'One Year Free Hosting')
         .field('cost', 2000)
-        .field('expiresAt', (Math.round(_newDate1 / 1000)).toString())
+        .field('expiresAt', _newDate1.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_a.jfif`),
           `offer_a.jfif`)
         // .send({
@@ -517,7 +517,7 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('title', 'WP Free')
         .field('description', 'Free Wordpress Website')
         .field('cost', 5000)
-        .field('expiresAt', (Math.round(_newDate2 / 1000)).toString())
+        .field('expiresAt', _newDate2.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_b.jfif`),
           `offer_b.jfif`)
         .end((err, res) => {
@@ -540,7 +540,7 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('title', 'Land Free')
         .field('description', 'Free land Analysis up to 500 square meters')
         .field('cost', 10000)
-        .field('expiresAt', (Math.round(_newDate1 / 1000)).toString())
+        .field('expiresAt', _newDate1.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_c.jfif`),
           `offer_c.jfif`)
         .end((err, res) => {
@@ -557,7 +557,7 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('title', 'More Land')
         .field('description', 'Free land Analysis up to 1500 square meters')
         .field('cost', 20000)
-        .field('expiresAt', (Math.round(_newDate2 / 1000)).toString())
+        .field('expiresAt', _newDate2.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_d.jfif`),
           `offer_d.jfif`)
         .end((err, res) => {
@@ -580,7 +580,7 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('title', 'Basket Time')
         .field('description', 'An Easter Wine Basket')
         .field('cost', 500)
-        .field('expiresAt', (Math.round(_newDate1 / 1000)).toString())
+        .field('expiresAt', _newDate1.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_b.jfif`),
           `offer_b.jfif`)
         .end((err, res) => {
@@ -597,7 +597,7 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('title', 'Apples')
         .field('description', 'One kilo of appless')
         .field('cost', 100)
-        .field('expiresAt', (Math.round(_newDate2 / 1000)).toString())
+        .field('expiresAt', _newDate2.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}offer_d.jfif`),
           `offer_d.jfif`)
         .end((err, res) => {
@@ -785,10 +785,10 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('minAllowed', '10')
         .field('maxAllowed', '20')
         .field('maxAmount', '1000')
-        .field('redeemStarts', (Math.round(_newDate1 / 1000)).toString())
-        .field('redeemEnds', (Math.round(_newDate4 / 1000)).toString())
-        .field('startsAt', (Math.round(_newDate1 / 1000)).toString())
-        .field('expiresAt', (Math.round(_newDate3 / 1000)).toString())
+        .field('redeemStarts', _newDate1.toString())
+        .field('redeemEnds', _newDate2.toString())
+        .field('startsAt', _newDate1.toString())
+        .field('expiresAt', _newDate3.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}microcredit_a.png`),
           `microcredit_a.png`)
         .end((err, res) => {
@@ -821,10 +821,10 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('minAllowed', '0')
         .field('maxAllowed', '0')
         .field('maxAmount', '1000')
-        .field('redeemStarts', (Math.round(_newDate2 / 1000)).toString())
-        .field('redeemEnds', (Math.round(_newDate3 / 1000)).toString())
-        .field('startsAt', (Math.round(_newDate1 / 1000)).toString())
-        .field('expiresAt', (Math.round(_newDate2 / 1000)).toString())
+        .field('redeemStarts', _newDate2.toString())
+        .field('redeemEnds', _newDate3.toString())
+        .field('startsAt', _newDate1.toString())
+        .field('expiresAt', _newDate2.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}microcredit_b.png`),
           `microcredit_b.png`)
         .end((err, res) => {
@@ -858,10 +858,10 @@ describe("Initialize DB & Drop past Collections", () => {
         .field('minAllowed', '5')
         .field('maxAllowed', '20')
         .field('maxAmount', '5000')
-        .field('redeemStarts', (Math.round(_newDate2 / 1000)).toString())
-        .field('redeemEnds', (Math.round(_newDate3 / 1000)).toString())
-        .field('startsAt', (Math.round(_newDate1 / 1000)).toString())
-        .field('expiresAt', (Math.round(_newDate2 / 1000)).toString())
+        .field('redeemStarts', _newDate2.toString())
+        .field('redeemEnds', _newDate3.toString())
+        .field('startsAt', _newDate1.toString())
+        .field('expiresAt', _newDate2.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}microcredit_c.jpg`),
           `microcredit_c.jpg`)
         .end((err, res) => {

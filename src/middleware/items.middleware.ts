@@ -46,15 +46,13 @@ async function offer(request: RequestWithUser, response: Response, next: NextFun
   }]).exec().catch());
 
   if (error) next(new UnprocessableEntityException('DB ERROR'));
-  else if (offers.length) {
+  else if (!offers.length) {
     response.status(200).send({
-      message: "offer_not_exists",
+      message: "Offer does not exist",
       code: 204
     })
   } else {
-    response.locals = {
-      offer: offers[0]
-    };
+    response.locals["offer"] = offers[0];
     next();
   }
 }
@@ -85,15 +83,13 @@ async function post(request: RequestWithUser, response: Response, next: NextFunc
   }]).exec().catch());
 
   if (error) next(new UnprocessableEntityException('DB ERROR'));
-  else if (posts.length) {
+  else if (!posts.length) {
     response.status(200).send({
-      message: "post_not_exists",
+      message: "Post does not exist",
       code: 204
     })
   } else {
-    response.locals = {
-      post: posts[0]
-    };
+    response.locals["post"] = posts[0];
     next();
   }
 }
@@ -124,15 +120,13 @@ async function event(request: RequestWithUser, response: Response, next: NextFun
   }]).exec().catch());
 
   if (error) next(new UnprocessableEntityException('DB ERROR'));
-  else if (events.length) {
+  else if (!events.length) {
     response.status(200).send({
-      message: "event_not_exists",
+      message: "Event does not exist",
       code: 204
     })
   } else {
-    response.locals = {
-      event: events[0]
-    };
+    response.locals["event"] = events[0];
     next();
   }
 }
@@ -160,8 +154,10 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
       campaign_imageURL: '$microcredit.imageURL',
       title: '$microcredit.title',
       address: '$microcredit.address',
+      status: '$microcredit.status',
 
       quantitative: '$microcredit.quantitative',
+      stepAmount: '$microcredit.stepAmount',
       maxAmount: '$microcredit.maxAmount',
       maxAllowed: '$microcredit.maxAllowed',
       minAllowed: '$microcredit.minAllowed',
@@ -172,17 +168,15 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
       expiresAt: '$microcredit.expiresAt'
     }
   }]).exec().catch());
-
+  console.log(campaigns)
   if (error) next(new UnprocessableEntityException('DB ERROR'));
-  else if (campaigns.length) {
+  else if (!campaigns.length) {
     response.status(200).send({
-      message: "campaign_not_exists",
+      message: "Campaign does not exist!",
       code: 204
     })
   } else {
-    response.locals = {
-      campaign: campaigns[0]
-    };
+    response.locals["campaign"] = campaigns[0];
     next();
   }
 }
@@ -191,9 +185,61 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
   //private paymentToSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
   const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
   const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+  const support_id: Support["support_id"] = request.body.support_id;
+
+  let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
+  [error, supports] = await to(userModel.aggregate([{
+    $unwind: '$microcredit'
+  }, {
+    $unwind: '$microcredit.supports'
+  }, {
+    $match: {
+      $and: [{
+        _id: new ObjectId(merchant_id)
+      }, {
+        'microcredit._id': new ObjectId(campaign_id)
+      }, {
+        'microcredit.supports._id': new ObjectId(support_id)
+      }]
+    }
+  }, {
+    $project: {
+      _id: false,
+      campaign_id: '$microcredit._id',
+      support_id: '$microcredit.supports._id',
+      backer_id: '$microcredit.supports.backer_id',
+      initialTokens: '$microcredit.supports.initialTokens',
+      redeemedTokens: '$microcredit.supports.redeemedTokens',
+      method: '$microcredit.supports.method',
+      status: '$microcredit.supports.status',
+      contractIndex: '$microcredit.supports.contractIndex',
+    }
+  }, {
+    $sort: {
+      support_id: -1
+    }
+  }
+  ]).exec().catch());
+
+  if (error) next(new UnprocessableEntityException('DB ERROR'));
+  else if (!supports.length) {
+    response.status(200).send({
+      message: "Support does not exist!",
+      code: 204
+    })
+  } else {
+    response.locals["support"] = supports[0];
+    next();
+  }
+}
+
+async function microcreditSupportsPayments(request: RequestWithUser, response: Response, next: NextFunction) {
+  //private paymentToSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+  const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
   const payment_id: string[] = request.body.payment_id;
 
-  let payments: any = [];
+  let payments: ObjectId[] = [];
   payment_id.forEach(p => {
     payments.push(new ObjectId(p));
   });
@@ -232,9 +278,9 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
   }
   ]).exec().catch());
   if (error) next(new UnprocessableEntityException('DB ERROR'));
-  else if (!supports) {
+  else if (!supports.length) {
     response.status(200).send({
-      message: "supports_not_exists",
+      message: "No Supports!",
       code: 204
     })
   } else {
@@ -248,5 +294,6 @@ export default {
   postMiddleware: post,
   eventMiddleware: event,
   microcreditCampaign: microcreditCampaign,
-  microcreditSupport: microcreditSupport
+  microcreditSupport: microcreditSupport,
+  microcreditSupportsPayments: microcreditSupportsPayments
 }

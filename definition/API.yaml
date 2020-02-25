@@ -73,7 +73,7 @@ paths:
           $ref: '#/components/responses/Not_Found'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-          
+
   /auth/register/merchant:
     post:
       summary: "Register/Invite a new merchant (only for merchants)"
@@ -225,7 +225,7 @@ paths:
           $ref: '#/components/responses/Not_Found'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-          
+
   /auth/check_identifier/{identifier}:
     get:
       summary: "Check if email or card is linked to any account"
@@ -387,13 +387,13 @@ paths:
   /loyalty/earn:
     post:
       summary: ""
-      operationId: earnToken
+      operationId: earnPoints
       security:
         - bearerAuth: []
       tags:
         - loyalty
       requestBody:
-        $ref: '#/components/requestBodies/EarnTokenRequestBody'
+        $ref: '#/components/requestBodies/LoyaltyEarnRequestBody'
       responses:
         '200':
           $ref: '#/components/responses/Updated'
@@ -411,13 +411,13 @@ paths:
   /loyalty/redeem:
     post:
       summary: ""
-      operationId: redeemToken
+      operationId: redeemPoints
       security:
         - bearerAuth: []
       tags:
         - loyalty
       requestBody:
-        $ref: '#/components/requestBodies/RedeemTokenRequestBody'
+        $ref: '#/components/requestBodies/LoyaltyRedeemRequestBody'
       responses:
         '200':
           $ref: '#/components/responses/Updated'
@@ -468,7 +468,7 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /loyalty/activity:
+  /loyalty/badge:
     get:
       summary: ""
       operationId: readActivity
@@ -484,7 +484,7 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /loyalty/activity/{_to}:
+  /loyalty/badge/{_to}:
     get:
       summary: ""
       operationId: readActivityByMerchant
@@ -503,7 +503,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-          
+
   /loyalty/transactions/{offset}:
     get:
       summary: ""
@@ -592,7 +592,7 @@ paths:
           $ref: '#/components/responses/Bad_Request'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-          
+
   /loyalty/offers/{merchant_id}/{offer_id}:
     put:
       summary: "Update an Offer"
@@ -742,7 +742,7 @@ paths:
           $ref: '#/components/responses/Bad_Request'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-  
+
   /posts:
     post:
       summary: "Create a new Post"
@@ -901,7 +901,7 @@ paths:
           $ref: '#/components/responses/Bad_Request'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-  
+
   /events:
     post:
       summary: "Create a new Event"
@@ -1026,7 +1026,83 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-          
+
+  # Paths: Microfund
+  /microcredit/earn/{_to}:
+    post:
+      summary: ""
+      operationId: earnTokensByMerchant
+      parameters:
+        - $ref: '#/components/parameters/_to'
+      security:
+        - bearerAuth: []
+      tags:
+        - microcredit
+      requestBody:
+        $ref: '#/components/requestBodies/MicrocreditEarnRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/Created'
+        '204':
+          $ref: '#/components/responses/No_User'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+  /microcredit/earn:
+    post:
+      summary: ""
+      operationId: earnTokens
+      security:
+        - bearerAuth: []
+      tags:
+        - microcredit
+      requestBody:
+        $ref: '#/components/requestBodies/MicrocreditEarnRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/Created'
+        '204':
+          $ref: '#/components/responses/No_User'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
+
+  /microcredit/redeem:
+    post:
+      summary: ""
+      operationId: redeemTokens
+      security:
+        - bearerAuth: []
+      tags:
+        - microcredit
+      requestBody:
+        $ref: '#/components/requestBodies/MicrocreditRedeemRequestBody'
+      responses:
+        '200':
+          $ref: '#/components/responses/Created'
+        '204':
+          $ref: '#/components/responses/No_User'
+        '400':
+          $ref: '#/components/responses/Bad_Request'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable_Entity'
+
   # Paths: Microfund - Campaigns
   /microcredit/campaigns/public/{offset}:
     get:
@@ -1041,7 +1117,7 @@ paths:
           $ref: '#/components/responses/Campaigns'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-          
+
   /microcredit/campaigns/private/{offset}:
     get:
       summary: "Read Private Campaigns from every store"
@@ -1060,7 +1136,7 @@ paths:
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
 
-  /microcredit/campaigns:          
+  /microcredit/campaigns:
     post:
       summary: "Create a new Microcredit Campaign"
       operationId: createMicrocreditCampaign
@@ -1096,7 +1172,7 @@ paths:
           $ref: '#/components/responses/Campaigns'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-          
+
   /microcredit/campaigns/private/{merchant_id_slug}/{offset}:
     get:
       summary: "Read Private Campaigns from every store"
@@ -1115,7 +1191,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-          
+
   /microcredit/campaigns/{merchant_id_slug}/{campaign_id_slug}:
     get:
       summary: "Read a Campaign"
@@ -1201,7 +1277,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '422':
           $ref: '#/components/responses/Unprocessable_Entity'
-  
+
   /microcredit/supports:
     get:
       summary: "Read a All Backer's Supports"
@@ -1220,7 +1296,7 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '422':
-          $ref: '#/components/responses/Unprocessable_Entity'      
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /microcredit/supports/{merchant_id}/{campaign_id}:
     get:
@@ -1241,7 +1317,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
-          $ref: '#/components/responses/Unprocessable_Entity'   
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /microcredit/supports/{merchant_id}/{campaign_id}/{_to}:
     get:
@@ -1257,13 +1333,13 @@ paths:
         - microcredit
       responses:
         '200':
-          $ref: '#/components/responses/Supports'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
-          $ref: '#/components/responses/Unprocessable_Entity'   
+          $ref: '#/components/responses/Unprocessable_Entity'
 
   /microcredit/supports/{merchant_id}/{campaign_id}/{payment}:
     put:
@@ -1279,14 +1355,14 @@ paths:
         - microcredit
       responses:
         '200':
-          $ref: '#/components/responses/Supports'
+          $ref: '#/components/responses/Updated'
         '400':
           $ref: '#/components/responses/Bad_Request'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
-          $ref: '#/components/responses/Unprocessable_Entity'   
-          
+          $ref: '#/components/responses/Unprocessable_Entity'
+
 components:
   parameters:
     identifier:
@@ -1479,7 +1555,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/CardDto'    
+            $ref: '#/components/schemas/CardDto'
     # Profile & Merchant
     CustomerRequestBody:
       description: ""
@@ -1499,25 +1575,25 @@ components:
             $ref: '#/components/schemas/MerchantDto'
 
     # Loyalty
-    EarnTokenRequestBody:
+    LoyaltyEarnRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
             oneOf:
-              - $ref: '#/components/schemas/EarnPointsEmailDto'
-              - $ref: '#/components/schemas/EarnPointsAddressDto'
+              - $ref: '#/components/schemas/LoyaltyEarnEmailDto'
+              - $ref: '#/components/schemas/LoyaltyEarnCardDto'
 
-    RedeemTokenRequestBody:
+    LoyaltyRedeemRequestBody:
       description: ""
       required: true
       content:
         application/json:
           schema:
             oneOf:
-              - $ref: '#/components/schemas/RedeemPointsEmailDto'
-              - $ref: '#/components/schemas/RedeemPointsAddressDto'
+              - $ref: '#/components/schemas/LoyaltyRedeemEmailDto'
+              - $ref: '#/components/schemas/LoyaltyRedeemCardDto'
 
     OfferRequestBody:
       description: ""
@@ -1543,8 +1619,28 @@ components:
         multipart/form-data: #application/json:
           schema:
             $ref: '#/components/schemas/EventDto'
-            
+
     # Microfund
+    MicrocreditEarnRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/MicrocreditEarnEmailDto'
+              - $ref: '#/components/schemas/MicrocreditEarnCardDto'
+
+    MicrocreditRedeemRequestBody:
+      description: ""
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/MicrocreditRedeemEmailDto'
+              - $ref: '#/components/schemas/MicrocreditRedeemCardDto'
+
     CampaignRequestBody:
       description: ""
       required: true
@@ -1608,7 +1704,7 @@ components:
                 default: 200
 
     # Loyalty - Offers
-    Offer: 
+    Offer:
       description: Expected response to a valid request
       content:
         application/json:
@@ -1729,7 +1825,7 @@ components:
             code: 200
 
     # Community - Posts
-    Post: 
+    Post:
       description: Expected response to a valid request
       content:
         application/json:
@@ -1781,7 +1877,7 @@ components:
             code: 200
 
     # Community - Events
-    Event: 
+    Event:
       description: Expected response to a valid request
       content:
         application/json:
@@ -1831,7 +1927,7 @@ components:
                 type: 'post'
                 content: "These are my thoughts"
             code: 200
-            
+
     # Community - PostsEvents
     PostsEvents:
       description: Expected response to a valid request
@@ -1862,7 +1958,7 @@ components:
                 type: 'post'
                 content: "These are my thoughts"
             code: 200
-            
+
     # Microfund - Campaigns
     Campaign:
       description: Expected response to a valid request
@@ -1888,8 +1984,8 @@ components:
               code:
                 type: number
                 default: 200
-    
-    Supports: 
+
+    Supports:
       description: Expected response to a valid request
       content:
         application/json:
@@ -1901,7 +1997,7 @@ components:
               code:
                 type: number
                 default: 200
-                
+
     # Create, Updated, Email Send, Error
     Created:
       description: Expected response to valid request
@@ -1929,8 +2025,8 @@ components:
             $ref: "#/components/schemas/LinkAction"
           example:
             code: 200
-            message: "email_no_card"      
-            
+            message: "email_no_card"
+
     Action_Required:
       description: Password or Email has not been verified
       content:
@@ -2081,7 +2177,7 @@ components:
           type: number
           format: float
         nationalBank:
-          type: string        
+          type: string
         pireausBank:
           type: string
         eurobank:
@@ -2091,7 +2187,7 @@ components:
         paypal:
           type: string
         timetable:
-          type: string    
+          type: string
     ChangePassInDto:
       type: object
       properties:
@@ -2133,14 +2229,14 @@ components:
       properties:
         token:
           type: string
-          format: email      
+          format: email
     CardDto:
       type: object
       properties:
         token:
           type: string
           format: uuid
-          
+
     # Request - Profile & Merchant
     CustomerDto:
       type: object
@@ -2183,7 +2279,7 @@ components:
           type: number
           format: float
         nationalBank:
-          type: string        
+          type: string
         pireausBank:
           type: string
         eurobank:
@@ -2193,7 +2289,7 @@ components:
         paypal:
           type: string
         timetable:
-          type: string        
+          type: string
       required:
         - name
         - imageURL
@@ -2203,7 +2299,7 @@ components:
         - city
         - phone
     # Request - Loyalty
-    EarnPointsEmailDto:
+    LoyaltyEarnEmailDto:
       type: object
       properties:
         password:
@@ -2215,7 +2311,7 @@ components:
         _amount:
           type: number
 
-    EarnPointsAddressDto:
+    LoyaltyEarnCardDto:
       type: object
       properties:
         password:
@@ -2223,11 +2319,11 @@ components:
           format: password
         _to:
           type: string
-          format: address
+          format: uuid
         _amount:
           type: number
 
-    RedeemPointsEmailDto:
+    LoyaltyRedeemEmailDto:
       type: object
       properties:
         password:
@@ -2239,7 +2335,7 @@ components:
         _points:
           type: number
 
-    RedeemPointsAddressDto:
+    LoyaltyRedeemCardDto:
       type: object
       properties:
         password:
@@ -2247,7 +2343,7 @@ components:
           format: password
         _to:
           type: string
-          format: address
+          format: uuid
         _points:
           type: number
 
@@ -2258,7 +2354,7 @@ components:
           type: string
           format: binary
         title:
-          type: string     
+          type: string
         description:
           type: string
         cost:
@@ -2278,7 +2374,7 @@ components:
           type: string
         content:
           type: string
-        access: 
+        access:
           type: string
           enum: [public, private, partner]
 
@@ -2294,16 +2390,70 @@ components:
           type: string
         description:
           type: string
-        access: 
+        access:
           type: string
           enum: [public, private, partner]
         dateTime:
           type: number
         location:
           type: string
-          
+
 
     # Request - Microfund
+    MicrocreditEarnEmailDto:
+      type: object
+      properties:
+        _amount:
+          type: string
+          format: password
+        method:
+          type: string
+          enum: [nationalBank, pireausBank, eurobank, alphaBank, paypal, store]
+        paid:
+          type: boolean
+
+    MicrocreditEarnCardDto:
+      type: object
+      properties:
+        _amount:
+          type: string
+          format: password
+        method:
+          type: string
+          enum: [nationalBank, pireausBank, eurobank, alphaBank, paypal, store]
+        paid:
+          type: boolean
+
+    MicrocreditRedeemEmailDto:
+      type: object
+      properties:
+        password:
+          type: string
+          format: password
+        _to:
+          type: string
+          format: email
+        _tokens:
+          type: number
+        support_id:
+          type: string
+          format: uuid
+
+    MicrocreditRedeemCardDto:
+      type: object
+      properties:
+        password:
+          type: string
+          format: password
+        _to:
+          type: string
+          format: uuid
+        _tokens:
+          type: number
+        support_id:
+          type: string
+          format: uuid
+
     CampaignDto:
       type: object
       properties:
@@ -2317,15 +2467,17 @@ components:
         access:
           type: string
           enum: [public, private, partners]
-        descritpion:
+        description:
           type: string
         category:
           type: string
         quantitative:
           type: boolean
+        stepAmount:
+          type: number
         minAllowed:
           type: number
-        maxAllowed: 
+        maxAllowed:
           type: number
         maxAmount:
           type: number
@@ -2335,7 +2487,7 @@ components:
           type: number
         startsAt:
           type: number
-        expiresAt: 
+        expiresAt:
           type: number
 
     # Response - Auth
@@ -2546,7 +2698,7 @@ components:
         merchant_imageURL:
           type: string
           format: uri
-        
+
         post_id:
           type: string
           format: uuid
@@ -2561,7 +2713,7 @@ components:
         subtitle:
           type: string
         content:
-          type: string                 
+          type: string
         access:
           type: string
           enum: [public, private, partners]
@@ -2586,7 +2738,7 @@ components:
         merchant_imageURL:
           type: string
           format: uri
-        
+
         event_id:
           type: string
           format: uuid
@@ -2601,7 +2753,7 @@ components:
         subtitle:
           type: string
         content:
-          type: string                 
+          type: string
         access:
           type: string
           enum: [public, private, partners]
@@ -2615,7 +2767,7 @@ components:
     Events:
       type: array
       items:
-        $ref: '#/components/schemas/Event'        
+        $ref: '#/components/schemas/Event'
 
     PostEvent:
       type: object
@@ -2630,7 +2782,7 @@ components:
         merchant_imageURL:
           type: string
           format: uri
-        
+
         post_event_id:
           type: string
           format: uuid
@@ -2645,7 +2797,7 @@ components:
         subtitle:
           type: string
         content:
-          type: string                 
+          type: string
         access:
           type: string
           enum: [public, private, partners]
@@ -2659,23 +2811,23 @@ components:
     PostsEvents:
       type: array
       items:
-        $ref: '#/components/schemas/PostEvent'  
+        $ref: '#/components/schemas/PostEvent'
 
     # Response - Microfund Campaigns
     Campaign:
       type: object
       properties:
-        merchant_id: 
+        merchant_id:
           type: string
           format: uuid
-        merchant_name: 
+        merchant_name:
           type: string
         merchant_slug:
           type: string
-        merchant_imageURL: 
+        merchant_imageURL:
           type: string
           format: uri
-        merchant_payment: 
+        merchant_payment:
           type: object
           properties:
             nationalBank:
@@ -2687,47 +2839,47 @@ components:
             alphaBank:
               type: string
             paypal:
-              type: string              
-        campaign_id: 
+              type: string
+        campaign_id:
           type: string
           format: uuid
-        campaign_slug: 
+        campaign_slug:
           type: string
           format: uuid
-        campaign_imageURL: 
+        campaign_imageURL:
           type: string
           format: uri
-        title: 
+        title:
           type: string
-        terms: 
+        terms:
           type: string
-        description: 
+        description:
           type: string
-        category: 
+        category:
           type: string
-        access: 
+        access:
           type: string
           enum: [public, private, partners]
-        quantitative: 
+        quantitative:
           type: boolean
         stepAmount:
           type: number
-        minAllowed: 
+        minAllowed:
           type: number
-        maxAllowed: 
+        maxAllowed:
           type: number
-        maxAmount: 
+        maxAmount:
           type: number
-        redeemStarts: 
-          type: number
-          format: Date
-        redeemEnds: 
+        redeemStarts:
           type: number
           format: Date
-        startsAt: 
+        redeemEnds:
           type: number
           format: Date
-        expiresAt: 
+        startsAt:
+          type: number
+          format: Date
+        expiresAt:
           type: number
           format: Date
         confirmedTokens:
@@ -2744,7 +2896,7 @@ components:
               type: number
             redeemedTokens:
               type: number
-        createdAt: 
+        createdAt:
           type: string
           format: Date
 
@@ -2762,20 +2914,20 @@ components:
         campaign_id:
           type: string
           format: uuid
-        support_id: 
+        support_id:
           type: string
           format: uuid
-        backer_id: 
+        backer_id:
           type: string
           format: uuid
-        initialTokens: 
+        initialTokens:
           type: number
-        redeemedTokens: 
+        redeemedTokens:
           type: number
-        method: 
+        method:
           type: string
           enum: [nationalBank, pireausBank, eurobank, alphaBank, paypal]
-        status: 
+        status:
           type: string
           enum: [order, confirmation]
 
@@ -2783,7 +2935,7 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/Support'
-        
+
     # Response - Typical Responses (Created, Updated, Email Sent, Action Required, Error)
     Created:
       type: object
@@ -2852,7 +3004,7 @@ components:
           format: int32
         message:
           type: string
-          
+
     Action_Required:
       type: object
       required:

@@ -87,8 +87,8 @@ export class BlockchainService {
       projectExpiredAt,
       projectAvailableAt,
       projectStartedAt,
-      //  projectFinishedAt,
-      projectUseToken, this.address
+      projectFinishedAt,
+      !projectUseToken, this.address
     );
   }
 

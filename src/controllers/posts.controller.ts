@@ -29,10 +29,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function (req: RequestWithUser, file, cb) {
+  destination: function(req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/items'));
   },
-  filename: function (req: RequestWithUser, file, cb) {
+  filename: function(req: RequestWithUser, file, cb) {
 
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
@@ -70,7 +70,7 @@ class PostsController implements Controller {
     const splittedParams: string[] = params.split("-");
 
     const now = new Date();
-    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+    const seconds = parseInt(now.getTime().toString());
 
     return {
       limit: (parseInt(splittedParams[0]) === 0) ? Number.MAX_SAFE_INTEGER : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])) + parseInt(splittedParams[0]),
@@ -197,17 +197,17 @@ class PostsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-      $push: {
-        posts: {
-          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-          "title": data.title,
-          "subtitle": data.subtitle,
-          "slug": await this.latinize(request, response, next),
-          "content": data.content,
-          "access": data.access
+        $push: {
+          posts: {
+            "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
+            "title": data.title,
+            "subtitle": data.subtitle,
+            "slug": await this.latinize(request, response, next),
+            "content": data.content,
+            "access": data.access
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(201).send({
       message: "Success! A new Post has been created!",
@@ -406,14 +406,14 @@ class PostsController implements Controller {
         _id: merchant_id,
         'posts._id': post_id
       }, {
-      '$set': {
-        'posts.$._id': post_id,
-        'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentPost.post_imageURL,
-        'posts.$.title': data.title,
-        'posts.$.content': data.content,
-        'posts.$.access': data.access,
-      }
-    }).catch());
+        '$set': {
+          'posts.$._id': post_id,
+          'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentPost.post_imageURL,
+          'posts.$.title': data.title,
+          'posts.$.content': data.content,
+          'posts.$.access': data.access,
+        }
+      }).catch());
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -436,12 +436,12 @@ class PostsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: merchant_id
     }, {
-      $pull: {
-        posts: {
-          _id: post_id
+        $pull: {
+          posts: {
+            _id: post_id
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Post " + post_id + " has been deleted!",

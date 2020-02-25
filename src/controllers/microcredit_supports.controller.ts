@@ -48,13 +48,13 @@ class MicrocreditSupportsController implements Controller {
     this.router.get(`${this.path}/`, authMiddleware, this.readAllBackerSupports);
     this.router.get(`${this.path}/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), this.readAllSupportsByCampaign);
     this.router.get(`${this.path}/:merchant_id/:campaign_id/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBackerSupportsByCampaign);
-    this.router.put(`${this.path}/:merchant_id/:campaign_id/:payment`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), validationParamsMiddleware(PaymentDto), this.confirmSupportPayment, itemsMiddleware.microcreditCampaign, itemsMiddleware.microcreditSupport, this.registerReceivedFund, this.registerRevertFund);
+    this.router.put(`${this.path}/:merchant_id/:campaign_id/:payment`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), validationParamsMiddleware(PaymentDto), this.confirmSupportPayment, itemsMiddleware.microcreditCampaign, itemsMiddleware.microcreditSupportsPayments, this.registerReceivedFund, this.registerRevertFund);
   }
 
   private readAllBackerSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
 
-    let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
+    let error: Error, supports: any[]; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, supports] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
@@ -67,13 +67,39 @@ class MicrocreditSupportsController implements Controller {
       $project: {
         _id: false,
         merchant_id: '$_id',
+        merchant_slug: '$slug',
+        merchant_name: '$name',
+        merchant_imageURL: '$imageURL',
+        merchant_payment: '$payment',
+
         campaign_id: '$microcredit._id',
+        campaign_slug: '$microcredit.slug',
+        campaign_imageURL: '$microcredit.imageURL',
+        title: '$microcredit.title',
+        terms: '$microcredit.title',
+        description: '$microcredit.title',
+        category: '$microcredit.category',
+        access: '$microcredit.access',
+
+        quantitative: '$microcredit.quantitative',
+        stepAmount: '$microcredit.stepAmount',
+        minAllowed: '$microcredit.minAllowed',
+        maxAllowed: '$microcredit.maxAllowed',
+        maxAmount: '$microcredit.maxAmount',
+
+        redeemStarts: '$microcredit.redeemStarts',
+        redeemEnds: '$microcredit.redeemEnds',
+        startsAt: '$microcredit.startsAt',
+        expiresAt: '$microcredit.expiresAt',
+
+        createdAt: '$microcredit.createdAt',
+
         support_id: '$microcredit.supports._id',
         backer_id: '$microcredit.supports.backer_id',
         initialTokens: '$microcredit.supports.initialTokens',
         redeemedTokens: '$microcredit.supports.redeemedTokens',
         method: '$microcredit.supports.method',
-        status: '$microcredit.supports.status',
+        status: '$microcredit.supports.status'
       }
     }, {
       $sort: {
@@ -187,10 +213,10 @@ class MicrocreditSupportsController implements Controller {
       'microcredit._id': campaign_id,
       'microcredit.supports._id': { $in: payment_id }
     }, {
-      $set: {
-        'microcredit.$.supports.$[d].status': status
-      }
-    }, { "arrayFilters": [{ "d._id": { $in: payment_id } }] }).catch());
+        $set: {
+          'microcredit.$.supports.$[d].status': status
+        }
+      }, { "arrayFilters": [{ "d._id": { $in: payment_id } }] }).catch());
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     next();
@@ -210,7 +236,7 @@ class MicrocreditSupportsController implements Controller {
               .then(async (result: any) => {
                 await this.transaction.create({
                   ...result,
-                  data: { user_id: s.backer_id, campaign_id: campaign.campaign_id, support_id: s.support_id },
+                  data: { address: campaign.address, user_id: s.backer_id, campaign_id: campaign.campaign_id, support_id: s.support_id, contactIndex: s.contractIndex },
                   type: 'ReceiveFund'
                 });
                 if (index === (supports.length - 1)) {
@@ -246,7 +272,7 @@ class MicrocreditSupportsController implements Controller {
             .then(async (result: any) => {
               await this.transaction.create({
                 ...result,
-                data: { user_id: s.backer_id, campaign_id: campaign.campaign_id, support_id: s.support_id },
+                data: { user_id: s.backer_id, campaign_id: campaign.campaign_id, support_id: s.support_id, contractIndex: s.contractIndex },
                 type: 'RevertFund'
               });
               if (index === (supports.length - 1)) {

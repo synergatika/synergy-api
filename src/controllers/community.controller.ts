@@ -48,7 +48,7 @@ class CommunityController implements Controller {
     const splittedParams: string[] = params.split("-");
 
     const now = new Date();
-    const seconds = parseInt((Math.round(now.getTime() / 1000)).toString());
+    const seconds = parseInt(now.getTime().toString());
 
     return {
       index: parseInt(splittedParams[0]) * parseInt(splittedParams[1]),
@@ -485,4 +485,3 @@ export default CommunityController;
 
   // private emailSender = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
   // }
-

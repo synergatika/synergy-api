@@ -46,8 +46,8 @@ class LoyaltyController implements Controller {
     //this.router.get(`${this.path}/badge/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBadgeByMerchant);
     this.router.get(`${this.path}/transactions/:offset?`, authMiddleware, this.readTransactions);
 
-    this.router.get(`${this.path}/activity`, authMiddleware, this.readActivity);
-    this.router.get(`${this.path}/activity/:_to`, customerMiddleware, this.readActivityByMerchant);
+    this.router.get(`${this.path}/badge`, authMiddleware, this.readActivity);
+    this.router.get(`${this.path}/badge/:_to`, customerMiddleware, this.readActivityByMerchant);
 
 
     this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
@@ -219,19 +219,23 @@ class LoyaltyController implements Controller {
     const badge_2: string[] = (`${process.env.BADGE2}`).split("-");
     const badge_3: string[] = (`${process.env.BADGE3}`).split("-");
 
-    let badge: string, rate: number;
+    let badge: string, rate: number, slug: number;
     if (activity.amount > parseInt(badge_3[0]) && activity.stores > parseInt(badge_3[1]) && activity.transactions > parseInt(badge_3[2])) {
+      slug = 3;
       rate = parseInt(badge_3[3]);
       badge = badge_3[4];
     } else if (activity.amount > parseInt(badge_2[0]) && activity.stores > parseInt(badge_2[1]) && activity.transactions > parseInt(badge_2[2])) {
+      slug = 2;
       rate = parseInt(badge_2[3]);
       badge = badge_2[4];
     } else {
+      slug = 1;
       rate = parseInt(badge_1[3]);
       badge = badge_1[4];
     }
 
     return {
+      slug: slug,
       amount: activity.amount,
       stores: activity.stores,
       transactions: activity.transactions,
@@ -282,7 +286,8 @@ class LoyaltyController implements Controller {
       response.locals["activity"] = this.activityToBagde(activity[0]);
     } else {
       response.locals["activity"] = {
-        points: 0,
+        slug: 1,
+        amount: 0,
         stores: 0,
         transactions: 0,
         rate: 2,
@@ -294,7 +299,7 @@ class LoyaltyController implements Controller {
 
   private readActivity = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
-    const customer: User = response.locals.customer;
+    const user: User = request.user;
 
     var _now: number = Date.now();
     var _date = new Date(_now);
@@ -307,7 +312,7 @@ class LoyaltyController implements Controller {
     [error, activity] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
-          { 'to_id': (customer._id).toString() },
+          { 'to_id': (user._id).toString() },
           { 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
           { 'type': "EarnPoints" }
         ]
@@ -338,7 +343,8 @@ class LoyaltyController implements Controller {
     } else {
       response.status(200).send({
         data: {
-          points: 0,
+          slug: 1,
+          amount: 0,
           stores: 0,
           transactions: 0,
           rate: 2,
@@ -439,4 +445,3 @@ export default LoyaltyController;
 //       next(new UnprocessableEntityException('Blockchain Error'))
 //     })
 // }
-

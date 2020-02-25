@@ -322,24 +322,24 @@ describe("Loyalty (/loyalty)", () => {
           done();
         });
     });
-    describe("Points - From DefaultMerchant_2 to NewUser", () => {
-      it("1. should earn points - 201 Created", (done) => {
-        chai.request(`${process.env.API_URL}`)
-          .post("loyalty/earn")
-          .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
-          .send({
-            password: defaultMerchant_2.password,
-            _to: newUser.email,
-            _amount: 96
-          })
-          .end((err, res) => {
-            res.should.have.status(201);
-            res.body.should.be.a('object');
-            res.body.should.have.property('data');
-            res.body.data.should.have.property('receipt');
-            done();
-          });
-      });
+  });
+  describe("Points - From DefaultMerchant_2 to NewUser", () => {
+    it("1. should earn points - 201 Created", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("loyalty/earn")
+        .set('Authorization', 'Bearer ' + defaultMerchant_2.authToken)
+        .send({
+          password: defaultMerchant_2.password,
+          _to: newUser.email,
+          _amount: 96
+        })
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          res.body.data.should.have.property('receipt');
+          done();
+        });
     });
   });
 });

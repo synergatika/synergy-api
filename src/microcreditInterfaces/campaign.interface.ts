@@ -16,6 +16,7 @@ interface Campaign {
   description: string;
   category: string;
   access: string;
+  status: string;
 
   quantitative: boolean;
   stepAmount: number;

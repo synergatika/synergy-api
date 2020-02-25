@@ -3,9 +3,11 @@ import MicrocreditTransaction from '../microcreditInterfaces/transaction.interfa
 import { object, string } from 'prop-types';
 
 const dataSchema = new mongoose.Schema({
+  address: String,
   user_id: String,
   campaign_id: String,
   support_id: String,
+  contractIndex: Number,
 }, { _id: false });
 
 const logsSchema = new mongoose.Schema({
