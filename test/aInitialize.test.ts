@@ -5,12 +5,16 @@ import chaiAsPromised from 'chai-as-promised';
 chai.should();
 chai.use(require('chai-as-promised'));
 chai.use(require('chai-http'));
+
 import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
 validateEnv();
+
 import userModel from '../src/models/user.model';
 import registrationTransactionModel from '../src/models/registration.transaction.model';
 import loyaltyTransactionModel from '../src/models/loyalty.transaction.model';
+import microcreditTransactionModel from '../src/models/microcredit.transaction.model';
+
 import { imagesLocation, defaultAdmin, defaultMerchant_1, defaultMerchant_2, defaultMerchant_3 } from './_structs.test';
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -69,6 +73,9 @@ describe("Initialize DB & Drop past Collections", () => {
   });
   before(() => {
     return loyaltyTransactionModel.deleteMany({});
+  });
+  before(() => {
+    return microcreditTransactionModel.deleteMany({});
   });
   before(() => {
     return userModel.deleteMany({});

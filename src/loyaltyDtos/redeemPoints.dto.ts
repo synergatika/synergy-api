@@ -13,7 +13,6 @@ class RedeemPointsDto {
   @IsString()
   @IsOptional()
   public offer_id: string;
-
 }
 
 export default RedeemPointsDto;

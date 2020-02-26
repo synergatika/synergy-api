@@ -1,6 +1,15 @@
 interface MicrocreditTransaction {
   _id: string;
 
+  data: {
+    address: string;
+    user_id: string;
+    campaign_id: string;
+    support_id: string;
+    contractIndex: number;
+    tokens: number;
+  };
+
   tx: string;
   receipt: {
     transactionHash: string;

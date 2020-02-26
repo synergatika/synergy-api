@@ -4,6 +4,7 @@ import { object } from 'prop-types';
 
 const microcreditSupportSchema = new mongoose.Schema({
   backer_id: String,
+  payment_id: String,
   initialTokens: Number,
   redeemedTokens: Number,
   status: {

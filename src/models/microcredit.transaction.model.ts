@@ -1,13 +1,18 @@
 import * as mongoose from 'mongoose';
 import MicrocreditTransaction from '../microcreditInterfaces/transaction.interface';
-import { object, string } from 'prop-types';
 
 const dataSchema = new mongoose.Schema({
-  address: String,
-  user_id: String,
   campaign_id: String,
+  address: String,
   support_id: String,
-  contractIndex: Number,
+  contractIndex: {
+    type: Number,
+    default: -1
+  },
+  tokens: {
+    type: Number,
+    default: -1
+  },
 }, { _id: false });
 
 const logsSchema = new mongoose.Schema({
@@ -44,6 +49,11 @@ const receiptSchema = new mongoose.Schema({
 
 const microcreditTransactionSchema = new mongoose.Schema({
 
+  merchant_id: String,
+  customer_id: String,
+
+  data: dataSchema,
+
   tx: String,
   receipt: receiptSchema,
   logs: [logsSchema],
@@ -51,10 +61,9 @@ const microcreditTransactionSchema = new mongoose.Schema({
     type: String,
     enum: ['PromiseFund', 'ReceiveFund', 'RevertFund', 'SpendFund'],
   },
-  data: dataSchema
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const microcreditTransactionModel = mongoose.model<MicrocreditTransaction & mongoose.Document>('MicrocreditTransaction', microcreditTransactionSchema);
 export default microcreditTransactionModel;

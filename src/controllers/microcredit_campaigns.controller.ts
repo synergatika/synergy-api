@@ -33,10 +33,10 @@ const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.j
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/items'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
 });
@@ -239,29 +239,29 @@ class MicrocreditCampaignsController implements Controller {
     [error, results] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-        $push: {
-          microcredit: {
-            "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-            "title": data.title,
-            "slug": await this.latinize(request, response, next),
-            "terms": data.terms,
-            "access": data.access,
-            "description": data.description,
-            "category": data.category,
-            "quantitative": data.quantitative,
-            "stepAmount": data.stepAmount,
-            "minAllowed": data.minAllowed,
-            "maxAllowed": data.maxAllowed,
-            "maxAmount": data.maxAmount,
-            "redeemStarts": data.redeemStarts,
-            "redeemEnds": data.redeemEnds,
-            "startsAt": data.startsAt,
-            "expiresAt": data.expiresAt,
-            "address": '',
-            "transactionHash": ''
-          }
+      $push: {
+        microcredit: {
+          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
+          "title": data.title,
+          "slug": await this.latinize(request, response, next),
+          "terms": data.terms,
+          "access": data.access,
+          "description": data.description,
+          "category": data.category,
+          "quantitative": data.quantitative,
+          "stepAmount": data.stepAmount,
+          "minAllowed": data.minAllowed,
+          "maxAllowed": data.maxAllowed,
+          "maxAmount": data.maxAmount,
+          "redeemStarts": data.redeemStarts,
+          "redeemEnds": data.redeemEnds,
+          "startsAt": data.startsAt,
+          "expiresAt": data.expiresAt,
+          "address": '',
+          "transactionHash": ''
         }
-      }, { new: true }).catch());
+      }
+    }, { new: true }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
 
     const currentCampaign = results.microcredit[results["microcredit"].length - 1];
@@ -297,12 +297,12 @@ class MicrocreditCampaignsController implements Controller {
           _id: user._id,
           'microcredit._id': currentCampaign.campaign_id
         }, {
-            '$set': {
-              'microcredit.$.status': 'published', // published
-              'microcredit.$.address': result.address,
-              'microcredit.$.transactionHash': result.transactionHash,
-            }
-          });
+          '$set': {
+            'microcredit.$.status': 'published', // published
+            'microcredit.$.address': result.address,
+            'microcredit.$.transactionHash': result.transactionHash,
+          }
+        });
 
         response.status(201).send({
           message: "Success! Microcredit Campaign with ID: " + currentCampaign.campaign_id + " has been published!",
@@ -317,9 +317,10 @@ class MicrocreditCampaignsController implements Controller {
   private readPrivateCampaignsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
-    const status = (request.user._id === merchant_id) ? 'draft' : 'random';
+    const status = (request.user._id == merchant_id) ? 'draft' : 'random';
     const user: User = request.user;
-
+    console.log(user)
+    console.log(merchant_id);
     const params: string = request.params.offset;
     const offset: {
       limit: number, skip: number, greater: number
@@ -413,12 +414,12 @@ class MicrocreditCampaignsController implements Controller {
     const matchArrayID = [
       { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
       { 'microcredit.access': 'public' },
-      { 'microcredit.status': 'draft' } //published
+      { 'microcredit.status': 'published' }
     ];
     const matchArraySlug = [
       { slug: merchant_id },
       { 'microcredit.access': 'public' },
-      { 'microcredit.status': 'draft' }//published
+      { 'microcredit.status': 'published' }
     ];
 
     let error: Error, campaigns: Campaign[];
@@ -580,25 +581,25 @@ class MicrocreditCampaignsController implements Controller {
         _id: merchant_id,
         'microcredit._id': campaign_id
       }, {
-        '$set': {
-          'microcredit.$._id': campaign_id,
-          'microcredit.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentCampaign.campaign_imageURL,
-          'microcredit.$.title': data.title,
-          'microcredit.$.terms': data.terms,
-          'microcredit.$.access': data.access,
-          'microcredit.$.description': data.description,
-          'microcredit.$.category': data.category,
-          'microcredit.$.quantitative': data.quantitative,
-          'microcredit.$.stepAmount': data.stepAmount,
-          'microcredit.$.minAllowed': data.minAllowed,
-          'microcredit.$.maxAllowed': data.maxAllowed,
-          'microcredit.$.maxAmount': data.maxAmount,
-          'microcredit.$.redeemStarts': data.redeemStarts,
-          'microcredit.$.redeemEnds': data.redeemEnds,
-          'microcredit.$.startsAt': data.startsAt,
-          'microcredit.$.expiresAt': data.expiresAt,
-        }
-      }).catch());
+      '$set': {
+        'microcredit.$._id': campaign_id,
+        'microcredit.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentCampaign.campaign_imageURL,
+        'microcredit.$.title': data.title,
+        'microcredit.$.terms': data.terms,
+        'microcredit.$.access': data.access,
+        'microcredit.$.description': data.description,
+        'microcredit.$.category': data.category,
+        'microcredit.$.quantitative': data.quantitative,
+        'microcredit.$.stepAmount': data.stepAmount,
+        'microcredit.$.minAllowed': data.minAllowed,
+        'microcredit.$.maxAllowed': data.maxAllowed,
+        'microcredit.$.maxAmount': data.maxAmount,
+        'microcredit.$.redeemStarts': data.redeemStarts,
+        'microcredit.$.redeemEnds': data.redeemEnds,
+        'microcredit.$.startsAt': data.startsAt,
+        'microcredit.$.expiresAt': data.expiresAt,
+      }
+    }).catch());
 
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -621,12 +622,12 @@ class MicrocreditCampaignsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: merchant_id
     }, {
-        $pull: {
-          microcredit: {
-            _id: campaign_id
-          }
+      $pull: {
+        microcredit: {
+          _id: campaign_id
         }
-      }).catch());
+      }
+    }).catch());
     if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Microcredit Campaign with ID: " + campaign_id + " has been deleted!",

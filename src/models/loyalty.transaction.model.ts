@@ -3,7 +3,17 @@ import LoyaltyTransaction from '../loyaltyInterfaces/transaction.interface';
 import { object, string } from 'prop-types';
 
 const dataSchema = new mongoose.Schema({
-
+  merchant_name: String,
+  merchant_email: String,
+  points: Number,
+  amount: {
+    type: Number,
+    default: -1
+  },
+  offer_id: {
+    type: String,
+    default: '-1'
+  }
 }, { _id: false });
 
 const infoSchema = new mongoose.Schema({
@@ -35,19 +45,22 @@ const receiptSchema = new mongoose.Schema({
 
 const loyaltyTransactionSchema = new mongoose.Schema({
 
+  merchant_id: String,
+  customer_id: String,
+
   from_id: String,
   to_id: String,
 
   info: infoSchema,
+  data: dataSchema,
 
   tx: String,
   receipt: receiptSchema,
   logs: Array,
   type: {
     type: String,
-    enum: ['EarnPoints', 'RedeemPoints'],
+    enum: ['EarnPoints', 'RedeemPoints', 'RedeemPointsOffer'],
   },
-  data: dataSchema
 }, {
   timestamps: true
 });

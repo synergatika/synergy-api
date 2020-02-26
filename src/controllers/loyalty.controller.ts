@@ -72,17 +72,24 @@ class LoyaltyController implements Controller {
   private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: EarnPointsDto = request.body;
     const _amount = Math.round(data._amount);
+    const _points: number = _amount * response.locals.activity.rate;
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
     const customer = response.locals.customer;
-    const _points: number = _amount * response.locals.activity.rate;
-    console.log(customer._id, typeof (customer._id))
-    console.log(((customer._id).toString()).substring(0, 4) + "****************" + ((customer._id).toString()).substring(20, 24));
+    //  console.log(customer._id, typeof (customer._id))
+    //  console.log(((customer._id).toString()).substring(0, 4) + "****************" + ((customer._id).toString()).substring(20, 24));
     await serviceInstance.getLoyaltyAppContract()
       .then((instance) => {
         return instance.earnPoints(_points, customer.account.address, _partner, serviceInstance.address)
           .then(async (result: any) => {
             await this.transaction.create({
               ...result,
+
+              merchant_id: request.user._id, customer_id: customer._id,
+              data: {
+                merchant_name: request.user.name, merchant_email: request.user.email,
+                points: _points, amount: _amount
+              },
+
               from_id: request.user._id, to_id: customer._id,
               info: {
                 from_name: request.user.name, from_email: request.user.email,
@@ -106,22 +113,48 @@ class LoyaltyController implements Controller {
 
   private redeemTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RedeemPointsDto = request.body;
-    data._points = Math.round(data._points);
+    const _points = Math.round(data._points);
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
     const customer = response.locals.customer;
 
     await serviceInstance.getLoyaltyAppContract()
       .then((instance) => {
-        return instance.usePoints(data._points, customer.account.address, _partner, serviceInstance.address)
+        return instance.usePoints(_points, customer.account.address, _partner, serviceInstance.address)
           .then(async (result: any) => {
-            await this.transaction.create({
-              ...result,
-              from_id: request.user._id, to_id: customer._id,
-              info: {
-                from_name: request.user.name, from_email: request.user.email,
-                to_email: customer.email, points: data._points, offer_id: data.offer_id
-              }, type: "RedeemPoints"
-            });
+
+            if (data.offer_id) {
+              await this.transaction.create({
+                ...result,
+
+                merchant_id: request.user._id, customer_id: customer._id,
+                data: {
+                  merchant_name: request.user.name, merchant_email: request.user.email,
+                  points: _points, offer_id: data.offer_id
+                },
+
+                from_id: request.user._id, to_id: customer._id,
+                info: {
+                  from_name: request.user.name, from_email: request.user.email,
+                  to_email: customer.email, points: _points, offer_id: data.offer_id
+                }, type: "RedeemPoints"
+              });
+            } else {
+              await this.transaction.create({
+                ...result,
+
+                merchant_id: request.user._id, customer_id: customer._id,
+                data: {
+                  merchant_name: request.user.name, merchant_email: request.user.email,
+                  points: data._points, offer_id: data.offer_id
+                },
+
+                from_id: request.user._id, to_id: customer._id,
+                info: {
+                  from_name: request.user.name, from_email: request.user.email,
+                  to_email: customer.email, points: data._points, offer_id: data.offer_id
+                }, type: "RedeemPointsOffer"
+              });
+            }
             response.status(201).send({
               data: result,
               code: 201

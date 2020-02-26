@@ -30,10 +30,6 @@ import transactionModel from '../models/microcredit.transaction.model';
 // Path
 var path = require('path');
 
-// Blockchain Service
-import { BlockchainService } from '../utils/blockchainService';
-const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
-
 class MicrocreditSupportsController implements Controller {
   public path = '/microcredit/supports';
   public router = express.Router();
@@ -48,7 +44,6 @@ class MicrocreditSupportsController implements Controller {
     this.router.get(`${this.path}/`, authMiddleware, this.readAllBackerSupports);
     this.router.get(`${this.path}/:merchant_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), this.readAllSupportsByCampaign);
     this.router.get(`${this.path}/:merchant_id/:campaign_id/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), validationParamsMiddleware(IdentifierDto), customerMiddleware, this.readBackerSupportsByCampaign);
-    this.router.put(`${this.path}/:merchant_id/:campaign_id/:payment`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), validationParamsMiddleware(PaymentDto), this.confirmSupportPayment, itemsMiddleware.microcreditCampaign, itemsMiddleware.microcreditSupportsPayments, this.registerReceivedFund, this.registerRevertFund);
   }
 
   private readAllBackerSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -142,6 +137,7 @@ class MicrocreditSupportsController implements Controller {
         redeemedTokens: '$microcredit.supports.redeemedTokens',
         method: '$microcredit.supports.method',
         status: '$microcredit.supports.status',
+        createdAt: '$microcredit.supports.createdAt',
       }
     }, {
       $sort: {
@@ -198,97 +194,6 @@ class MicrocreditSupportsController implements Controller {
     response.status(200).send({
       data: supports,
       code: 200
-    });
-  }
-
-  private confirmSupportPayment = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
-    const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
-    const status: string = (request.params.payment === 'pay') ? 'confirmation' : 'order';
-    const payment_id: string[] = request.body.payment_id;
-
-    let error: Error, results: any; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateMany({
-      _id: merchant_id,
-      'microcredit._id': campaign_id,
-      'microcredit.supports._id': { $in: payment_id }
-    }, {
-        $set: {
-          'microcredit.$.supports.$[d].status': status
-        }
-      }, { "arrayFilters": [{ "d._id": { $in: payment_id } }] }).catch());
-
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
-    next();
-  }
-
-  private registerReceivedFund = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const campaign: Campaign = response.locals.campaign;
-    const supports: Support[] = response.locals.supports;
-    const status: boolean = (request.params.payment === 'pay');
-
-    if (status) {
-      supports.forEach(async (s, index) => {
-        await serviceInstance.getMicrocredit(campaign.address)
-          .then((instance) => {
-            //  return instance.fundReceived(s.contractIndex, serviceInstance.address)
-            return instance.fundReceived(0, serviceInstance.address)
-              .then(async (result: any) => {
-                await this.transaction.create({
-                  ...result,
-                  data: { address: campaign.address, user_id: s.backer_id, campaign_id: campaign.campaign_id, support_id: s.support_id, contactIndex: s.contractIndex },
-                  type: 'ReceiveFund'
-                });
-                if (index === (supports.length - 1)) {
-                  response.status(201).send({
-                    data: "Success! Campaign with Id:" + campaign.campaign_id + " has been updated to Status:" + status + " for " + supports.length + " Payments!",
-                    code: 200
-                  });
-                }
-              })
-              .catch((error: Error) => {
-                next(new UnprocessableEntityException('Blockchain Error'))
-              })
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException('Blockchain Error'))
-          })
-      });
-    } else {
-      next();
-    }
-  }
-
-  private registerRevertFund = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const campaign: Campaign = response.locals.campaign;
-    const supports: Support[] = response.locals.supports;
-    const status: boolean = (request.params.payment === 'pay');
-
-    supports.forEach(async (s, index) => {
-      await serviceInstance.getMicrocredit(campaign.address)
-        .then((instance) => {
-          //  return instance.revertFund(s.contractIndex, serviceInstance.address)
-          return instance.revertFund(0, serviceInstance.address)
-            .then(async (result: any) => {
-              await this.transaction.create({
-                ...result,
-                data: { user_id: s.backer_id, campaign_id: campaign.campaign_id, support_id: s.support_id, contractIndex: s.contractIndex },
-                type: 'RevertFund'
-              });
-              if (index === (supports.length - 1)) {
-                response.status(201).send({
-                  data: "Success! Campaign with Id:" + campaign.campaign_id + " has been updated to Status:" + status + " for " + supports.length + " Payments!",
-                  code: 200
-                });
-              }
-            })
-            .catch((error: Error) => {
-              next(new UnprocessableEntityException('Blockchain Error'))
-            })
-        })
-        .catch((error: Error) => {
-          next(new UnprocessableEntityException('Blockchain Error'))
-        })
     });
   }
 }
