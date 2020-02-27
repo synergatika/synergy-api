@@ -147,7 +147,7 @@ class CommunityController implements Controller {
     }
     ]).exec().catch());
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count), //    singers.sort(compare);
       code: 200
@@ -232,7 +232,7 @@ class CommunityController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
@@ -341,7 +341,7 @@ class CommunityController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
@@ -451,7 +451,7 @@ class CommunityController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
@@ -473,7 +473,7 @@ export default CommunityController;
   //       sender_id: user._id, receiver_email: data.receiver,
   //       points: 100, complete: false
   //     }).catch());
-  //     if (error) next(new UnprocessableEntityException('DB ERROR'));
+  //     if(error) return next(new UnprocessableEntityException('DB ERROR'));
   //     response.locals = {
   //       sender_name: user.name,
   //       sender_email: user.email,

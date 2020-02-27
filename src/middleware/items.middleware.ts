@@ -46,7 +46,7 @@ async function offer(request: RequestWithUser, response: Response, next: NextFun
     }
   }]).exec().catch());
 
-  if (error) next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!offers.length) {
     response.status(200).send({
       message: "Offer does not exist",
@@ -83,7 +83,7 @@ async function post(request: RequestWithUser, response: Response, next: NextFunc
     }
   }]).exec().catch());
 
-  if (error) next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!posts.length) {
     response.status(200).send({
       message: "Post does not exist",
@@ -120,7 +120,7 @@ async function event(request: RequestWithUser, response: Response, next: NextFun
     }
   }]).exec().catch());
 
-  if (error) next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!events.length) {
     response.status(200).send({
       message: "Event does not exist",
@@ -169,7 +169,7 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
       expiresAt: '$microcredit.expiresAt'
     }
   }]).exec().catch());
-  if (error) next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!campaigns.length) {
     response.status(200).send({
       message: "Campaign does not exist!",
@@ -185,7 +185,7 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
   const merchant_id: SupportID["merchant_id"] = request.params.merchant_id;
   const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
   const support_id: SupportID["support_id"] = request.params.support_id;
-  console.log(support_id);
+
   let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
   [error, supports] = await to(userModel.aggregate([{
     $unwind: '$microcredit'
@@ -219,8 +219,8 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
     }
   }
   ]).exec().catch());
-  console.log(supports);
-  if (error) next(new UnprocessableEntityException('DB ERROR'));
+
+  if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!supports.length) {
     response.status(200).send({
       message: "Support does not exist!",
@@ -276,7 +276,7 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
 //     }
 //   }
 //   ]).exec().catch());
-//   if (error) next(new UnprocessableEntityException('DB ERROR'));
+//   if(error) return next(new UnprocessableEntityException('DB ERROR'));
 //   else if (!supports.length) {
 //     response.status(200).send({
 //       message: "No Supports!",

@@ -25,7 +25,7 @@ async function customerMiddleware(request: RequestWithUser, response: Response, 
   }).catch());
 
 
-  if (error) next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!customer) {// Have to create a customer (/auth/register/customer) and then transfer points
     response.status(200).send({
       message: "user_not_exists",

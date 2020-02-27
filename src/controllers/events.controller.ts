@@ -30,10 +30,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/items'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
 
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
@@ -127,7 +127,7 @@ class EventsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: events,
       code: 200
@@ -180,7 +180,7 @@ class EventsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: events,
       code: 200
@@ -210,19 +210,19 @@ class EventsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-        $push: {
-          events: {
-            "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-            "title": data.title,
-            "slug": await this.latinize(request, response, next),
-            "description": data.description,
-            "access": data.access,
-            "location": data.location,
-            "dateTime": data.dateTime
-          }
+      $push: {
+        events: {
+          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
+          "title": data.title,
+          "slug": await this.latinize(request, response, next),
+          "description": data.description,
+          "access": data.access,
+          "location": data.location,
+          "dateTime": data.dateTime
         }
-      }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+      }
+    }).catch());
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(201).send({
       message: "Success! A new Event has been created!",
       code: 201
@@ -289,7 +289,7 @@ class EventsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: events,
       code: 200
@@ -356,7 +356,7 @@ class EventsController implements Controller {
     { $skip: offset.skip }
     ]).exec().catch());
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: events,
       code: 200
@@ -410,7 +410,7 @@ class EventsController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: events[0],
       code: 200
@@ -423,7 +423,8 @@ class EventsController implements Controller {
     const data: EventDto = request.body;
 
     const currentEvent: Event = response.locals.event;
-    if (currentEvent.event_imageURL && request.file) {
+    if ((currentEvent.event_imageURL && (currentEvent.event_imageURL).includes(merchant_id)) && request.file) {
+      //if (currentEvent.event_imageURL && request.file) {
       var imageFile = (currentEvent.event_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
@@ -434,18 +435,18 @@ class EventsController implements Controller {
         _id: merchant_id,
         'events._id': event_id
       }, {
-        '$set': {
-          'events.$._id': event_id,
-          'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentEvent.event_imageURL,
-          'events.$.title': data.title,
-          'events.$.description': data.description,
-          'events.$.access': data.access,
-          'events.$.location': data.location,
-          'events.$.dateTime': data.dateTime,
-        }
-      }).catch());
+      '$set': {
+        'events.$._id': event_id,
+        'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentEvent.event_imageURL,
+        'events.$.title': data.title,
+        'events.$.description': data.description,
+        'events.$.access': data.access,
+        'events.$.location': data.location,
+        'events.$.dateTime': data.dateTime,
+      }
+    }).catch());
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been updated!",
       code: 200
@@ -457,7 +458,8 @@ class EventsController implements Controller {
     const event_id: EventID["event_id"] = request.params.event_id;
 
     const currentEvent: Event = response.locals.event;
-    if (currentEvent.event_imageURL) {
+    if (currentEvent.event_imageURL && (currentEvent.event_imageURL).includes(merchant_id)) {
+      //if (currentEvent.event_imageURL) {
       var imageFile = (currentEvent.event_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
@@ -466,13 +468,13 @@ class EventsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: merchant_id
     }, {
-        $pull: {
-          events: {
-            _id: event_id
-          }
+      $pull: {
+        events: {
+          _id: event_id
         }
-      }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+      }
+    }).catch());
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been deleted!",
       code: 200

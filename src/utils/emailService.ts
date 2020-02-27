@@ -41,7 +41,7 @@ class EmailService {
   //   }
   //   let error, results: object = {};
   //   [error, results] = await to(this.emailSender(options));
-  //   if (error) next(new NotFoundException('Sending Email Fail'));
+  //   if(error) return next(new NotFoundException('Sending Email Fail'));
   //   response.status(200).send({
   //     message: "Your friend has been invited.",
   //     code: response.locals.statusCode || 200
@@ -61,7 +61,7 @@ class EmailService {
     }
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
-    if (error) next(new NotFoundException('Sending Email Fail'));
+    if (error) return next(new NotFoundException('Sending Email Fail'));
     response.status(200).send({
       // -- For Testing Purposes Only -- //
       tempData: { "token": data.token },
@@ -85,7 +85,7 @@ class EmailService {
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
-    if (error) next(new NotFoundException('Sending Email Fail'));
+    if (error) return next(new NotFoundException('Sending Email Fail'));
 
     response.status(200).send({
       // -- For Testing Purposes Only -- //
@@ -110,7 +110,7 @@ class EmailService {
       }
       let error, results: object = {};
       [error, results] = await to(this.emailSender(options));
-      if (error) next(new NotFoundException('Sending Email Fail'));
+      if (error) return next(new NotFoundException('Sending Email Fail'));
 
       response.locals.response = {
         tempData: { "password": data.user.password },

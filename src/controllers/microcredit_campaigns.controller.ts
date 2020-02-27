@@ -140,7 +140,7 @@ class MicrocreditCampaignsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     const campaignsTokens: any = await this.mergeOnlyID(campaigns, matchArray);
 
@@ -206,7 +206,7 @@ class MicrocreditCampaignsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     const campaignsTokens: any = await this.mergeOnlyID(campaigns, matchArray);
 
@@ -262,7 +262,7 @@ class MicrocreditCampaignsController implements Controller {
         }
       }
     }, { new: true }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     const currentCampaign = results.microcredit[results["microcredit"].length - 1];
 
@@ -275,8 +275,7 @@ class MicrocreditCampaignsController implements Controller {
   private registerMicrocredit = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
     const currentCampaign: Campaign = response.locals.campaign;
-    console.log(currentCampaign);
-    //parseInt(((new Date()).getTime() / 1000).toString()),
+
     if (currentCampaign.status !== 'draft') {
       response.status(200).send({
         message: "Microcredit Campaign with ID: " + currentCampaign.campaign_id + " has been already published!",
@@ -286,10 +285,18 @@ class MicrocreditCampaignsController implements Controller {
 
     await serviceInstance.startNewMicrocredit(user.account.address,
       1, currentCampaign.maxAmount, currentCampaign.maxAllowed, currentCampaign.minAllowed,
+      // parseInt((currentCampaign.redeemEnds).toString()),
+      // parseInt((currentCampaign.redeemStarts).toString()),
+      // parseInt((currentCampaign.startsAt).toString()),
+      // parseInt((currentCampaign.expiresAt).toString()),
       parseInt(((currentCampaign.redeemEnds).toString()).slice(0, -3)),
       parseInt(((currentCampaign.redeemStarts).toString()).slice(0, -3)),
       parseInt(((currentCampaign.startsAt).toString()).slice(0, -3)),
       parseInt(((currentCampaign.expiresAt).toString()).slice(0, -3)),
+      // parseInt(((currentCampaign.redeemEnds).toString() + "000000")),
+      // parseInt(((currentCampaign.redeemStarts).toString() + "000000")),
+      // parseInt(((currentCampaign.startsAt).toString() + "000000")),
+      // parseInt(((currentCampaign.expiresAt).toString() + "000000")),
       currentCampaign.quantitative)
       .then(async (result: any) => {
 
@@ -319,8 +326,7 @@ class MicrocreditCampaignsController implements Controller {
     const access = (request.user.access === 'merchant') ? 'partners' : 'random';
     const status = (request.user._id == merchant_id) ? 'draft' : 'random';
     const user: User = request.user;
-    console.log(user)
-    console.log(merchant_id);
+
     const params: string = request.params.offset;
     const offset: {
       limit: number, skip: number, greater: number
@@ -392,11 +398,10 @@ class MicrocreditCampaignsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     const campaignsTokens: any = await this.mergeIDSlug(campaigns, matchArrayID, matchArraySlug);
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: campaignsTokens, //campaigns,
       code: 200
@@ -479,7 +484,8 @@ class MicrocreditCampaignsController implements Controller {
 
     const campaignsTokens: any = await this.mergeIDSlug(campaigns, matchArrayID, matchArraySlug);
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+
     response.status(200).send({
       data: campaignsTokens, //campaigns,
       code: 200
@@ -549,14 +555,9 @@ class MicrocreditCampaignsController implements Controller {
         createdAt: '$microcredit.createdAt'
       }
     }]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     const campaignsTokens: any = await this.mergeIDSlug(campaigns, matchArrayID, matchArraySlug);
-    // let tokens: {
-    //   initialTokens: number,
-    //   redeemedTokens: number
-    // };
-    // tokens = await this.readACampaignTotal(merchant_id, campaign_id);
 
     response.status(200).send({
       data: campaignsTokens[0], //campaigns[0],
@@ -570,7 +571,8 @@ class MicrocreditCampaignsController implements Controller {
     const data: CampaignDto = request.body;
 
     const currentCampaign: Campaign = response.locals.campaign;
-    if (currentCampaign.campaign_imageURL && request.file) {
+    if ((currentCampaign.campaign_imageURL && (currentCampaign.campaign_imageURL).includes(merchant_id)) && request.file) {
+      //if (currentCampaign.campaign_imageURL && request.file) {
       var imageFile = (currentCampaign.campaign_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
@@ -601,7 +603,7 @@ class MicrocreditCampaignsController implements Controller {
       }
     }).catch());
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Microcredit Campaign with ID: " + campaign_id + " has been updated!",
       code: 200
@@ -613,7 +615,8 @@ class MicrocreditCampaignsController implements Controller {
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
     const currentCampaign: Campaign = response.locals.campaign;
-    if (currentCampaign.campaign_imageURL) {
+    if (currentCampaign.campaign_imageURL && (currentCampaign.campaign_imageURL).includes(merchant_id)) {
+      //if (currentCampaign.campaign_imageURL) {
       var imageFile = (currentCampaign.campaign_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
@@ -628,7 +631,7 @@ class MicrocreditCampaignsController implements Controller {
         }
       }
     }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Microcredit Campaign with ID: " + campaign_id + " has been deleted!",
       code: 200
@@ -894,7 +897,7 @@ export default MicrocreditCampaignsController;
   //     initialTokens: tokens[0].initialTokens,
   //     redeemedTokens: tokens[0].redeemedTokens
   //   };
-  //   // if (error) next(new UnprocessableEntityException('DB ERROR'));
+  //   // if(error) return next(new UnprocessableEntityException('DB ERROR'));
   //
   //   // response.status(200).send({
   //   //   data: {

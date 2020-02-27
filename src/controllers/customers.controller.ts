@@ -61,7 +61,7 @@ class CustomersController implements Controller {
       "name": 1, "imageURL": 1,
       "createdAt": 1
     }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     customer.password = undefined;
     response.status(200).send({
@@ -92,7 +92,7 @@ class CustomersController implements Controller {
       "new": true
     }).catch());
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     response.status(200).send({
       data: customer,

@@ -87,7 +87,7 @@ class MicrocreditController implements Controller {
         }
       }
     }, { new: true }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     const currentCampaign = results.microcredit[results.microcredit.map(function (e: any) { return e._id; }).indexOf(campaign_id)];
     const currentSupport = currentCampaign.supports[currentCampaign["supports"].length - 1];
@@ -133,7 +133,7 @@ class MicrocreditController implements Controller {
         }
       }
     }, { new: true }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     const currentCampaign = results.microcredit[results.microcredit.map(function (e: any) { return e._id; }).indexOf(campaign_id)];
     const currentSupport = currentCampaign.supports[currentCampaign["supports"].length - 1];
@@ -183,7 +183,6 @@ class MicrocreditController implements Controller {
     const campaign: Campaign = response.locals.campaign;
     const support: Support = response.locals.support;
 
-    console.log(support.support_id);
     await serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
         return instance.promiseToFund(customer.account.address, data._amount, serviceInstance.address)
@@ -267,7 +266,7 @@ class MicrocreditController implements Controller {
         'microcredit.$.supports.$[d].status': ((support.status === 'order') ? 'confirmation' : 'order')
       }
     }, { "arrayFilters": [{ "d._id": support_id }] }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     next();
   }
@@ -321,8 +320,6 @@ class MicrocreditController implements Controller {
     const campaign: Campaign = response.locals.campaign;
     const support: Support = response.locals.support;
 
-    console.log("Revert");
-    console.log(support);
     await serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
         return instance.revertFund(support.contractIndex, serviceInstance.address)
@@ -390,7 +387,7 @@ class MicrocreditController implements Controller {
         'microcredit.$.supports.$[d].updatedAt': new Date()
       }
     }, { "arrayFilters": [{ "d._id": support_id }] }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     next();
   }

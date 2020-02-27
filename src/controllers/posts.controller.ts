@@ -29,10 +29,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/items'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
 
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
@@ -120,7 +120,7 @@ class PostsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: posts,
       code: 200
@@ -167,7 +167,7 @@ class PostsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: posts,
       code: 200
@@ -197,18 +197,18 @@ class PostsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-        $push: {
-          posts: {
-            "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-            "title": data.title,
-            "subtitle": data.subtitle,
-            "slug": await this.latinize(request, response, next),
-            "content": data.content,
-            "access": data.access
-          }
+      $push: {
+        posts: {
+          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
+          "title": data.title,
+          "subtitle": data.subtitle,
+          "slug": await this.latinize(request, response, next),
+          "content": data.content,
+          "access": data.access
         }
-      }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+      }
+    }).catch());
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(201).send({
       message: "Success! A new Post has been created!",
       code: 201
@@ -270,7 +270,7 @@ class PostsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: posts,
       code: 200
@@ -332,7 +332,8 @@ class PostsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+
     response.status(200).send({
       data: posts,
       code: 200
@@ -382,7 +383,8 @@ class PostsController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+
     response.status(200).send({
       data: posts[0],
       code: 200
@@ -395,7 +397,8 @@ class PostsController implements Controller {
     const data: PostDto = request.body;
 
     const currentPost: Post = response.locals.post;
-    if (currentPost.post_imageURL && request.file) {
+    if ((currentPost.post_imageURL && (currentPost.post_imageURL).includes(merchant_id)) && request.file) {
+      //if (currentPost.post_imageURL && request.file) {
       var imageFile = (currentPost.post_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
@@ -406,16 +409,16 @@ class PostsController implements Controller {
         _id: merchant_id,
         'posts._id': post_id
       }, {
-        '$set': {
-          'posts.$._id': post_id,
-          'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentPost.post_imageURL,
-          'posts.$.title': data.title,
-          'posts.$.content': data.content,
-          'posts.$.access': data.access,
-        }
-      }).catch());
+      '$set': {
+        'posts.$._id': post_id,
+        'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentPost.post_imageURL,
+        'posts.$.title': data.title,
+        'posts.$.content': data.content,
+        'posts.$.access': data.access,
+      }
+    }).catch());
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Post " + post_id + " has been updated!",
       code: 200
@@ -427,7 +430,8 @@ class PostsController implements Controller {
     const post_id: PostID["post_id"] = request.params.post_id;
 
     const currentPost: Post = response.locals.post;
-    if (currentPost.post_imageURL) {
+    if (currentPost.post_imageURL && (currentPost.post_imageURL).includes(merchant_id)) {
+      //if (currentPost.post_imageURL) {
       var imageFile = (currentPost.post_imageURL).split('assets/items/');
       await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
@@ -436,13 +440,13 @@ class PostsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: merchant_id
     }, {
-        $pull: {
-          posts: {
-            _id: post_id
-          }
+      $pull: {
+        posts: {
+          _id: post_id
         }
-      }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+      }
+    }).catch());
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Post " + post_id + " has been deleted!",
       code: 200

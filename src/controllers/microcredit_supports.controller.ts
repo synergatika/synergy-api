@@ -102,7 +102,7 @@ class MicrocreditSupportsController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: supports,
       code: 200
@@ -145,7 +145,7 @@ class MicrocreditSupportsController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: supports,
       code: 200
@@ -190,7 +190,7 @@ class MicrocreditSupportsController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: supports,
       code: 200

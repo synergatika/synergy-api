@@ -238,7 +238,7 @@ class LoyaltyController implements Controller {
     }).sort('-createdAt')
       .limit(offset.limit).skip(offset.skip)
       .catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: transactions,
       code: 200
@@ -314,7 +314,9 @@ class LoyaltyController implements Controller {
       }
     }]).exec().catch());
 
-    if (error) { next(new UnprocessableEntityException('DB ERROR')); }
+    if (error) {
+      next(new UnprocessableEntityException('DB ERROR'));
+    }
     else if (activity.length) {
       response.locals["activity"] = this.activityToBagde(activity[0]);
     } else {
@@ -367,7 +369,9 @@ class LoyaltyController implements Controller {
       }
     }]).exec().catch());
 
-    if (error) { next(new UnprocessableEntityException('DB ERROR')); }
+    if (error) {
+      next(new UnprocessableEntityException('DB ERROR'));
+    }
     else if (activity.length) {
       response.status(200).send({
         data: this.activityToBagde(activity[0]),

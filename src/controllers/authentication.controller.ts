@@ -144,7 +144,7 @@ class AuthenticationController implements Controller {
         .select({
           "_id": 1, "email": 1, "card": 1
         }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
       else if (!user) {
         response.status(200).send({
           message: "email_none",
@@ -167,7 +167,7 @@ class AuthenticationController implements Controller {
         .select({
           "_id": 1, "email": 1, "card": 1
         }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
       else if (!user) {
         response.status(200).send({
           message: "card_none",
@@ -204,7 +204,7 @@ class AuthenticationController implements Controller {
         access: 'customer', account: account,
         email_verified: false, pass_verified: true
       }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
       request.params.email = data.email;
       response.locals = {
@@ -237,7 +237,7 @@ class AuthenticationController implements Controller {
           card: data.card
         }
       }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "A card has been linked to customer's email.",
         code: 200
@@ -272,7 +272,7 @@ class AuthenticationController implements Controller {
         }
       }).catch());
 
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
       response.locals = {
         user: {
@@ -316,7 +316,7 @@ class AuthenticationController implements Controller {
       [error, user] = await to(this.user.create({
         ...authData
       }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
       response.locals = {
         user: {
@@ -385,7 +385,7 @@ class AuthenticationController implements Controller {
         createdBy: request.user._id,
         email_verified: true, pass_verified: false,
       }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
       response.locals = {
         user: {
@@ -455,7 +455,7 @@ class AuthenticationController implements Controller {
       "email_verified": 1, "pass_verified": 1,
       "access": 1, "imageURL": 1, "name": 1
     }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
       const isPasswordMatching = await bcrypt.compare(data.password, user.password);
       if (isPasswordMatching) {
@@ -517,7 +517,7 @@ class AuthenticationController implements Controller {
           password: hashedPassword
         }
       }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your password has been Updated",
         code: 200
@@ -535,7 +535,7 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.findOne({
       email: email, email_verified: true, pass_verified: false
     }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     else if (user) {
       if (await bcrypt.compare(data.oldPassword, user.password)) { // Is password matching?
         user.password = undefined;
@@ -552,7 +552,7 @@ class AuthenticationController implements Controller {
             password: hashedPassword
           }
         }).catch());
-        if (error) next(new UnprocessableEntityException('DB ERROR'));
+        if (error) return next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
           message: "Success! Your password has been Updated",
           code: 200
@@ -580,7 +580,7 @@ class AuthenticationController implements Controller {
           verificationExpiration: token.expiresAt
         }
       }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
           email: email
@@ -612,7 +612,7 @@ class AuthenticationController implements Controller {
           verificationExpiration: "",
         }
       }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your Email Address has been Verified",
         code: 200
@@ -637,7 +637,7 @@ class AuthenticationController implements Controller {
           restorationExpiration: token.expiresAt
         }
       }).catch());
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
           email: email
@@ -706,7 +706,7 @@ class AuthenticationController implements Controller {
       let error: Error, user: User;
       [error, user] = await to(this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: seconds } }).catch());
 
-      if (error) next(new UnprocessableEntityException('DB ERROR'));
+      if (error) return next(new UnprocessableEntityException('DB ERROR'));
       else if (user) {
         const hashedPassword = await bcrypt.hash(data.newPassword, 10);
         const account = serviceInstance.createWallet(data.newPassword)
@@ -727,7 +727,7 @@ class AuthenticationController implements Controller {
             restorationExpiration: ""
           }
         }).catch());
-        if (error) next(new UnprocessableEntityException('DB ERROR'));
+        if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
         response.locals = {
           user: {
@@ -802,7 +802,7 @@ class AuthenticationController implements Controller {
   //       return Transporter.sendMail(mailOptions);
   //     })
   //   );
-  //   if (error) next(new NotFoundException('Sending Email Fail'));
+  //   if(error) return next(new NotFoundException('Sending Email Fail'));
   //   else if (data.state === '1') { // Email Verification
   //     response.status(200).send({
   //       // -- For Testing Purposes Only -- //

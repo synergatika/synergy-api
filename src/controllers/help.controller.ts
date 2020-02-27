@@ -40,7 +40,7 @@ class HelpController implements Controller {
       ETH_REMOTE_NETWORK_TYPE
     } = process.env;
 
-    const timeOutPromise = new Promise(function(resolve, reject) {
+    const timeOutPromise = new Promise(function (resolve, reject) {
       setTimeout(() => {
         resolve(false);
       }, 5000);
@@ -85,7 +85,7 @@ class HelpController implements Controller {
       DB_PASSWORD
     } = process.env;
 
-    const timeOutPromise = new Promise(function(resolve, reject) {
+    const timeOutPromise = new Promise(function (resolve, reject) {
       setTimeout(() => {
         resolve([true, null]);
       }, 5000);

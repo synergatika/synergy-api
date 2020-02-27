@@ -90,7 +90,7 @@ class MerchantsController implements Controller {
     }).sort('-createdAt')
       .limit(offset.limit).skip(offset.skip)
       .catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: merchants,
       code: 200
@@ -114,9 +114,8 @@ class MerchantsController implements Controller {
       "contact": 1, "address": 1,
       "payment": 1, "timetable": 1
     }).catch());
-    console.log(error);
 
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       data: merchant,
       code: 200
@@ -159,7 +158,7 @@ class MerchantsController implements Controller {
       "fields": { "name": 1, "imageURL": 1 },
       "new": true
     }).catch());
-    if (error) next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     response.status(200).send({
       data: merchant,
