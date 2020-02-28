@@ -53,7 +53,7 @@ class EmailService {
 
     let options = {
       from: process.env.EMAIL_FROM,
-      to: 'dmytakis@gmail.com', // data.user.email
+      to: data.user.email,
       subject: 'Email Verification',
       html: '',
       type: 'verification',
@@ -76,7 +76,7 @@ class EmailService {
 
     let options = {
       from: process.env.EMAIL_FROM,
-      to: 'dmytakis@gmail.com', // data.user.email
+      to: data.user.email,
       subject: 'Password Restoration',
       html: '',
       type: 'restoration',
@@ -102,7 +102,7 @@ class EmailService {
     if (data.user.email) {
       let options = {
         from: process.env.EMAIL_FROM,
-        to: 'dmytakis@gmail.com', // data.user.email
+        to: data.user.email,
         subject: 'New Account',
         html: '',
         type: 'registration',
