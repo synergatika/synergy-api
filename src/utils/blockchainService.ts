@@ -84,10 +84,10 @@ export class BlockchainService {
       projectMaximunAmount,
       projectMaxBackerAmount,
       projectMinBackerAmount,
-      projectExpiredAt,
-      projectAvailableAt,
-      projectStartedAt,
-      projectFinishedAt,
+      String(projectExpiredAt),
+      String(projectAvailableAt),
+      String(projectStartedAt),
+      String(projectFinishedAt),
       !projectUseToken, this.address
     );
   }
