@@ -292,14 +292,14 @@ class MicrocreditCampaignsController implements Controller {
       // parseInt((currentCampaign.redeemStarts).toString()),
       // parseInt((currentCampaign.startsAt).toString()),
       // parseInt((currentCampaign.expiresAt).toString()),
-      parseInt(((currentCampaign.redeemEnds).toString()).slice(0, -3)),
-      parseInt(((currentCampaign.redeemStarts).toString()).slice(0, -3)),
-      parseInt(((currentCampaign.startsAt).toString()).slice(0, -3)),
-      parseInt(((currentCampaign.expiresAt).toString()).slice(0, -3)),
-      // parseInt(((currentCampaign.redeemEnds).toString() + "000000")),
-      // parseInt(((currentCampaign.redeemStarts).toString() + "000000")),
-      // parseInt(((currentCampaign.startsAt).toString() + "000000")),
-      // parseInt(((currentCampaign.expiresAt).toString() + "000000")),
+      //parseInt(((currentCampaign.redeemEnds).toString()).slice(0, -3)),
+      //parseInt(((currentCampaign.redeemStarts).toString()).slice(0, -3)),
+      //parseInt(((currentCampaign.startsAt).toString()).slice(0, -3)),
+      //parseInt(((currentCampaign.expiresAt).toString()).slice(0, -3)),
+      parseInt(((currentCampaign.redeemEnds).toString() + "000000")),
+      parseInt(((currentCampaign.redeemStarts).toString() + "000000")),
+      parseInt(((currentCampaign.startsAt).toString() + "000000")),
+      parseInt(((currentCampaign.expiresAt).toString() + "000000")),
       currentCampaign.quantitative)
       .then(async (result: any) => {
 
