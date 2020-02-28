@@ -228,7 +228,7 @@ class LoyaltyController implements Controller {
     [error, transactions] = await to(this.transaction.find({
       $and: [
         { $or: [{ to_id: request.user._id }, { from_id: request.user._id }] },
-        { $or: [{ type: "EarnPoints" }, { type: "RedeemPoints" }] }
+        { $or: [{ type: "EarnPoints" }, { type: "RedeemPoints" }, { type: "RedeemPointsOffer" }] }
       ]
     }).select({
       "_id": 1, "type": 1,

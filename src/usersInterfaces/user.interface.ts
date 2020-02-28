@@ -19,7 +19,13 @@ interface User {
   pass_verified: boolean;
   createdAt: Date;
   imageURL: string;
-
+  payments: {
+    nationalBank: string,
+    pireausBank: string,
+    eurobank: string,
+    alphaBank: string,
+    paypal: string,
+  },
   previousAccounts: Object;
 }
 

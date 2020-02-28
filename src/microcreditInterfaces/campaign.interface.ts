@@ -5,13 +5,19 @@ interface Campaign {
   merchant_id: string;
   merchant_slug: string;
   merchant_imageURL: string;
-  merchant_payment: {
+  merchant_payments: {
+    nationalBank: string;
+    pireausBank: string;
+    eurobank: string;
+    alphaBank: string;
+    paypal: string;
   };
 
   campaign_id: string;
   campaign_slug: string;
   campaign_imageURL: string;
   title: string;
+  subtitle: string;
   terms: string;
   description: string;
   category: string;

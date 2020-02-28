@@ -358,6 +358,8 @@ class AuthenticationController implements Controller {
       [error, user] = await to(this.user.create({
         email: data.email,
         name: data.name,
+        description: data.description,
+        subtitle: data.subtitle,
         imageURL: `${process.env.API_URL}assets/profile/${request.file.filename}`,
         address: {
           street: data.street,
@@ -380,7 +382,6 @@ class AuthenticationController implements Controller {
         slug: await this.latinize(request, response, next),
         // ...data,
         sector: data.sector, access: 'merchant',
-        description: data.description,
         password: hashedPassword, account: account,
         createdBy: request.user._id,
         email_verified: true, pass_verified: false,

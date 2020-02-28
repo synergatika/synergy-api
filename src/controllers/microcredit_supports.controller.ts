@@ -65,14 +65,14 @@ class MicrocreditSupportsController implements Controller {
         merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
-        merchant_payment: '$payment',
+        merchant_payments: '$payments',
 
         campaign_id: '$microcredit._id',
         campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
-        terms: '$microcredit.title',
-        description: '$microcredit.title',
+        terms: '$microcredit.terms',
+        description: '$microcredit.description',
         category: '$microcredit.category',
         access: '$microcredit.access',
 
@@ -94,6 +94,7 @@ class MicrocreditSupportsController implements Controller {
         initialTokens: '$microcredit.supports.initialTokens',
         redeemedTokens: '$microcredit.supports.redeemedTokens',
         method: '$microcredit.supports.method',
+        payment_id: '$microcredit.supports.payment_id',
         status: '$microcredit.supports.status'
       }
     }, {
@@ -136,6 +137,7 @@ class MicrocreditSupportsController implements Controller {
         initialTokens: '$microcredit.supports.initialTokens',
         redeemedTokens: '$microcredit.supports.redeemedTokens',
         method: '$microcredit.supports.method',
+        payment_id: '$microcredit.supports.payment_id',
         status: '$microcredit.supports.status',
         createdAt: '$microcredit.supports.createdAt',
       }
@@ -182,6 +184,7 @@ class MicrocreditSupportsController implements Controller {
         initialTokens: '$microcredit.supports.initialTokens',
         redeemedTokens: '$microcredit.supports.redeemedTokens',
         method: '$microcredit.supports.method',
+        payment_id: '$microcredit.supports.payment_id',
         status: '$microcredit.supports.status',
       }
     }, {

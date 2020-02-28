@@ -1,30 +1,5 @@
 import { IsString, IsNumber, IsEnum, IsOptional } from 'class-validator';
 
-
-/*
-export class Address {
-  @IsString()
-  public street: string;
-
-  @IsString()
-  public city: string;
-
-  @IsNumber()
-  public postCode: number;
-}
-
-export class Contact {
-  @IsString()
-  public phone: string;
-
-  @IsOptional()
-  @IsString()
-  public websiteURL: string;
-
-  @IsString()
-  public address: Address;
-}*/
-
 export enum Sector {
   n = 'None',
   a = 'B2B Services & Other Goods and Services',
@@ -50,6 +25,10 @@ class MerchantDto {
   @IsOptional()
   @IsString()
   public description: string;
+
+  @IsOptional()
+  @IsString()
+  public subtitle: string;
 
   @IsString()
   public street: string;

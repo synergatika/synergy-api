@@ -22,7 +22,8 @@ async function authMiddleware(request: RequestWithUser, response: Response, next
         "email": 1, "password": 1,
         "account": 1, "access": 1,
         "email_verified": 1, "pass_verified": 1,
-        "imageURL": 1, "slug": 1
+        "imageURL": 1, "slug": 1,
+        "payments": 1
       });
       if (user) {
         request.user = user;

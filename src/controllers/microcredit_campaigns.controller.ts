@@ -107,12 +107,13 @@ class MicrocreditCampaignsController implements Controller {
         merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
-        merchant_payment: '$payment',
+        merchant_payments: '$payments',
 
         campaign_id: '$microcredit._id',
         campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
+        subtitle: '$microcredit.subtitle',
         terms: '$microcredit.terms',
         description: '$microcredit.description',
         category: '$microcredit.category',
@@ -157,7 +158,7 @@ class MicrocreditCampaignsController implements Controller {
       limit: number, skip: number, greater: number
     } = this.offsetParams(params);
 
-    const matchArray = [{ 'microcredit.access': 'public' }, { 'microcredit.status': 'draft' }];
+    const matchArray = [{ 'microcredit.access': 'public' }, { 'microcredit.status': 'published' }];
 
     let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
@@ -173,12 +174,13 @@ class MicrocreditCampaignsController implements Controller {
         merchant_slug: '$slug',
         merchant_name: '$name',
         merchant_imageURL: '$imageURL',
-        merchant_payment: '$payment',
+        merchant_payments: '$payments',
 
         campaign_id: '$microcredit._id',
         campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
+        subtitle: '$microcredit.subtitle',
         terms: '$microcredit.terms',
         description: '$microcredit.description',
         category: '$microcredit.category',
@@ -243,6 +245,7 @@ class MicrocreditCampaignsController implements Controller {
         microcredit: {
           "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
           "title": data.title,
+          "subtitle": data.subtitle,
           "slug": await this.latinize(request, response, next),
           "terms": data.terms,
           "access": data.access,
@@ -364,12 +367,13 @@ class MicrocreditCampaignsController implements Controller {
         merchant_name: '$name',
         merchant_slug: '$slug',
         merchant_imageURL: '$imageURL',
-        merchant_payment: '$payment',
+        merchant_payments: '$payments',
 
         campaign_id: '$microcredit._id',
         campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
+        subtitle: '$microcredit.subtitle',
         terms: '$microcredit.title',
         description: '$microcredit.title',
         category: '$microcredit.category',
@@ -448,12 +452,13 @@ class MicrocreditCampaignsController implements Controller {
         merchant_name: '$name',
         merchant_slug: '$slug',
         merchant_imageURL: '$imageURL',
-        merchant_payment: '$payment',
+        merchant_payments: '$payments',
 
         campaign_id: '$microcredit._id',
         campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
+        subtitle: '$microcredit.subtitle',
         terms: '$microcredit.title',
         description: '$microcredit.title',
         category: '$microcredit.category',
@@ -535,6 +540,7 @@ class MicrocreditCampaignsController implements Controller {
         campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
+        subtitle: '$microcredit.subtitle',
         terms: '$microcredit.terms',
         description: '$microcredit.description',
         category: '$microcredit.category',
@@ -587,6 +593,7 @@ class MicrocreditCampaignsController implements Controller {
         'microcredit.$._id': campaign_id,
         'microcredit.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentCampaign.campaign_imageURL,
         'microcredit.$.title': data.title,
+        'microcredit.$.subtitle': data.subtitle,
         'microcredit.$.terms': data.terms,
         'microcredit.$.access': data.access,
         'microcredit.$.description': data.description,

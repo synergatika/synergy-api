@@ -23,6 +23,7 @@ const microcreditSupportSchema = new mongoose.Schema({
 
 const microcreditCampaignSchema = new mongoose.Schema({
   title: String,
+  subtitle: String,
   slug: String,
   terms: String,
   description: String,
@@ -55,6 +56,7 @@ const microcreditCampaignSchema = new mongoose.Schema({
 
 const offerSchema = new mongoose.Schema({
   title: String,
+  subtitle: String,
   slug: String,
   description: String,
   imageURL: String,
@@ -144,6 +146,7 @@ const userSchema = new mongoose.Schema({
     default: 'None'
   },
   description: String,
+  subtitle: String,
 
   contact: contactSchema,
   address: addressSchema,

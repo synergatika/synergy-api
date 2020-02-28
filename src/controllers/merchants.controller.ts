@@ -84,7 +84,7 @@ class MerchantsController implements Controller {
       "id": 1, "email": 1,
       "name": 1, "imageURL": 1,
       "createdAt": 1, "slug": 1,
-      "sector": 1, "description": 1,
+      "sector": 1, "description": 1, "subtitle": 1,
       "contact": 1, "address": 1,
       "payment": 1, "timetable": 1
     }).sort('-createdAt')
@@ -110,7 +110,7 @@ class MerchantsController implements Controller {
       "id": 1, "email": 1,
       "name": 1, "imageURL": 1,
       "createdAt": 1, "slug": 1,
-      "sector": 1, "description": 1,
+      "sector": 1, "description": 1, "subtitle": 1,
       "contact": 1, "address": 1,
       "payment": 1, "timetable": 1
     }).catch());
@@ -152,7 +152,8 @@ class MerchantsController implements Controller {
         'payments.alphaBank': data.alphaBank,
         'payments.paypal': data.paypal,
         'timetable': data.timetable,
-        'description': data.description
+        'description': data.description,
+        'subtitle': data.subtitle
       }
     }, {
       "fields": { "name": 1, "imageURL": 1 },

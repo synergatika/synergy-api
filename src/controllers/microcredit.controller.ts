@@ -15,14 +15,17 @@ import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exce
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
+import Merchant from '../usersInterfaces/merchant.interface';
 import Campaign from '../microcreditInterfaces/campaign.interface';
 import Support from '../microcreditInterfaces/support.interface';
+//import Payment from '../microcreditInterfaces/payment.interface';
 // Middleware
 import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 import customerMiddleware from '../middleware/customer.middleware';
+import merchantMiddleware from '../middleware/merchant.middleware';
 import itemsMiddleware from '../middleware/items.middleware';
 // Models
 import userModel from '../models/user.model';
@@ -46,11 +49,10 @@ class MicrocreditController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/earn/:merchant_id/:campaign_id`, authMiddleware, validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto), itemsMiddleware.microcreditCampaign, this.earnTokens, this.registerPromisedFund);
+    this.router.post(`${this.path}/earn/:merchant_id/:campaign_id`, authMiddleware, validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto), merchantMiddleware, itemsMiddleware.microcreditCampaign, this.earnTokens, this.registerPromisedFund);
     this.router.post(`${this.path}/earn/:merchant_id/:campaign_id/:_to`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(CampaignID), validationParamsMiddleware(IdentifierDto), validationBodyMiddleware(EarnTokensDto), customerMiddleware, itemsMiddleware.microcreditCampaign, this.earnTokensByMerchant, this.registerPromisedFund, this.registerReceivedFund);
     this.router.put(`${this.path}/confirm/:merchant_id/:campaign_id/:support_id`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(SupportID), itemsMiddleware.microcreditCampaign, itemsMiddleware.microcreditSupport, this.confirmSupportPayment, this.registerReceivedFund, this.registerRevertFund);
     this.router.post(`${this.path}/redeem/:merchant_id/:campaign_id/:support_id`, authMiddleware, accessMiddleware.onlyAsMerchant, accessMiddleware.belongsTo, validationParamsMiddleware(SupportID), validationBodyMiddleware(RedeemTokensDto), customerMiddleware, itemsMiddleware.microcreditCampaign, itemsMiddleware.microcreditSupport, this.redeemTokens, this.registerSpendFund);
-    //  this.router.get(`${this.path}/check/:index`, this.randomGenerator);
   }
 
   private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -58,13 +60,14 @@ class MicrocreditController implements Controller {
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
     const data: EarnTokensDto = request.body;
 
-    const user: User = request.user;
+    const customer: User = request.user;
+    const merchant: Merchant = response.locals.merchant;
     const campaign: Campaign = response.locals.campaign;
 
     const now = new Date();
     const seconds = parseInt(now.getTime().toString());
     if ((campaign.startsAt > seconds) || (campaign.expiresAt < seconds)) {
-      response.status(200).send({
+      return response.status(200).send({
         message: "Campaign is Not Available for Backing",
         code: 204
       });
@@ -77,7 +80,7 @@ class MicrocreditController implements Controller {
     }, {
       $push: {
         'microcredit.$.supports': {
-          "backer_id": user._id,
+          "backer_id": customer._id,
           "initialTokens": data._amount,
           "method": data.method,
           "redeemedTokens": 0,
@@ -92,7 +95,8 @@ class MicrocreditController implements Controller {
     const currentCampaign = results.microcredit[results.microcredit.map(function (e: any) { return e._id; }).indexOf(campaign_id)];
     const currentSupport = currentCampaign.supports[currentCampaign["supports"].length - 1];
     currentSupport["support_id"] = currentSupport._id; currentSupport._id = undefined;
-    response.locals["customer"] = user;
+    response.locals["customer"] = customer;
+    response.locals["merchant"] = merchant;
     response.locals["support"] = currentSupport;
 
     next();
@@ -104,12 +108,13 @@ class MicrocreditController implements Controller {
     const data: EarnTokensDto = request.body;
 
     const customer: User = response.locals.customer;
+    const merchant: User = request.user;
     const campaign: Campaign = response.locals.campaign;
 
     const now = new Date();
     const seconds = parseInt(now.getTime().toString());
     if ((campaign.startsAt > seconds) || (campaign.expiresAt < seconds)) {
-      response.status(200).send({
+      return response.status(200).send({
         message: "Sorry! No Backing Period",
         code: 204
       });
@@ -139,21 +144,21 @@ class MicrocreditController implements Controller {
     const currentSupport = currentCampaign.supports[currentCampaign["supports"].length - 1];
     currentSupport["support_id"] = currentSupport._id; currentSupport._id = undefined;
     response.locals["customer"] = customer;
+    response.locals["merchant"] = merchant;
     response.locals["support"] = currentSupport;
 
     next();
   }
 
-  private randomGenerator = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  //private randomGenerator = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
 
-    const index: number = parseInt(request.params.index);
-    //private randomGenerator = (index: number) => {
+  //    const index: number = parseInt(request.params.index);
+  private randomGenerator = (index: number) => {
     let payment_id: string;
 
     var _date = new Date();
     const _year = ("0" + _date.getFullYear()).slice(-2);
     const _day = ("0" + (_date.getMonth() + 1)).slice(-2);
-
     console.log(_year)
     console.log(_day)
 
@@ -167,11 +172,11 @@ class MicrocreditController implements Controller {
       payment_id = index.toString();
     }
 
-    response.status(201).send({
-      message: payment_id,
-      code: 201
-    });
-    // return payment_id;
+    // response.status(201).send({
+    //   message: payment_id,
+    //   code: 201
+    // });
+    return payment_id;
   }
 
   private registerPromisedFund = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -180,6 +185,7 @@ class MicrocreditController implements Controller {
     const data: EarnTokensDto = request.body;
 
     const customer: User = response.locals.customer;
+    const merchant: Merchant = response.locals.merchant;
     const campaign: Campaign = response.locals.campaign;
     const support: Support = response.locals.support;
 
@@ -190,6 +196,7 @@ class MicrocreditController implements Controller {
 
             response.locals.support.contractIndex = result.logs[0].args.index;
             response.locals.support.contractRef = result.logs[0].args.ref;
+            const payment_id = this.randomGenerator(response.locals.support.contractIndex);
 
             await this.transaction.create({
               ...result,
@@ -207,6 +214,7 @@ class MicrocreditController implements Controller {
               'microcredit.supports._id': new ObjectId(support.support_id),
             }, {
               $set: {
+                'microcredit.$.supports.$[d].payment_id': payment_id,
                 'microcredit.$.supports.$[d].contractIndex': response.locals.support.contractIndex,
                 'microcredit.$.supports.$[d].contractRef': response.locals.support.contractRef,
                 'microcredit.$.supports.$[d].updatedAt': new Date()
@@ -216,8 +224,33 @@ class MicrocreditController implements Controller {
             if (data.paid) {
               next();
             } else {
+              let how: string;
+              if (data.method === 'nationalBank') {
+                how = merchant.payments['nationalBank'];
+
+              } else if (data.method === 'pireausBank') {
+                how = merchant.payments['pireausBank'];
+
+              } else if (data.method === 'eurobank') {
+                how = merchant.payments['eurobank'];
+
+              } else if (data.method === 'alphaBank') {
+                how = merchant.payments['alphaBank'];
+
+              } else if (data.method === 'paypal') {
+                how = merchant.payments['paypal'];
+
+              } else {
+                how = 'Store';
+              }
               response.status(201).send({
-                message: "Success! A new Support has been added for Campaign: " + campaign_id + "! Status: 'Pending'! (Support ID: " + support.support_id + ")",
+                data: {
+                  support_id: support.support_id,
+                  payment_id: payment_id,
+                  method: data.method,
+                  how: how
+                },
+                //message: "Success! A new Support has been added for Campaign: " + campaign_id + "! Status: 'Pending'! (Support ID: " + support.support_id + ")",
                 code: 201
               });
             }
@@ -244,13 +277,13 @@ class MicrocreditController implements Controller {
     const now = new Date();
     const seconds = parseInt(now.getTime().toString());
     if (((campaign.startsAt > seconds) || (campaign.expiresAt < seconds)) && (support.status === 'order')) {
-      response.status(200).send({
+      return response.status(200).send({
         message: "Sorry! No Payment Confirmation Period",
         code: 204
       });
     }
     if (((campaign.startsAt > seconds) || (campaign.redeemStarts < seconds)) && (support.status === 'confirmation')) {
-      response.status(200).send({
+      return response.status(200).send({
         message: "Sorry! No Revert Payment Period",
         code: 204
       });
@@ -362,13 +395,13 @@ class MicrocreditController implements Controller {
     const now = new Date();
     const seconds = parseInt(now.getTime().toString());
     if (((campaign.redeemStarts > seconds) || (campaign.redeemEnds < seconds)) && (support.status === 'order')) {
-      response.status(200).send({
+      return response.status(200).send({
         message: "Sorry! No Redeem Period",
         code: 204
       });
     }
     if (support.initialTokens < ((support.redeemTokens) + _tokens)) {
-      response.status(200).send({
+      return response.status(200).send({
         message: "Sorry! Not Enough Tokens",
         code: 204
       });

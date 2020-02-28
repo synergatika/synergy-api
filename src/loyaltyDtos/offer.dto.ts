@@ -8,6 +8,10 @@ class OfferDto {
   @IsString()
   public title: string;
 
+  @IsOptional()
+  @IsString()
+  public subtitle: string;
+
   @IsString()
   public description: string;
 

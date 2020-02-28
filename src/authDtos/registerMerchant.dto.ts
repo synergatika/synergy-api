@@ -30,6 +30,10 @@ class RegisterMerchantDto {
   @IsString()
   public description: string;
 
+  @IsOptional()
+  @IsString()
+  public subtitle: string;
+
   @IsString()
   public street: string;
 
