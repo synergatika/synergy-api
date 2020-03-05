@@ -26,10 +26,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function (req: RequestWithUser, file, cb) {
+  destination: function(req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/profile'));
   },
-  filename: function (req: RequestWithUser, file, cb) {
+  filename: function(req: RequestWithUser, file, cb) {
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
 });
@@ -82,11 +82,11 @@ class MerchantsController implements Controller {
       access: 'merchant'
     }).select({
       "id": 1, "email": 1,
-      "name": 1, "imageURL": 1,
-      "createdAt": 1, "slug": 1,
+      "name": 1, "slug": 1, "imageURL": 1,
       "sector": 1, "description": 1, "subtitle": 1,
       "contact": 1, "address": 1,
-      "payment": 1, "timetable": 1
+      "payments": 1, "timetable": 1,
+      "createdAt": 1
     }).sort('-createdAt')
       .limit(offset.limit).skip(offset.skip)
       .catch());
@@ -108,11 +108,11 @@ class MerchantsController implements Controller {
       ]
     }).select({
       "id": 1, "email": 1,
-      "name": 1, "imageURL": 1,
-      "createdAt": 1, "slug": 1,
+      "name": 1, "slug": 1, "imageURL": 1,
       "sector": 1, "description": 1, "subtitle": 1,
       "contact": 1, "address": 1,
-      "payment": 1, "timetable": 1
+      "payments": 1, "timetable": 1,
+      "createdAt": 1
     }).catch());
 
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
@@ -136,29 +136,29 @@ class MerchantsController implements Controller {
     [error, merchant] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-      $set: {
-        name: data.name,
-        imageURL: (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL,
-        sector: data.sector,
-        'address.city': data.city,
-        'address.postCode': data.postCode,
-        'address.street': data.street,
-        'address.coordinates': [data.lat, data.long],
-        'contact.phone': data.phone,
-        'contact.websiteURL': data.websiteURL,
-        'payments.nationalBank': data.nationalBank,
-        'payments.pireausBank': data.pireausBank,
-        'payments.eurobank': data.eurobank,
-        'payments.alphaBank': data.alphaBank,
-        'payments.paypal': data.paypal,
-        'timetable': data.timetable,
-        'description': data.description,
-        'subtitle': data.subtitle
-      }
-    }, {
-      "fields": { "name": 1, "imageURL": 1 },
-      "new": true
-    }).catch());
+        $set: {
+          name: data.name,
+          imageURL: (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL,
+          sector: data.sector,
+          'address.city': data.city,
+          'address.postCode': data.postCode,
+          'address.street': data.street,
+          'address.coordinates': [data.lat, data.long],
+          'contact.phone': data.phone,
+          'contact.websiteURL': data.websiteURL,
+          'payments.nationalBank': data.nationalBank,
+          'payments.pireausBank': data.pireausBank,
+          'payments.eurobank': data.eurobank,
+          'payments.alphaBank': data.alphaBank,
+          'payments.paypal': data.paypal,
+          'description': data.description,
+          'subtitle': data.subtitle,
+          'timetable': data.timetable,
+        }
+      }, {
+        "fields": { "name": 1, "imageURL": 1 },
+        "new": true
+      }).catch());
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     response.status(200).send({

@@ -29,35 +29,17 @@ class EmailService {
       })
   }
 
-  // public userInvitation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-  //   const data = response.locals;
-  //   let options = {
-  //     from: process.env.EMAIL_FROM,
-  //     to: 'dmytakis@gmail.com', // data.user.email
-  //     subject: 'User Invitation',
-  //     html: '',
-  //     type: 'invitation',
-  //     locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/login/` },
-  //   }
-  //   let error, results: object = {};
-  //   [error, results] = await to(this.emailSender(options));
-  //   if(error) return next(new NotFoundException('Sending Email Fail'));
-  //   response.status(200).send({
-  //     message: "Your friend has been invited.",
-  //     code: response.locals.statusCode || 200
-  //   })
-  // }
-
   public emailVerification = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
 
     let options = {
       from: process.env.EMAIL_FROM,
-      to: data.user.email,
+      to: data.user.email,//'synergatika@gmail.com',
       subject: 'Email Verification',
       html: '',
       type: 'verification',
-      locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/verify-email/${data.token}` },
+      //locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/verify-email/${data.token}` },
+      locals: { logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/verify-email/${data.token}` },
     }
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
@@ -76,11 +58,12 @@ class EmailService {
 
     let options = {
       from: process.env.EMAIL_FROM,
-      to: data.user.email,
+      to: data.user.email,//'synergatika@gmail.com',
       subject: 'Password Restoration',
       html: '',
       type: 'restoration',
-      locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/reset-password/${data.token}` },
+      //locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/reset-password/${data.token}` },
+      locals: { logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/reset-password/${data.token}` },
     }
 
     let error, results: object = {};
@@ -102,11 +85,12 @@ class EmailService {
     if (data.user.email) {
       let options = {
         from: process.env.EMAIL_FROM,
-        to: data.user.email,
+        to: data.user.email,//'synergatika@gmail.com',
         subject: 'New Account',
         html: '',
         type: 'registration',
-        locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/login/`, password: data.user.password },
+        //locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/login/`, password: data.user.password },
+        locals: { logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/login/`, password: data.user.password },
       }
       let error, results: object = {};
       [error, results] = await to(this.emailSender(options));
@@ -117,6 +101,7 @@ class EmailService {
         message: "User has been Invited to enjoy our Community!",
         code: 200
       }
+
     }
     next();
   }

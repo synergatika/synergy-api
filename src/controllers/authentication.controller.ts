@@ -60,10 +60,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function (req: RequestWithUser, file, cb) {
+  destination: function(req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/profile'));
   },
-  filename: function (req: RequestWithUser, file, cb) {
+  filename: function(req: RequestWithUser, file, cb) {
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
 });
@@ -233,10 +233,10 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-        $set: {
-          card: data.card
-        }
-      }).catch());
+          $set: {
+            card: data.card
+          }
+        }).catch());
       if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "A card has been linked to customer's email.",
@@ -265,12 +265,12 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         card: card
       }, {
-        $set: {
-          email: data.email,
-          password: hashedPassword,
-          account: account
-        }
-      }).catch());
+          $set: {
+            email: data.email,
+            password: hashedPassword,
+            account: account
+          }
+        }).catch());
 
       if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
@@ -513,11 +513,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         _id: user._id
       }, {
-        $set: {
-          account: account,
-          password: hashedPassword
-        }
-      }).catch());
+          $set: {
+            account: account,
+            password: hashedPassword
+          }
+        }).catch());
       if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your password has been Updated",
@@ -547,12 +547,12 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           email: email
         }, {
-          $set: {
-            account: account,
-            pass_verified: true,
-            password: hashedPassword
-          }
-        }).catch());
+            $set: {
+              account: account,
+              pass_verified: true,
+              password: hashedPassword
+            }
+          }).catch());
         if (error) return next(new UnprocessableEntityException('DB ERROR'));
         response.status(200).send({
           message: "Success! Your password has been Updated",
@@ -576,11 +576,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-        $set: {
-          verificationToken: token.token,
-          verificationExpiration: token.expiresAt
-        }
-      }).catch());
+          $set: {
+            verificationToken: token.token,
+            verificationExpiration: token.expiresAt
+          }
+        }).catch());
       if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
@@ -605,14 +605,14 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         verificationToken: data.token
       }, {
-        $set: {
-          email_verified: true,
-        },
-        $unset: {
-          verificationToken: "",
-          verificationExpiration: "",
-        }
-      }).catch());
+          $set: {
+            email_verified: true,
+          },
+          $unset: {
+            verificationToken: "",
+            verificationExpiration: "",
+          }
+        }).catch());
       if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.status(200).send({
         message: "Success! Your Email Address has been Verified",
@@ -633,11 +633,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-        $set: {
-          restorationToken: token.token,
-          restorationExpiration: token.expiresAt
-        }
-      }).catch());
+          $set: {
+            restorationToken: token.token,
+            restorationExpiration: token.expiresAt
+          }
+        }).catch());
       if (error) return next(new UnprocessableEntityException('DB ERROR'));
       response.locals = {
         user: {
@@ -716,18 +716,18 @@ class AuthenticationController implements Controller {
         [error, results] = await to(this.user.updateOne({
           restorationToken: data.token
         }, {
-          $set: {
-            password: hashedPassword,
-            account: account
-          },
-          $push: {
-            previousAccounts: user.account
-          },
-          $unset: {
-            restorationToken: "",
-            restorationExpiration: ""
-          }
-        }).catch());
+            $set: {
+              password: hashedPassword,
+              account: account
+            },
+            $push: {
+              previousAccounts: user.account
+            },
+            $unset: {
+              restorationToken: "",
+              restorationExpiration: ""
+            }
+          }).catch());
         if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
         response.locals = {
@@ -765,71 +765,6 @@ class AuthenticationController implements Controller {
       expiresAt: parseInt(seconds.toString())
     }
   }
-
-  // private emailSender = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-  //   const data = response.locals;
-  //
-  //   let emailInfo = {
-  //     to: data.user.email,
-  //     subject: "",
-  //     html: "<h3>Hello world?</h3><p>Test</p>",
-  //     type: '',
-  //     locals: {},
-  //   };
-  //   if (data.state === '1') { // Email Verification
-  //     emailInfo.type = 'verification',
-  //       emailInfo.locals = { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/verify-email/${data.token}` },
-  //       emailInfo.subject = "Email Verification";
-  //   } else if (data.state === '2') { // Password Restoration
-  //     emailInfo.type = 'restoration',
-  //       emailInfo.locals = { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/reset-password/${data.token}` },
-  //       emailInfo.subject = "Password Restoration";
-  //   } else if (data.state === '3') { // Email Invitation
-  //     emailInfo.type = 'registration',
-  //       emailInfo.locals = { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/login/`, password: data.user.password },
-  //       emailInfo.subject = "New Account";
-  //   }
-  //
-  //   let error, results: object = {};
-  //   [error, results] = await to(Promise.all([email.render(emailInfo.type, emailInfo.locals)])
-  //     .then((template: object) => {
-  //       const mailOptions: nodemailer.SendMailOptions = {
-  //         from: process.env.EMAIL_FROM, //'Fred Foo ✔ <dimitris.sec@gmail.com>', // sender address
-  //         to: 'dmytakis@gmail.com', // Dev
-  //         //to: data.user.email, // Prod
-  //         subject: emailInfo.subject, // Subject line
-  //         html: template.toString() // html body
-  //       };
-  //       return Transporter.sendMail(mailOptions);
-  //     })
-  //   );
-  //   if(error) return next(new NotFoundException('Sending Email Fail'));
-  //   else if (data.state === '1') { // Email Verification
-  //     response.status(200).send({
-  //       // -- For Testing Purposes Only -- //
-  //       tempData: { "token": data.token },
-  //       // -- ////////////|\\\\\\\\\\\\ -- //
-  //       message: response.locals.message || "Please, follow your link to Validate your Email.",
-  //       code: response.locals.statusCode || 200
-  //     });
-  //   } else if (data.state === '2') { // Password Restoration
-  //     response.status(200).send({
-  //       // -- For Testing Purposes Only -- //
-  //       tempData: { "token": data.token },
-  //       // -- ////////////|\\\\\\\\\\\\ -- //
-  //       message: "Please, follow your link to Update your Password.",
-  //       code: 200
-  //     });
-  //   } else if (data.state === '3') { // Email Invitation
-  //     response.status(200).send({
-  //       // -- For Testing Purposes Only -- //
-  //       tempData: { "password": data.user.password },
-  //       // -- ////////////|\\\\\\\\\\\\ -- //
-  //       message: "User has been Invited to enjoy our Community!",
-  //       code: 200
-  //     });
-  //   }
-  // }
 
   private createToken(user: User): TokenData {
     const expiresIn = parseInt(process.env.JWT_EXPIRATION); // an hour

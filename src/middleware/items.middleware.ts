@@ -232,62 +232,6 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
   }
 }
 
-// async function microcreditSupportsPayments(request: RequestWithUser, response: Response, next: NextFunction) {
-//   //private paymentToSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-//   const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
-//   const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
-//   const payment_id: string[] = request.body.payment_id;
-
-//   let payments: ObjectId[] = [];
-//   payment_id.forEach(p => {
-//     payments.push(new ObjectId(p));
-//   });
-
-//   let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
-//   [error, supports] = await to(userModel.aggregate([{
-//     $unwind: '$microcredit'
-//   }, {
-//     $unwind: '$microcredit.supports'
-//   }, {
-//     $match: {
-//       $and: [{
-//         _id: new ObjectId(merchant_id)
-//       }, {
-//         'microcredit._id': new ObjectId(campaign_id)
-//       }, {
-//         'microcredit.supports._id': { $in: payments }
-//       }]
-//     }
-//   }, {
-//     $project: {
-//       _id: false,
-//       campaign_id: '$microcredit._id',
-//       support_id: '$microcredit.supports._id',
-//       backer_id: '$microcredit.supports.backer_id',
-//       initialTokens: '$microcredit.supports.initialTokens',
-//       redeemedTokens: '$microcredit.supports.redeemedTokens',
-//       method: '$microcredit.supports.method',
-//       status: '$microcredit.supports.status',
-//       contractIndex: '$microcredit.supports.contractIndex',
-//     }
-//   }, {
-//     $sort: {
-//       support_id: -1
-//     }
-//   }
-//   ]).exec().catch());
-//   if(error) return next(new UnprocessableEntityException('DB ERROR'));
-//   else if (!supports.length) {
-//     response.status(200).send({
-//       message: "No Supports!",
-//       code: 204
-//     })
-//   } else {
-//     response.locals["supports"] = supports;
-//     next();
-//   }
-// }
-
 export default {
   offerMiddleware: offer,
   postMiddleware: post,

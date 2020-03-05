@@ -460,28 +460,3 @@ class CommunityController implements Controller {
 }
 
 export default CommunityController;
-
-  // private inviteAFriend = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   const data: InvitationDto = request.body;
-  //   const user: User = request.user;
-  //   if ((await this.invitation.findOne({ receiver_email: data.receiver })) ||
-  //     (await this.user.findOne({ email: data.receiver }))) {
-  //     next(new UnprocessableEntityException("User has been already invited!"));
-  //   } else {
-  //     let error: Error, results: Object;
-  //     [error, results] = await to(this.invitation.create({
-  //       sender_id: user._id, receiver_email: data.receiver,
-  //       points: 100, complete: false
-  //     }).catch());
-  //     if(error) return next(new UnprocessableEntityException('DB ERROR'));
-  //     response.locals = {
-  //       sender_name: user.name,
-  //       sender_email: user.email,
-  //       receiver_email: data.receiver
-  //     }
-  //     next();
-  //   }
-  // }
-
-  // private emailSender = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  // }

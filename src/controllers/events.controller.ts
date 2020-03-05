@@ -30,10 +30,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function (req: RequestWithUser, file, cb) {
+  destination: function(req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/items'));
   },
-  filename: function (req: RequestWithUser, file, cb) {
+  filename: function(req: RequestWithUser, file, cb) {
 
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
@@ -210,18 +210,19 @@ class EventsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-      $push: {
-        events: {
-          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-          "title": data.title,
-          "slug": await this.latinize(request, response, next),
-          "description": data.description,
-          "access": data.access,
-          "location": data.location,
-          "dateTime": data.dateTime
+        $push: {
+          events: {
+            "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
+            "title": data.title,
+            "subtitle": data.subtitle,
+            "slug": await this.latinize(request, response, next),
+            "description": data.description,
+            "access": data.access,
+            "location": data.location,
+            "dateTime": data.dateTime
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(201).send({
       message: "Success! A new Event has been created!",
@@ -402,11 +403,11 @@ class EventsController implements Controller {
         title: '$events.title',
         subtitle: '$events.subtitle',
         description: '$events.description',
-        access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
+        access: '$events.access',
 
-        createdAt: '$posts.createdAt'
+        createdAt: '$events.createdAt'
       }
     }
     ]).exec().catch());
@@ -435,16 +436,17 @@ class EventsController implements Controller {
         _id: merchant_id,
         'events._id': event_id
       }, {
-      '$set': {
-        'events.$._id': event_id,
-        'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentEvent.event_imageURL,
-        'events.$.title': data.title,
-        'events.$.description': data.description,
-        'events.$.access': data.access,
-        'events.$.location': data.location,
-        'events.$.dateTime': data.dateTime,
-      }
-    }).catch());
+        '$set': {
+          'events.$._id': event_id,
+          'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentEvent.event_imageURL,
+          'events.$.title': data.title,
+          'events.$.subtitle': data.subtitle,
+          'events.$.description': data.description,
+          'events.$.access': data.access,
+          'events.$.location': data.location,
+          'events.$.dateTime': data.dateTime,
+        }
+      }).catch());
 
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
@@ -468,12 +470,12 @@ class EventsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: merchant_id
     }, {
-      $pull: {
-        events: {
-          _id: event_id
+        $pull: {
+          events: {
+            _id: event_id
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been deleted!",

@@ -30,10 +30,10 @@ var path = require('path');
 // Upload File
 import multer from 'multer';
 var storage = multer.diskStorage({
-  destination: function(req: RequestWithUser, file, cb) {
+  destination: function (req: RequestWithUser, file, cb) {
     cb(null, path.join(__dirname, '../assets/items'));
   },
-  filename: function(req: RequestWithUser, file, cb) {
+  filename: function (req: RequestWithUser, file, cb) {
     cb(null, (req.user._id).toString() + '_' + new Date().getTime());
   }
 });
@@ -149,18 +149,18 @@ class OffersController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-        $push: {
-          offers: {
-            "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
-            "title": data.title,
-            "subtitle": data.subtitle,
-            "slug": await this.latinize(request, response, next),
-            "description": data.description,
-            "cost": data.cost,
-            "expiresAt": data.expiresAt
-          }
+      $push: {
+        offers: {
+          "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
+          "title": data.title,
+          "subtitle": data.subtitle,
+          "slug": await this.latinize(request, response, next),
+          "description": data.description,
+          "cost": data.cost,
+          "expiresAt": data.expiresAt
         }
-      }).catch());
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(201).send({
       message: "Success! A new offer has been created!",
@@ -304,16 +304,16 @@ class OffersController implements Controller {
         _id: merchant_id,
         'offers._id': offer_id
       }, {
-        '$set': {
-          'offers.$._id': offer_id,
-          'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentOffer.offer_imageURL,
-          'offers.$.title': data.title,
-          'offers.$.subtitle': data.subtitle,
-          'offers.$.description': data.description,
-          'offers.$.cost': data.cost,
-          'offers.$.expiresAt': data.expiresAt
-        }
-      }).catch());
+      '$set': {
+        'offers.$._id': offer_id,
+        'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentOffer.offer_imageURL,
+        'offers.$.title': data.title,
+        'offers.$.subtitle': data.subtitle,
+        'offers.$.description': data.description,
+        'offers.$.cost': data.cost,
+        'offers.$.expiresAt': data.expiresAt
+      }
+    }).catch());
 
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
     console.log(error);
@@ -337,12 +337,12 @@ class OffersController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: merchant_id
     }, {
-        $pull: {
-          offers: {
-            _id: offer_id
-          }
+      $pull: {
+        offers: {
+          _id: offer_id
         }
-      }).catch());
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
     response.status(200).send({
       message: "Success! Offer " + offer_id + " has been deleted!",
@@ -352,21 +352,3 @@ class OffersController implements Controller {
 }
 
 export default OffersController;
-
-// const previousImage: Offer[] = await (this.user.aggregate([{
-//   $unwind: '$offers'
-// }, {
-//   $match:
-//   {
-//     $and: [{
-//       _id: new ObjectId(merchant_id)
-//     }, {
-//       'offers._id': new ObjectId(offer_id)
-//     }]
-//   }
-// }, {
-//   $project: {
-//     _id: false,
-//     offer_imageURL: '$offers.imageURL',
-//   }
-// }]));
