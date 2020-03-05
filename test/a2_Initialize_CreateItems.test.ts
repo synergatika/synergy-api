@@ -10,7 +10,7 @@ import 'dotenv/config';
 import validateEnv from '../src/utils/validateEnv';
 validateEnv();
 
-import { imagesLocation, defaultAdmin, defaultMerchant_1, defaultMerchant_2, defaultMerchant_3 } from './_structs.test';
+import { imagesLocation, defaultAdmin, defaultMerchant_1, defaultMerchant_2, defaultMerchant_3, defaultMerchant_4, defaultMerchant_5, defaultMerchant_6 } from './_structs.test';
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
 var path = require('path');
@@ -125,7 +125,7 @@ describe("Create Events", () => {
         .field('subtitle', 'The best way to say something is to do it')
         .field('description', 'Through cultural events, concerts, exhibitions, conversations and workshops, we highlight the living examples of cooperative undertakings that work and operate radically. <br> There we will sing together, we will discuss together, we will eat and drink and mostly we will co-envisage how these undertakings could comprise “the revolution of the daily life” for the people who are not satisfied by complaints and condemnation, but take their lives in their hands. <br> Claiming the collective and personal autonomy and its implementation in today’s life.')
         .field('access', 'public')
-        .field('dateTime', _newDate2.toString())
+        .field('dateTime', _newDate1.toString())
         .field('location', 'Laetrou 21-25, Thessaloniki')
         .attach('imageURL', fs.readFileSync(`${imagesLocation}synallois_event_public.jfif`),
           `synallois_event_public.jfif`)
@@ -199,7 +199,7 @@ describe("Create Microcredit Campaigns", () => {
     var _date_1 = new Date();
     var _newDate1 = _date_1.setDate(_date_1.getDate());
     var _date_2 = new Date();
-    var _newDate2 = _date_2.setDate(_date_2.getDate());
+    var _newDate2 = _date_2.setDate(_date_2.getDate() + 50);
     var _date_3 = new Date();
     var _newDate3 = _date_3.setDate(_date_3.getDate() + 50);
     var _date_4 = new Date();
@@ -220,8 +220,8 @@ describe("Create Microcredit Campaigns", () => {
         .field('minAllowed', '10')
         .field('maxAllowed', '100')
         .field('maxAmount', '30000')
-        .field('redeemStarts', _newDate2.toString())
-        .field('redeemEnds', _newDate3.toString())
+        .field('redeemStarts', _newDate1.toString())
+        .field('redeemEnds', _newDate4.toString())
         .field('startsAt', _newDate1.toString())
         .field('expiresAt', _newDate2.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}synallois_campaign.jpg`),

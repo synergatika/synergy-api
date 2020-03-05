@@ -48,6 +48,9 @@ var defaultMerchant_2 = {
   name: "Commonspace",
   email: "info@_commonspace.gr",
   password: "commonspace",
+  subtitle: "Something",
+  description: 'Description',
+  timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
   tempPass: '',
   sector: "Recreation and Culture",
   imageFile: "commonspace.png",
@@ -142,6 +145,7 @@ var defaultMerchant_5 = {
   sector: "Recreation and Culture",
   subtitle: "We publish books with love and diligence, so that everyone can have access to good books.",
   description: "We are a self-managed book space project that started in 2009 as an editorial initiative and gradually evolved into a self-managed community to promote a different culture and a different relationship with books. Cooperative Publications operate anti-hierarchically, without directors and directors, deciding - in the spirit of consensus - collectively.<br>Our publishing philosophy consists in the admittedly optimistic (and for some controversial) assumption that the book can not only be a commodity but primarily a social good and that the reader is not just a consumer but a book lover.<br>With love and diligence, we print books that we consider economically feasible, tasteful and remarkable (hopefully) so that everyone can have access to good books. <br>Beyond the publishing of books, our cooperative is also active in the field of distribution and sale of books. Our self-managed bookstore is already operating at 35 Eressou Street in Exarchia, where one can find books from small, alternative publishing houses that are not 'hosted' on the shelves of bigger bookstores. We have gathered a selected literature collection of rare books, as well as an offer section.",
+  timetable: "All time",
   imageFile: "cooperativepublications.jpg",
   contact: {
     phone: 2103818840,
@@ -172,6 +176,7 @@ var defaultMerchant_6 = {
   sector: "Education",
   subtitle: "We publish books with love and diligence, so that everyone can have access to good books.",
   description: "ACTION PLUS Social Cooperative Enterprise was established in 2014 with the vision to create favorable conditions for an open access to the cultural, leisure and community life of Athens. In that context, we: organize quality guided tours at a low fee and with a special policy for families and for disabled persons.<br>Each of the ACTION PLUS activities is designed by our experts’ team and our group of certified tour guides. Our aim is to offer a unique experience that goes beyond the usual track.<br>ACTION PLUS profits are used for the creation  of new jobs, the broadening of our scope of activities and the increase of our social impact. Feel free to contact us for further information about our activities!",
+  timetable: "All time",
   imageFile: "actionplus.jpg",
   contact: {
     phone: 2103818840,
