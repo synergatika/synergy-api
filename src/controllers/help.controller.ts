@@ -1,6 +1,7 @@
 import * as express from 'express';
 import * as mongoose from 'mongoose';
 import to from 'await-to-ts';
+import { API_VERSION } from '../version';
 
 const path = require('path');
 
@@ -165,7 +166,7 @@ class HelpController implements Controller {
 
   private establishing = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     let result: any = {
-      api_version: process.env.API_VERSION
+      api_version: API_VERSION
     };
 
     result = await this.checkEthereum(result);
