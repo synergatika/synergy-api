@@ -329,7 +329,7 @@ class MicrocreditController implements Controller {
 
               response.status(201).send({
                 message: "Success! Support with ID: " + support_id + " has been updated to Status: Paid!",
-                code: 200
+                code: 201
               });
             })
             .catch((error: Error) => {
