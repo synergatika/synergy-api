@@ -184,7 +184,7 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
 async function microcreditSupport(request: RequestWithUser, response: Response, next: NextFunction) {
   const merchant_id: SupportID["merchant_id"] = request.params.merchant_id;
   const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
-  const support_id: SupportID["support_id"] = request.params.support_id;
+  const support_id: SupportID["support_id"] = request.params.support_id || request.body.support_id;
 
   let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
   [error, supports] = await to(userModel.aggregate([{

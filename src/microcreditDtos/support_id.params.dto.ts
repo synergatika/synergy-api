@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 class SupportID {
   @IsString()
@@ -7,6 +7,7 @@ class SupportID {
   @IsString()
   public campaign_id: string;
 
+  @IsOptional()
   @IsString()
   public support_id: string;
 }
