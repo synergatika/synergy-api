@@ -3,6 +3,7 @@ import MicrocreditTransaction from '../microcreditInterfaces/transaction.interfa
 
 const dataSchema = new mongoose.Schema({
   campaign_id: String,
+  campaign_title: String,
   address: String,
   support_id: String,
   contractIndex: {
@@ -49,8 +50,8 @@ const receiptSchema = new mongoose.Schema({
 
 const microcreditTransactionSchema = new mongoose.Schema({
 
-  merchant_id: String,
-  customer_id: String,
+  partner_id: String,
+  member_id: String,
 
   data: dataSchema,
 

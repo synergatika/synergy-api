@@ -3,8 +3,8 @@ import LoyaltyTransaction from '../loyaltyInterfaces/transaction.interface';
 import { object, string } from 'prop-types';
 
 const dataSchema = new mongoose.Schema({
-  merchant_name: String,
-  merchant_email: String,
+  partner_name: String,
+  partner_email: String,
   points: Number,
   amount: {
     type: Number,
@@ -13,6 +13,10 @@ const dataSchema = new mongoose.Schema({
   offer_id: {
     type: String,
     default: '-1'
+  },
+  offer_title: {
+    type: String,
+    default: null
   }
 }, { _id: false });
 
@@ -45,8 +49,8 @@ const receiptSchema = new mongoose.Schema({
 
 const loyaltyTransactionSchema = new mongoose.Schema({
 
-  merchant_id: String,
-  customer_id: String,
+  partner_id: String,
+  member_id: String,
 
   from_id: String,
   to_id: String,

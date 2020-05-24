@@ -41,7 +41,7 @@ class HelpController implements Controller {
       ETH_REMOTE_NETWORK_TYPE
     } = process.env;
 
-    const timeOutPromise = new Promise(function (resolve, reject) {
+    const timeOutPromise = new Promise(function(resolve, reject) {
       setTimeout(() => {
         resolve(false);
       }, 5000);
@@ -86,7 +86,7 @@ class HelpController implements Controller {
       DB_PASSWORD
     } = process.env;
 
-    const timeOutPromise = new Promise(function (resolve, reject) {
+    const timeOutPromise = new Promise(function(resolve, reject) {
       setTimeout(() => {
         resolve([true, null]);
       }, 5000);
@@ -143,15 +143,15 @@ class HelpController implements Controller {
         to: 'synergatika@gmail.com',
         subject: "Test email",
         html: "<h3>Hello world?</h3><p>Test</p>",
-        type: 'verification',
-        locals: { home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}` + 'auth/verify-email/' + '#gibberish' },
+        type: '_test',
+        locals: { home_page: `${process.env.APP_URL}` },
       };
       let error, results: object = {};
       [error, results] = await to(Promise.all([email.render(emailInfo.type, emailInfo.locals)])
         .then((template: object) => {
           const mailOptions: nodemailer.SendMailOptions = {
             from: process.env.EMAIL_FROM,
-            to: emailInfo.to, // Prod
+            to: 'dmytakis@gmail.com',//emailInfo.to, // Prod
             subject: emailInfo.subject, // Subject line
             html: template.toString() // html body
           };

@@ -1,14 +1,15 @@
 import * as express from 'express';
 import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
-var latinize = require('latinize');
+import path from 'path';
 
 // Dtos
 import OfferDto from '../loyaltyDtos/offer.dto'
-import MerchantID from '../usersDtos/merchant_id.params.dto'
+import PartnerID from '../usersDtos/partner_id.params.dto'
 import OfferID from '../loyaltyDtos/offer_id.params.dto'
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
+import NotFoundException from '../exceptions/NotFound.exception';
 // Interfaces
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
@@ -21,28 +22,16 @@ import validationParamsMiddleware from '../middleware/params.validation';
 import authMiddleware from '../middleware/auth.middleware';
 import accessMiddleware from '../middleware/access.middleware';
 import itemsMiddleware from '../middleware/items.middleware';
+import FilesMiddleware from '../middleware/files.middleware';
+import SlugHelper from '../middleware/slug.helper';
+import OffsetHelper from '../middleware/offset.helper';
+// Helper's Instance
+const uploadFile = FilesMiddleware.uploadItem;
+const deleteFile = FilesMiddleware.deleteFile;
+const createSlug = SlugHelper.offerSlug;
+const offsetParams = OffsetHelper.offsetLimit;
 // Models
 import userModel from '../models/user.model';
-
-//Path
-var path = require('path');
-
-// Upload File
-import multer from 'multer';
-var storage = multer.diskStorage({
-  destination: function (req: RequestWithUser, file, cb) {
-    cb(null, path.join(__dirname, '../assets/items'));
-  },
-  filename: function (req: RequestWithUser, file, cb) {
-    cb(null, (req.user._id).toString() + '_' + new Date().getTime());
-  }
-});
-var upload = multer({ storage: storage });
-
-// Remove File
-const fs = require('fs');
-const { promisify } = require('util');
-const unlinkAsync = promisify(fs.unlink);
 
 class OffersController implements Controller {
   public path = '/loyalty/offers';
@@ -55,25 +44,11 @@ class OffersController implements Controller {
 
   private initializeRoutes() {
     this.router.get(`${this.path}/public/:offset`, this.readAllOffers);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsMerchant, upload.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), this.createOffer);
-    this.router.get(`${this.path}/public/:merchant_id/:offset`, validationParamsMiddleware(MerchantID), this.readOffersByStore);
-    this.router.get(`${this.path}/:merchant_id/:offer_id`, validationParamsMiddleware(OfferID), this.readOffer);
-    this.router.put(`${this.path}/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, upload.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), itemsMiddleware.offerMiddleware, this.updateOffer);
-    this.router.delete(`${this.path}/:merchant_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsMerchant, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, itemsMiddleware.offerMiddleware, this.deleteOffer);
-  }
-
-  private offsetParams = (params: string) => {
-    if (!params) return { limit: Number.MAX_SAFE_INTEGER, skip: 0, greater: 0 };
-    const splittedParams: string[] = params.split("-");
-
-    const now = new Date();
-    const seconds = parseInt(now.getTime().toString());
-
-    return {
-      limit: (parseInt(splittedParams[0]) === 0) ? Number.MAX_SAFE_INTEGER : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])) + parseInt(splittedParams[0]),
-      skip: (parseInt(splittedParams[0]) === 0) ? 0 : (parseInt(splittedParams[0]) * parseInt(splittedParams[1])),
-      greater: (parseInt(splittedParams[2]) === 1) ? seconds : 0
-    };
+    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), this.createOffer);
+    this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readOffersByStore);
+    this.router.get(`${this.path}/:partner_id/:offer_id`, validationParamsMiddleware(OfferID), this.readOffer);
+    this.router.put(`${this.path}/:partner_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), itemsMiddleware.offerMiddleware, this.updateOffer);
+    this.router.delete(`${this.path}/:partner_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, itemsMiddleware.offerMiddleware, this.deleteOffer);
   }
 
   private readAllOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -81,7 +56,7 @@ class OffersController implements Controller {
 
     const offset: {
       limit: number, skip: number, greater: number
-    } = this.offsetParams(params);
+    } = offsetParams(params);
 
     let error: Error, offers: Offer[];
     [error, offers] = await to(this.user.aggregate([{
@@ -93,11 +68,11 @@ class OffersController implements Controller {
     }, {
       $project: {
         _id: false,
-        merchant_id: '$_id',
-        merchant_slug: '$slug',
-        merchant_name: '$name',
-        merchant_imageURL: '$imageURL',
-        address: '$address',
+        partner_id: '$_id',
+        partner_slug: '$slug',
+        partner_name: '$name',
+        partner_imageURL: '$imageURL',
+        partner_address: '$address',
 
         offer_id: '$offers._id',
         offer_slug: '$offers.slug',
@@ -126,21 +101,6 @@ class OffersController implements Controller {
     });
   }
 
-  private latinize = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const data: OfferDto = request.body;
-    const user: User = request.user;
-
-    let _slug = latinize((data.title).toLowerCase()).split(' ').join('_');
-    const slugs = await this.user.aggregate([
-      { $unwind: '$offers' },
-      { $match: { $and: [{ slug: (user._id) }, { $or: [{ 'offers.slug': _slug }, { 'offers.slug': { $regex: _slug + "-.*" } }] }] } },
-      { $project: { _id: '$_id', title: '$offers.title', slug: '$offers.slug' } }
-    ]);
-
-    if (!slugs.length) return _slug;
-    else return _slug + "-" + (slugs.length + 1);
-  }
-
   private createOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: OfferDto = request.body;
     const user: User = request.user;
@@ -154,7 +114,7 @@ class OffersController implements Controller {
           "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
           "title": data.title,
           "subtitle": data.subtitle,
-          "slug": await this.latinize(request, response, next),
+          "slug": await createSlug(request),
           "description": data.description,
           "cost": data.cost,
           "expiresAt": data.expiresAt
@@ -169,12 +129,12 @@ class OffersController implements Controller {
   }
 
   private readOffersByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const merchant_id: MerchantID["merchant_id"] = request.params.merchant_id;
+    const partner_id: PartnerID["partner_id"] = request.params.partner_id;
 
     const params: string = request.params.offset;
     const offset: {
       limit: number, skip: number, greater: number
-    } = this.offsetParams(params);
+    } = offsetParams(params);
 
     let error: Error, offers: Offer[];
     [error, offers] = await to(this.user.aggregate([{
@@ -184,13 +144,13 @@ class OffersController implements Controller {
         $or: [
           {
             $and: [
-              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
               { 'offers.expiresAt': { $gt: offset.greater } }
             ]
           },
           {
             $and: [
-              { slug: merchant_id },
+              { slug: partner_id },
               { 'offers.expiresAt': { $gt: offset.greater } }
             ]
           }
@@ -199,11 +159,11 @@ class OffersController implements Controller {
     }, {
       $project: {
         _id: false,
-        merchant_id: '$_id',
-        merchant_slug: '$slug',
-        merchant_name: '$name',
-        merchant_imageURL: '$imageURL',
-        address: '$address',
+        partner_id: '$_id',
+        partner_slug: '$slug',
+        partner_name: '$name',
+        partner_imageURL: '$imageURL',
+        partner_address: '$address',
 
         offer_id: '$offers._id',
         offer_slug: '$offers.slug',
@@ -233,7 +193,7 @@ class OffersController implements Controller {
   }
 
   private readOffer = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const merchant_id: OfferID["merchant_id"] = request.params.merchant_id;
+    const partner_id: OfferID["partner_id"] = request.params.partner_id;
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
 
     let error: Error, offers: Offer[];
@@ -244,13 +204,13 @@ class OffersController implements Controller {
         $or: [
           {
             $and: [
-              { _id: ObjectId.isValid(merchant_id) ? new ObjectId(merchant_id) : new ObjectId() },
+              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
               { 'offers._id': ObjectId.isValid(offer_id) ? new ObjectId(offer_id) : new ObjectId() }
             ]
           },
           {
             $and: [
-              { slug: merchant_id },
+              { slug: partner_id },
               { 'offers.slug': offer_id }
             ]
           }
@@ -259,11 +219,11 @@ class OffersController implements Controller {
     }, {
       $project: {
         _id: false,
-        merchant_id: '$_id',
-        merchant_slug: '$slug',
-        merchant_name: '$name',
-        merchant_imageURL: '$imageURL',
-        address: '$address',
+        partner_id: '$_id',
+        partner_slug: '$slug',
+        partner_name: '$name',
+        partner_imageURL: '$imageURL',
+        partner_address: '$address',
 
         offer_id: '$offers._id',
         offer_slug: '$offers.slug',
@@ -279,7 +239,10 @@ class OffersController implements Controller {
     }
     ]).exec().catch());
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
-    console.log(offers);
+    else if (!offers.length) {
+      return next(new NotFoundException('OFFER_NOT_EXISTS'));
+    }
+
     response.status(200).send({
       data: offers[0],
       code: 200
@@ -287,36 +250,36 @@ class OffersController implements Controller {
   }
 
   private updateOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const merchant_id: OfferID["merchant_id"] = request.params.merchant_id;
+    const partner_id: OfferID["partner_id"] = request.params.partner_id;
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
     const data: OfferDto = request.body;
 
     const currentOffer: Offer = response.locals.offer;
-    if ((currentOffer.offer_imageURL && (currentOffer.offer_imageURL).includes(merchant_id)) && request.file) {
+    if ((currentOffer.offer_imageURL && (currentOffer.offer_imageURL).includes(partner_id)) && request.file) {
       //if (currentOffer.offer_imageURL && request.file) {
       var imageFile = (currentOffer.offer_imageURL).split('assets/items/');
-      await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
+      await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne(
       {
-        _id: merchant_id,
+        _id: partner_id,
         'offers._id': offer_id
       }, {
       '$set': {
         'offers.$._id': offer_id,
         'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentOffer.offer_imageURL,
         'offers.$.title': data.title,
+        'offers.$.slug': await createSlug(request),
         'offers.$.subtitle': data.subtitle,
         'offers.$.description': data.description,
         'offers.$.cost': data.cost,
         'offers.$.expiresAt': data.expiresAt
       }
     }).catch());
-
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
-    console.log(error);
+
     response.status(200).send({
       message: "Success! Offer " + offer_id + " has been updated!",
       code: 200
@@ -324,18 +287,18 @@ class OffersController implements Controller {
   }
 
   private deleteOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const merchant_id: OfferID["merchant_id"] = request.params.merchant_id;
+    const partner_id: OfferID["partner_id"] = request.params.partner_id;
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
 
     const currentOffer: Offer = response.locals.offer;
-    if (currentOffer.offer_imageURL && (currentOffer.offer_imageURL).includes(merchant_id)) {
+    if (currentOffer.offer_imageURL && (currentOffer.offer_imageURL).includes(partner_id)) {
       var imageFile = (currentOffer.offer_imageURL).split('assets/items/');
-      await unlinkAsync(path.join(__dirname, '../assets/items/' + imageFile[1]));
+      await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne({
-      _id: merchant_id
+      _id: partner_id
     }, {
       $pull: {
         offers: {

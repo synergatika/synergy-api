@@ -14,7 +14,7 @@ const microcreditSupportSchema = new mongoose.Schema({
   },
   method: {
     type: String,
-    enum: ['nationalBank', 'pireausBank', 'eurobank', 'alphaBank', 'paypal', 'store'],
+    //enum: ['nationalBank', 'pireausBank', 'eurobank', 'alphaBank', 'paypal', 'store'],
     default: 'store'
   },
   contractIndex: Number,
@@ -105,11 +105,15 @@ const contactSchema = new mongoose.Schema({
 }, { _id: false });
 
 const paymentsSchema = new mongoose.Schema({
-  nationalBank: String,
-  piraeusBank: String,
-  eurobank: String,
-  alphaBank: String,
-  paypal: String
+  bic: String,
+  name: String,
+  value: String,
+
+  //nationalBank: String,
+  //pireausBank: String,
+  //eurobank: String,
+  //alphaBank: String,
+  //paypal: String
 }, { _id: false });
 
 const authSchema = new mongoose.Schema({
@@ -118,6 +122,11 @@ const authSchema = new mongoose.Schema({
   verificationToken: String,
   verificationExpiration: Number
 }, { _id: false });
+
+const deactivateSchema = new mongoose.Schema({
+  reason: String,
+  createdAt: Date
+});
 
 const userSchema = new mongoose.Schema({
   name: String,
@@ -137,12 +146,12 @@ const userSchema = new mongoose.Schema({
 
   access: {
     type: String,
-    enum: ['customer', 'merchant', 'admin'],
-    default: 'customer'
+    enum: ['member', 'partner', 'admin'],
+    default: 'member'
   },
   sector: {
     type: String,
-    enum: ['None', 'B2B Services & Other Goods and Services', 'Durables', 'Durables (Technology)', 'Education', 'Food', 'Hotels, cafes and restaurants', 'Recreation and Culture'],
+    //enum: ['None', 'B2B Services & Other Goods and Services', 'Durables', 'Durables (Technology)', 'Education', 'Food', 'Hotels, cafes and restaurants', 'Recreation and Culture'],
     default: 'None'
   },
   description: String,
@@ -151,15 +160,23 @@ const userSchema = new mongoose.Schema({
   contact: contactSchema,
   address: addressSchema,
   timetable: String,
-  payments: paymentsSchema,
+  payments: [paymentsSchema],
 
   email_verified: Boolean,
   pass_verified: Boolean,
+  activated: {
+    type: Boolean,
+    default: true
+  },
+  deactivations: [deactivateSchema],
 
   restorationToken: String,
   restorationExpiration: Number,
   verificationToken: String,
   verificationExpiration: Number,
+
+  oneClickToken: String,
+  oneClickExpiration: Number,
   // auth: authSchema,
   offers: [offerSchema],
   posts: [postSchema],
@@ -171,8 +188,8 @@ const userSchema = new mongoose.Schema({
     default: 'itself'
   }
 }, {
-  timestamps: true
-});
+    timestamps: true
+  });
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 export default userModel;

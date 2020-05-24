@@ -1,11 +1,19 @@
 interface User {
   _id: string;
-  name: string,
+  name: string;
+  slug: string;
+
+  imageURL: string;
 
   email: string;
   password: string;
 
-  card: string;
+  email_verified: boolean;
+  pass_verified: boolean;
+  activated?: boolean;
+
+  access: string;
+  createdAt: Date;
 
   account: {
     version: number;
@@ -13,19 +21,6 @@ interface User {
     address: string;
     crypto: object;
   };
-
-  access: string;
-  email_verified: boolean;
-  pass_verified: boolean;
-  createdAt: Date;
-  imageURL: string;
-  payments: {
-    nationalBank: string,
-    pireausBank: string,
-    eurobank: string,
-    alphaBank: string,
-    paypal: string,
-  },
   previousAccounts: Object;
 }
 

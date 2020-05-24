@@ -3,8 +3,8 @@ import App from './app';
 
 // Controllers
 import AuthenticationController from './controllers/authentication.controller';
-import CustomersController from './controllers/customers.controller';
-import MerchantsController from './controllers/merchants.controller';
+import MembersController from './controllers/members.controller';
+import PartnersController from './controllers/partners.controller';
 import OffersController from './controllers/offers.controller';
 import MicrocreditController from './controllers/microcredit.controller';
 import MicrocreditCampaignsController from './controllers/microcredit_campaigns.controller';
@@ -14,6 +14,8 @@ import PostsController from './controllers/posts.controller';
 import EventsController from './controllers/events.controller';
 import CommunityController from './controllers/community.controller';
 import HelpController from './controllers/help.controller';
+import ContentController from './controllers/content.controller';
+import UsersController from './controllers/users.controller';
 
 import validateEnv from './utils/validateEnv';
 
@@ -22,8 +24,8 @@ validateEnv();
 const app = new App(
   [
     new AuthenticationController(),
-    new CustomersController(),
-    new MerchantsController(),
+    new MembersController(),
+    new PartnersController(),
     new LoyaltyController(),
     new OffersController(),
     new MicrocreditController(),
@@ -32,7 +34,9 @@ const app = new App(
     new CommunityController(),
     new PostsController(),
     new EventsController(),
-    new HelpController()
+    new HelpController(),
+    new ContentController(),
+    new UsersController()
   ],
 );
 

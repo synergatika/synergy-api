@@ -1,6 +1,7 @@
 import { object } from "prop-types";
 
-const imagesLocation = '/mnt/c/Users/Dimitris Sociality/Desktop/Synargy Demo Images';
+//const imagesLocation = '/mnt/c/Users/Dimitris Sociality/Desktop/Synargy Demo Images';
+const imagesLocation = '/mnt/c/Users/dmytakis/Documents/MyDocuments/Software Engineering (Projects)/Synergy/Synergy Demo Images';
 
 var defaultAdmin = {
   name: "Admin",
@@ -10,251 +11,290 @@ var defaultAdmin = {
   _id: '',
 };
 
-var defaultMerchant_1 = {
-  name: "Sociality",
-  email: "contact@_sociality.gr",
-  password: "sociality",
+var partner_a = {
+  name: "Partner A",
+  email: "partner_a@email.gr",
+  password: "partner_a",
   tempPass: '',
   sector: "Durables (Technology)",
-  imageFile: "sociality.png",
-  subtitle: "Structures should serve people and not the other way around",
-  description: "We empower the online presences of organizations and companies in a wide range of the digital spectrum. " +
-    "We design and develop custom digital tools that make everyday work easier, more efficient and effective." +
-    "We organize open and private wokrshops and provide courses on digital expertise." +
-    "We contribute to the community with our research work in user research, prototype development and by participating in social projects.",
+  imageFile: "partner_a.png",
+  subtitle: "This is subtitle for partner a!",
+  description: "This is description for partner a! This is description for partner a! This is description for partner a! This is description for partner a!",
   timetable: "Monday to Friday 10.00 - 18.00",
   contact: {
-    phone: 2103606616,
-    websiteURL: "http://socaility.gr"
+    phone: 2101021010,
+    websiteURL: "http://partner_a.gr"
   },
   address: {
-    street: "Solonos 136",
+    street: "Street A",
     city: "Athens",
     postCode: 10677,
     coordinates: ['37.985560', '23.732720']
   },
-  payments: {
-    nationalBank: '',
-    pireausBank: 'GR9701168245531283734574714',
-    eurobank: '',
-    alphaBank: '',
-    paypal: ''
-  },
+  payments: [{
+    bic: 'PIRBGRAA',
+    name: 'PiraeusBank',
+    value: 'GR9701168245531283734574714'
+  }],
   authToken: '',
   _id: '',
+  updatedImageFile: "updated_partner_a.png",
+  updatedDescription: "This is an updated description for partner a! This is description for partner a! This is description for partner a! This is description for partner a!",
+  updatedAddress: {
+    street: "Updated Street A",
+    city: "Updated City",
+    postCode: 10677,
+    coordinates: ['37.985560', '23.732720']
+  },
 };
 
-var defaultMerchant_2 = {
-  name: "Commonspace",
-  email: "info@_commonspace.gr",
-  password: "commonspace",
-  subtitle: "Something",
-  description: 'Description',
-  timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
+var partner_b = {
+  name: "Partner B",
+  email: "partner_b@email.gr",
+  password: "partner_b",
   tempPass: '',
+  subtitle: "This is subtitle for partner b!",
+  description: "This is description for partner b! This is description for partner b! This is description for partner b! This is description for partner b!",
+  timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
   sector: "Recreation and Culture",
-  imageFile: "commonspace.png",
+  imageFile: "partner_b.png",
   contact: {
-    phone: 2130434085,
-    websiteURL: "https://www.commonspace.gr/"
+    phone: 2102021020,
+    websiteURL: "https://www.merchnat_b.gr/"
   },
   address: {
-    street: "Akakiou 1 - 3 & Ipeirou 60",
+    street: "Street B",
     city: "Athens",
     postCode: 10439,
     coordinates: ['37.990800', '23.725320']
   },
-  payments: {
-    nationalBank: '',
-    pireausBank: 'GR9701168245531283734666951',
-    eurobank: '',
-    alphaBank: 'GR7901047254398567169456321',
-    paypal: ''
-  },
+  payments: [{
+    bic: 'PIRBGRAA',
+    name: 'PiraeusBank',
+    value: 'GR9701168245531283734666951'
+  }, {
+    bic: 'CRBAGRAA',
+    name: 'AlphaBankAE',
+    value: 'GR7901047254398567169456321'
+  }],
   authToken: '',
   _id: '',
 };
 
-var defaultMerchant_3 = {
-  name: "Syn Allois",
-  email: "info@_synallois.org",
-  password: "synallois",
-  tempPass: '',
-  sector: "Food",
-  subtitle: "Our core business is alternative and solidarity trade, mainly in the food sector!",
-  description: "The Solidarity Economy Cooperative Syn Allois started operating in Athens in the fall of 2011. We have chosen to work collectively, applying alternative economic practices that aim at meeting human needs, solidarity and equal relations. <br>Our core business is alternative and solidarity trade, mainly in the food sector. A commercial process, that aims to meet the needs of all involved in the supply chain: The decent reward of producers' value, the provision of quality products in the best possible way accessible to consumers, the sustainable and democratic functioning of trafficking organizations, and the concern for the protection of the natural environment. <br>It is not a utopia, but a reality that engages millions of people across the globe and achieves its goals to the extent that it manages to create long-lasting relationships of reciprocity and trust. <br>In our store you can find: coffee, cocoa-chocolate, sugar, tea-mate, pasta rice - quinoa, cereal-muesli-fruit and fruit products, organic spices-sauces, detergents essences, detergents, natural cosmetics.",
+var partner_c = {
+  name: "Partner C",
+  email: "partner_c@email.gr",
+  password: "partner_c",
+  subtitle: "This is subtitle for partner c!",
+  description: "This is description for partner c! This is description for partner c! This is description for partner c! This is description for partner c!",
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
-  imageFile: "synallois.png",
-  contact: {
-    phone: 2103456681,
-    websiteURL: "https://synallois.org"
-  },
-  address: {
-    street: "Nileos 35",
-    city: "Athens",
-    postCode: 11851,
-    coordinates: ['37.975040', '23.716560']
-  },
-  payments: {
-    nationalBank: 'GR5001415913618373112121112',
-    pireausBank: '',
-    eurobank: '',
-    alphaBank: '',
-    paypal: '/synallois'
-  },
-  authToken: '',
-  _id: '',
-};
-
-var defaultMerchant_4 = {
-  name: "Bread & Roses",
-  email: "info@_breadandroses.gr",
-  password: "breadandroses",
-  tempPass: '',
-  sector: "Hotels, cafes and restaurants",
-  subtitle: "Bread & Roses is the common secret of those who live and work in Omonia and the wider center of Athens, looking for quality but at the same time affordable food. A colorful cooperative restaurant!",
-  description: "Bread & Roses is the common secret of those who live and work in Omonia and the wider center of Athens, looking for quality but at the same time affordable food. A colorful cooperative restaurant! <br>Our philosophy for food is simple. Our menu is all in one dish: main course, salad and side dish, all in one plate that changes daily and you find it every morning at 10am on the store's media. That is to say, you will eat a delicious and economical full meal and you will be more than satisfied. <br>If you want to have a snack, just take the small portion. If you can't get out of work or just get bored getting out of the couch, you can order and deliver exactly the same procedure.<br>And don’t forget! When spring comes the cooler rooftop in Athens opens, offering the best scenery for events and parties!",
-  timetable: "Monday to Friday 10.00-20.00",
-  imageFile: "breadandroses.png",
-  contact: {
-    phone: 2103802898,
-    websiteURL: "https://breadandroses.gr/"
-  },
-  address: {
-    street: "Panepistimiou 64",
-    city: "Athens",
-    postCode: 10677,
-    coordinates: ['37.984086', '23.7275963']
-  },
-  payments: {
-    nationalBank: '',
-    pireausBank: '',
-    eurobank: '',
-    alphaBank: 'GR7901047254398567169526883',
-    paypal: '/breadandroses'
-  },
-  authToken: '',
-  _id: '',
-};
-
-var defaultMerchant_5 = {
-  name: "Cooperative Publications",
-  email: "syneditions@_gmail.com",
-  password: "cooperativepublications",
-  tempPass: '',
   sector: "Recreation and Culture",
-  subtitle: "We publish books with love and diligence, so that everyone can have access to good books.",
-  description: "We are a self-managed book space project that started in 2009 as an editorial initiative and gradually evolved into a self-managed community to promote a different culture and a different relationship with books. Cooperative Publications operate anti-hierarchically, without directors and directors, deciding - in the spirit of consensus - collectively.<br>Our publishing philosophy consists in the admittedly optimistic (and for some controversial) assumption that the book can not only be a commodity but primarily a social good and that the reader is not just a consumer but a book lover.<br>With love and diligence, we print books that we consider economically feasible, tasteful and remarkable (hopefully) so that everyone can have access to good books. <br>Beyond the publishing of books, our cooperative is also active in the field of distribution and sale of books. Our self-managed bookstore is already operating at 35 Eressou Street in Exarchia, where one can find books from small, alternative publishing houses that are not 'hosted' on the shelves of bigger bookstores. We have gathered a selected literature collection of rare books, as well as an offer section.",
-  timetable: "All time",
-  imageFile: "cooperativepublications.jpg",
-  contact: {
-    phone: 2103818840,
-    websiteURL: "https://ekdoseisynadelfwn.wordpress.com/"
-  },
-  address: {
-    street: "Kallidromiou 30",
-    city: "Athens",
-    postCode: 11473,
-    coordinates: ['37.9860737', '23.738737']
-  },
-  payments: {
-    nationalBank: '',
-    pireausBank: 'GR9301720800005080065297711',
-    eurobank: '',
-    alphaBank: '',
-    paypal: ''
-  },
-  authToken: '',
-  _id: '',
-};
+  imageFile: "partner_c.png",
+}
 
-var defaultMerchant_6 = {
-  name: "Action Plus",
-  email: "info@_action-plus.gr",
-  password: "actionplus",
-  tempPass: '',
-  sector: "Education",
-  subtitle: "We publish books with love and diligence, so that everyone can have access to good books.",
-  description: "ACTION PLUS Social Cooperative Enterprise was established in 2014 with the vision to create favorable conditions for an open access to the cultural, leisure and community life of Athens. In that context, we: organize quality guided tours at a low fee and with a special policy for families and for disabled persons.<br>Each of the ACTION PLUS activities is designed by our experts’ team and our group of certified tour guides. Our aim is to offer a unique experience that goes beyond the usual track.<br>ACTION PLUS profits are used for the creation  of new jobs, the broadening of our scope of activities and the increase of our social impact. Feel free to contact us for further information about our activities!",
-  timetable: "All time",
-  imageFile: "actionplus.jpg",
-  contact: {
-    phone: 2103818840,
-    websiteURL: "https://ekdoseisynadelfwn.wordpress.com/"
-  },
-  address: {
-    street: "Solonos 69",
-    city: "Athens",
-    postCode: 10679,
-    coordinates: ['37.9860737', '23.738737']
-  },
-  payments: {
-    nationalBank: "GR1301100800000008000681794",
-    pireausBank: "GR3401720320005032092204585",
-    eurobank: '',
-    alphaBank: "GR7901404410441002002010207",
-    paypal: ''
-  },
-  authToken: '',
-  _id: '',
-};
-
-var newUser = { // Auto Registered
-  name: "Demo User",
-  email: "demo@email.com",
-  password: "demo_2020",
+var user_a = { // Auto Registered
+  name: "Member 1",
+  email: "member1@email.com",
+  password: 'member1',
   verificationToken: '',
   restorationToken: '',
   authToken: '',
-  imageFile: "face1.png"
+  imageFile: "user_a.jpg",
+  tempPass: '',
+  _id: ''
 };
 
-var newCustomer_1 = { // Registerd by Merchant
-  name: "Customer 1",
-  email: "customer1@email.com",
-  password: 'customer1',
+var user_b = { // Registerd by Partner
+  name: "Member 2",
+  email: "member2@email.com",
+  password: 'member2',
   authToken: '',
+  verificationToken: '',
+  restorationToken: '',
+  tempPass: '',
+  _id: ''
+};
+
+var user_c = { // Registerd by Partner
+  name: "Member 3",
+  email: "member3@email.com",
+  password: 'member3',
+  card: '3412341278567856',
+  authToken: '',
+  verificationToken: '',
   restorationToken: '',
   tempPass: ''
 };
 
-var newCustomer_2 = { // Registerd by Merchant
-  name: "Customer 2",
-  email: "customer2@email.com",
-  password: 'customer2',
+var user_d = { // Registerd by Partner
+  name: "Member 4",
+  email: "member4@email.com",
+  password: 'member4',
+  card: '4123412385678567',
   authToken: '',
+  verificationToken: '',
   restorationToken: '',
   tempPass: ''
 };
 
-var newMerchant = { // Registered by Admin
-  name: "Merchant Random",
-  email: "merchant11@gmail.com",
-  password: 'newMerchant',
+var user_e = { // Registerd by Partner
+  name: "Member 5",
+  email: "member5@email.com",
+  password: 'member5',
+  card: '5678567812341234',
   authToken: '',
+  verificationToken: '',
+  restorationToken: '',
   tempPass: ''
+};
+
+var user_f = {
+  email: "member6@email.com",
+  oneClickToken: '',
+  tempPass: ''
+};
+
+var offer_a = {
+  title: 'First Offer',
+  subtitle: 'This is subtitle for offer A',
+  description: 'This is description for offer A! This is description for offer A! This is description for offer A!',
+  cost: 80,
+  expiresAt: '',
+  imageFile: 'offer_a.png',
+  updatedImageFile: 'updated_offer_a.png'
+}
+
+var offer_b = {
+  title: 'Second Offer',
+  subtitle: 'This is subtitle for offer B',
+  description: 'This is description for offer B! This is description for offer B! This is description for offer B!',
+  cost: 120,
+  expiresAt: '',
+  imageFile: 'offer_b.jpg',
+}
+
+var offer_c = {
+  title: 'Third Offer',
+  subtitle: 'This is subtitle for offer C',
+  description: 'This is description for offer C! This is description for offer C! This is description for offer C!',
+  cost: 100,
+  expiresAt: '',
+  imageFile: ''
+}
+
+var post_a = {
+  access: 'public',
+  title: 'First Post (Public)',
+  subtitle: 'This is subtitle for post A',
+  content: 'This is content for post A! This is content for post A! This is content for post A!',
+  imageFile: 'post_a.png'
+}
+
+var post_b = {
+  access: 'private',
+  title: 'Second Post (Private)',
+  subtitle: 'This is subtitle for post B',
+  content: 'This is content for post B! This is content for post B! This is content for post B!',
+  imageFile: 'post_b.png'
+}
+
+var event_a = {
+  access: 'partners',
+  title: 'First Event (Partners)',
+  subtitle: 'This is subtitle for event A',
+  description: 'This is description for event A! This is description for event A! This is description for event A!',
+  dateTime: '',
+  location: 'Location Event A',
+  imageFile: 'event_a.jpg'
+}
+
+var event_b = {
+  access: 'public',
+  title: 'Second Event (Public)',
+  subtitle: 'This is subtitle for event B',
+  description: 'This is description for event B! This is description for event B! This is description for event B!',
+  dateTime: '',
+  location: 'Location Event B',
+  imageFile: 'event_b.jpg',
+  updatedImageFile: 'updated_event_b.jpg'
+}
+
+var microcredit_a = {
+  _id: '',
+  title: 'First Microcredit Campaign',
+  terms: 'These are terms for microcredit A',
+  access: 'public',
+  description: 'This is description for microcredit A! This is description for microcredit A! This is description for microcredit A!',
+  category: 'Technology',
+  subtitle: 'This is subtitle',
+  quantitative: true,
+  stepAmount: 1,
+  minAllowed: 10,
+  maxAllowed: 50,
+  maxAmount: 3000,
+  redeemStarts: '',
+  redeemEnds: '',
+  startsAt: '',
+  expiresAt: '',
+  imageFile: 'microcredit_a.png',
+  updatedDescription: 'This is updated description for microcredit A! This is description for microcredit A! This is description for microcredit A!',
+}
+
+var microcredit_b = {
+  _id: '',
+  title: 'Second Microcredit Campaign',
+  terms: 'These are terms for microcredit B',
+  access: 'private',
+  description: 'This is description for microcredit B! This is description for microcredit B! This is description for microcredit B!',
+  category: 'Technology',
+  subtitle: 'This is subtitle',
+  quantitative: false,
+  stepAmount: 1,
+  minAllowed: 5,
+  maxAllowed: 0,
+  maxAmount: 45,
+  redeemStarts: '',
+  redeemEnds: '',
+  startsAt: '',
+  expiresAt: '',
+  imageFile: 'microcredit_b.jpg'
+}
+
+var content_a = {
+  name: 'Test Content',
+  el_title: 'Ελληνικός Τίτλος',
+  en_title: 'English Title',
+  el_content: 'Ελληνικό Περιεχόμενο',
+  en_content: 'English Content',
+  updated_en_content: 'Updated English Content'
 };
 
 type Offer = {
-  merchant_id: '',
-  merchant_imageURL: '',
-  merchant_name: '',
+  partner_id: '',
+  partner_imageURL: '',
+  partner_name: '',
+  partner_slug: '',
   offer_id: '',
-  imageURL: '',
+  offer_imageURL: '',
   title: '',
+  offer_slug: '',
+  subtitle: '',
   description: '',
-  cost: '',
-  expiresAt: '',
+  cost: 0,
+  expiresAt: 0,
   createdAt: ''
 }
 
 type Post = {
-  merchant_id: '',
-  merchant_imageURL: '',
-  merchant_name: '',
+  partner_id: '',
+  partner_imageURL: '',
+  partner_name: '',
+  partner_slug: '',
   post_id: '',
-  imageURL: '',
+  post_imageURL: '',
   title: '',
+  post_slug: '',
+  subtitle: '',
   content: '',
   type: '',
   access: '',
@@ -262,35 +302,72 @@ type Post = {
 }
 
 type Event = {
-  merchant_id: '',
-  merchant_imageURL: '',
-  merchant_name: '',
+  partner_id: '',
+  partner_imageURL: '',
+  partner_name: '',
+  partner_slug: '',
   event_id: '',
-  imageURL: '',
+  event_imageURL: '',
   title: '',
+  event_slug: '',
+  subtitle: '',
   description: '',
   location: '',
-  dateTime: '',
+  dateTime: 0,
   access: '',
   createdAt: ''
+}
+
+type MicrocreditCampaign = {
+  partner_id: '',
+  partner_imageURL: '',
+  partner_name: '',
+  merchnat_slug: '',
+  campaign_id: '',
+  campaign_imageURL: '',
+  title: '',
+  campaign_slug: '',
+  terms: '',
+  access: '',
+  description: '',
+  category: '',
+  subtitle: '',
+  quantitative: false,
+  stepAmount: 0,
+  minAllowed: 0,
+  maxAllowed: 0,
+  maxAmount: 0,
+  redeemStarts: 0,
+  redeemEnds: 0,
+  startsAt: 0,
+  expiresAt: 0,
+  createdAt: ''
+}
+
+type Content = {
+  _id: '',
+  name: '',
+  el_title: '',
+  en_title: '',
+  el_content: '',
+  en_content: ''
 }
 
 var offers: Offer[] = new Array();
 var posts: Post[] = new Array();
 var events: Event[] = new Array();
+var microcreditCampaigns: MicrocreditCampaign[] = new Array();
+var content: Content[] = new Array();
 
 export {
   imagesLocation,
-  defaultMerchant_1,
-  defaultMerchant_2,
-  defaultMerchant_3,
-  defaultMerchant_4,
-  defaultMerchant_5,
-  defaultMerchant_6,
   defaultAdmin,
-  newUser,
-  newCustomer_1,
-  newCustomer_2,
-  newMerchant,
-  offers, posts, events
+  partner_a, partner_b, partner_c,
+  user_a, user_b, user_c, user_d, user_e, user_f,
+  offer_a, offer_b, offer_c,
+  post_a, post_b,
+  event_a, event_b,
+  microcredit_a, microcredit_b,
+  content_a,
+  offers, posts, events, microcreditCampaigns, content
 }

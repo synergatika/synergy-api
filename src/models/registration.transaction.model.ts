@@ -35,8 +35,8 @@ const registrationTransactionSchema = new mongoose.Schema({
     enum: ['RegisterMember', 'RegisterPartner', 'RecoverPoints'],
   },
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const registrationTransactionModel = mongoose.model<RegistrationTransaction & mongoose.Document>('RegistrationTransaction', registrationTransactionSchema);
 export default registrationTransactionModel;

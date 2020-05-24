@@ -1,8 +1,8 @@
 interface Offer {
-  merchant_id: string;
-  merchant_slug: string;
-  merchant_name: string;
-  merchant_imageURL: string;
+  partner_id: string;
+  partner_slug: string;
+  partner_name: string;
+  partner_imageURL: string;
 
   offer_id: string;
   offer_slug: string;
@@ -10,7 +10,7 @@ interface Offer {
   title: string;
   description: string;
   cost: number;
-  expiresAt: Date;
+  expiresAt: number;
 
   createdAt: Date;
   updatedAt: Date;

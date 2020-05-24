@@ -7,7 +7,6 @@ import HttpException from '../exceptions/HttpException';
 
 function validationParams<T>(type: any): express.RequestHandler {
   return (req, res, next) => {
-
     validate(plainToClass(type, req.params))
       .then((errors: ValidationError[]) => {
         if (errors.length > 0) {
@@ -19,5 +18,4 @@ function validationParams<T>(type: any): express.RequestHandler {
       });
   };
 }
-
 export default validationParams;

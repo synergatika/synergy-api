@@ -17,11 +17,13 @@ function validationBody<T>(type: any): express.RequestHandler {
     validate(plainToClass(type, req.body))
       .then((errors: ValidationError[]) => {
         if (errors.length > 0) {
+
           if (req.file && (req.file.path).includes('profile')) {
             unlinkSync(path.join(__dirname, `../assets/profile/${req.file.filename}`));
           } else if (req.file && (req.file.path).includes('items')) {
             unlinkSync(path.join(__dirname, `../assets/items/${req.file.filename}`));
           }
+
           const message = errors.map((error: ValidationError) => Object.values(error.constraints)).join(', ');
           next(new HttpException(400, message));
         } else {
@@ -30,5 +32,4 @@ function validationBody<T>(type: any): express.RequestHandler {
       });
   };
 }
-
 export default validationBody;

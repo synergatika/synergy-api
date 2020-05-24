@@ -18,5 +18,4 @@ function validationBody<T>(type: any): express.RequestHandler {
       });
   };
 }
-
 export default validationBody;

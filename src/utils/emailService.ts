@@ -10,7 +10,7 @@ const Email = require('email-templates');
 const email = new Email();
 
 // Exceptions
-import NotFoundException from '../exceptions/NotFound.exception';
+import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 // Interfaces
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 
@@ -29,28 +29,29 @@ class EmailService {
       })
   }
 
+  /**
+   *
+   */
   public emailVerification = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
 
     let options = {
       from: process.env.EMAIL_FROM,
-      to: data.user.email,//'synergatika@gmail.com',
+      to: data.user.email,
       subject: 'Email Verification',
       html: '',
       type: 'verification',
-      //locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/verify-email/${data.token}` },
-      locals: { logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/verify-email/${data.token}` },
+      locals: {
+        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        home_page: `${process.env.APP_URL}`,
+        link: `${process.env.APP_URL}auth/verify-email/${data.token}`
+      },
     }
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
-    if (error) return next(new NotFoundException('Sending Email Fail'));
-    response.status(200).send({
-      // -- For Testing Purposes Only -- //
-      tempData: { "token": data.token },
-      // -- ////////////|\\\\\\\\\\\\ -- //
-      message: response.locals.message || "Please, follow your link to Validate your Email.",
-      code: response.locals.statusCode || 200
-    })
+    if (error) return next(new UnprocessableEntityException('Email Service Error'));
+
+    response.status(data.res.code).send(data.res.body);
   }
 
   public passwordRestoration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -58,25 +59,22 @@ class EmailService {
 
     let options = {
       from: process.env.EMAIL_FROM,
-      to: data.user.email,//'synergatika@gmail.com',
+      to: data.user.email,
       subject: 'Password Restoration',
       html: '',
       type: 'restoration',
-      //locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/reset-password/${data.token}` },
-      locals: { logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/reset-password/${data.token}` },
+      locals: {
+        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        home_page: `${process.env.APP_URL}`,
+        link: `${process.env.APP_URL}auth/reset-password/${data.token}`
+      },
     }
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
-    if (error) return next(new NotFoundException('Sending Email Fail'));
+    if (error) return next(new UnprocessableEntityException('Email Service Error'));
 
-    response.status(200).send({
-      // -- For Testing Purposes Only -- //
-      tempData: { "token": data.token },
-      // -- ////////////|\\\\\\\\\\\\ -- //
-      message: "Please, follow your link to Update your Password.",
-      code: 200
-    });
+    response.status(data.res.code).send(data.res.body);
   }
 
   public userRegistration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -85,25 +83,70 @@ class EmailService {
     if (data.user.email) {
       let options = {
         from: process.env.EMAIL_FROM,
-        to: data.user.email,//'synergatika@gmail.com',
+        to: data.user.email,
         subject: 'New Account',
         html: '',
         type: 'registration',
-        //locals: { logo_url: `${process.env.API_URL}assets/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/login/`, password: data.user.password },
-        locals: { logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`, home_page: `${process.env.APP_URL}`, link: `${process.env.APP_URL}auth/login/`, password: data.user.password },
+        locals: {
+          logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+          home_page: `${process.env.APP_URL}`,
+          link: `${process.env.APP_URL}auth/login/`,
+          password: data.user.password
+        },
       }
+
       let error, results: object = {};
       [error, results] = await to(this.emailSender(options));
-      if (error) return next(new NotFoundException('Sending Email Fail'));
-
-      response.locals.response = {
-        tempData: { "password": data.user.password },
-        message: "User has been Invited to enjoy our Community!",
-        code: 200
-      }
-
+      if (error) return next(new UnprocessableEntityException('Email Service Error'));
     }
-    next();
+    response.status(data.res.code).send(data.res.body);
+  }
+
+  public accountReactivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+
+    let options = {
+      from: process.env.EMAIL_FROM,
+      to: data.user.email,
+      subject: 'Account Activation',
+      html: '',
+      type: 'reactivation',
+      locals: {
+        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        home_page: `${process.env.APP_URL}`,
+        link: `${process.env.APP_URL}auth/login/`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException('Email Service Error'));
+
+    response.status(data.res.code).send(data.res.body);
+  }
+
+  public accountDeactivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+
+    let options = {
+      from: process.env.EMAIL_FROM,
+      to: process.env.EMAIL_FROM,
+      subject: 'Account Deactivation',
+      html: '',
+      type: 'deactivation',
+      locals: {
+        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        home_page: `${process.env.APP_URL}`,
+        email: data.user.email,
+        reason: `${data.reason}`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException('Email Service Error'));
+
+    response.status(data.res.code).send(data.res.body);
   }
 }
 export default EmailService;

@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsEnum, IsNumber, IsBoolean, IsOptional } from 'class-validator';
 
 class EarnTokensDto {
   @IsNumber()

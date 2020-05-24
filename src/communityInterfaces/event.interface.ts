@@ -1,8 +1,8 @@
 interface Event {
-  merchant_id: string;
-  merchant_slug: string;
-  merchant_name: string;
-  merchant_imageURL: string;
+  partner_id: string;
+  partner_slug: string;
+  partner_name: string;
+  partner_imageURL: string;
 
   event_id: string;
   event_slug: string;

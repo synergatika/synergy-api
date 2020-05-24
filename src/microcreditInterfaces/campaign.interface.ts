@@ -1,17 +1,19 @@
 import Support from './support.interface';
+import Bank from '../usersInterfaces/bank.interface';
 
 interface Campaign {
-  merchant_name: string;
-  merchant_id: string;
-  merchant_slug: string;
-  merchant_imageURL: string;
-  merchant_payments: {
-    nationalBank: string;
-    pireausBank: string;
-    eurobank: string;
-    alphaBank: string;
-    paypal: string;
-  };
+  partner_name: string;
+  partner_id: string;
+  partner_slug: string;
+  partner_imageURL: string;
+  partner_payments: [Bank];
+  // {
+  //   nationalBank: string;
+  //   pireausBank: string;
+  //   eurobank: string;
+  //   alphaBank: string;
+  //   paypal: string;
+  // };
 
   campaign_id: string;
   campaign_slug: string;

@@ -19,6 +19,8 @@
     "@types/chai-as-promised": "7.1.2",
     "@types/chai-string": "1.4.2",
     "@types/email-templates": "6.0.0",
+    "@types/latinize": "^0.2.15",
+    "@types/rimraf": "^2.0.3",
     "@types/should": "13.0.0",
     "await-to-ts": "1.0.6",
     "bcrypt": "3.0.6",

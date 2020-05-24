@@ -10,6 +10,7 @@ import CampaignID from '../microcreditDtos/campaign_id.params.dto';
 import SupportID from '../microcreditDtos/support_id.params.dto';
 // Exceptions
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
+import NotFoundException from '../exceptions/NotFound.exception';
 // Interfaces
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import Offer from '../loyaltyInterfaces/offer.interface';
@@ -21,7 +22,7 @@ import Support from '../microcreditInterfaces/support.interface';
 import userModel from '../models/user.model';
 
 async function offer(request: RequestWithUser, response: Response, next: NextFunction) {
-  const merchant_id: OfferID["merchant_id"] = request.params.merchant_id;
+  const partner_id: OfferID["partner_id"] = request.params.partner_id;
   const offer_id: OfferID["offer_id"] = request.params.offer_id;
 
   let error: Error, offers: Offer[];
@@ -31,7 +32,7 @@ async function offer(request: RequestWithUser, response: Response, next: NextFun
     $match:
     {
       $and: [{
-        _id: new ObjectId(merchant_id)
+        _id: new ObjectId(partner_id)
       }, {
         'offers._id': new ObjectId(offer_id)
       }]
@@ -48,18 +49,15 @@ async function offer(request: RequestWithUser, response: Response, next: NextFun
 
   if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!offers.length) {
-    response.status(200).send({
-      message: "Offer does not exist",
-      code: 204
-    })
-  } else {
-    response.locals["offer"] = offers[0];
-    next();
+    return next(new NotFoundException('OFFER_NOT_EXISTS'));
   }
+
+  response.locals["offer"] = offers[0];
+  next();
 }
 
 async function post(request: RequestWithUser, response: Response, next: NextFunction) {
-  const merchant_id: PostID["merchant_id"] = request.params.merchant_id;
+  const partner_id: PostID["partner_id"] = request.params.partner_id;
   const post_id: PostID["post_id"] = request.params.post_id;
 
   let error: Error, posts: Post[];
@@ -69,7 +67,7 @@ async function post(request: RequestWithUser, response: Response, next: NextFunc
     $match:
     {
       $and: [{
-        _id: new ObjectId(merchant_id)
+        _id: new ObjectId(partner_id)
       }, {
         'posts._id': new ObjectId(post_id)
       }]
@@ -85,18 +83,15 @@ async function post(request: RequestWithUser, response: Response, next: NextFunc
 
   if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!posts.length) {
-    response.status(200).send({
-      message: "Post does not exist",
-      code: 204
-    })
-  } else {
-    response.locals["post"] = posts[0];
-    next();
+    return next(new NotFoundException('POST_NOT_EXISTS'));
   }
+
+  response.locals["post"] = posts[0];
+  next();
 }
 
 async function event(request: RequestWithUser, response: Response, next: NextFunction) {
-  const merchant_id: EventID["merchant_id"] = request.params.merchant_id;
+  const partner_id: EventID["partner_id"] = request.params.partner_id;
   const event_id: EventID["event_id"] = request.params.event_id;
 
   let error: Error, events: Event[];
@@ -106,7 +101,7 @@ async function event(request: RequestWithUser, response: Response, next: NextFun
     $match:
     {
       $and: [{
-        _id: new ObjectId(merchant_id)
+        _id: new ObjectId(partner_id)
       }, {
         'events._id': new ObjectId(event_id)
       }]
@@ -122,18 +117,15 @@ async function event(request: RequestWithUser, response: Response, next: NextFun
 
   if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!events.length) {
-    response.status(200).send({
-      message: "Event does not exist",
-      code: 204
-    })
-  } else {
-    response.locals["event"] = events[0];
-    next();
+    return next(new NotFoundException('EVENT_NOT_EXISTS'));
   }
+
+  response.locals["event"] = events[0];
+  next();
 }
 
 async function microcreditCampaign(request: RequestWithUser, response: Response, next: NextFunction) {
-  const merchant_id: CampaignID["merchant_id"] = request.params.merchant_id;
+  const partner_id: CampaignID["partner_id"] = request.params.partner_id;
   const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
   let error: Error, campaigns: Campaign[];
@@ -143,7 +135,7 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
     $match:
     {
       $and: [{
-        _id: new ObjectId(merchant_id)
+        _id: new ObjectId(partner_id)
       }, {
         'microcredit._id': new ObjectId(campaign_id)
       }]
@@ -171,20 +163,17 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
   }]).exec().catch());
   if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!campaigns.length) {
-    response.status(200).send({
-      message: "Campaign does not exist!",
-      code: 204
-    })
-  } else {
-    response.locals["campaign"] = campaigns[0];
-    next();
+    return next(new NotFoundException('CAMPAIGN_NOT_EXISTS'));
   }
+
+  response.locals["campaign"] = campaigns[0];
+  next();
 }
 
 async function microcreditSupport(request: RequestWithUser, response: Response, next: NextFunction) {
-  const merchant_id: SupportID["merchant_id"] = request.params.merchant_id;
+  const partner_id: SupportID["partner_id"] = request.params.partner_id;
   const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
-  const support_id: SupportID["support_id"] = request.params.support_id || request.body.support_id;
+  const support_id: SupportID["support_id"] = request.params.support_id;
 
   let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
   [error, supports] = await to(userModel.aggregate([{
@@ -194,7 +183,7 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
   }, {
     $match: {
       $and: [{
-        _id: new ObjectId(merchant_id)
+        _id: new ObjectId(partner_id)
       }, {
         'microcredit._id': new ObjectId(campaign_id)
       }, {
@@ -219,17 +208,14 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
     }
   }
   ]).exec().catch());
-
   if (error) return next(new UnprocessableEntityException('DB ERROR'));
   else if (!supports.length) {
-    response.status(200).send({
-      message: "Support does not exist!",
-      code: 204
-    })
-  } else {
-    response.locals["support"] = supports[0];
-    next();
+    return next(new NotFoundException('SUPPORT_NOT_EXISTS'));
   }
+
+  request.params["_to"] = supports[0].backer_id;
+  response.locals["support"] = supports[0];
+  next();
 }
 
 export default {
