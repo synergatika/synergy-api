@@ -1,12 +1,16 @@
 import Support from './support.interface';
-import Bank from '../usersInterfaces/bank.interface';
+import PartnerAddress from '../usersInterfaces/partner_address.interface';
+import PartnerContact from '../usersInterfaces/partner_contact.interface';
+import PartnerPayment from '../usersInterfaces/partner_payment.interface';
 
 interface Campaign {
   partner_name: string;
   partner_id: string;
   partner_slug: string;
   partner_imageURL: string;
-  partner_payments: [Bank];
+  partner_address: PartnerAddress;
+  partner_contact: PartnerContact;
+  partner_payments: [PartnerPayment];
   // {
   //   nationalBank: string;
   //   pireausBank: string;

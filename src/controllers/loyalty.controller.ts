@@ -47,17 +47,51 @@ class LoyaltyController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/earn/:_to`, authMiddleware, accessMiddleware.onlyAsPartner, /*accessMiddleware.confirmPassword,*/validationBodyMiddleware(EarnPointsDto), usersMiddleware.member, balanceMiddleware.activity, this.earnTokens);
-    this.router.post(`${this.path}/redeem/:_to`, authMiddleware, accessMiddleware.onlyAsPartner, /*accessMiddleware.confirmPassword,*/ validationBodyMiddleware(RedeemPointsDto), usersMiddleware.member, balanceMiddleware.balance, checkMiddleware.canRedeemPoints, this.redeemTokens);
-    this.router.post(`${this.path}/redeem/:partner_id/:offer_id/:_to`, authMiddleware, accessMiddleware.onlyAsPartner, /*accessMiddleware.confirmPassword,*/ validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, validationBodyMiddleware(RedeemPointsDto), usersMiddleware.member, itemsMiddleware.offerMiddleware, balanceMiddleware.balance, checkMiddleware.canRedeemOffer, this.redeemTokens);
+    this.router.post(`${this.path}/earn/:_to`,
+      authMiddleware, accessMiddleware.onlyAsPartner, /*accessMiddleware.confirmPassword,*/
+      validationBodyMiddleware(EarnPointsDto),
+      usersMiddleware.member,
+      balanceMiddleware.activity,
+      this.earnTokens);
 
-    this.router.get(`${this.path}/transactions/:offset`, authMiddleware, this.readTransactions);
+    this.router.post(`${this.path}/redeem/:_to`,
+      authMiddleware, accessMiddleware.onlyAsPartner, /*accessMiddleware.confirmPassword,*/
+      validationBodyMiddleware(RedeemPointsDto),
+      usersMiddleware.member,
+      balanceMiddleware.balance, checkMiddleware.canRedeemPoints,
+      this.redeemTokens);
 
-    this.router.get(`${this.path}/balance`, authMiddleware, this.readBalance);
-    this.router.get(`${this.path}/balance/:_to`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(IdentifierDto), usersMiddleware.member, balanceMiddleware.balance, this.readBalanceByPartner);
+    this.router.post(`${this.path}/redeem/:partner_id/:offer_id/:_to`,
+      authMiddleware, accessMiddleware.onlyAsPartner, accessMiddleware.belongsTo,/*accessMiddleware.confirmPassword,*/
+      validationParamsMiddleware(OfferID), validationBodyMiddleware(RedeemPointsDto),
+      usersMiddleware.member,
+      itemsMiddleware.offerMiddleware,
+      balanceMiddleware.balance, checkMiddleware.canRedeemOffer,
+      this.redeemTokens);
 
-    this.router.get(`${this.path}/badge`, authMiddleware, this.readActivity);
-    this.router.get(`${this.path}/badge/:_to`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(IdentifierDto), usersMiddleware.member, balanceMiddleware.activity, this.readActivityByPartner);
+    this.router.get(`${this.path}/transactions/:offset`,
+      authMiddleware,
+      this.readTransactions);
+
+    this.router.get(`${this.path}/balance`,
+      authMiddleware,
+      this.readBalance);
+    this.router.get(`${this.path}/balance/:_to`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(IdentifierDto),
+      usersMiddleware.member,
+      balanceMiddleware.balance,
+      this.readBalanceByPartner);
+
+    this.router.get(`${this.path}/badge`,
+      authMiddleware,
+      this.readActivity);
+    this.router.get(`${this.path}/badge/:_to`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(IdentifierDto),
+      usersMiddleware.member,
+      balanceMiddleware.activity,
+      this.readActivityByPartner);
 
     //  this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
     //  this.router.get(`${this.path}/transactions_info`, authMiddleware, this.transactionInfoLength);
@@ -90,8 +124,8 @@ class LoyaltyController implements Controller {
           .then(async (result: any) => {
             await this.transaction.create({
               ...result,
-
               partner_id: request.user._id, member_id: member._id,
+              type: "EarnPoints",
               data: {
                 partner_name: request.user.name, partner_email: request.user.email,
                 points: _points, amount: _amount
@@ -103,7 +137,6 @@ class LoyaltyController implements Controller {
               //   to_email: member.email,
               //   points: _points, amount: _amount
               // },
-              type: "EarnPoints"
             });
             response.status(201).send({
               data: result,
@@ -134,19 +167,19 @@ class LoyaltyController implements Controller {
 
             await this.transaction.create({
               ...result,
-
               partner_id: request.user._id, member_id: member._id,
+              type: (offer_id === '-1') ? "RedeemPoints" : "RedeemPointsOffer",
               data: {
                 partner_name: request.user.name, partner_email: request.user.email,
                 points: data._points, offer_id: offer_id, offer_title: offer_title
-              },
+              }
 
               // from_id: request.user._id, to_id: member._id,
               // info: {
               //   from_name: request.user.name, from_email: request.user.email,
               //   to_email: member.email, points: data._points, offer_id: offer_id,
               // },
-              type: (offer_id === '-1') ? "RedeemPoints" : "RedeemPointsOffer"
+
             });
 
             response.status(201).send({
@@ -222,7 +255,6 @@ class LoyaltyController implements Controller {
         "transactions": { "$size": "$transactions" },
       }
     }]).exec().catch());
-
     if (error) return next(new UnprocessableEntityException('DB ERROR'));
 
     response.status(200).send({
@@ -258,6 +290,8 @@ class LoyaltyController implements Controller {
       code: 200
     });
   }
+}
+export default LoyaltyController;
 
   // private partnersInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
   //   await serviceInstance.getLoyaltyAppContract()
@@ -296,6 +330,3 @@ class LoyaltyController implements Controller {
   //       next(new UnprocessableEntityException('Blockchain Error'))
   //     })
   // }
-}
-
-export default LoyaltyController;

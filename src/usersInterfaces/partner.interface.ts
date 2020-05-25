@@ -1,5 +1,7 @@
 import User from './user.interface';
-import Bank from './bank.interface';
+import PartnerAddress from './partner_address.interface';
+import PartnerContact from './partner_contact.interface';
+import PartnerPayment from './partner_payment.interface';
 
 interface Partner extends User {
   slug: string;
@@ -9,25 +11,9 @@ interface Partner extends User {
   description: string;
   timetable: string;
 
-  contact: {
-    phone: number;
-    websiteURL: string;
-  };
-  address: {
-    street: string;
-    city: string;
-    postCode: string;
-    coordinates: [string];
-  };
-  payments: [Bank];
-
-
-  // nationalBank: string,
-  // pireausBank: string,
-  // eurobank: string,
-  // alphaBank: string,
-  // paypal: string,
-
+  contact: PartnerContact;
+  address: PartnerAddress;
+  payments: [PartnerPayment];
 }
 
 export default Partner;

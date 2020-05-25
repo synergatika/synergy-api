@@ -55,7 +55,7 @@ class MicrocreditCampaignsController implements Controller {
     this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPrivateCampaignsByStore);
     this.router.get(`${this.path}/:partner_id/:campaign_id`, validationParamsMiddleware(CampaignID), this.readCampaign);
     this.router.put(`${this.path}/:partner_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(CampaignDto), itemsMiddleware.microcreditCampaign, checkMiddleware.canEditMicrocredit, this.updateCampaign);
-    this.router.put(`${this.path}/:partner_id/:campaign_id/publish`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, itemsMiddleware.microcreditCampaign, checkMiddleware.canPublishMicrocredit, this.registerMicrocredit);
+    this.router.put(`${this.path}/:partner_id/:campaign_id/publish`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, usersMiddleware.partner, itemsMiddleware.microcreditCampaign, checkMiddleware.canPublishMicrocredit, this.registerMicrocredit);
     this.router.delete(`${this.path}/:partner_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, itemsMiddleware.microcreditCampaign, checkMiddleware.canEditMicrocredit, this.deleteCampaign);
   }
 
@@ -86,6 +86,7 @@ class MicrocreditCampaignsController implements Controller {
         partner_name: '$name',
         partner_email: '$email',
         partner_imageURL: '$imageURL',
+
         partner_payments: '$payments',
         partner_address: '$address',
         partner_contact: '$contact',
@@ -167,6 +168,7 @@ class MicrocreditCampaignsController implements Controller {
         partner_name: '$name',
         partner_email: '$email',
         partner_imageURL: '$imageURL',
+
         partner_payments: '$payments',
         partner_address: '$address',
         partner_contact: '$contact',
@@ -341,6 +343,7 @@ class MicrocreditCampaignsController implements Controller {
         partner_email: '$email',
         partner_slug: '$slug',
         partner_imageURL: '$imageURL',
+
         partner_payments: '$payments',
         partner_address: '$address',
         partner_contact: '$contact',
@@ -437,6 +440,7 @@ class MicrocreditCampaignsController implements Controller {
         partner_email: '$email',
         partner_slug: '$slug',
         partner_imageURL: '$imageURL',
+
         partner_payments: '$payments',
         partner_address: '$address',
         partner_contact: '$contact',
@@ -527,7 +531,8 @@ class MicrocreditCampaignsController implements Controller {
         partner_email: '$email',
         partner_slug: '$slug',
         partner_imageURL: '$imageURL',
-        partner_payment: '$payment',
+
+        partner_payments: '$payments',
         partner_address: '$address',
         partner_contact: '$contact',
 

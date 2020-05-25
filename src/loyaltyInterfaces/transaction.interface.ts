@@ -4,6 +4,7 @@ interface LoyaltyTransaction {
   member_id: string;
   partner_id: string;
 
+  type: string;
   data: {
     partner_name: string;
     partner_email: string;
@@ -12,7 +13,6 @@ interface LoyaltyTransaction {
     offer_id: string;
     offer_title: string
   };
-  type: string;
 
   tx: string;
   createdAt: Date;

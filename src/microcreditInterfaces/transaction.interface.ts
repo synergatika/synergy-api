@@ -4,6 +4,7 @@ interface MicrocreditTransaction {
   partner_id: string;
   member_id: string;
 
+  type: string;
   data: {
     campaign_id: string;
     campaign_title: string;
@@ -12,7 +13,7 @@ interface MicrocreditTransaction {
     contractIndex: number;
     tokens: number;
   };
-  type: string;
+
 
   tx: string;
   createdAt: Date;

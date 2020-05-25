@@ -46,7 +46,11 @@ class CheckMiddleware {
 
   static canPublishMicrocredit = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const campaign: Campaign = response.locals.campaign;
+    const partner: Partner = response.locals.partner;
 
+    if (!partner.payments || !partner.payments.length) {
+      return next(new NotFoundException('PAYMENT_METHODS_REQUIRED'));
+    }
     if (campaign.status !== 'draft') {
       return next(new NotFoundException('CAMPAIGN_PUBLISHED'));
     }

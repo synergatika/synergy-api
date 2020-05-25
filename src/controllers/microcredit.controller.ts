@@ -203,11 +203,12 @@ class MicrocreditController implements Controller {
             await this.transaction.create({
               ...result,
               partner_id: partner_id, member_id: member._id,
+              type: 'PromiseFund',
               data: {
                 campaign_id: campaign_id, campaign_title: campaign.title, address: campaign.address,
                 support_id: support.support_id, contractIndex: response.locals.support.contractIndex,
                 tokens: data._amount
-              }, type: 'PromiseFund'
+              }
             });
 
             await this.user.updateOne({
@@ -291,10 +292,11 @@ class MicrocreditController implements Controller {
               await this.transaction.create({
                 ...result,
                 partner_id: partner_id, member_id: support.backer_id,
+                type: 'ReceiveFund',
                 data: {
                   campaign_id: campaign_id, campaign_title: campaign.title, address: campaign.address,
                   support_id: support_id, contractIndex: support.contractIndex
-                }, type: 'ReceiveFund'
+                }
               });
 
               response.status(200).send({
@@ -333,10 +335,11 @@ class MicrocreditController implements Controller {
             await this.transaction.create({
               ...result,
               partner_id: partner_id, member_id: support.backer_id,
+              type: 'RevertFund',
               data: {
                 campaign_id: campaign_id, campaign_title: campaign.title, address: campaign.address,
                 support_id: support_id, contractIndex: support.contractIndex
-              }, type: 'RevertFund'
+              }
             });
             response.status(200).send({
               data: {
@@ -404,11 +407,12 @@ class MicrocreditController implements Controller {
               await this.transaction.create({
                 ...result,
                 partner_id: partner_id, member_id: member._id,
+                type: 'SpendFund',
                 data: {
                   campaign_id: campaign_id, campaign_title: campaign.title, address: campaign.address,
                   support_id: support_id,
                   tokens: _tokens
-                }, type: 'SpendFund'
+                }
               });
 
               response.status(200).send({
@@ -432,11 +436,12 @@ class MicrocreditController implements Controller {
               await this.transaction.create({
                 ...result,
                 partner_id: partner_id, member_id: member._id,
+                type: 'SpendFund',
                 data: {
                   campaign_id: campaign_id, campaign_title: campaign.title, address: campaign.address,
                   support_id: support_id,
                   tokens: _tokens
-                }, type: 'SpendFund'
+                }
               });
 
               response.status(200).send({
