@@ -14,7 +14,6 @@ import userModel from '../models/user.model';
 async function oneClickMiddleware(request: RequestWithUser, response: Response, next: NextFunction) {
 
   const params = request.params;
-  console.log(params);
   if (params && params.token) {
     try {
       const token = request.params.token;
@@ -30,18 +29,14 @@ async function oneClickMiddleware(request: RequestWithUser, response: Response, 
       });
       if (user) {
         request.user = user;
-        console.log("HERE", request.user);
         next();
       } else {
-        console.log("Error_1")
         next(new UnauthorizedException("Authorization Required."));
       }
     } catch (error) {
-      console.log("Error_2", error)
       next(new UnauthorizedException("Authorization Required."));
     }
   } else {
-    console.log("Error_3")
     next(new UnauthorizedException("Authorization Required."));
   }
 }

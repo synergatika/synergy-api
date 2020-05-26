@@ -40,7 +40,7 @@ class ContentController implements Controller {
   private readContent = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     let error: Error, content: Content[];
     [error, content] = await to(this.content.find().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       data: content,
@@ -59,7 +59,7 @@ class ContentController implements Controller {
         { name: content_id }
       ]
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       data: content,
@@ -74,7 +74,7 @@ class ContentController implements Controller {
     [error, results] = await to(this.content.create({
       ...data
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       message: 'Success! A new Content has been created!',
@@ -90,15 +90,15 @@ class ContentController implements Controller {
     [error, results] = await to(this.content.updateOne({
       _id: content_id
     }, {
-        $set: {
-          name: data.name,
-          el_title: data.el_title,
-          en_title: data.en_title,
-          el_content: data.el_content,
-          en_content: data.en_content
-        }
-      }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+      $set: {
+        name: data.name,
+        el_title: data.el_title,
+        en_title: data.en_title,
+        el_content: data.el_content,
+        en_content: data.en_content
+      }
+    }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       message: "Success! Content " + content_id + " has been updated!",

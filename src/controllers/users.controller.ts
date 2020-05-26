@@ -60,7 +60,7 @@ class UserController implements Controller {
     }).sort('-createdAt')
       .limit(offset.limit).skip(offset.skip)
       .catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: users,
       code: 200
@@ -85,7 +85,7 @@ class UserController implements Controller {
       "fields": { "email": 1, "name": 1, "acceess": 1 },
       "new": true
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {
       res: {

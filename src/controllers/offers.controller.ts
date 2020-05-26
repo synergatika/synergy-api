@@ -94,7 +94,7 @@ class OffersController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: offers,
       code: 200
@@ -121,7 +121,7 @@ class OffersController implements Controller {
         }
       }
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new offer has been created!",
       code: 201
@@ -185,7 +185,7 @@ class OffersController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: offers,
       code: 200
@@ -238,7 +238,7 @@ class OffersController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     else if (!offers.length) {
       return next(new NotFoundException('OFFER_NOT_EXISTS'));
     }
@@ -278,7 +278,7 @@ class OffersController implements Controller {
         'offers.$.expiresAt': data.expiresAt
       }
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       message: "Success! Offer " + offer_id + " has been updated!",
@@ -306,7 +306,7 @@ class OffersController implements Controller {
         }
       }
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Offer " + offer_id + " has been deleted!",
       code: 200

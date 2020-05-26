@@ -21,7 +21,9 @@ import validationBodyMiddleware from '../middleware/body.validation';
 import validationParamsMiddleware from '../middleware/params.validation';
 import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
 import authMiddleware from '../middleware/auth.middleware';
+import oneClickMiddleware from '../middleware/one-click.middleware';
 import accessMiddleware from '../middleware/access.middleware';
+import usersMiddleware from '../middleware/users.middleware';
 import itemsMiddleware from '../middleware/items.middleware';
 import checkMiddleware from '../middleware/check.middleware';
 import FilesMiddleware from '../middleware/files.middleware';
@@ -48,15 +50,67 @@ class MicrocreditCampaignsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/public/:offset`, this.readPublicCampaigns);
-    this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPrivateCampaigns);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(CampaignDto), this.createCampaign);
-    this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPublicCampaignsByStore);
-    this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPrivateCampaignsByStore);
-    this.router.get(`${this.path}/:partner_id/:campaign_id`, validationParamsMiddleware(CampaignID), this.readCampaign);
-    this.router.put(`${this.path}/:partner_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(CampaignDto), itemsMiddleware.microcreditCampaign, checkMiddleware.canEditMicrocredit, this.updateCampaign);
-    this.router.put(`${this.path}/:partner_id/:campaign_id/publish`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, usersMiddleware.partner, itemsMiddleware.microcreditCampaign, checkMiddleware.canPublishMicrocredit, this.registerMicrocredit);
-    this.router.delete(`${this.path}/:partner_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, itemsMiddleware.microcreditCampaign, checkMiddleware.canEditMicrocredit, this.deleteCampaign);
+    this.router.post(`${this.path}/one-click/:token`,
+      oneClickMiddleware, accessMiddleware.onlyAsPartner,
+      uploadFile.single('imageURL'),
+      validationBodyAndFileMiddleware(CampaignDto),
+      this.createCampaign,
+      usersMiddleware.partner,
+      checkMiddleware.canPublishMicrocredit,
+      this.registerMicrocredit);
+
+    this.router.get(`${this.path}/public/:offset`,
+      this.readPublicCampaigns);
+
+    this.router.get(`${this.path}/private/:offset`,
+      authMiddleware,
+      this.readPrivateCampaigns);
+
+    this.router.post(`${this.path}/`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      uploadFile.single('imageURL'),
+      validationBodyAndFileMiddleware(CampaignDto),
+      this.createCampaign);
+
+    this.router.get(`${this.path}/public/:partner_id/:offset`,
+      validationParamsMiddleware(PartnerID),
+      this.readPublicCampaignsByStore);
+
+    this.router.get(`${this.path}/private/:partner_id/:offset`,
+      authMiddleware,
+      validationParamsMiddleware(PartnerID),
+      this.readPrivateCampaignsByStore);
+
+    this.router.get(`${this.path}/:partner_id/:campaign_id`,
+      validationParamsMiddleware(CampaignID),
+      this.readCampaign);
+
+    this.router.put(`${this.path}/:partner_id/:campaign_id`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(CampaignID),
+      accessMiddleware.belongsTo,
+      uploadFile.single('imageURL'),
+      validationBodyAndFileMiddleware(CampaignDto),
+      itemsMiddleware.microcreditCampaign,
+      checkMiddleware.canEditMicrocredit,
+      this.updateCampaign);
+
+    this.router.put(`${this.path}/:partner_id/:campaign_id/publish`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(CampaignID),
+      accessMiddleware.belongsTo,
+      usersMiddleware.partner,
+      itemsMiddleware.microcreditCampaign,
+      checkMiddleware.canPublishMicrocredit,
+      this.registerMicrocredit);
+
+    this.router.delete(`${this.path}/:partner_id/:campaign_id`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(CampaignID),
+      accessMiddleware.belongsTo,
+      itemsMiddleware.microcreditCampaign,
+      checkMiddleware.canEditMicrocredit,
+      this.deleteCampaign);
   }
 
   private readPrivateCampaigns = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -123,7 +177,7 @@ class MicrocreditCampaignsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     const confirmedTokens: Tokens[] = await this.readTokens(campaigns, 'confirmation');
     const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
@@ -205,7 +259,7 @@ class MicrocreditCampaignsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     const confirmedTokens: Tokens[] = await this.readTokens(campaigns, 'confirmation');
     const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
@@ -232,38 +286,44 @@ class MicrocreditCampaignsController implements Controller {
     [error, results] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-        $push: {
-          microcredit: {
-            "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-            "title": data.title,
-            "subtitle": data.subtitle,
-            "slug": await createSlug(request),
-            "terms": data.terms,
-            "access": data.access,
-            "description": data.description,
-            "category": data.category,
-            "quantitative": data.quantitative,
-            "stepAmount": data.stepAmount,
-            "minAllowed": data.minAllowed,
-            "maxAllowed": data.maxAllowed,
-            "maxAmount": data.maxAmount,
-            "redeemStarts": data.redeemStarts,
-            "redeemEnds": data.redeemEnds,
-            "startsAt": data.startsAt,
-            "expiresAt": data.expiresAt,
-            "address": '',
-            "transactionHash": ''
-          }
+      $push: {
+        microcredit: {
+          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
+          "title": data.title,
+          "subtitle": data.subtitle,
+          "slug": await createSlug(request),
+          "terms": data.terms,
+          "access": data.access,
+          "description": data.description,
+          "category": data.category,
+          "quantitative": data.quantitative,
+          "stepAmount": data.stepAmount,
+          "minAllowed": data.minAllowed,
+          "maxAllowed": data.maxAllowed,
+          "maxAmount": data.maxAmount,
+          "redeemStarts": data.redeemStarts,
+          "redeemEnds": data.redeemEnds,
+          "startsAt": data.startsAt,
+          "expiresAt": data.expiresAt,
+          "status": 'draft',
+          "address": '',
+          "transactionHash": ''
         }
-      }, { new: true }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
-
+      }
+    }, { new: true }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     const currentCampaign = results.microcredit[results["microcredit"].length - 1];
 
-    response.status(201).send({
-      data: currentCampaign, //message: "Success! A new Microcredit Campaign has been created! (Campaign ID: " + currentCampaign._id + ")",
-      code: 201
-    });
+    if (request.params && request.params.token) {
+      response.locals["campaign"] = currentCampaign;
+      response.locals.campaign.campaign_id = currentCampaign._id;
+      next();
+    } else {
+      response.status(201).send({
+        data: currentCampaign, //message: "Success! A new Microcredit Campaign has been created! (Campaign ID: " + currentCampaign._id + ")",
+        code: 201
+      });
+    }
   }
 
   private registerMicrocredit = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -283,12 +343,12 @@ class MicrocreditCampaignsController implements Controller {
           _id: user._id,
           'microcredit._id': currentCampaign.campaign_id
         }, {
-            '$set': {
-              'microcredit.$.status': 'published', // published
-              'microcredit.$.address': result.address,
-              'microcredit.$.transactionHash': result.transactionHash,
-            }
-          });
+          '$set': {
+            'microcredit.$.status': 'published', // published
+            'microcredit.$.address': result.address,
+            'microcredit.$.transactionHash': result.transactionHash,
+          }
+        });
 
         response.status(200).send({
           message: "Success! Microcredit Campaign with ID: " + currentCampaign.campaign_id + " has been published!",
@@ -381,7 +441,7 @@ class MicrocreditCampaignsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     const confirmedTokens: Tokens[] = await this.readTokens(campaigns, 'confirmation');
     const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
@@ -477,7 +537,7 @@ class MicrocreditCampaignsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     const confirmedTokens: Tokens[] = await this.readTokens(campaigns, 'confirmation');
     const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
@@ -561,7 +621,7 @@ class MicrocreditCampaignsController implements Controller {
         createdAt: '$microcredit.createdAt'
       }
     }]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     else if (!campaigns.length) {
       return next(new NotFoundException('CAMPAIGN_NOT_EXIST'));
     }
@@ -601,29 +661,29 @@ class MicrocreditCampaignsController implements Controller {
         _id: partner_id,
         'microcredit._id': campaign_id
       }, {
-        '$set': {
-          'microcredit.$._id': campaign_id,
-          'microcredit.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentCampaign.campaign_imageURL,
-          'microcredit.$.title': data.title,
-          'microcredit.$.slug': await createSlug(request),
-          'microcredit.$.subtitle': data.subtitle,
-          'microcredit.$.terms': data.terms,
-          'microcredit.$.access': data.access,
-          'microcredit.$.description': data.description,
-          'microcredit.$.category': data.category,
-          'microcredit.$.quantitative': data.quantitative,
-          'microcredit.$.stepAmount': data.stepAmount,
-          'microcredit.$.minAllowed': data.minAllowed,
-          'microcredit.$.maxAllowed': data.maxAllowed,
-          'microcredit.$.maxAmount': data.maxAmount,
-          'microcredit.$.redeemStarts': data.redeemStarts,
-          'microcredit.$.redeemEnds': data.redeemEnds,
-          'microcredit.$.startsAt': data.startsAt,
-          'microcredit.$.expiresAt': data.expiresAt,
-        }
-      }).catch());
+      '$set': {
+        'microcredit.$._id': campaign_id,
+        'microcredit.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentCampaign.campaign_imageURL,
+        'microcredit.$.title': data.title,
+        'microcredit.$.slug': await createSlug(request),
+        'microcredit.$.subtitle': data.subtitle,
+        'microcredit.$.terms': data.terms,
+        'microcredit.$.access': data.access,
+        'microcredit.$.description': data.description,
+        'microcredit.$.category': data.category,
+        'microcredit.$.quantitative': data.quantitative,
+        'microcredit.$.stepAmount': data.stepAmount,
+        'microcredit.$.minAllowed': data.minAllowed,
+        'microcredit.$.maxAllowed': data.maxAllowed,
+        'microcredit.$.maxAmount': data.maxAmount,
+        'microcredit.$.redeemStarts': data.redeemStarts,
+        'microcredit.$.redeemEnds': data.redeemEnds,
+        'microcredit.$.startsAt': data.startsAt,
+        'microcredit.$.expiresAt': data.expiresAt,
+      }
+    }).catch());
 
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Microcredit Campaign with ID: " + campaign_id + " has been updated!",
       code: 200
@@ -645,13 +705,13 @@ class MicrocreditCampaignsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: partner_id
     }, {
-        $pull: {
-          microcredit: {
-            _id: campaign_id
-          }
+      $pull: {
+        microcredit: {
+          _id: campaign_id
         }
-      }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+      }
+    }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Microcredit Campaign with ID: " + campaign_id + " has been deleted!",
       code: 200

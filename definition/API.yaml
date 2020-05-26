@@ -2243,7 +2243,7 @@ components:
             code: 404
             message: "Something wrong happes!"
     Unprocessable_Entity:
-      description: "422 Unprocessable Entity - [DB Error, Blockchain Error, Email Service Error]"
+      description: "422 Unprocessable Entity - [DB Error, Blockchain Error, Email Error]"
       content:
         application/json:
           schema:

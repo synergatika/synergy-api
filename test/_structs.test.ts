@@ -90,6 +90,12 @@ var partner_c = {
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
   sector: "Recreation and Culture",
   imageFile: "partner_c.png",
+  payments: [{
+    bic: 'PIRBGRAA',
+    name: 'PiraeusBank',
+    value: 'GR9715968245559633797851234'
+  }],
+  oneClickToken: ''
 }
 
 var user_a = { // Auto Registered
@@ -260,6 +266,26 @@ var microcredit_b = {
   imageFile: 'microcredit_b.jpg'
 }
 
+var microcredit_c = {
+  _id: '',
+  title: 'Third Microcredit Campaign',
+  terms: 'These are terms for microcredit C',
+  access: 'public',
+  description: 'This is description for microcredit C! This is description for microcredit C! This is description for microcredit C!',
+  category: 'Technology',
+  subtitle: 'This is subtitle',
+  quantitative: false,
+  stepAmount: 1,
+  minAllowed: 5,
+  maxAllowed: 0,
+  maxAmount: 45,
+  redeemStarts: '',
+  redeemEnds: '',
+  startsAt: '',
+  expiresAt: '',
+  imageFile: 'microcredit_b.jpg'
+}
+
 var content_a = {
   name: 'Test Content',
   el_title: 'Ελληνικός Τίτλος',
@@ -367,7 +393,7 @@ export {
   offer_a, offer_b, offer_c,
   post_a, post_b,
   event_a, event_b,
-  microcredit_a, microcredit_b,
+  microcredit_a, microcredit_b, microcredit_c,
   content_a,
   offers, posts, events, microcreditCampaigns, content
 }

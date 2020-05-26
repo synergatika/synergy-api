@@ -8,7 +8,7 @@ chai.use(require('chai-http'));
 
 import * as fs from 'fs';
 
-import { imagesLocation, partner_a, user_a, offer_a, offer_b, post_a, post_b, event_a, event_b, microcredit_a, microcredit_b, offers, events } from './_structs.test';
+import { imagesLocation, partner_a, partner_c, user_a, offer_a, offer_b, post_a, post_b, event_a, event_b, microcredit_a, microcredit_b, microcredit_c, offers, events } from './_structs.test';
 
 describe("Partner - Offers, Posts, Events", () => {
   describe("Partner - Offers (/loyalty/offers)", () => {
@@ -529,6 +529,33 @@ describe("Partner - Offers, Posts, Events", () => {
       chai.request(`${process.env.API_URL}`)
         .put("microcredit/campaigns/" + partner_a._id + "/" + microcredit_b._id + "/publish")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+    it("9. should create/publish one-click campaign | 200 Updated", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/campaigns/one-click/" + partner_c.oneClickToken)
+        .field('title', microcredit_c.title)
+        .field('terms', microcredit_c.terms)
+        .field('access', microcredit_c.access)
+        .field('description', microcredit_c.description)
+        .field('category', microcredit_c.category)
+        .field('subtitle', microcredit_c.subtitle)
+        .field('quantitative', microcredit_c.quantitative)
+        .field('stepAmount', microcredit_c.stepAmount)
+        .field('minAllowed', microcredit_c.minAllowed)
+        .field('maxAllowed', microcredit_c.maxAllowed)
+        .field('maxAmount', microcredit_c.maxAmount)
+        .field('redeemStarts', _newDate3.toString())
+        .field('redeemEnds', _newDate4.toString())
+        .field('startsAt', _newDate1.toString())
+        .field('expiresAt', _newDate2.toString())
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_c.imageFile}`),
+        `${microcredit_c.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');

@@ -100,7 +100,7 @@ class EventsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: events,
       code: 200
@@ -153,7 +153,7 @@ class EventsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: events,
       code: 200
@@ -181,7 +181,7 @@ class EventsController implements Controller {
         }
       }
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new Event has been created!",
       code: 201
@@ -248,7 +248,7 @@ class EventsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: events,
       code: 200
@@ -315,7 +315,7 @@ class EventsController implements Controller {
     { $skip: offset.skip }
     ]).exec().catch());
 
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: events,
       code: 200
@@ -369,7 +369,7 @@ class EventsController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     else if (!events.length) {
       return next(new NotFoundException('EVENT_NOT_EXISTS'));
     }
@@ -410,7 +410,7 @@ class EventsController implements Controller {
         'events.$.dateTime': data.dateTime,
       }
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been updated!",
       code: 200
@@ -438,7 +438,7 @@ class EventsController implements Controller {
         }
       }
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been deleted!",
       code: 200

@@ -140,7 +140,7 @@ class HelpController implements Controller {
       result['smtp_email_from'] = EMAIL_FROM;
     } else {
       let emailInfo = {
-        to: 'synergatika@gmail.com',
+        to: `${process.env.EMAIL_USER}`,// 'synergatika@gmail.com',
         subject: "Test email",
         html: "<h3>Hello world?</h3><p>Test</p>",
         type: '_test',
@@ -151,7 +151,7 @@ class HelpController implements Controller {
         .then((template: object) => {
           const mailOptions: nodemailer.SendMailOptions = {
             from: process.env.EMAIL_FROM,
-            to: 'dmytakis@gmail.com',//emailInfo.to, // Prod
+            to: `${process.env.TEST_EMAIL}` || emailInfo.to,
             subject: emailInfo.subject, // Subject line
             html: template.toString() // html body
           };

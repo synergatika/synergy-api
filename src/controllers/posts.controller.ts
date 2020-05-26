@@ -93,7 +93,7 @@ class PostsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: posts,
       code: 200
@@ -140,7 +140,7 @@ class PostsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: posts,
       code: 200
@@ -166,7 +166,7 @@ class PostsController implements Controller {
         }
       }
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new Post has been created!",
       code: 201
@@ -228,7 +228,7 @@ class PostsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: posts,
       code: 200
@@ -290,7 +290,7 @@ class PostsController implements Controller {
     { $limit: offset.limit },
     { $skip: offset.skip }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       data: posts,
@@ -342,7 +342,7 @@ class PostsController implements Controller {
       }
     }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     else if (!posts.length) {
       return next(new NotFoundException('POST_NOT_EXISTS'));
     }
@@ -382,7 +382,7 @@ class PostsController implements Controller {
       }
     }).catch());
 
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Post " + post_id + " has been updated!",
       code: 200
@@ -410,7 +410,7 @@ class PostsController implements Controller {
         }
       }
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Post " + post_id + " has been deleted!",
       code: 200

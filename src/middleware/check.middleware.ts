@@ -80,7 +80,7 @@ class CheckMiddleware {
       return next(new NotFoundException('CAMPAIGN_NOT_PUBLISHED')); //"Campaign's has not been published yet",
     }
     if (((parseInt(backerTokens.initialTokens) + data._amount) > campaign.maxAmount) && (campaign.maxAmount > 0)) {
-      return next(new NotFoundException('OVER_TOTAL_MAX')); //"Campaign's supporting period has not yet started",
+      return next(new NotFoundException('OVER_TOTAL_MAX'));
     }
     if (campaign.startsAt > seconds) {
       return next(new NotFoundException('CAMPAIGN_NOT_STARTED')); //"Campaign's supporting period has not yet started",
@@ -98,7 +98,7 @@ class CheckMiddleware {
       return next(new NotFoundException('ZERO_AMOUNT')); //"Support Fund cannot be 0",
     }
     if ((partner) && (data.method !== 'store') &&
-      ((partner.payments).filter(function(el) {
+      ((partner.payments).filter(function (el) {
         return el.bic == data.method
       }).length == 0)) {
       //  !(Object.values(JSON.parse(JSON.stringify(partner.payments)))[(Object.keys(JSON.parse(JSON.stringify(partner.payments))).indexOf(data.method))])) {

@@ -46,7 +46,7 @@ class MembersController implements Controller {
       "name": 1, "imageURL": 1,
       "createdAt": 1
     }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       data: member,
@@ -77,7 +77,7 @@ class MembersController implements Controller {
       "new": true
     }).catch());
 
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       data: member,

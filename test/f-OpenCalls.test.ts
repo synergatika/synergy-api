@@ -194,8 +194,6 @@ describe("Open Calls", () => {
           method: 'PIRBGRAA',
           _amount: 20,
         }).end((err, res) => {
-          console.log(err);
-          console.log(res.body);
           res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('data');

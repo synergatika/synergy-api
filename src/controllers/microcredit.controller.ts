@@ -75,24 +75,29 @@ class MicrocreditController implements Controller {
       this.registerPromisedFund);
 
     this.router.post(`${this.path}/earn/:partner_id/:campaign_id/:_to`,
-      authMiddleware, accessMiddleware.onlyAsPartner, accessMiddleware.belongsTo,
-      validationParamsMiddleware(CampaignID), validationParamsMiddleware(IdentifierDto), validationBodyMiddleware(EarnTokensDto),
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(CampaignID),
+      accessMiddleware.belongsTo,
+      validationParamsMiddleware(IdentifierDto), validationBodyMiddleware(EarnTokensDto),
       usersMiddleware.member, usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
       this.readBackerTokens, checkMiddleware.canEarnMicrocredit,
       this.earnTokensByPartner,
       this.registerPromisedFund, this.registerReceivedFund);
 
     this.router.put(`${this.path}/confirm/:partner_id/:campaign_id/:support_id`,
-      authMiddleware, accessMiddleware.onlyAsPartner, accessMiddleware.belongsTo,
+      authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(SupportID),
+      accessMiddleware.belongsTo,
       itemsMiddleware.microcreditCampaign, itemsMiddleware.microcreditSupport,
       checkMiddleware.canConfirmRevertPayment,
       this.confirmSupportPayment,
       this.registerReceivedFund, this.registerRevertFund);
 
     this.router.post(`${this.path}/redeem/:partner_id/:campaign_id/:support_id`,
-      authMiddleware, accessMiddleware.onlyAsPartner, accessMiddleware.belongsTo,
-      validationParamsMiddleware(SupportID), validationBodyMiddleware(RedeemTokensDto),
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(SupportID),
+      accessMiddleware.belongsTo,
+      validationBodyMiddleware(RedeemTokensDto),
       itemsMiddleware.microcreditCampaign, itemsMiddleware.microcreditSupport, usersMiddleware.member,
       checkMiddleware.canRedeemMicrocredit,
       this.redeemTokens,
@@ -107,9 +112,6 @@ class MicrocreditController implements Controller {
       this.readTransactions);
   }
 
-  private oneClickEarnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  }
-
   private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
@@ -122,21 +124,21 @@ class MicrocreditController implements Controller {
       _id: partner_id,
       'microcredit._id': campaign_id
     }, {
-        $push: {
-          'microcredit.$.supports': {
-            "backer_id": member._id,
-            "initialTokens": data._amount,
-            "method": data.method,
-            "redeemedTokens": 0,
-            "contractIndex": -1,
-            "createdAt": new Date(),
-            "updatedAt": new Date()
-          }
+      $push: {
+        'microcredit.$.supports': {
+          "backer_id": member._id,
+          "initialTokens": data._amount,
+          "method": data.method,
+          "redeemedTokens": 0,
+          "contractIndex": -1,
+          "createdAt": new Date(),
+          "updatedAt": new Date()
         }
-      }, { new: true }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+      }
+    }, { new: true }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    const currentCampaign = results.microcredit[results.microcredit.map(function(e: any) { return e._id; }).indexOf(campaign_id)];
+    const currentCampaign = results.microcredit[results.microcredit.map(function (e: any) { return e._id; }).indexOf(campaign_id)];
     const currentSupport = currentCampaign.supports[currentCampaign["supports"].length - 1];
     currentSupport["support_id"] = currentSupport._id; currentSupport._id = undefined;
     response.locals["member"] = member;
@@ -157,22 +159,22 @@ class MicrocreditController implements Controller {
       _id: partner_id,
       'microcredit._id': campaign_id
     }, {
-        $push: {
-          'microcredit.$.supports': {
-            "backer_id": member._id,
-            "initialTokens": data._amount,
-            "method": 'store',
-            "redeemedTokens": 0,
-            "contractIndex": -1,
-            "status": ((data.paid) ? 'confirmation' : 'order'),
-            "createdAt": new Date(),
-            "updatedAt": new Date()
-          }
+      $push: {
+        'microcredit.$.supports': {
+          "backer_id": member._id,
+          "initialTokens": data._amount,
+          "method": 'store',
+          "redeemedTokens": 0,
+          "contractIndex": -1,
+          "status": ((data.paid) ? 'confirmation' : 'order'),
+          "createdAt": new Date(),
+          "updatedAt": new Date()
         }
-      }, { new: true }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+      }
+    }, { new: true }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    const currentCampaign = results.microcredit[results.microcredit.map(function(e: any) { return e._id; }).indexOf(campaign_id)];
+    const currentCampaign = results.microcredit[results.microcredit.map(function (e: any) { return e._id; }).indexOf(campaign_id)];
     const currentSupport = currentCampaign.supports[currentCampaign["supports"].length - 1];
     currentSupport["support_id"] = currentSupport._id; currentSupport._id = undefined;
     response.locals["support"] = currentSupport;
@@ -216,13 +218,13 @@ class MicrocreditController implements Controller {
               'microcredit._id': new ObjectId(campaign_id),
               'microcredit.supports._id': new ObjectId(support.support_id),
             }, {
-                $set: {
-                  'microcredit.$.supports.$[d].payment_id': payment_id,
-                  'microcredit.$.supports.$[d].contractIndex': response.locals.support.contractIndex,
-                  'microcredit.$.supports.$[d].contractRef': response.locals.support.contractRef,
-                  'microcredit.$.supports.$[d].updatedAt': new Date()
-                }
-              }, { "arrayFilters": [{ "d._id": support.support_id }] });
+              $set: {
+                'microcredit.$.supports.$[d].payment_id': payment_id,
+                'microcredit.$.supports.$[d].contractIndex': response.locals.support.contractIndex,
+                'microcredit.$.supports.$[d].contractRef': response.locals.support.contractRef,
+                'microcredit.$.supports.$[d].updatedAt': new Date()
+              }
+            }, { "arrayFilters": [{ "d._id": support.support_id }] });
 
             if (data.paid) {
               next();
@@ -243,13 +245,11 @@ class MicrocreditController implements Controller {
             }
           })
           .catch((error: Error) => {
-            console.log(error)
-            next(new UnprocessableEntityException('Blockchain Error'))
+            next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
           })
       })
       .catch((error: Error) => {
-        console.log(error)
-        next(new UnprocessableEntityException('Blockchain Error'))
+        next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
       })
   }
 
@@ -266,11 +266,11 @@ class MicrocreditController implements Controller {
       'microcredit._id': campaign_id,
       'microcredit.supports._id': support_id
     }, {
-        $set: {
-          'microcredit.$.supports.$[d].status': ((support.status === 'order') ? 'confirmation' : 'order')
-        }
-      }, { "arrayFilters": [{ "d._id": support_id }] }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+      $set: {
+        'microcredit.$.supports.$[d].status': ((support.status === 'order') ? 'confirmation' : 'order')
+      }
+    }, { "arrayFilters": [{ "d._id": support_id }] }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     next();
   }
@@ -310,11 +310,11 @@ class MicrocreditController implements Controller {
               });
             })
             .catch((error: Error) => {
-              next(new UnprocessableEntityException('Blockchain Error'))
+              next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
             })
         })
         .catch((error: Error) => {
-          next(new UnprocessableEntityException('Blockchain Error'))
+          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
         });
     } else {
       next();
@@ -352,11 +352,11 @@ class MicrocreditController implements Controller {
             });
           })
           .catch((error: Error) => {
-            next(new UnprocessableEntityException('Blockchain Error'))
+            next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
           })
       })
       .catch((error: Error) => {
-        next(new UnprocessableEntityException('Blockchain Error'))
+        next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
       })
   }
 
@@ -374,14 +374,14 @@ class MicrocreditController implements Controller {
       'microcredit._id': new ObjectId(campaign_id),
       'microcredit.supports._id': support_id
     }, {
-        $inc: {
-          'microcredit.$.supports.$[d].redeemedTokens': _tokens
-        },
-        $set: {
-          'microcredit.$.supports.$[d].updatedAt': new Date()
-        }
-      }, { "arrayFilters": [{ "d._id": support_id }] }).catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+      $inc: {
+        'microcredit.$.supports.$[d].redeemedTokens': _tokens
+      },
+      $set: {
+        'microcredit.$.supports.$[d].updatedAt': new Date()
+      }
+    }, { "arrayFilters": [{ "d._id": support_id }] }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals.support.redeemedTokens += _tokens;
     next();
@@ -421,11 +421,11 @@ class MicrocreditController implements Controller {
               });
             })
             .catch((error: Error) => {
-              next(new UnprocessableEntityException('Blockchain Error'))
+              next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
             })
         })
         .catch((error: Error) => {
-          next(new UnprocessableEntityException('Blockchain Error'))
+          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
         })
     } else {
       await serviceInstance.getMicrocredit(campaign.address)
@@ -450,11 +450,11 @@ class MicrocreditController implements Controller {
               });
             })
             .catch((error: Error) => {
-              next(new UnprocessableEntityException('Blockchain Error'))
+              next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
             })
         })
         .catch((error: Error) => {
-          next(new UnprocessableEntityException('Blockchain Error'))
+          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
         })
     }
   }
@@ -480,7 +480,7 @@ class MicrocreditController implements Controller {
     }).sort('-createdAt')
       .limit(offset.limit).skip(offset.skip)
       .catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: transactions,
       code: 200
@@ -523,7 +523,7 @@ class MicrocreditController implements Controller {
       }
     }]).exec().catch());
 
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       data: (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 }),
@@ -554,7 +554,7 @@ class MicrocreditController implements Controller {
         'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
       }
     }]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals["backerTokens"] = {
       '_id': tokens.length ? tokens[0]._id : campaign.campaign_id,

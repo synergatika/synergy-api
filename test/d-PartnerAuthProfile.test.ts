@@ -81,14 +81,14 @@ describe("Partner - Authentication & Profile", () => {
         .field('email', partner_c.email)
         .field('name', partner_c.name)
         .field('password', partner_c.password)
-        .field('payments', JSON.stringify(partner_a.payments))
+        .field('payments', JSON.stringify(partner_c.payments))
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.imageFile}`),
         `${partner_a.imageFile}`)
         .end((err, res) => {
-          console.log(res.body)
           res.should.have.status(200);
           res.body.should.be.a('object');
-          res.body.should.have.property('message');
+          res.body.should.have.property('data');
+          partner_c.oneClickToken = res.body.data.oneClickToken;
           done();
         });
     });

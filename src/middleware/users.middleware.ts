@@ -25,7 +25,7 @@ async function member(request: RequestWithUser, response: Response, next: NextFu
   }).catch());
 
 
-  if (error) return next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!member) {
     return next(new NotFoundException('MEMBER_NOT_EXISTS'));
   } else if (!member.activated) {
@@ -37,7 +37,7 @@ async function member(request: RequestWithUser, response: Response, next: NextFu
 }
 
 async function partner(request: RequestWithUser, response: Response, next: NextFunction) {
-  const partner_id: string = request.params.partner_id;
+  const partner_id: string = request.params.partner_id || request.user._id;
 
   let error: Error, partner: Partner;
   [error, partner] = await to(userModel.findOne({
@@ -48,7 +48,7 @@ async function partner(request: RequestWithUser, response: Response, next: NextF
   }).catch());
 
 
-  if (error) return next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!partner) {
     return next(new NotFoundException('PARTNER_NOT_EXISTS'));
   } else if (!partner.activated) {
@@ -61,5 +61,5 @@ async function partner(request: RequestWithUser, response: Response, next: NextF
 
 export default {
   member: member,
-  partner: partner,
+  partner: partner
 }

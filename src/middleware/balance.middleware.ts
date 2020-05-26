@@ -31,11 +31,11 @@ async function balance(request: RequestWithUser, response: Response, next: NextF
           next();
         })
         .catch((error: Error) => {
-          next(new UnprocessableEntityException('Blockchain Error'))
+          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
         })
     })
     .catch((error) => {
-      next(new UnprocessableEntityException('Blockchain Error'))
+      next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
     })
 }
 
@@ -75,7 +75,7 @@ async function activity(request: RequestWithUser, response: Response, next: Next
     }
   }]).exec().catch());
 
-  if (error) return next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
   response.locals["activity"] = (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 });
   next();

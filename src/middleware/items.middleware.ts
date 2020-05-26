@@ -47,7 +47,7 @@ async function offer(request: RequestWithUser, response: Response, next: NextFun
     }
   }]).exec().catch());
 
-  if (error) return next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!offers.length) {
     return next(new NotFoundException('OFFER_NOT_EXISTS'));
   }
@@ -81,7 +81,7 @@ async function post(request: RequestWithUser, response: Response, next: NextFunc
     }
   }]).exec().catch());
 
-  if (error) return next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!posts.length) {
     return next(new NotFoundException('POST_NOT_EXISTS'));
   }
@@ -115,7 +115,7 @@ async function event(request: RequestWithUser, response: Response, next: NextFun
     }
   }]).exec().catch());
 
-  if (error) return next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!events.length) {
     return next(new NotFoundException('EVENT_NOT_EXISTS'));
   }
@@ -161,7 +161,7 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
       expiresAt: '$microcredit.expiresAt'
     }
   }]).exec().catch());
-  if (error) return next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!campaigns.length) {
     return next(new NotFoundException('CAMPAIGN_NOT_EXISTS'));
   }
@@ -208,7 +208,7 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
     }
   }
   ]).exec().catch());
-  if (error) return next(new UnprocessableEntityException('DB ERROR'));
+  if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!supports.length) {
     return next(new NotFoundException('SUPPORT_NOT_EXISTS'));
   }

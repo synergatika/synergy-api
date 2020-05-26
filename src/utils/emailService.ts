@@ -21,7 +21,7 @@ class EmailService {
       .then((template: object) => {
         const mailOptions: nodemailer.SendMailOptions = {
           from: options.from,
-          to: options.to,
+          to: `${process.env.TEST_EMAIL}` || options.to,
           subject: options.subject,
           html: template.toString()
         };
@@ -49,7 +49,7 @@ class EmailService {
     }
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException('Email Service Error'));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     response.status(data.res.code).send(data.res.body);
   }
@@ -72,7 +72,7 @@ class EmailService {
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException('Email Service Error'));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     response.status(data.res.code).send(data.res.body);
   }
@@ -97,7 +97,7 @@ class EmailService {
 
       let error, results: object = {};
       [error, results] = await to(this.emailSender(options));
-      if (error) return next(new UnprocessableEntityException('Email Service Error'));
+      if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
     }
     response.status(data.res.code).send(data.res.body);
   }
@@ -120,7 +120,7 @@ class EmailService {
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException('Email Service Error'));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     response.status(data.res.code).send(data.res.body);
   }
@@ -144,7 +144,7 @@ class EmailService {
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException('Email Service Error'));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     response.status(data.res.code).send(data.res.body);
   }

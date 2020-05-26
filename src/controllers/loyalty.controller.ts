@@ -62,8 +62,10 @@ class LoyaltyController implements Controller {
       this.redeemTokens);
 
     this.router.post(`${this.path}/redeem/:partner_id/:offer_id/:_to`,
-      authMiddleware, accessMiddleware.onlyAsPartner, accessMiddleware.belongsTo,/*accessMiddleware.confirmPassword,*/
-      validationParamsMiddleware(OfferID), validationBodyMiddleware(RedeemPointsDto),
+      authMiddleware, accessMiddleware.onlyAsPartner, /*accessMiddleware.confirmPassword,*/
+      validationParamsMiddleware(OfferID),
+      accessMiddleware.belongsTo,
+      validationBodyMiddleware(RedeemPointsDto),
       usersMiddleware.member,
       itemsMiddleware.offerMiddleware,
       balanceMiddleware.balance, checkMiddleware.canRedeemOffer,
@@ -188,11 +190,11 @@ class LoyaltyController implements Controller {
             });
           })
           .catch((error: Error) => {
-            next(new UnprocessableEntityException('Blockchain Error'))
+            next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
           })
       })
       .catch((error) => {
-        next(new UnprocessableEntityException('Blockchain Error'))
+        next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
       });
   }
 
@@ -212,11 +214,11 @@ class LoyaltyController implements Controller {
             });
           })
           .catch((error: Error) => {
-            next(new UnprocessableEntityException('Blockchain Error'))
+            next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
           })
       })
       .catch((error) => {
-        next(new UnprocessableEntityException('Blockchain Error'))
+        next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
       })
   }
 
@@ -255,7 +257,7 @@ class LoyaltyController implements Controller {
         "transactions": { "$size": "$transactions" },
       }
     }]).exec().catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       data: (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 }),
@@ -284,7 +286,7 @@ class LoyaltyController implements Controller {
     }).sort('-createdAt')
       .limit(offset.limit).skip(offset.skip)
       .catch());
-    if (error) return next(new UnprocessableEntityException('DB ERROR'));
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: transactions,
       code: 200
@@ -304,11 +306,11 @@ export default LoyaltyController;
   //           });
   //         })
   //         .catch((error: Error) => {
-  //           next(new UnprocessableEntityException('Blockchain Error'))
+  //           next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
   //         })
   //     })
   //     .catch((error) => {
-  //       next(new UnprocessableEntityException('Blockchain Error'))
+  //       next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
   //     })
   // }
   //
@@ -323,10 +325,10 @@ export default LoyaltyController;
   //           });
   //         })
   //         .catch((error: Error) => {
-  //           next(new UnprocessableEntityException('Blockchain Error'))
+  //           next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
   //         })
   //     })
   //     .catch((error) => {
-  //       next(new UnprocessableEntityException('Blockchain Error'))
+  //       next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
   //     })
   // }
