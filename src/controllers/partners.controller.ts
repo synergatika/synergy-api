@@ -64,6 +64,7 @@ class PartnersController implements Controller {
       .limit(offset.limit).skip(offset.skip)
       .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+    console.log(partners);
     response.status(200).send({
       data: partners,
       code: 200

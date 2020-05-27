@@ -88,6 +88,7 @@ class LoyaltyController implements Controller {
     this.router.get(`${this.path}/badge`,
       authMiddleware,
       this.readActivity);
+
     this.router.get(`${this.path}/badge/:_to`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(IdentifierDto),
