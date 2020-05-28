@@ -21,7 +21,7 @@ class EmailService {
       .then((template: object) => {
         const mailOptions: nodemailer.SendMailOptions = {
           from: options.from,
-          to: `${process.env.TEST_EMAIL}` || options.to,
+          to: /*`${process.env.TEST_EMAIL}` ||*/ options.to,
           subject: options.subject,
           html: template.toString()
         };

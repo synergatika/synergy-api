@@ -1,15 +1,15 @@
 import { IsString, IsNumber, IsEnum, IsOptional } from 'class-validator';
 
-export enum Sector {
-  n = 'None',
-  a = 'B2B Services & Other Goods and Services',
-  b = 'Durables',
-  c = 'Durables (Technology)',
-  d = 'Education',
-  e = 'Food',
-  f = 'Hotels, cafes and restaurants',
-  g = 'Recreation and Culture'
-}
+// export enum Sector {
+//   n = 'None',
+//   a = 'B2B Services & Other Goods and Services',
+//   b = 'Durables',
+//   c = 'Durables (Technology)',
+//   d = 'Education',
+//   e = 'Food',
+//   f = 'Hotels, cafes and restaurants',
+//   g = 'Recreation and Culture'
+// }
 
 class PartnerDto {
   @IsString()
@@ -20,8 +20,10 @@ class PartnerDto {
   public imageURL: string;
 
   @IsOptional()
-  @IsEnum(Sector)
-  public sector: Sector;
+  @IsString()
+  public sector: string;
+  // @IsEnum(Sector)
+  // public sector: Sector;
 
   @IsOptional()
   @IsString()
