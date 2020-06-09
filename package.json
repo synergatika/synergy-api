@@ -42,7 +42,6 @@
     "mongoose": "5.7.5",
     "multer": "^1.4.2",
     "nodemailer": "6.3.0",
-    "paypal-adaptive": "^0.4.2",
     "saslprep": "1.0.3",
     "serialize-javascript": "2.1.2",
     "should": "13.2.3",
