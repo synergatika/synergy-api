@@ -98,7 +98,7 @@ class CheckMiddleware {
       return next(new NotFoundException('ZERO_AMOUNT')); //"Support Fund cannot be 0",
     }
     if ((partner) && (data.method !== 'store') &&
-      ((partner.payments).filter(function (el) {
+      ((partner.payments).filter(function(el) {
         return el.bic == data.method
       }).length == 0)) {
       //  !(Object.values(JSON.parse(JSON.stringify(partner.payments)))[(Object.keys(JSON.parse(JSON.stringify(partner.payments))).indexOf(data.method))])) {

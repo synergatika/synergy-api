@@ -173,7 +173,7 @@ describe("Open Calls", () => {
     });
   });
   describe("One Click Register - Support (/auth || /microcredit)", () => {
-    it("1. should register a user only email - 200 OneCLickAction", (done) => {
+    it("1. should register a user only email - 200 OneClickAction", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("auth/one-click/register")
         .send({
@@ -193,6 +193,33 @@ describe("Open Calls", () => {
         .send({
           method: 'PIRBGRAA',
           _amount: 20,
+        }).end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          done();
+        });
+    });
+    it("3. should get onClickToken - 200 OneClickAction", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("auth/one-click/register")
+        .send({
+          email: user_f.email
+        }).end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          user_f.oneClickToken = res.body.data.oneClickToken;
+          done();
+        });
+    });
+    it("4. should promise/receive (paypal) fund - 200 Payment", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/one-click/" + partner_a._id + "/" + microcredit_a._id + "/" + user_f.oneClickToken)
+        .send({
+          method: 'PIRBGRAA',
+          _amount: 20,
+          paid: true
         }).end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');

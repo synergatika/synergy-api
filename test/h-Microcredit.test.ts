@@ -163,7 +163,7 @@ describe("Microcredit", () => {
         .set('Authorization', 'Bearer ' + user_a.authToken)
         .send({
           method: 'PIRBGRAA',
-          _amount: 30,
+          _amount: 5,
         })
         .end((err, res) => {
           res.should.have.status(200);
@@ -173,7 +173,7 @@ describe("Microcredit", () => {
           done();
         });
     });
-    it("12. should NOT promise fund | as excented max amount - 404 Not Found", (done) => {
+    it("12. should NOT promise fund | as max than min amount - 404 Not Found", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("microcredit/earn/" + partner_a._id + "/" + microcredit_b._id)
         .set('Authorization', 'Bearer ' + user_a.authToken)
@@ -209,7 +209,7 @@ describe("Microcredit", () => {
         .set('Authorization', 'Bearer ' + user_a.authToken)
         .send({
           method: 'PIRBGRAA',
-          _amount: 10,
+          _amount: 5,
         })
         .end((err, res) => {
           res.should.have.status(200);
@@ -219,7 +219,22 @@ describe("Microcredit", () => {
           done();
         });
     });
-    it("15. should receive fund - 200 Payment", (done) => {
+    it("15. should NOT promise fund | as exceed max amount - 404 Not Found", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/earn/" + partner_a._id + "/" + microcredit_b._id)
+        .set('Authorization', 'Bearer ' + user_a.authToken)
+        .send({
+          method: 'PIRBGRAA',
+          _amount: 5,
+        })
+        .end((err, res) => {
+          res.should.have.status(404);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+    it("16. should receive fund - 200 Payment", (done) => {
       chai.request(`${process.env.API_URL}`)
         .put("microcredit/confirm/" + partner_a._id + "/" + microcredit_b._id + "/" + b1_support_id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
@@ -230,7 +245,7 @@ describe("Microcredit", () => {
           done();
         });
     });
-    it("16. should revert fund - 200 Payment", (done) => {
+    it("17. should revert fund - 200 Payment", (done) => {
       chai.request(`${process.env.API_URL}`)
         .put("microcredit/confirm/" + partner_a._id + "/" + microcredit_b._id + "/" + b1_support_id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
