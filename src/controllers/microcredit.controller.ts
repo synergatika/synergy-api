@@ -58,6 +58,22 @@ class MicrocreditController implements Controller {
 
   private initializeRoutes() {
 
+    this.router.get(`${this.path}/one-click-balance/:partner_id/:campaign_id/:token`,
+      oneClickMiddleware,
+      validationParamsMiddleware(CampaignID),
+      usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
+      this.readBackerTokens,
+      this.readBalance
+    );
+
+    this.router.get(`${this.path}/earn-tokens-balance/:partner_id/:campaign_id`,
+      authMiddleware,
+      validationParamsMiddleware(CampaignID),
+      usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
+      this.readBackerTokens,
+      this.readBalance
+    );
+
     this.router.post(`${this.path}/one-click/:partner_id/:campaign_id/:token`,
       oneClickMiddleware,
       validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto),
@@ -112,6 +128,13 @@ class MicrocreditController implements Controller {
       this.readTransactions);
   }
 
+  private readBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    response.status(200).send({
+      data: response.locals.backerTokens,
+      code: 200
+    });
+
+  }
   private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;

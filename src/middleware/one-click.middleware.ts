@@ -20,18 +20,23 @@ async function oneClickMiddleware(request: RequestWithUser, response: Response, 
 
       const now = new Date();
       const seconds = parseInt(now.getTime().toString());
-      const user: User = await userModel.findOneAndUpdate({ oneClickToken: token, oneClickExpiration: { $gt: seconds } },
+      const user: User = await userModel.findOne(
         {
-          $set: {
-            oneClickToken: null, oneClickExpiration: null
-          }
-        }).select({
-          "_id": 1,
-          "email": 1, "password": 1,
-          "name": 1, "imageURL": 1,
-          "account": 1, "access": 1,
-          "email_verified": 1, "pass_verified": 1
-        });
+          oneClickToken: token, oneClickExpiration: { $gt: seconds }
+        }
+        // const user: User = await userModel.findOneAndUpdate({ oneClickToken: token, oneClickExpiration: { $gt: seconds } },
+        //   {
+        //     $set: {
+        //       oneClickToken: null, oneClickExpiration: null
+        //     }
+        //   }
+      ).select({
+        "_id": 1,
+        "email": 1, "password": 1,
+        "name": 1, "imageURL": 1,
+        "account": 1, "access": 1,
+        "email_verified": 1, "pass_verified": 1
+      });
       if (user) {
         request.user = user;
         next();
