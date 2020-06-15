@@ -163,7 +163,7 @@ describe("Microcredit", () => {
         .set('Authorization', 'Bearer ' + user_a.authToken)
         .send({
           method: 'PIRBGRAA',
-          _amount: 5,
+          _amount: 15,
         })
         .end((err, res) => {
           res.should.have.status(200);
@@ -173,7 +173,22 @@ describe("Microcredit", () => {
           done();
         });
     });
-    it("12. should NOT promise fund | as max than min amount - 404 Not Found", (done) => {
+    it("12. should NOT promise fund | as less than min allowed - 404 Not Found", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/earn/" + partner_a._id + "/" + microcredit_b._id)
+        .set('Authorization', 'Bearer ' + user_a.authToken)
+        .send({
+          method: 'PIRBGRAA',
+          _amount: 10,
+        })
+        .end((err, res) => {
+          res.should.have.status(404);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+    it("13. should NOT promise fund | as greater than max allowed - 404 Not Found", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("microcredit/earn/" + partner_a._id + "/" + microcredit_b._id)
         .set('Authorization', 'Bearer ' + user_a.authToken)
@@ -188,28 +203,13 @@ describe("Microcredit", () => {
           done();
         });
     });
-    it("13. should NOT promise fund | as less than min amount - 404 Not Found", (done) => {
+    it("14. should promise - 200 Payment", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("microcredit/earn/" + partner_a._id + "/" + microcredit_b._id)
         .set('Authorization', 'Bearer ' + user_a.authToken)
         .send({
           method: 'PIRBGRAA',
-          _amount: 3,
-        })
-        .end((err, res) => {
-          res.should.have.status(404);
-          res.body.should.be.a('object');
-          res.body.should.have.property('message');
-          done();
-        });
-    });
-    it("14. should promise fund - 200 Payment", (done) => {
-      chai.request(`${process.env.API_URL}`)
-        .post("microcredit/earn/" + partner_a._id + "/" + microcredit_b._id)
-        .set('Authorization', 'Bearer ' + user_a.authToken)
-        .send({
-          method: 'PIRBGRAA',
-          _amount: 5,
+          _amount: 15,
         })
         .end((err, res) => {
           res.should.have.status(200);
@@ -219,13 +219,13 @@ describe("Microcredit", () => {
           done();
         });
     });
-    it("15. should NOT promise fund | as exceed max amount - 404 Not Found", (done) => {
+    it("15. should NOT promise fund | as excedeed max amount - 404 Payment", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("microcredit/earn/" + partner_a._id + "/" + microcredit_b._id)
         .set('Authorization', 'Bearer ' + user_a.authToken)
         .send({
           method: 'PIRBGRAA',
-          _amount: 5,
+          _amount: 15,
         })
         .end((err, res) => {
           res.should.have.status(404);
