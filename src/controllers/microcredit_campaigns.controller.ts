@@ -331,7 +331,7 @@ class MicrocreditCampaignsController implements Controller {
     const currentCampaign: Campaign = response.locals.campaign;
 
     await serviceInstance.startNewMicrocredit(user.account.address,
-      1, currentCampaign.maxAmount,/* currentCampaign.maxAllowed*/0, currentCampaign.minAllowed,
+      1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
       parseInt(((currentCampaign.redeemEnds).toString() + "000000")),
       parseInt(((currentCampaign.redeemStarts).toString() + "000000")),
       parseInt(((currentCampaign.startsAt).toString() + "000000")),
