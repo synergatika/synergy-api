@@ -85,16 +85,11 @@ export class BlockchainService {
       projectMaxBackerAmount,
       projectMinBackerAmount,
       // Dev
-      //String(projectExpiredAt).slice(0, -9),
-      //String(projectAvailableAt).slice(0, -9),
-      //String(projectStartedAt).slice(0, -9),
-      //String(projectFinishedAt).slice(0, -9),
+      //String(projectExpiredAt).slice(0, -9), String(projectAvailableAt).slice(0, -9), String(projectStartedAt).slice(0, -9), String(projectFinishedAt).slice(0, -9),
       // Prod
-      String(projectExpiredAt),
-      String(projectAvailableAt),
-      String(projectStartedAt),
-      String(projectFinishedAt),
-      !projectUseToken, this.address
+      String(projectExpiredAt), String(projectAvailableAt), String(projectStartedAt), String(projectFinishedAt),
+      !projectUseToken,
+      this.address
     );
   }
 
