@@ -22,9 +22,9 @@ class EmailService {
         const mailOptions: nodemailer.SendMailOptions = {
           from: options.from,
           // Dev
-          to: `${process.env.TEST_EMAIL}` || options.to,
+          //to: `${process.env.TEST_EMAIL}` || options.to,
           // Prod
-          //to: options.to,
+          to: options.to,
           subject: options.subject,
           html: template.toString()
         };

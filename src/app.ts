@@ -14,10 +14,10 @@ class App {
   public app: express.Application;
 
   private options: cors.CorsOptions = {
-    allowedHeaders: ["Access-Control-Allow-Headers", "Authorization", "Origin", "X-Requested-With", "Content-Type", "Accept", "X-Access-Token"],
+    allowedHeaders: ["Access-Control-Allow-Origin", "Authorization", "Origin", "X-Requested-With", "Content-Type", "Accept", "X-Access-Token"],
     credentials: true,
     methods: "GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE",
-    origin: '*',//`${process.env.APP_URL}`,
+    origin: [`${process.env.APP_URL}`.slice(0, -1), 'http://localhost:4200'],
     preflightContinue: false
   };
 
