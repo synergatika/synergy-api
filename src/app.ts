@@ -17,7 +17,7 @@ class App {
     allowedHeaders: ["Access-Control-Allow-Origin", "Authorization", "Origin", "X-Requested-With", "Content-Type", "Accept", "X-Access-Token"],
     credentials: true,
     methods: "GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE",
-    origin: [`${process.env.APP_URL}`.slice(0, -1), 'http://localhost:4200'],
+    origin: [`${process.env.APP_URL}`.slice(0, -1), 'https://open.synergatika.gr', 'http://localhost:4200'],
     preflightContinue: false
   };
 

@@ -129,7 +129,7 @@ class MicrocreditCampaignsController implements Controller {
         $and: [
           { 'microcredit.access': { $in: ['public', 'private', access] } },
           { 'microcredit.status': 'published' },
-          { 'microcredit.redeemEnds': { $gt: offset.greater } }
+          { 'microcredit.expiresAt': { $gt: offset.greater } }
         ]
       }
     }, {
@@ -211,7 +211,7 @@ class MicrocreditCampaignsController implements Controller {
         $and: [
           { 'microcredit.access': 'public' },
           { 'microcredit.status': 'published' },
-          { 'microcredit.redeemEnds': { $gt: offset.greater } }
+          { 'microcredit.expiresAt': { $gt: offset.greater } }
         ]
       }
     }, {
@@ -382,7 +382,7 @@ class MicrocreditCampaignsController implements Controller {
               { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
               { 'microcredit.access': { $in: ['public', 'private', access] } },
               { 'microcredit.status': { $in: ['published', status] } },
-              { 'microcredit.redeemEnds': { $gt: offset.greater } }
+              { 'microcredit.expiresAt': { $gt: offset.greater } }
             ]
           },
           {
@@ -390,7 +390,7 @@ class MicrocreditCampaignsController implements Controller {
               { slug: partner_id },
               { 'microcredit.access': { $in: ['public', 'private', access] } },
               { 'microcredit.status': { $in: ['published', status] } },
-              { 'microcredit.redeemEnds': { $gt: offset.greater } }
+              { 'microcredit.expiresAt': { $gt: offset.greater } }
             ]
           }
         ]
@@ -479,7 +479,7 @@ class MicrocreditCampaignsController implements Controller {
               { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
               { 'microcredit.access': 'public' },
               { 'microcredit.status': 'published' },
-              { 'microcredit.redeemEnds': { $gt: offset.greater } }
+              { 'microcredit.expiresAt': { $gt: offset.greater } }
             ]
           },
           {
@@ -487,7 +487,7 @@ class MicrocreditCampaignsController implements Controller {
               { slug: partner_id },
               { 'microcredit.access': 'public' },
               { 'microcredit.status': 'published' },
-              { 'microcredit.redeemEnds': { $gt: offset.greater } }
+              { 'microcredit.expiresAt': { $gt: offset.greater } }
             ]
           }
         ]
