@@ -17,6 +17,10 @@ const dataSchema = new mongoose.Schema({
   offer_title: {
     type: String,
     default: null
+  },
+  quantity: {
+    type: Number,
+    default: 0
   }
 }, { _id: false });
 
@@ -66,8 +70,8 @@ const loyaltyTransactionSchema = new mongoose.Schema({
     enum: ['EarnPoints', 'RedeemPoints', 'RedeemPointsOffer'],
   },
 }, {
-  timestamps: true
-});
+    timestamps: true
+  });
 
 const loyaltyTransactionModel = mongoose.model<LoyaltyTransaction & mongoose.Document>('LoyaltyTransaction', loyaltyTransactionSchema);
 export default loyaltyTransactionModel;

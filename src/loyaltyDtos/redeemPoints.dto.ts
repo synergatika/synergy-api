@@ -6,6 +6,10 @@ class RedeemPointsDto {
 
   @IsNumber()
   public _points: number;
+
+  @IsOptional()
+  @IsNumber()
+  public quantity: number;
 }
 
 export default RedeemPointsDto;

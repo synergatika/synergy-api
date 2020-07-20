@@ -100,6 +100,7 @@ describe("Loyalty", () => {
         .set('Authorization', 'Bearer ' + user_a.authToken)
         .end((err, res) => {
           res.should.have.status(200);
+          console.log(res.body);
           res.body.should.be.a('object');
           res.body.should.have.property('data');
           done();

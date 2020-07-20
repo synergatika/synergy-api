@@ -31,6 +31,7 @@ import accessMiddleware from '../middleware/access.middleware';
 import usersMiddleware from '../middleware/users.middleware';
 import itemsMiddleware from '../middleware/items.middleware';
 import checkMiddleware from '../middleware/check.middleware';
+import balanceMiddleware from '../middleware/balance.middleware';
 import convertHelper from '../middleware/convert.helper';
 import OffsetHelper from '../middleware/offset.helper';
 // Helper's Instance
@@ -62,7 +63,7 @@ class MicrocreditController implements Controller {
       oneClickMiddleware,
       validationParamsMiddleware(CampaignID),
       usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
-      this.readBackerTokens,
+      balanceMiddleware.microcredit_balance,
       this.readBalance
     );
 
@@ -70,15 +71,14 @@ class MicrocreditController implements Controller {
       authMiddleware,
       validationParamsMiddleware(CampaignID),
       usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
-      this.readBackerTokens,
-      this.readBalance
-    );
+      balanceMiddleware.microcredit_balance,
+      this.readBalance);
 
     this.router.post(`${this.path}/one-click/:partner_id/:campaign_id/:token`,
       oneClickMiddleware,
       validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto),
       usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
-      this.readBackerTokens, checkMiddleware.canEarnMicrocredit,
+      balanceMiddleware.microcredit_balance,/*  this.readBackerTokens,*/ checkMiddleware.canEarnMicrocredit,
       this.earnTokens,
       this.registerPromisedFund, this.registerReceivedFund);
 
@@ -86,7 +86,7 @@ class MicrocreditController implements Controller {
       authMiddleware,
       validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto),
       usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
-      this.readBackerTokens, checkMiddleware.canEarnMicrocredit,
+      balanceMiddleware.microcredit_balance,/*  this.readBackerTokens,*/ checkMiddleware.canEarnMicrocredit,
       this.earnTokens,
       this.registerPromisedFund);
 
@@ -96,7 +96,7 @@ class MicrocreditController implements Controller {
       accessMiddleware.belongsTo,
       validationParamsMiddleware(IdentifierDto), validationBodyMiddleware(EarnTokensDto),
       usersMiddleware.member, usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
-      this.readBackerTokens, checkMiddleware.canEarnMicrocredit,
+      balanceMiddleware.microcredit_balance,  /*  this.readBackerTokens, */checkMiddleware.canEarnMicrocredit,
       this.earnTokensByPartner,
       this.registerPromisedFund, this.registerReceivedFund);
 
@@ -121,6 +121,7 @@ class MicrocreditController implements Controller {
 
     this.router.get(`${this.path}/badge`,
       authMiddleware,
+      balanceMiddleware.microcredit_activity,
       this.readActivity);
 
     this.router.get(`${this.path}/transactions/:offset`,
@@ -133,8 +134,15 @@ class MicrocreditController implements Controller {
       data: response.locals.backerTokens,
       code: 200
     });
-
   }
+
+  private readActivity = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    response.status(200).send({
+      data: response.locals.activity,
+      code: 200
+    });
+  }
+
   private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
@@ -510,82 +518,82 @@ class MicrocreditController implements Controller {
     });
   }
 
-  private readActivity = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  // private readActivity = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //
+  //   const user: User = request.user;
+  //
+  //   var _now: number = Date.now();
+  //   var _date = new Date(_now);
+  //   _date.setDate(1);
+  //   _date.setHours(0, 0, 0, 0);
+  //   _date.setMonth(_date.getMonth() - 12);
+  //
+  //   let error: Error, history: History[];
+  //   [error, history] = await to(this.transaction.aggregate([{
+  //     $match: {
+  //       $and: [
+  //         { 'member_id': (user._id).toString() },
+  //         { 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
+  //         { 'type': "PromiseFund" }
+  //       ]
+  //     }
+  //   },
+  //   {
+  //     $group: {
+  //       _id: '$to_id',
+  //       amount: { $sum: "$data.tokens" },
+  //       stores: { "$addToSet": "$partner_id" },
+  //       transactions: { "$addToSet": "$_id" }
+  //     }
+  //   },
+  //   {
+  //     "$project": {
+  //       "amount": 1,
+  //       "stores": { "$size": "$stores" },
+  //       "transactions": { "$size": "$transactions" },
+  //     }
+  //   }]).exec().catch());
+  //
+  //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+  //
+  //   response.status(200).send({
+  //     data: (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 }),
+  //     code: 200
+  //   });
+  //}
 
-    const user: User = request.user;
-
-    var _now: number = Date.now();
-    var _date = new Date(_now);
-    _date.setDate(1);
-    _date.setHours(0, 0, 0, 0);
-    _date.setMonth(_date.getMonth() - 12);
-
-    let error: Error, history: History[];
-    [error, history] = await to(this.transaction.aggregate([{
-      $match: {
-        $and: [
-          { 'member_id': (user._id).toString() },
-          { 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
-          { 'type': "PromiseFund" }
-        ]
-      }
-    },
-    {
-      $group: {
-        _id: '$to_id',
-        amount: { $sum: "$data.tokens" },
-        stores: { "$addToSet": "$partner_id" },
-        transactions: { "$addToSet": "$_id" }
-      }
-    },
-    {
-      "$project": {
-        "amount": 1,
-        "stores": { "$size": "$stores" },
-        "transactions": { "$size": "$transactions" },
-      }
-    }]).exec().catch());
-
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-    response.status(200).send({
-      data: (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 }),
-      code: 200
-    });
-  }
-
-  private readBackerTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const campaign: Campaign = response.locals.campaign;
-    const member: User = (response.locals.member) ? response.locals.member : request.user;
-
-    let error: Error, tokens: Tokens[];
-    [error, tokens] = await to(this.user.aggregate([{
-      $unwind: '$microcredit'
-    }, {
-      $unwind: '$microcredit.supports'
-    }, {
-      $match: {
-        $and: [
-          { 'microcredit._id': new ObjectId(campaign.campaign_id) },
-          { 'microcredit.supports.backer_id': (member._id).toString() }
-        ]
-      }
-    }, {
-      "$group": {
-        '_id': '$microcredit._id',
-        'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
-        'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
-      }
-    }]).exec().catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-    response.locals["backerTokens"] = {
-      '_id': tokens.length ? tokens[0]._id : campaign.campaign_id,
-      'initialTokens': tokens.length ? tokens[0].initialTokens : '0',
-      'redeemedTokens': tokens.length ? tokens[0].redeemedTokens : '0'
-    };
-    next();
-  }
+  // private readBackerTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   const campaign: Campaign = response.locals.campaign;
+  //   const member: User = (response.locals.member) ? response.locals.member : request.user;
+  //
+  //   let error: Error, tokens: Tokens[];
+  //   [error, tokens] = await to(this.user.aggregate([{
+  //     $unwind: '$microcredit'
+  //   }, {
+  //     $unwind: '$microcredit.supports'
+  //   }, {
+  //     $match: {
+  //       $and: [
+  //         { 'microcredit._id': new ObjectId(campaign.campaign_id) },
+  //         { 'microcredit.supports.backer_id': (member._id).toString() }
+  //       ]
+  //     }
+  //   }, {
+  //     "$group": {
+  //       '_id': '$microcredit._id',
+  //       'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+  //       'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
+  //     }
+  //   }]).exec().catch());
+  //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+  //
+  //   response.locals["backerTokens"] = {
+  //     '_id': tokens.length ? tokens[0]._id : campaign.campaign_id,
+  //     'initialTokens': tokens.length ? tokens[0].initialTokens : '0',
+  //     'redeemedTokens': tokens.length ? tokens[0].redeemedTokens : '0'
+  //   };
+  //   next();
+  // }
 }
 
 export default MicrocreditController;

@@ -7,4 +7,3 @@ interface Activity {
   badge: string;
 }
 export default Activity;
-
