@@ -8,5 +8,4 @@ class MemberDto {
   @IsString()
   public imageURL: string;
 }
-
 export default MemberDto;

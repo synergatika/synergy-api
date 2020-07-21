@@ -2,23 +2,40 @@ import * as express from 'express';
 import to from 'await-to-ts'
 import path from 'path';
 
-// Dtos
-import MemberDto from '../usersDtos/member.dto'
-// Exceptions
+/**
+ * DTOs
+ */
+import MemberDto from '../usersDtos/member.dto';
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 import Member from '../usersInterfaces/member.interface';
-// Middleware
-import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import FilesMiddleware from '../middleware/files.middleware';
-// Helper's Instance
+
+/**
+ * Middleware
+ */
+import validationBodyAndFileMiddleware from '../middleware/validators/body_file.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import FilesMiddleware from '../middleware/items/files.middleware';
+
+/**
+ * Helper's Instance
+ */
 const uploadFile = FilesMiddleware.uploadPerson;
 const deleteFile = FilesMiddleware.deleteFile;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 
 class MembersController implements Controller {

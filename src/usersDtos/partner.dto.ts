@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 // export enum Sector {
 //   n = 'None',
@@ -89,5 +89,4 @@ class PartnerDto {
   // @IsString()
   // public paypal: string;
 }
-
 export default PartnerDto;

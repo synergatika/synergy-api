@@ -100,7 +100,6 @@ describe("Loyalty", () => {
         .set('Authorization', 'Bearer ' + user_a.authToken)
         .end((err, res) => {
           res.should.have.status(200);
-          console.log(res.body);
           res.body.should.be.a('object');
           res.body.should.have.property('data');
           done();
@@ -150,6 +149,16 @@ describe("Loyalty", () => {
           done();
         });
     });
-
+    it("6. should read loyalty statistics - 200 LoyaltyStatistics", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .get("loyalty/statistics")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          done();
+        });
+    });
   });
 });

@@ -7,5 +7,4 @@ class CampaignID {
   @IsString()
   public campaign_id: string;
 }
-
 export default CampaignID;

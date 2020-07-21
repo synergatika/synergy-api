@@ -10,5 +10,4 @@ class AccessDto {
   @IsEnum(Access)
   public access: Access;
 }
-
 export default AccessDto;

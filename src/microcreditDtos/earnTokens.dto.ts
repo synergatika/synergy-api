@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsNumber, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsBoolean, IsOptional } from 'class-validator';
 
 class EarnTokensDto {
   @IsNumber()
@@ -11,5 +11,4 @@ class EarnTokensDto {
   @IsBoolean()
   public paid: boolean;
 }
-
 export default EarnTokensDto;

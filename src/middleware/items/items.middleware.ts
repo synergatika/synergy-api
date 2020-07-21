@@ -2,24 +2,35 @@ import { NextFunction, Response } from 'express';
 import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 
-// Dtos
-import OfferID from '../loyaltyDtos/offer_id.params.dto';
-import PostID from '../communityDtos/post_id.params.dto';
-import EventID from '../communityDtos/event_id.params.dto';
-import CampaignID from '../microcreditDtos/campaign_id.params.dto';
-import SupportID from '../microcreditDtos/support_id.params.dto';
-// Exceptions
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-import NotFoundException from '../exceptions/NotFound.exception';
-// Interfaces
-import RequestWithUser from '../interfaces/requestWithUser.interface';
-import Offer from '../loyaltyInterfaces/offer.interface';
-import Post from '../communityInterfaces/post.interface';
-import Event from '../communityInterfaces/event.interface';
-import Campaign from '../microcreditInterfaces/campaign.interface';
-import Support from '../microcreditInterfaces/support.interface';
-// Models
-import userModel from '../models/user.model';
+/**
+ * DTOs
+ */
+import OfferID from '../../loyaltyDtos/offer_id.params.dto';
+import PostID from '../../communityDtos/post_id.params.dto';
+import EventID from '../../communityDtos/event_id.params.dto';
+import CampaignID from '../../microcreditDtos/campaign_id.params.dto';
+import SupportID from '../../microcreditDtos/support_id.params.dto';
+
+/**
+ * Exceptions
+ */
+import UnprocessableEntityException from '../../exceptions/UnprocessableEntity.exception';
+import NotFoundException from '../../exceptions/NotFound.exception';
+
+/**
+ * Interfaces
+ */
+import RequestWithUser from '../../interfaces/requestWithUser.interface';
+import Offer from '../../loyaltyInterfaces/offer.interface';
+import Post from '../../communityInterfaces/post.interface';
+import Event from '../../communityInterfaces/event.interface';
+import Campaign from '../../microcreditInterfaces/campaign.interface';
+import Support from '../../microcreditInterfaces/support.interface';
+
+/**
+ * Models
+ */
+import userModel from '../../models/user.model';
 
 async function offer(request: RequestWithUser, response: Response, next: NextFunction) {
   const partner_id: OfferID["partner_id"] = request.params.partner_id;

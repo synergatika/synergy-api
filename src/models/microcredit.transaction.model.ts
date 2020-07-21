@@ -49,7 +49,6 @@ const receiptSchema = new mongoose.Schema({
 }, { _id: false });
 
 const microcreditTransactionSchema = new mongoose.Schema({
-
   partner_id: String,
   member_id: String,
 

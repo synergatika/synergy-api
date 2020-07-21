@@ -3,35 +3,52 @@ import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 import path from 'path';
 
-// Dtos
+/**
+ * DTOs
+ */
 import OfferDto from '../loyaltyDtos/offer.dto'
 import PartnerID from '../usersDtos/partner_id.params.dto'
 import OfferID from '../loyaltyDtos/offer_id.params.dto'
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 import NotFoundException from '../exceptions/NotFound.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 import Offer from '../loyaltyInterfaces/offer.interface';
-import LoyaltyOfferStatistics from '../loyaltyInterfaces/loyaltyOfferStatistics.interface';
-// Middleware
-import validationBodyMiddleware from '../middleware/body.validation';
-import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import accessMiddleware from '../middleware/access.middleware';
-import itemsMiddleware from '../middleware/items.middleware';
-import FilesMiddleware from '../middleware/files.middleware';
-import SlugHelper from '../middleware/slug.helper';
-import OffsetHelper from '../middleware/offset.helper';
-// Helper's Instance
+import LoyaltyStatistics from '../loyaltyInterfaces/loyaltyStatistics.interface';
+
+/**
+ * Middleware
+ */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
+import validationBodyAndFileMiddleware from '../middleware/validators/body_file.validation';
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import accessMiddleware from '../middleware/auth/access.middleware';
+import itemsMiddleware from '../middleware/items/items.middleware';
+import FilesMiddleware from '../middleware/items/files.middleware';
+import SlugHelper from '../middleware/items/slug.helper';
+import OffsetHelper from '../middleware/items/offset.helper';
+
+/**
+ * Helper's Instance
+ */
 const uploadFile = FilesMiddleware.uploadItem;
 const deleteFile = FilesMiddleware.deleteFile;
 const createSlug = SlugHelper.offerSlug;
 const offsetParams = OffsetHelper.offsetLimit;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 import transactionModel from '../models/loyalty.transaction.model';
 
@@ -112,18 +129,18 @@ class OffersController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-        $push: {
-          offers: {
-            "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
-            "title": data.title,
-            "subtitle": data.subtitle,
-            "slug": await createSlug(request),
-            "description": data.description,
-            "cost": data.cost,
-            "expiresAt": data.expiresAt
-          }
+      $push: {
+        offers: {
+          "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
+          "title": data.title,
+          "subtitle": data.subtitle,
+          "slug": await createSlug(request),
+          "description": data.description,
+          "cost": data.cost,
+          "expiresAt": data.expiresAt
         }
-      }).catch());
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new offer has been created!",
@@ -241,29 +258,27 @@ class OffersController implements Controller {
       }
     }
     ]).exec().catch());
-    console.log(offers);
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     else if (!offers.length) {
       return next(new NotFoundException('OFFER_NOT_EXISTS'));
     }
 
-    const statisticsRedeem: LoyaltyOfferStatistics[] = await this.readStatistics(offers, 'RedeemPointsOffer');
+    const statisticsRedeem: LoyaltyStatistics[] = await this.readStatistics(offers, 'RedeemPointsOffer');
     const offerStatistics = offers.map((a: Offer) =>
       Object.assign({}, a,
         {
-          statistics: (statisticsRedeem).find((b: LoyaltyOfferStatistics) => (b._id).toString() === (a.offer_id).toString()),
+          statistics: (statisticsRedeem).find((b: LoyaltyStatistics) => (b._id).toString() === (a.offer_id).toString()),
         }
       )
     );
+
+    console.log("Offer with Statistics");
+    console.log(offerStatistics[0]);
+
     response.status(200).send({
-      data: offerStatistics[0], //campaigns[0],
+      data: offerStatistics[0],
       code: 200
     });
-
-    // response.status(200).send({
-    //   data: offers[0],
-    //   code: 200
-    // });
   }
 
   private updateOffer = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -284,17 +299,17 @@ class OffersController implements Controller {
         _id: partner_id,
         'offers._id': offer_id
       }, {
-        '$set': {
-          'offers.$._id': offer_id,
-          'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentOffer.offer_imageURL,
-          'offers.$.title': data.title,
-          'offers.$.slug': await createSlug(request),
-          'offers.$.subtitle': data.subtitle,
-          'offers.$.description': data.description,
-          'offers.$.cost': data.cost,
-          'offers.$.expiresAt': data.expiresAt
-        }
-      }).catch());
+      '$set': {
+        'offers.$._id': offer_id,
+        'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentOffer.offer_imageURL,
+        'offers.$.title': data.title,
+        'offers.$.slug': await createSlug(request),
+        'offers.$.subtitle': data.subtitle,
+        'offers.$.description': data.description,
+        'offers.$.cost': data.cost,
+        'offers.$.expiresAt': data.expiresAt
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -317,12 +332,12 @@ class OffersController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: partner_id
     }, {
-        $pull: {
-          offers: {
-            _id: offer_id
-          }
+      $pull: {
+        offers: {
+          _id: offer_id
         }
-      }).catch());
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Offer " + offer_id + " has been deleted!",
@@ -332,21 +347,19 @@ class OffersController implements Controller {
 
   private readStatistics = async (offers: Offer[], status: string) => {
 
-    var _now: number = Date.now();
-    var _date = new Date(_now);
-    _date.setDate(1);
-    _date.setHours(0, 0, 0, 0);
-    _date.setMonth(_date.getMonth() - 12);
+    // var _now: number = Date.now();
+    // var _date = new Date(_now);
+    // _date.setDate(1);
+    // _date.setHours(0, 0, 0, 0);
+    // _date.setMonth(_date.getMonth() - 12);
 
-    let error: Error, statistics: LoyaltyOfferStatistics[];
+    let error: Error, statistics: LoyaltyStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
-
-        // 'data.offer_id': '5f15818a9f5b970c56c41536'//{ $in: offers.map(a => a.offer_id) }
         $and: [
           { 'data.offer_id': { $in: offers.map(a => (a.offer_id).toString()) } },
-          //   //{ 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
           { 'type': status }
+          //{ 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
         ]
       }
     },
@@ -356,6 +369,7 @@ class OffersController implements Controller {
         points: { $sum: "$data.points" },
         quantity: { $sum: "$data.quantity" },
         users: { "$addToSet": "$member_id" },
+        count: { "$addToSet": "$_id" }
       }
     },
     {
@@ -364,17 +378,18 @@ class OffersController implements Controller {
         "quantity": 1,
         "users": { "$size": "$users" },
         "usersArray": '$users',
-        "type": 1
+        "count": { "$size": "$count" }
       }
     }
     ]).exec().catch());
     if (error) return [];
 
-    const byDate: any = await this.readDailyStatistics(offers, status);
-    const fullStatistics = statistics.map((a: LoyaltyOfferStatistics) =>
+    const byDate: LoyaltyStatistics[] = await this.readDailyStatistics(offers, status);
+    console.log(byDate);
+    const fullStatistics = statistics.map((a: LoyaltyStatistics) =>
       Object.assign({}, a,
         {
-          byDate: ((byDate).find((e: LoyaltyOfferStatistics) => (e._id).toString() === (a._id).toString())).byDate,
+          byDate: ((byDate).find((e: LoyaltyStatistics) => (e._id).toString() === (a._id).toString())).byDate,
         }
       )
     );
@@ -384,19 +399,19 @@ class OffersController implements Controller {
 
   private readDailyStatistics = async (offers: Offer[], status: string) => {
 
-    var _now: number = Date.now();
-    var _date = new Date(_now);
-    _date.setDate(1);
-    _date.setHours(0, 0, 0, 0);
-    _date.setMonth(_date.getMonth() - 12);
+    // var _now: number = Date.now();
+    // var _date = new Date(_now);
+    // _date.setDate(1);
+    // _date.setHours(0, 0, 0, 0);
+    // _date.setMonth(_date.getMonth() - 12);
 
-    let error: Error, statistics: LoyaltyOfferStatistics[];
+    let error: Error, statistics: LoyaltyStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
           { 'data.offer_id': { $in: offers.map(a => (a.offer_id).toString()) } },
-          //   //{ 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
           { 'type': status }
+          //   //{ 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
         ]
       }
     },
@@ -408,7 +423,8 @@ class OffersController implements Controller {
         },
         points: { $sum: "$data.points" },
         quantity: { $sum: "$data.quantity" },
-        users: { "$addToSet": "$member_id" }
+        users: { "$addToSet": "$member_id" },
+        count: { "$addToSet": "$_id" }
       }
     },
     {
@@ -416,14 +432,14 @@ class OffersController implements Controller {
         _id: "$_id.offer_id",
         byDate: {
           $push: {
-            date: "$_id.date", points: '$points', quantity: "$quantity", users: { "$size": "$users" }, usersArray: '$users'
+            date: "$_id.date", points: '$points', quantity: "$quantity", users: { "$size": "$users" }, usersArray: '$users', count: { "$size": "$count" }
           }
         }
       }
     },
     {
       "$project": {
-        "byDate": { date: 1, points: 1, quantity: 1, users: 1, usersArray: 1 },
+        "byDate": { date: 1, points: 1, quantity: 1, users: 1, usersArray: 1, count: 1 },
       }
     }
     ]).exec().catch());

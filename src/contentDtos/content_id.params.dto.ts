@@ -4,5 +4,4 @@ class ContentID {
   @IsString()
   public content_id: string;
 }
-
 export default ContentID;

@@ -3,34 +3,51 @@ import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 import path from 'path';
 
-// Dtos
+/**
+ * DTOs
+ */
 import EventDto from '../communityDtos/event.dto'
 import PartnerID from '../usersDtos/partner_id.params.dto'
 import EventID from '../communityDtos/event_id.params.dto'
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 import NotFoundException from '../exceptions/NotFound.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import Controller from '../interfaces/controller.interface';
 import User from '../usersInterfaces/user.interface';
 import Event from '../communityInterfaces/event.interface';
-// Middleware
-import validationBodyMiddleware from '../middleware/body.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
-import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import accessMiddleware from '../middleware/access.middleware';
-import itemsMiddleware from '../middleware/items.middleware';
-import FilesMiddleware from '../middleware/files.middleware';
-import SlugHelper from '../middleware/slug.helper';
-import OffsetHelper from '../middleware/offset.helper';
-// Helper's Instance
+
+/**
+ * Middleware
+ */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import validationBodyAndFileMiddleware from '../middleware/validators/body_file.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import accessMiddleware from '../middleware/auth/access.middleware';
+import itemsMiddleware from '../middleware/items/items.middleware';
+import FilesMiddleware from '../middleware/items/files.middleware';
+import SlugHelper from '../middleware/items/slug.helper';
+import OffsetHelper from '../middleware/items/offset.helper';
+
+/**
+ * Helper's Instances
+ */
 const uploadFile = FilesMiddleware.uploadItem;
 const deleteFile = FilesMiddleware.deleteFile;
 const createSlug = SlugHelper.eventSlug;
 const offsetParams = OffsetHelper.offsetLimit;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 
 class EventsController implements Controller {

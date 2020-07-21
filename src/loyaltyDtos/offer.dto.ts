@@ -21,5 +21,4 @@ class OfferDto {
   @IsString()
   public expiresAt: number;
 }
-
 export default OfferDto;

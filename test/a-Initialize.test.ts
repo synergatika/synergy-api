@@ -7,13 +7,15 @@ chai.use(require('chai-as-promised'));
 chai.use(require('chai-http'));
 
 import 'dotenv/config';
+import validateEnv from '../src/utils/validateEnv';
+validateEnv();
+
 import * as mongoose from 'mongoose';
 import * as bcrypt from 'bcrypt';
 var path = require('path');
 var fs = require('fs')
 var rimraf = require("rimraf");
-import validateEnv from '../src/utils/validateEnv';
-validateEnv();
+
 
 import { defaultAdmin, content_a } from './_structs.test';
 import userModel from '../src/models/user.model';

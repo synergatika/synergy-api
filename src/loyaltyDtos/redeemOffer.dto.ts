@@ -10,5 +10,4 @@ class RedeemOfferDto {
   @IsNumber()
   public quantity: number;
 }
-
 export default RedeemOfferDto;

@@ -1,8 +1,9 @@
 
-
-// Dtos
-import Activity from '../loyaltyInterfaces/activity.interface';
-import History from '../loyaltyInterfaces/history.interface';
+/**
+ * DTOs
+ */
+import Activity from '../../loyaltyInterfaces/activity.interface';
+import History from '../../loyaltyInterfaces/history.interface';
 
 class ConvertHelper {
 
@@ -38,8 +39,6 @@ class ConvertHelper {
       badge: badge
     };
   }
-
-
 
   static indexToPayment(index: number): string {
     let payment_id: string;

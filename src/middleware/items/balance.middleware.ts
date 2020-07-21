@@ -3,25 +3,41 @@ import to from 'await-to-ts'
 var path = require('path');
 import { ObjectId } from 'mongodb';
 
-// Eth
-import { BlockchainService } from '../utils/blockchainService';
+/**
+ * Blockchain Service
+ */
+import { BlockchainService } from '../../utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
-// Dtos
-import Campaign from '../microcreditInterfaces/campaign.interface';
-import History from '../loyaltyInterfaces/history.interface';
-import Tokens from '../microcreditInterfaces/tokens.interface';
-// Exceptions
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-// Interfaces
-import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
-// Middleware
+/**
+ * DTOs
+ */
+import Campaign from '../../microcreditInterfaces/campaign.interface';
+import History from '../../loyaltyInterfaces/history.interface';
+import Tokens from '../../microcreditInterfaces/tokens.interface';
+
+/**
+ * Exceptions
+ */
+import UnprocessableEntityException from '../../exceptions/UnprocessableEntity.exception';
+
+/**
+ * Interfaces
+ */
+import RequestWithUser from '../../interfaces/requestWithUser.interface';
+import User from '../../usersInterfaces/user.interface';
+
+/**
+ * Middleware
+ */
 import convertHelper from './convert.helper';
-// Models
-import userModel from '../models/user.model';
-import loyaltyTransactionModel from '../models/loyalty.transaction.model';
-import microcreditTransactionModel from '../models/microcredit.transaction.model';
+
+/**
+ * Models
+ */
+import userModel from '../../models/user.model';
+import loyaltyTransactionModel from '../../models/loyalty.transaction.model';
+import microcreditTransactionModel from '../../models/microcredit.transaction.model';
 
 async function loyalty_balance(request: RequestWithUser, response: Response, next: NextFunction) {
   const member: User = (response.locals.member) ? response.locals.member : request.user;

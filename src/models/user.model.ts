@@ -1,6 +1,5 @@
 import * as mongoose from 'mongoose';
 import User from '../usersInterfaces/user.interface';
-import { object } from 'prop-types';
 
 const microcreditSupportSchema = new mongoose.Schema({
   backer_id: String,
@@ -188,8 +187,8 @@ const userSchema = new mongoose.Schema({
     default: 'itself'
   }
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 export default userModel;

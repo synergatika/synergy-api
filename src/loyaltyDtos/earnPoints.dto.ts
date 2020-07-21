@@ -7,5 +7,4 @@ class EarnPointsDto {
     @IsNumber()
     public _amount: number;
 }
-
 export default EarnPointsDto;

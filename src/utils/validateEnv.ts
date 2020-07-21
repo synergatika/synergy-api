@@ -1,6 +1,4 @@
-import {
-  cleanEnv, str, port, host, num, email, url
-} from 'envalid';
+import { cleanEnv, str, port, host, num, email, url, bool } from 'envalid';
 
 export default function validateEnv() {
   cleanEnv(process.env, {
@@ -14,8 +12,9 @@ export default function validateEnv() {
     EMAIL_FROM: str({ default: 'Synergy | A Social and Solidarity Economy Toolkit' }),
     EMAIL_HOST: host(),
     EMAIL_PASS: str(),
-    EMAIL_PORT: port({ default: 587}),
+    EMAIL_PORT: port({ default: 587 }),
     EMAIL_USER: email(),
+    TEST_EMAIL: str(),
     ETH_API_ACCOUNT_PRIVKEY: str(),
     ETH_REMOTE_WS: num({ default: 8546 }),
     ETH_REMOTE_REST: num({ default: 8545 }),
@@ -27,5 +26,6 @@ export default function validateEnv() {
     TOKEN_EXPIRATION: num({ default: 5 }),
     TOKEN_LENGTH: num({ default: 32 }),
     SENTRY_URI: str(),
+    PRODUCTION: bool({ default: true }),
   });
 }

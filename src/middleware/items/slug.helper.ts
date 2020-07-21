@@ -3,17 +3,26 @@ import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 import latinize from 'latinize';
 
-// Dtos
+
+/**
+ * DTOs
+ */
 import RegisterPartnerWithPasswordDto from 'authDtos/registerPartnerWithPassword.dto';
-import OfferDto from '../loyaltyDtos/offer.dto';
-import PostDto from '../communityDtos/post.dto';
-import EventDto from '../communityDtos/event.dto';
-import CampaignDto from '../microcreditDtos/campaign.dto';
-// Interfaces
-import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
-// Models
-import userModel from '../models/user.model';
+import OfferDto from '../../loyaltyDtos/offer.dto';
+import PostDto from '../../communityDtos/post.dto';
+import EventDto from '../../communityDtos/event.dto';
+import CampaignDto from '../../microcreditDtos/campaign.dto';
+
+/**
+ * Interfaces
+ */
+import RequestWithUser from '../../interfaces/requestWithUser.interface';
+import User from '../../usersInterfaces/user.interface';
+
+/**
+ * Models
+ */
+import userModel from '../../models/user.model';
 
 class SlugHelper {
   static partnerSlug = async (request: express.Request) => {
@@ -24,7 +33,7 @@ class SlugHelper {
 
     if (!slugs.length) return _slug;
     else {
-      var partner = slugs.filter(function(el) {
+      var partner = slugs.filter(function (el) {
         return el._id == request.params.partner_id
       });
       return (partner.length) ? partner[0]["slug"] : _slug + "-" + (slugs.length + 1);
@@ -46,7 +55,7 @@ class SlugHelper {
 
     if (!slugs.length) return _slug;
     else {
-      var offer = slugs.filter(function(el) {
+      var offer = slugs.filter(function (el) {
         return el.offer_id == request.params.offer_id
       });
       return (offer.length) ? offer[0]["slug"] : _slug + "-" + (slugs.length + 1);
@@ -66,7 +75,7 @@ class SlugHelper {
 
     if (!slugs.length) return _slug;
     else {
-      var post = slugs.filter(function(el) {
+      var post = slugs.filter(function (el) {
         return el.post_id == request.params.post_id
       });
       return (post.length) ? post[0]["slug"] : _slug + "-" + (slugs.length + 1);
@@ -86,7 +95,7 @@ class SlugHelper {
 
     if (!slugs.length) return _slug;
     else {
-      var event = slugs.filter(function(el) {
+      var event = slugs.filter(function (el) {
         return el.event_id == request.params.event_id
       });
       return (event.length) ? event[0]["slug"] : _slug + "-" + (slugs.length + 1);
@@ -106,7 +115,7 @@ class SlugHelper {
 
     if (!slugs.length) return _slug;
     else {
-      var campaign = slugs.filter(function(el) {
+      var campaign = slugs.filter(function (el) {
         return el.campaign_id == request.params.campaign_id
       });
       return (campaign.length) ? campaign[0]["slug"] : _slug + "-" + (slugs.length + 1);

@@ -7,5 +7,4 @@ class EventID {
   @IsString()
   public event_id: string;
 }
-
 export default EventID;

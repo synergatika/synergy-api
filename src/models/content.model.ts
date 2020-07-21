@@ -1,6 +1,5 @@
 import * as mongoose from 'mongoose';
 import Content from '../contentInterfaces/content.interface';
-import { object, string } from 'prop-types';
 
 const contentSchema = new mongoose.Schema({
   name: String,

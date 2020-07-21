@@ -1,6 +1,5 @@
 import * as mongoose from 'mongoose';
 import RegistrationTransaction from '../authInterfaces/transaction.interface';
-import { object, string } from 'prop-types';
 
 const receiptSchema = new mongoose.Schema({
   transactionHash: String,

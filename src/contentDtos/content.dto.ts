@@ -15,7 +15,5 @@ class ContentDto {
 
   @IsString()
   public en_content: string;
-
 }
-
 export default ContentDto;

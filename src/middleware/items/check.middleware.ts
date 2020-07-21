@@ -1,20 +1,31 @@
 import { NextFunction, Response } from 'express';
 import * as bcrypt from 'bcrypt';
 
-// Dtos
-import RedeemOfferDto from '../loyaltyDtos/redeemOffer.dto';
+/**
+ * DTOs
+ */
+import RedeemOfferDto from '../../loyaltyDtos/redeemOffer.dto';
 import EarnTokensDto from 'microcreditDtos/earnTokens.dto';
-// Exceptions
-import NotFoundException from '../exceptions/NotFound.exception';
-// Interfaces
-import RequestWithUser from '../interfaces/requestWithUser.interface';
-import Partner from 'usersInterfaces/partner.interface';
-import Offer from '../loyaltyInterfaces/offer.interface';
-import Campaign from '../microcreditInterfaces/campaign.interface';
-import Support from '../microcreditInterfaces/support.interface';
-import Tokens from '../microcreditInterfaces/tokens.interface';
-// Models
-import userModel from '../models/user.model';
+
+/**
+ * Exceptions
+ */
+import NotFoundException from '../../exceptions/NotFound.exception';
+
+/**
+ * Interfaces
+ */
+import RequestWithUser from '../../interfaces/requestWithUser.interface';
+import Partner from '../../usersInterfaces/partner.interface';
+import Offer from '../../loyaltyInterfaces/offer.interface';
+import Campaign from '../../microcreditInterfaces/campaign.interface';
+import Support from '../../microcreditInterfaces/support.interface';
+import Tokens from '../../microcreditInterfaces/tokens.interface';
+
+/**
+ * Models
+ */
+import userModel from '../../models/user.model';
 
 class CheckMiddleware {
 
@@ -98,7 +109,7 @@ class CheckMiddleware {
       return next(new NotFoundException('ZERO_AMOUNT')); //"Support Fund cannot be 0",
     }
     if ((partner) && (data.method !== 'store') &&
-      ((partner.payments).filter(function(el) {
+      ((partner.payments).filter(function (el) {
         return el.bic == data.method
       }).length == 0)) {
       //  !(Object.values(JSON.parse(JSON.stringify(partner.payments)))[(Object.keys(JSON.parse(JSON.stringify(partner.payments))).indexOf(data.method))])) {

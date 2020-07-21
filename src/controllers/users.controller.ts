@@ -3,30 +3,49 @@ import to from 'await-to-ts';
 import path from 'path';
 import { ObjectId } from 'mongodb';
 
-// Email Service
+/**
+ * Email Service
+ */
 import EmailService from '../utils/emailService';
 const emailService = new EmailService();
 
-// Dtos
+/**
+ * DTOs
+ */
 import UserID from '../usersDtos/user_id.params.dto';
 import AccessDto, { Access } from '../usersDtos/access.params.dto';
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 import NotFoundException from '../exceptions/NotFound.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import User from '../usersInterfaces/user.interface';
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 //import Content from '../contentInterfaces/content.interface';
-// Middleware
-import validationBodyMiddleware from '../middleware/body.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import accessMiddleware from '../middleware/access.middleware';
-import OffsetHelper from '../middleware/offset.helper';
-// Helper's Instance
+
+/**
+ * Middleware
+ */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import accessMiddleware from '../middleware/auth/access.middleware';
+import OffsetHelper from '../middleware/items/offset.helper';
+
+/**
+ * Helper's Instance
+ */
 const offsetParams = OffsetHelper.offsetLimit;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 
 class UserController implements Controller {
@@ -53,7 +72,7 @@ class UserController implements Controller {
 
     let error: Error, users: User[];
     [error, users] = await to(this.user.find({ access: access }).select({
-      "_id": 1,
+      "_id": 1, "address": 1,
       "email": 1, "card": 1,
       "name": 1, "imageURL": 1,
       "activated": 1, "createdAt": 1

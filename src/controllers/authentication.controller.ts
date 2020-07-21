@@ -6,14 +6,21 @@ import to from 'await-to-ts';
 import path from 'path';
 import { ObjectId } from 'mongodb';
 
-// Blockchain Service
+/**
+ * Blockchain Service
+ */
 import { BlockchainService } from '../utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
-// Email Service
+
+/**
+ * Email Service
+ */
 import EmailService from '../utils/emailService';
 const emailService = new EmailService();
 
-// Dtos
+/**
+ * DTOs
+ */
 import AuthenticationDto from '../authDtos/authentication.dto';
 import RegisterUserWithPasswordDto from '../authDtos/registerUserWithPassword.dto';
 import RegisterUserWithoutPasswordDto from '../authDtos/registerUserWithoutPassword.dto';
@@ -26,10 +33,16 @@ import EmailDto from '../authDtos/email.params.dto';
 import CardDto from '../authDtos/card.params.dto';
 import IdentifierDto from '../authDtos/identifier.params.dto';
 import DeactivatationDto from '../authDtos/deactivation.dto';
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import NotFoundException from '../exceptions/NotFound.exception';
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 import DataStoredInToken from '../authInterfaces/dataStoredInToken';
 import TokenData from '../authInterfaces/tokenData.interface';
@@ -38,19 +51,28 @@ import User from '../usersInterfaces/user.interface';
 import Member from '../usersInterfaces/member.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import Account from '../usersInterfaces/account.interface';
-// Middleware
-import validationBodyMiddleware from '../middleware/body.validation';
-import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
-import accessMiddleware from '../middleware/access.middleware';
-import authMiddleware from '../middleware/auth.middleware';
-import FilesMiddleware from '../middleware/files.middleware';
-import SlugHelper from '../middleware/slug.helper';
-// Helper's Instance
+
+/**
+ * Middleware
+ */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
+import validationBodyAndFileMiddleware from '../middleware//validators/body_file.validation';
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import accessMiddleware from '../middleware/auth/access.middleware';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import FilesMiddleware from '../middleware/items/files.middleware';
+import SlugHelper from '../middleware/items/slug.helper';
+
+/**
+ * Helper's Instances
+ */
 const uploadFile = FilesMiddleware.uploadPerson;
 const renameFile = FilesMiddleware.renameFile;
 const createSlug = SlugHelper.partnerSlug;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 import transactionModel from '../models/registration.transaction.model';
 

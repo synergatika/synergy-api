@@ -11,5 +11,4 @@ class SupportID {
   @IsString()
   public support_id: string;
 }
-
 export default SupportID;

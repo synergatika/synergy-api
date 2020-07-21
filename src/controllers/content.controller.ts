@@ -3,22 +3,36 @@ import to from 'await-to-ts';
 import path from 'path';
 import { ObjectId } from 'mongodb';
 
-// Dtos
+/**
+ * DTOs
+ */
 import ContentID from '../contentDtos/content_id.params.dto';
 import ContentDto from '../contentDtos/content.dto';
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 import NotFoundException from '../exceptions/NotFound.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import Content from '../contentInterfaces/content.interface';
-// Middleware
-import validationBodyMiddleware from '../middleware/body.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import accessMiddleware from '../middleware/access.middleware';
-// Models
+
+/**
+ * Middleware
+ */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import accessMiddleware from '../middleware/auth/access.middleware';
+
+/**
+ * Models
+ */
 import contentModel from '../models/content.model';
 
 class ContentController implements Controller {

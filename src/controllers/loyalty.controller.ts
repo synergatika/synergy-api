@@ -1,37 +1,58 @@
 import * as express from 'express';
 import to from 'await-to-ts'
 var path = require('path');
-// Eth
+
+/**
+ * Blockchain Service
+ */
 import { BlockchainService } from '../utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
-// Dtos
+/**
+ * DTOs
+ */
 import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
 import EarnPointsDto from '../loyaltyDtos/earnPoints.dto';
 import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto';
 import OfferID from '../loyaltyDtos/offer_id.params.dto'
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 import LoyaltyTransaction from '../loyaltyInterfaces/transaction.interface';
 import History from '../loyaltyInterfaces/history.interface';
-// Middleware
-import validationBodyMiddleware from '../middleware/body.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import accessMiddleware from '../middleware/access.middleware';
-import usersMiddleware from '../middleware/users.middleware';
-import itemsMiddleware from '../middleware/items.middleware';
-import checkMiddleware from '../middleware/check.middleware';
-import balanceMiddleware from '../middleware/balance.middleware';
-import convertHelper from '../middleware/convert.helper';
-import OffsetHelper from '../middleware/offset.helper';
-// Helper's Instance
+import LoyaltyStatistics from '../loyaltyInterfaces/loyaltyStatistics.interface';
+
+/**
+ * Middleware
+ */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import accessMiddleware from '../middleware/auth/access.middleware';
+import usersMiddleware from '../middleware/items/users.middleware';
+import itemsMiddleware from '../middleware/items/items.middleware';
+import checkMiddleware from '../middleware/items/check.middleware';
+import balanceMiddleware from '../middleware/items/balance.middleware';
+import convertHelper from '../middleware/items/convert.helper';
+import OffsetHelper from '../middleware/items/offset.helper';
+
+/**
+ * Helper's Instance
+ */
 const offsetParams = OffsetHelper.offsetLimit;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 import transactionModel from '../models/loyalty.transaction.model';
 import Offer from 'loyaltyInterfaces/offer.interface';
@@ -99,7 +120,8 @@ class LoyaltyController implements Controller {
       this.readActivity);
 
     this.router.get(`${this.path}/statistics`,
-      this.readStatistics);
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      this.readLoyaltyStatistics);
     //  this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
     //  this.router.get(`${this.path}/transactions_info`, authMiddleware, this.transactionInfoLength);
   }
@@ -216,22 +238,33 @@ class LoyaltyController implements Controller {
     });
   }
 
-  private readStatistics = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  private readLoyaltyStatistics = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const user: User = request.user;
 
-    var _now: number = Date.now();
-    var _date = new Date(_now);
-    _date.setDate(1);
-    _date.setHours(0, 0, 0, 0);
-    _date.setMonth(_date.getMonth() - 12);
+    const statisticsEarn: LoyaltyStatistics[] = await this.readStatistics((user._id).toString(), 'EarnPoints');
+    const statisticsRedeem: LoyaltyStatistics[] = await this.readStatistics((user._id).toString(), 'RedeemPoints');
 
-    let error: Error, statistics: any[];
+    console.log("Loyalty Statistics");
+    console.log(statisticsEarn);
+    console.log(statisticsRedeem);
+
+    response.status(200).send({
+      data: {
+        statisticsEarn: statisticsEarn[0],
+        statisticsRedeem: statisticsRedeem[0]
+      },
+      code: 200
+    });
+  }
+
+  private readStatistics = async (partner_id: string, status: string) => {
+
+    let error: Error, statistics: LoyaltyStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
-
-        // 'data.offer_id': '5f15818a9f5b970c56c41536'//{ $in: offers.map(a => a.offer_id) }
         $and: [
-          { 'partner_id': '5f15922cd2d7ae0f7af14a5c' },
-          { 'type': 'EarnPoints' }
+          { 'partner_id': partner_id },
+          { 'type': status }
         ]
       }
     },
@@ -239,49 +272,43 @@ class LoyaltyController implements Controller {
       $group: {
         _id: '$partner_id',
         amount: { $sum: "$data.amount" },
+        points: { $sum: "$data.points" },
         users: { "$addToSet": "$member_id" },
+        count: { "$addToSet": "$_id" }
       }
     },
     {
       "$project": {
         "amount": 1,
+        "points": 1,
         "users": { "$size": "$users" },
         "usersArray": '$users',
-        "type": 1
+        "count": { "$size": "$count" }
       }
     }
     ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+    if (error) return [];
 
-    const byDate: any = await this.readDailyStatistics('aek');
-    const fullStatistics = statistics.map((a: any) =>
+    const byDate: LoyaltyStatistics[] = await this.readDailyStatistics(partner_id, status);
+    const fullStatistics = statistics.map((a: LoyaltyStatistics) =>
       Object.assign({}, a,
         {
-          byDate: ((byDate).find((e: any) => (e._id).toString() === (a._id).toString())).byDate,
+          byDate: ((byDate).find((e: LoyaltyStatistics) => (e._id).toString() === (a._id).toString())).byDate,
         }
       )
     );
 
-    response.status(200).send({
-      data: fullStatistics[0],
-      code: 200
-    });
+    return fullStatistics;
   }
 
-  private readDailyStatistics = async (status: string) => {
+  private readDailyStatistics = async (partner_id: string, status: string) => {
 
-    var _now: number = Date.now();
-    var _date = new Date(_now);
-    _date.setDate(1);
-    _date.setHours(0, 0, 0, 0);
-    _date.setMonth(_date.getMonth() - 12);
-
-    let error: Error, statistics: any[];
+    let error: Error, statistics: LoyaltyStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
-          { 'partner_id': '5f15922cd2d7ae0f7af14a5c' },
-          { 'type': 'EarnPoints' }
+          { 'partner_id': partner_id },
+          { 'type': status }
         ]
       }
     },
@@ -292,7 +319,9 @@ class LoyaltyController implements Controller {
           date: { day: { $dayOfMonth: "$createdAt" }, month: { $month: "$createdAt" }, year: { $year: "$createdAt" } }
         },
         amount: { $sum: "$data.amount" },
-        users: { "$addToSet": "$member_id" }
+        points: { $sum: "$data.points" },
+        users: { "$addToSet": "$member_id" },
+        count: { "$addToSet": "$_id" }
       }
     },
     {
@@ -300,14 +329,14 @@ class LoyaltyController implements Controller {
         _id: "$_id.partner_id",
         byDate: {
           $push: {
-            date: "$_id.date", amount: '$amount', users: { "$size": "$users" }, usersArray: '$users'
+            date: "$_id.date", amount: '$amount', points: '$points', users: { "$size": "$users" }, usersArray: '$users', count: { "$size": "$count" }
           }
         }
       }
     },
     {
       "$project": {
-        "byDate": { date: 1, amount: 1, users: 1, usersArray: 1 },
+        "byDate": { date: 1, amount: 1, points: 1, users: 1, usersArray: 1, count: 1 },
       }
     }
     ]).exec().catch());

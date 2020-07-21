@@ -18,5 +18,4 @@ class PostDto {
   @IsEnum(['public', 'private', 'partners'])
   public access: string;
 }
-
 export default PostDto;

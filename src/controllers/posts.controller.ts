@@ -3,33 +3,50 @@ import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 import path from 'path';
 
-// Dtos
+/**
+ * DTOs
+ */
 import PostDto from '../communityDtos/post.dto'
 import PartnerID from '../usersDtos/partner_id.params.dto'
 import PostID from '../communityDtos/post_id.params.dto'
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
 import NotFoundException from '../exceptions/NotFound.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 import Post from '../communityInterfaces/post.interface';
-// Middleware
-import validationParamsMiddleware from '../middleware/params.validation';
-import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import accessMiddleware from '../middleware/access.middleware';
-import itemsMiddleware from '../middleware/items.middleware';
-import FilesMiddleware from '../middleware/files.middleware';
-import SlugHelper from '../middleware/slug.helper';
-import OffsetHelper from '../middleware/offset.helper';
-// Helper's Instance
+
+/**
+ * Middlewares
+ */
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import validationBodyAndFileMiddleware from '../middleware/validators/body_file.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import accessMiddleware from '../middleware/auth/access.middleware';
+import itemsMiddleware from '../middleware/items/items.middleware';
+import FilesMiddleware from '../middleware/items/files.middleware';
+import SlugHelper from '../middleware/items/slug.helper';
+import OffsetHelper from '../middleware/items/offset.helper';
+
+/**
+ * Helper's Instance
+ */
 const uploadFile = FilesMiddleware.uploadItem;
 const deleteFile = FilesMiddleware.deleteFile;
 const createSlug = SlugHelper.postSlug;
 const offsetParams = OffsetHelper.offsetLimit;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 
 class PostsController implements Controller {

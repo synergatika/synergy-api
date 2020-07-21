@@ -11,5 +11,4 @@ class RedeemPointsDto {
   @IsNumber()
   public quantity: number;
 }
-
 export default RedeemPointsDto;

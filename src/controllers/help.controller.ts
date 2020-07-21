@@ -5,18 +5,27 @@ import { API_VERSION } from '../version';
 
 const path = require('path');
 
-// Eth
+/**
+ * Blockchain Service
+ */
 import { BlockchainService } from '../utils/blockchainService';
 
-// Email
+/**
+ * Email Service
+ */
 import * as nodemailer from 'nodemailer';
 import Transporter from '../utils/mailer'
 const Email = require('email-templates');
 const email = new Email();
 
-// Exceptions
+/**
+ * Exceptions
+ */
 import NotFoundException from '../exceptions/NotFound.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 
 class HelpController implements Controller {
@@ -41,7 +50,7 @@ class HelpController implements Controller {
       ETH_REMOTE_NETWORK_TYPE
     } = process.env;
 
-    const timeOutPromise = new Promise(function(resolve, reject) {
+    const timeOutPromise = new Promise(function (resolve, reject) {
       setTimeout(() => {
         resolve(false);
       }, 5000);
@@ -86,7 +95,7 @@ class HelpController implements Controller {
       DB_PASSWORD
     } = process.env;
 
-    const timeOutPromise = new Promise(function(resolve, reject) {
+    const timeOutPromise = new Promise(function (resolve, reject) {
       setTimeout(() => {
         resolve([true, null]);
       }, 5000);

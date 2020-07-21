@@ -7,5 +7,4 @@ class OfferID {
   @IsString()
   public offer_id: string;
 }
-
 export default OfferID;

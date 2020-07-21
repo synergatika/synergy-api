@@ -4,5 +4,4 @@ class UserID {
   @IsString()
   public user_id: string;
 }
-
 export default UserID;

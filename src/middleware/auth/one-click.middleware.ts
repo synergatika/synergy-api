@@ -1,15 +1,22 @@
 import { NextFunction, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 
-// Exceptions
-import UnauthorizedException from '../exceptions/Unauthorized.exception';
-// Interfaces
-import DataStoredInToken from '../authInterfaces/dataStoredInToken';
-import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
+/**
+ * Exceptions
+ */
+import UnauthorizedException from '../../exceptions/Unauthorized.exception';
 
-// Models
-import userModel from '../models/user.model';
+/**
+ * Interfaces
+ */
+import DataStoredInToken from '../../authInterfaces/dataStoredInToken';
+import RequestWithUser from '../../interfaces/requestWithUser.interface';
+import User from '../../usersInterfaces/user.interface';
+
+/**
+ * Models
+ */
+import userModel from '../../models/user.model';
 
 async function oneClickMiddleware(request: RequestWithUser, response: Response, next: NextFunction) {
 

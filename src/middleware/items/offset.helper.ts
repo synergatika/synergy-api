@@ -1,15 +1,23 @@
 import { NextFunction, Response } from 'express';
 import * as bcrypt from 'bcrypt';
 
-// Exceptions
-import ForbiddenException from '../exceptions/Forbidden.exception';
-// Interfaces
-import RequestWithUser from '../interfaces/requestWithUser.interface';
-import Offer from '../loyaltyInterfaces/offer.interface';
-import Campaign from '../microcreditInterfaces/campaign.interface';
-import Support from '../microcreditInterfaces/support.interface';
-// Models
-import userModel from '../models/user.model';
+/**
+ * Exceptions
+ */
+import ForbiddenException from '../../exceptions/Forbidden.exception';
+
+/**
+ * Interfaces
+ */
+import RequestWithUser from '../../interfaces/requestWithUser.interface';
+import Offer from '../../loyaltyInterfaces/offer.interface';
+import Campaign from '../../microcreditInterfaces/campaign.interface';
+import Support from '../../microcreditInterfaces/support.interface';
+
+/**
+ * Models
+ */
+import userModel from '../../models/user.model';
 
 class OffsetHelper {
 

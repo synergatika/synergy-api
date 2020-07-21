@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsBoolean, IsOptional } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 class CampaignDto {
 
@@ -27,24 +27,30 @@ class CampaignDto {
 
   @IsString()
   public quantitative: boolean;
+
   @IsOptional()
   @IsString()
   public stepAmount: number;
+
   @IsString()
   public minAllowed: number;
+
   @IsString()
   public maxAllowed: number;
+
   @IsString()
   public maxAmount: number;
 
   @IsString()
   public redeemStarts: number;
+
   @IsString()
   public redeemEnds: number;
+
   @IsString()
   public startsAt: number;
+
   @IsString()
   public expiresAt: number;
 }
-
 export default CampaignDto;

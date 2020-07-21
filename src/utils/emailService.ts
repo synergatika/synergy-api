@@ -2,6 +2,12 @@ import { NextFunction, Response } from 'express';
 import * as nodemailer from 'nodemailer';
 import to from 'await-to-ts';
 var path = require('path');
+
+// .env File
+import 'dotenv/config';
+import validateEnv from '../utils/validateEnv';
+validateEnv();
+
 import Promise from 'bluebird';
 
 // Email
@@ -21,15 +27,16 @@ class EmailService {
       .then((template: object) => {
         const mailOptions: nodemailer.SendMailOptions = {
           from: options.from,
-          // Dev
-          to: `${process.env.TEST_EMAIL}` || options.to,
-          // Prod
-          //to: options.to,
+          to: (`${process.env.PRODUCTION}` == 'true') ? options.to : `${process.env.TEST_EMAIL}`,
           subject: options.subject,
           html: template.toString()
         };
         return Transporter.sendMail(mailOptions);
-      })
+      });
+    // Dev
+    // to: `${process.env.TEST_EMAIL}` || options.to,
+    // Prod
+    // to: options.to,
   }
 
   /**
@@ -148,6 +155,31 @@ class EmailService {
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
     if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    response.status(data.res.code).send(data.res.body);
+  }
+
+  public userInvitation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    console.log(data);
+    let options = {
+      from: process.env.EMAIL_FROM,
+      to: data.receiver,
+      subject: 'User Invitation',
+      html: '',
+      type: 'invitation',
+      locals: {
+        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        home_page: `${process.env.APP_URL}`,
+        email: data.user.email,
+        reason: `${data.reason}`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+    console.log(results);
 
     response.status(data.res.code).send(data.res.body);
   }

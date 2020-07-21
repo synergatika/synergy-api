@@ -2,15 +2,23 @@ import { NextFunction, Response } from 'express';
 import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 
-// Exceptions
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-import NotFoundException from '../exceptions/NotFound.exception';
-// Interfaces
-import RequestWithUser from '../interfaces/requestWithUser.interface';
-import Member from '../usersInterfaces/member.interface';
-import Partner from '../usersInterfaces/partner.interface';
-// Models
-import userModel from '../models/user.model';
+/**
+ * Exceptions
+ */
+import UnprocessableEntityException from '../../exceptions/UnprocessableEntity.exception';
+import NotFoundException from '../../exceptions/NotFound.exception';
+
+/**
+ * Interfaces
+ */
+import RequestWithUser from '../../interfaces/requestWithUser.interface';
+import Member from '../../usersInterfaces/member.interface';
+import Partner from '../../usersInterfaces/partner.interface';
+
+/**
+ * Models
+ */
+import userModel from '../../models/user.model';
 
 async function member(request: RequestWithUser, response: Response, next: NextFunction) {
   const _to: string = request.params._to;

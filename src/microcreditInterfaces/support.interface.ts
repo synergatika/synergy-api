@@ -1,3 +1,5 @@
+import MicrocreditTransaction from './transaction.interface';
+
 interface Support {
   campaign_id: string;
   support_id: string;
@@ -9,6 +11,7 @@ interface Support {
   method: string;
   status: string;
 
+  transactions: MicrocreditTransaction[];
   createdAt: Date;
 }
 export default Support;

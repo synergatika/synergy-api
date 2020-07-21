@@ -1,36 +1,53 @@
 import * as express from 'express';
 import to from 'await-to-ts';
 import { ObjectId } from 'mongodb';
+var path = require('path');
 
-// Dtos
+/**
+ * DTOs
+ */
 import PartnerID from '../usersDtos/partner_id.params.dto';
 import CampaignID from '../microcreditDtos/campaign_id.params.dto';
 import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 import Campaign from '../microcreditInterfaces/campaign.interface';
 import Support from '../microcreditInterfaces/support.interface';
-// Middleware
-import validationBodyMiddleware from '../middleware/body.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
-import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import usersMiddleware from '../middleware/users.middleware';
-import accessMiddleware from '../middleware/access.middleware';
-import itemsMiddleware from '../middleware/items.middleware';
-import OffsetHelper from '../middleware/offset.helper';
-// Helper's Instance
+import MicrocreditTransaction from '../microcreditInterfaces/transaction.interface';
+
+/**
+ * Middleware
+ */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import validationBodyAndFileMiddleware from '../middleware/validators/body_file.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import accessMiddleware from '../middleware/auth/access.middleware';
+import usersMiddleware from '../middleware/items/users.middleware';
+import itemsMiddleware from '../middleware/items/items.middleware';
+import OffsetHelper from '../middleware/items/offset.helper';
+
+/**
+ * Helper's Instance
+ */
 const offsetParams = OffsetHelper.offsetLimit;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
 
-// Path
-var path = require('path');
 
 class MicrocreditSupportsController implements Controller {
   public path = '/microcredit/supports';
@@ -206,10 +223,52 @@ class MicrocreditSupportsController implements Controller {
     }
     ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    const transactions: { _id: string, transactions: MicrocreditTransaction[] }[] = await this.readTransactions(partner_id, (member._id).toString(), campaign_id);
+    const supportsTransactions = supports.map((a: Support) =>
+      Object.assign({}, a,
+        {
+          transactions: ((transactions).find((e: { _id: string, transactions: MicrocreditTransaction[] }) => (e._id).toString() === (a.support_id).toString())).transactions,
+        }
+      )
+    );
+
+    console.log("Backer's Supports per Campaign");
+    console.log(supportsTransactions);
+
     response.status(200).send({
-      data: supports,
+      data: supportsTransactions,
       code: 200
     });
+  }
+
+
+
+  private readTransactions = async (partner_id: string, member_id: string, campaign_id: string) => {
+
+    let error: Error, transactions: { _id: string, transactions: MicrocreditTransaction[] }[];
+    [error, transactions] = await to(this.transaction.aggregate([{
+      $match: {
+        $and: [
+          { member_id: member_id }, { partner_id: partner_id }, { 'data.campaign_id': campaign_id },
+          { $or: [{ type: "PromiseFund" }, { type: "SpendFund" }, { type: "ReceiveFund" }, { type: "RevertFund" }] }
+        ]
+      }
+    },
+    {
+      $group: {
+        _id: '$data.support_id',
+        transactions: { "$addToSet": { id: "$_id", data: '$data', member_id: '$member_id', partner_id: 'partner_id', type: '$type', tx: '$tx', createdAt: '$createdAt' } }
+      }
+    },
+    {
+      "$project": {
+        "transactions": 1
+      }
+    }]).exec().catch());
+    if (error) return [];
+
+    return transactions;
   }
 }
 

@@ -3,30 +3,47 @@ import to from 'await-to-ts'
 import { ObjectId } from 'mongodb';
 import path from 'path';
 
-// Dtos
+/**
+ * DTOs
+ */
 import PartnerDto from '../usersDtos/partner.dto';
 import PartnerID from '../usersDtos/partner_id.params.dto';
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 import Partner from '../usersInterfaces/partner.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
-// Middleware
-import validationBodyAndFileMiddleware from '../middleware/body_file.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import accessMiddleware from '../middleware/access.middleware';
-import FilesMiddleware from '../middleware/files.middleware';
-import SlugHelper from '../middleware/slug.helper';
-import OffsetHelper from '../middleware/offset.helper';
-// Helper's Instance
+
+/**
+ * Middleware
+ */
+import validationBodyAndFileMiddleware from '../middleware/validators/body_file.validation';
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import accessMiddleware from '../middleware/auth/access.middleware';
+import FilesMiddleware from '../middleware/items/files.middleware';
+import SlugHelper from '../middleware/items/slug.helper';
+import OffsetHelper from '../middleware/items/offset.helper';
+
+/**
+ * Helper's Instance
+ */
 const uploadFile = FilesMiddleware.uploadPerson;
 const deleteFile = FilesMiddleware.deleteFile;
 const createSlug = SlugHelper.partnerSlug;
 const offsetParams = OffsetHelper.offsetLimit;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 
 class PartnersController implements Controller {

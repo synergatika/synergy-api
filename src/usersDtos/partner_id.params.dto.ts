@@ -8,5 +8,4 @@ class PartnerID {
   @IsString()
   public offset: string;
 }
-
 export default PartnerID;

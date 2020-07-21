@@ -3,25 +3,48 @@ import to from 'await-to-ts';
 import { ObjectId } from 'mongodb';
 import path from 'path';
 
-// Dtos
+/**
+ * Email Service
+ */
+import EmailService from '../utils/emailService';
+const emailService = new EmailService();
+
+/**
+ * DTOs
+ */
 import InvitationDto from '../communityDtos/invitation.dto'
-// Exceptions
+
+/**
+ * Exceptions
+ */
 import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
-// Interfaces
+
+/**
+ * Interfaces
+ */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import User from '../usersInterfaces/user.interface';
 import PartnerID from '../usersDtos/partner_id.params.dto'
 import PostEvent from '../communityInterfaces/post_event.interface';
-// Middleware
-import validationBodyMiddleware from '../middleware/body.validation';
-import validationParamsMiddleware from '../middleware/params.validation';
-import authMiddleware from '../middleware/auth.middleware';
-import accessMiddleware from '../middleware/access.middleware';
-import OffsetHelper from '../middleware/offset.helper';
-// Helper's Instance
+
+/**
+ * Middleware
+ */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
+import validationParamsMiddleware from '../middleware/validators/params.validation';
+import authMiddleware from '../middleware/auth/auth.middleware';
+import accessMiddleware from '../middleware/auth/access.middleware';
+import OffsetHelper from '../middleware/items/offset.helper';
+
+/**
+ * Helper's Instances
+ */
 const offsetParams = OffsetHelper.offseIndex;
-// Models
+
+/**
+ * Models
+ */
 import userModel from '../models/user.model';
 import invitationModel from '../models/invitation.model';
 
@@ -29,7 +52,7 @@ class CommunityController implements Controller {
   public path = '/community';
   public router = express.Router();
   private user = userModel;
-  private invitation = invitationModel;
+  // private invitation = invitationModel;
 
   constructor() {
     this.initializeRoutes();
@@ -40,6 +63,25 @@ class CommunityController implements Controller {
     this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPrivatePostsEvents);
     this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPublicPostsEventsByStore);
     this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPrivatePostsEventsByStore);
+
+    this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.sendInvitation, emailService.userInvitation);
+  }
+
+  private sendInvitation = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: InvitationDto = request.body;
+
+    console.log("Invite")
+    response.locals = {
+      res: {
+        code: 200,
+        body: {
+          message: "Invitation sent",
+          code: 200
+        }
+      },
+      receiver: data.receiver,
+      user: request.user
+    }
   }
 
   private sortPostsEvents = (a: PostEvent, b: PostEvent) => {

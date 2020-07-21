@@ -7,5 +7,4 @@ class PostID {
   @IsString()
   public post_id: string;
 }
-
 export default PostID;

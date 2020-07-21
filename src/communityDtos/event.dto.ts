@@ -24,5 +24,4 @@ class EventDto {
   @IsString()
   public dateTime: number;
 }
-
 export default EventDto;

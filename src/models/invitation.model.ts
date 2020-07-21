@@ -1,6 +1,5 @@
 import * as mongoose from 'mongoose';
 import Invitation from '../communityInterfaces/invitation.interface';
-import { object, string } from 'prop-types';
 
 const invitationSchema = new mongoose.Schema({
 
@@ -10,8 +9,8 @@ const invitationSchema = new mongoose.Schema({
   points: Number,
   completed: Boolean
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const invitationModel = mongoose.model<Invitation & mongoose.Document>('Invitation', invitationSchema);
 export default invitationModel;
