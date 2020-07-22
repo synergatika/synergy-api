@@ -9,6 +9,22 @@ chai.use(require('chai-http'));
 import { partner_a, microcredit_a, user_f } from './_structs.test';
 
 describe("Open Calls", () => {
+  describe("Community (/commmunity)", () => {
+    it("1. should send an email = 200 EmailSent", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("community/communicate")
+        .send({
+          sender: user_f.email,
+          content: "Ζητώ ενημέρωση σχετικά με κάτι...",
+        })
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+  });
   describe("Partners (/partners)", () => {
     it("1. should NOT read partners | url not exist = 404 Not Found", (done) => {
       chai.request(`${process.env.API_URL}`)

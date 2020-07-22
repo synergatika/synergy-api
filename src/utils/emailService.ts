@@ -161,7 +161,7 @@ class EmailService {
 
   public userInvitation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    console.log(data);
+
     let options = {
       from: process.env.EMAIL_FROM,
       to: data.receiver,
@@ -171,15 +171,37 @@ class EmailService {
       locals: {
         logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
         home_page: `${process.env.APP_URL}`,
-        email: data.user.email,
-        reason: `${data.reason}`
+        email: data.user.email
       },
     }
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
     if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
-    console.log(results);
+
+    response.status(data.res.code).send(data.res.body);
+  }
+
+  public userCommunication = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+
+    let options = {
+      from: process.env.EMAIL_FROM,
+      to: process.env.EMAIL_FROM,
+      subject: 'User Communication',
+      html: '',
+      type: 'communication',
+      locals: {
+        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        home_page: `${process.env.APP_URL}`,
+        sender: data.sender,
+        content: `${data.content}`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     response.status(data.res.code).send(data.res.body);
   }

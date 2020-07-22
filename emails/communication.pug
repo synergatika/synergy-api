@@ -2,7 +2,7 @@ doctype html
 head
   meta(charset='utf-8')
   meta(http-equiv='x-ua-compatible' content='ie=edge')
-  title Deactivation
+  title Communication
   meta(name='viewport' content='width=device-width, initial-scale=1')
   style(type='text/css').
     /**
@@ -90,7 +90,7 @@ head
     outline: none;
     }
 // start preheader
-.preheader(style='display: none; max-width: 0; max-height: 0; overflow: hidden; font-size: 1px; line-height: 1px; color: #fff; opacity: 0;') A User wants to deactivate his/her account.
+.preheader(style='display: none; max-width: 0; max-height: 0; overflow: hidden; font-size: 1px; line-height: 1px; color: #fff; opacity: 0;') A user wants to communicate.
 // end preheader
 // start body
 table(border='0' cellpadding='0' cellspacing='0' width='100%')
@@ -132,9 +132,26 @@ table(border='0' cellpadding='0' cellspacing='0' width='100%')
         // start copy
         tr
           td(align='left' bgcolor='#ffffff' style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;")
-            p(style='margin: 0;') A user has been deactivated account.
-            p(style='margin: 0;') Email: #{email}
-            p(style='margin: 0;') Reason: #{reason}
+            p(style='margin: 0;') A User has a question.
+            p(style='margin: 0;') Email: #{sender}
+            p(style='margin: 0;') Content: #{content}
+        // end copy
+        // start button
+        tr
+          td(align='left' bgcolor='#ffffff')
+            table(border='0' cellpadding='0' cellspacing='0' width='100%')
+              tr
+                td(align='center' bgcolor='#ffffff' style='padding: 12px;')
+                  table(border='0' cellpadding='0' cellspacing='0')
+                    tr
+                      td(align='center' bgcolor='#1a82e2' style='border-radius: 6px;')
+                        a(href=link, target='_blank', style="display: inline-block; padding: 16px 36px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;") Log In
+        // end button
+        // start copy
+        tr
+          td(align='left' bgcolor='#ffffff' style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;")
+            p(style='margin: 0;') If that doesn&apos;t work, copy and paste the following link in your browser:
+            p(style='margin: 0;') #{link}
         // end copy
         // start copy
         tr

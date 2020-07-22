@@ -81,7 +81,7 @@ class CheckMiddleware {
   static canEarnMicrocredit = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const campaign: Campaign = response.locals.campaign;
     const partner: Partner = response.locals.partner;
-    const backerTokens: Tokens = response.locals.backerTokens;
+    const balance: Tokens = response.locals.balance;
     const data: EarnTokensDto = request.body;
 
     const now = new Date();
@@ -90,7 +90,7 @@ class CheckMiddleware {
     if (campaign.status === 'draft') {
       return next(new NotFoundException('CAMPAIGN_NOT_PUBLISHED')); //"Campaign's has not been published yet",
     }
-    if (((parseInt(backerTokens.initialTokens) + data._amount) > campaign.maxAmount) && (campaign.maxAmount > 0)) {
+    if (((parseInt(balance.initialTokens) + data._amount) > campaign.maxAmount) && (campaign.maxAmount > 0)) {
       return next(new NotFoundException('OVER_TOTAL_MAX'));
     }
     if (campaign.startsAt > seconds) {

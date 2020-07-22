@@ -369,9 +369,9 @@ class MicrocreditCampaignsController implements Controller {
 
     Object.keys(dates).forEach((key: string) => {
       if (`${process.env.PRODUCTION}` == 'true')
-        (dates as any)[key] = (dates as any)[key] + "000000"
+        (dates as any)[key] = (dates as any)[key] + "000000";
       else
-        (dates as any)[key] = ((dates as any)[key]).substring(0, ((dates as any)[key]).length - 3)
+        (dates as any)[key] = ((dates as any)[key]).substring(0, ((dates as any)[key]).length - 3);
     });
 
     console.log(dates);

@@ -149,7 +149,7 @@ class MicrocreditController implements Controller {
 
   private readBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     response.status(200).send({
-      data: response.locals.backerTokens,
+      data: response.locals.balance,
       code: 200
     });
   }
@@ -605,7 +605,7 @@ class MicrocreditController implements Controller {
   //   }]).exec().catch());
   //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   //
-  //   response.locals["backerTokens"] = {
+  //   response.locals["balance"] = {
   //     '_id': tokens.length ? tokens[0]._id : campaign.campaign_id,
   //     'initialTokens': tokens.length ? tokens[0].initialTokens : '0',
   //     'redeemedTokens': tokens.length ? tokens[0].redeemedTokens : '0'

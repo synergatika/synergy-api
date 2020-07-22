@@ -370,4 +370,20 @@ describe("Member - Authentication & Profile", () => {
                 });
         });
     });
+    describe("Member - Invitation (/community)", () => {
+        it("1. should send an invitation email - 200 EmailSent", (done) => {
+            chai.request(`${process.env.API_URL}`)
+                .post("community/invite")
+                .set('Authorization', 'Bearer ' + user_a.authToken)
+                .send({
+                    receiver: user_b.email,
+                })
+                .end((err, res) => {
+                    res.should.have.status(200);
+                    res.body.should.be.a('object');
+                    res.body.should.have.property('message');
+                    done();
+                });
+        });
+    });
 });

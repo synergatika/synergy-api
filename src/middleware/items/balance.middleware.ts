@@ -99,7 +99,9 @@ async function loyalty_activity(request: RequestWithUser, response: Response, ne
 
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-  response.locals["activity"] = (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 });
+  response.locals["activity"] = (history.length) ?
+    convertHelper.activityToBagde(history[0]) :
+    convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 });
   next();
 }
 
@@ -128,7 +130,7 @@ async function microcredit_balance(request: RequestWithUser, response: Response,
   }]).exec().catch());
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-  response.locals["backerTokens"] = {
+  response.locals["balance"] = {
     '_id': tokens.length ? tokens[0]._id : campaign.campaign_id,
     'initialTokens': tokens.length ? tokens[0].initialTokens : '0',
     'redeemedTokens': tokens.length ? tokens[0].redeemedTokens : '0'
@@ -174,10 +176,15 @@ async function microcredit_activity(request: RequestWithUser, response: Response
 
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-  response.status(200).send({
-    data: (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 }),
-    code: 200
-  });
+  response.locals["activity"] = (history.length) ?
+    convertHelper.activityToBagde(history[0]) :
+    convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 });
+
+  next();
+  // response.status(200).send({
+  //   data: (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 }),
+  //   code: 200
+  // });
 }
 
 export default {

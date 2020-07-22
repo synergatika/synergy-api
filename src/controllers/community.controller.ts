@@ -13,6 +13,7 @@ const emailService = new EmailService();
  * DTOs
  */
 import InvitationDto from '../communityDtos/invitation.dto'
+import CommunicationDto from '../communityDtos/communication.dto'
 
 /**
  * Exceptions
@@ -46,7 +47,7 @@ const offsetParams = OffsetHelper.offseIndex;
  * Models
  */
 import userModel from '../models/user.model';
-import invitationModel from '../models/invitation.model';
+// import invitationModel from '../models/invitation.model';
 
 class CommunityController implements Controller {
   public path = '/community';
@@ -65,12 +66,31 @@ class CommunityController implements Controller {
     this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPrivatePostsEventsByStore);
 
     this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.sendInvitation, emailService.userInvitation);
+
+    this.router.post(`${this.path}/communicate`, validationBodyMiddleware(CommunicationDto), this.sendCommunication, emailService.userCommunication);
+  }
+
+  private sendCommunication = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: CommunicationDto = request.body;
+
+    response.locals = {
+      res: {
+        code: 200,
+        body: {
+          message: "Communication sent",
+          code: 200
+        }
+      },
+      sender: data.sender,
+      content: data.content,
+    }
+
+    next();
   }
 
   private sendInvitation = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: InvitationDto = request.body;
 
-    console.log("Invite")
     response.locals = {
       res: {
         code: 200,
@@ -82,6 +102,8 @@ class CommunityController implements Controller {
       receiver: data.receiver,
       user: request.user
     }
+
+    next();
   }
 
   private sortPostsEvents = (a: PostEvent, b: PostEvent) => {
