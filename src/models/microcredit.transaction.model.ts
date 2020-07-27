@@ -62,8 +62,8 @@ const microcreditTransactionSchema = new mongoose.Schema({
     enum: ['PromiseFund', 'ReceiveFund', 'RevertFund', 'SpendFund'],
   },
 }, {
-  timestamps: true
-});
+    timestamps: true
+  });
 
 const microcreditTransactionModel = mongoose.model<MicrocreditTransaction & mongoose.Document>('MicrocreditTransaction', microcreditTransactionSchema);
 export default microcreditTransactionModel;

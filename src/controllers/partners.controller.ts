@@ -66,7 +66,7 @@ class PartnersController implements Controller {
     const offset: {
       limit: number, skip: number, greater: number
     } = offsetParams(params);
-
+    console.log(request.headers["content-language"]);
     let error: Error, partners: Partner[];
     [error, partners] = await to(this.user.find({
       access: 'partner'
@@ -128,31 +128,31 @@ class PartnersController implements Controller {
     [error, partner] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-      $set: {
-        'name': data.name,
-        'slug': await createSlug(request),
-        'subtile': data.subtitle,
-        'description': data.description,
-        'imageURL': (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL,
-        'sector': data.sector,
-        'address.city': data.city,
-        'address.postCode': data.postCode,
-        'address.street': data.street,
-        'address.coordinates': [data.lat, data.long],
-        'contact.phone': data.phone,
-        'contact.websiteURL': data.websiteURL,
-        'payments': JSON.parse(data.payments),
-        // 'payments.nationalBank': data.nationalBank,
-        // 'payments.pireausBank': data.pireausBank,
-        // 'payments.eurobank': data.eurobank,
-        // 'payments.alphaBank': data.alphaBank,
-        // 'payments.paypal': data.paypal,
-        'timetable': data.timetable,
-      }
-    }, {
-      "fields": { "name": 1, "imageURL": 1 },
-      "new": true
-    }).catch());
+        $set: {
+          'name': data.name,
+          'slug': await createSlug(request),
+          'subtile': data.subtitle,
+          'description': data.description,
+          'imageURL': (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL,
+          'sector': data.sector,
+          'address.city': data.city,
+          'address.postCode': data.postCode,
+          'address.street': data.street,
+          'address.coordinates': [data.lat, data.long],
+          'contact.phone': data.phone,
+          'contact.websiteURL': data.websiteURL,
+          'payments': JSON.parse(data.payments),
+          // 'payments.nationalBank': data.nationalBank,
+          // 'payments.pireausBank': data.pireausBank,
+          // 'payments.eurobank': data.eurobank,
+          // 'payments.alphaBank': data.alphaBank,
+          // 'payments.paypal': data.paypal,
+          'timetable': data.timetable,
+        }
+      }, {
+        "fields": { "name": 1, "imageURL": 1 },
+        "new": true
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({

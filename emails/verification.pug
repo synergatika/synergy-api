@@ -150,6 +150,8 @@ table(border='0' cellpadding='0' cellspacing='0' width='100%')
           td(align='left' bgcolor='#ffffff' style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;")
             p(style='margin: 0;') If that doesn&apos;t work, copy and paste the following link in your browser:
             p(style='margin: 0;') #{link}
+            p(style='margin: 0;') #{IF_LINK}
+            p(style='margin: 0;') #{link}
         // end copy
         // start copy
         tr
@@ -158,6 +160,8 @@ table(border='0' cellpadding='0' cellspacing='0' width='100%')
               | Cheers,
               br
               |  Synergy Team
+            p(style='margin: 0;')
+              #{CHEERS}
         // end copy
       // if (gte mso 9)|(IE)
   // end copy block
@@ -174,7 +178,9 @@ table(border='0' cellpadding='0' cellspacing='0' width='100%')
           td(align='center' bgcolor='#e9ecef' style="padding: 12px 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #666;")
             p(style='margin: 0;')
               | You received this email because we received a request for your account. If you didn&apos;t request you can safely delete this email.
-        // end permission
+            p(style='margin: 0;')
+              #{FOOTER}
+    // end permission
         // start unsubscribe
         tr
           td(align='center' bgcolor='#e9ecef' style="padding: 12px 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #666;")
