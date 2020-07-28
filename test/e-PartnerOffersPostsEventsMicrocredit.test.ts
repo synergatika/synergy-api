@@ -27,8 +27,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('description', offer_a.description)
         .field('cost', offer_a.cost)
         .field('expiresAt', _newDate.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_a.imageFile}`),
-        `${offer_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_a.imageFile}`), `${offer_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -60,8 +59,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('description', offer_b.description)
         .field('cost', offer_b.cost)
         .field('expiresAt', _newDate.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_b.imageFile}`),
-        `${offer_b.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_b.imageFile}`), `${offer_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -89,8 +87,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('description', offer_a.description)
         .field('cost', offer_a.cost)
         .field('expiresAt', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_a.updatedImageFile}`),
-        `${offer_a.updatedImageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_a.updatedImageFile}`), `${offer_a.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -109,8 +106,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('subtitle', post_a.subtitle)
         .field('content', post_a.content)
         .field('access', post_a.access)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_a.imageFile}`),
-        `${post_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_a.imageFile}`), `${post_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(403);
           res.body.should.be.a('object');
@@ -125,8 +121,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('title', post_a.title)
         .field('subtitle', post_a.subtitle)
         .field('access', post_a.access)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_a.imageFile}`),
-        `${post_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_a.imageFile}`), `${post_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(400);
           res.body.should.be.a('object');
@@ -142,8 +137,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('subtitle', post_a.subtitle)
         .field('content', post_a.content)
         .field('access', post_a.access)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_a.imageFile}`),
-        `${post_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_a.imageFile}`), `${post_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -158,8 +152,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('title', post_b.title)
         .field('content', post_b.content)
         .field('access', post_b.access)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`),
-        `${post_b.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`), `${post_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(401);
           res.body.should.be.a('object');
@@ -174,8 +167,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('title', post_b.title)
         .field('content', post_b.content)
         .field('access', post_b.access)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`),
-        `${post_b.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`), `${post_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -201,8 +193,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('access', event_a.access)
         .field('location', event_a.location)
         .field('dateTime', _newDate.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_a.imageFile}`),
-        `${event_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_a.imageFile}`), `${event_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -219,8 +210,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('access', event_a.access)
         .field('location', event_a.location)
         .field('dateTime', _newDate.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_a.imageFile}`),
-        `${event_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_a.imageFile}`), `${event_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(400);
           res.body.should.be.a('object');
@@ -237,8 +227,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.imageFile}`),
-        `${event_b.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.imageFile}`), `${event_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -281,8 +270,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.updatedImageFile}`),
-        `${event_b.updatedImageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.updatedImageFile}`), `${event_b.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(404);
           res.body.should.be.a('object');
@@ -300,8 +288,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.updatedImageFile}`),
-        `${event_b.updatedImageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.updatedImageFile}`), `${event_b.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -330,8 +317,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.updatedImageFile}`),
-        `${event_b.updatedImageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.updatedImageFile}`), `${event_b.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -380,8 +366,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('redeemEnds', _newDate4.toString())
         .field('startsAt', _newDate1.toString())
         .field('expiresAt', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_a.imageFile}`),
-        `${microcredit_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_a.imageFile}`), `${microcredit_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -420,8 +405,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('redeemEnds', _newDate4.toString())
         .field('startsAt', _newDate1.toString())
         .field('expiresAt', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_a.imageFile}`),
-        `${microcredit_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_a.imageFile}`), `${microcredit_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -459,8 +443,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('redeemEnds', _newDate4.toString())
         .field('startsAt', _newDate1.toString())
         .field('expiresAt', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_a.imageFile}`),
-        `${microcredit_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_a.imageFile}`), `${microcredit_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(404);
           res.body.should.be.a('object');
@@ -487,8 +470,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('redeemEnds', _newDate2.toString())
         .field('startsAt', _newDate3.toString())
         .field('expiresAt', _newDate4.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_b.imageFile}`),
-        `${microcredit_b.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_b.imageFile}`), `${microcredit_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(400);
           res.body.should.be.a('object');
@@ -515,8 +497,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('redeemEnds', _newDate4.toString())
         .field('startsAt', _newDate1.toString())
         .field('expiresAt', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_b.imageFile}`),
-        `${microcredit_b.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_b.imageFile}`), `${microcredit_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
           res.body.should.be.a('object');
@@ -554,8 +535,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('redeemEnds', _newDate4.toString())
         .field('startsAt', _newDate1.toString())
         .field('expiresAt', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_c.imageFile}`),
-        `${microcredit_c.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_c.imageFile}`), `${microcredit_c.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');

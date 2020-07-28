@@ -1,7 +1,6 @@
 interface Payment {
-    support_id: string;
-    payment_id: string;
-    method: string;
-    how: string;
+  support_id: string;
+  payment_id: string;
+  method: string;
 }
 export default Payment;

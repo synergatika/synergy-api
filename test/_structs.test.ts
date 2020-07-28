@@ -1,7 +1,7 @@
 import { object } from "prop-types";
 
-//const imagesLocation = '/mnt/c/Users/Dimitris Sociality/Documents/Notes (Projects)/Synergy/Synargy Demo Images/Demo Images';
-const imagesLocation = '/mnt/c/Users/dmytakis/Documents/MyDocuments/Software Engineering (Projects)/Synergy/Synergy Demo Images';
+const imagesLocation = '/mnt/c/Users/Dimitris Sociality/Documents/Notes (Projects)/Synergy/Synargy Demo Images/Demo Images';
+//const imagesLocation = '/mnt/c/Users/dmytakis/Documents/MyDocuments/Software Engineering (Projects)/Synergy/Synergy Demo Images';
 const lang = 'en-En';
 
 var defaultAdmin = {

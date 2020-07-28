@@ -14,7 +14,6 @@ interface MicrocreditTransaction {
     tokens: number;
   };
 
-
   tx: string;
   createdAt: Date;
 }

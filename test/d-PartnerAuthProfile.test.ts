@@ -82,8 +82,7 @@ describe("Partner - Authentication & Profile", () => {
         .field('name', partner_c.name)
         .field('password', partner_c.password)
         .field('payments', JSON.stringify(partner_c.payments))
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.imageFile}`),
-        `${partner_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.imageFile}`), `${partner_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -337,8 +336,7 @@ describe("Partner - Authentication & Profile", () => {
         // .field('eurobank', partner_a.payments.eurobank)
         // .field('alphaBank', partner_a.payments.alphaBank)
         // .field('paypal', partner_a.payments.paypal)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`),
-        `${partner_a.updatedAddress}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`), `${partner_a.updatedAddress}`)
         .end((err, res) => {
           res.should.have.status(403);
           res.body.should.be.a('object');
@@ -367,8 +365,7 @@ describe("Partner - Authentication & Profile", () => {
         //     .field('eurobank', partner_a.payments.eurobank)
         //     .field('alphaBank', partner_a.payments.alphaBank)
         //     .field('paypal', partner_a.payments.paypal)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`),
-        `${partner_a.updatedAddress}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`), `${partner_a.updatedAddress}`)
         .end((err, res) => {
           res.should.have.status(400);
           res.body.should.be.a('object');
@@ -397,8 +394,7 @@ describe("Partner - Authentication & Profile", () => {
         //   .field('eurobank', partner_a.payments.eurobank)
         //   .field('alphaBank', partner_a.payments.alphaBank)
         //   .field('paypal', partner_a.payments.paypal)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`),
-        `${partner_a.updatedAddress}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`), `${partner_a.updatedAddress}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -428,8 +424,7 @@ describe("Partner - Authentication & Profile", () => {
         //   .field('eurobank', partner_a.payments.eurobank)
         //   .field('alphaBank', partner_a.payments.alphaBank)
         //   .field('paypal', partner_a.payments.paypal)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`),
-        `${partner_a.updatedImageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`), `${partner_a.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');

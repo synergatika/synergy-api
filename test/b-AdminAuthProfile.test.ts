@@ -56,8 +56,7 @@ describe("Admin - Authentication", () => {
         // .field('eurobank', partner_a.payments.eurobank)
         // .field('alphaBank', partner_a.payments.alphaBank)
         // .field('paypal', partner_a.payments.paypal)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.imageFile}`),
-          `${partner_a.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.imageFile}`), `${partner_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -89,8 +88,7 @@ describe("Admin - Authentication", () => {
         // .field('eurobank', partner_b.payments.eurobank)
         // .field('alphaBank', partner_b.payments.alphaBank)
         // .field('paypal', partner_b.payments.paypal)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_b.imageFile}`),
-          `${partner_b.imageFile}`)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_b.imageFile}`), `${partner_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
