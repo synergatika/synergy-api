@@ -23,7 +23,7 @@
     "@types/rimraf": "^2.0.3",
     "@types/should": "13.0.0",
     "await-to-ts": "1.0.6",
-    "bcrypt": "3.0.8",
+    "bcrypt": "5.0.0",
     "body-parser": "1.19.0",
     "chai-as-promised": "7.1.1",
     "chai-string": "1.5.0",
