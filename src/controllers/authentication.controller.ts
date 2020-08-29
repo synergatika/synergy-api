@@ -375,7 +375,7 @@ class AuthenticationController implements Controller {
         return next(new NotFoundException('USER_EXISTS'));
       } else {
         const hashedPassword = await bcrypt.hash(data.password, 10);
-        //    const account: Account = serviceInstance.createWallet(data.password);
+        // const account: Account = serviceInstance.createWallet(data.password);
         const account: Account = serviceInstance.createWallet(data.email);
         const user_id = new ObjectId();
 

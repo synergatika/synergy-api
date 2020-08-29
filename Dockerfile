@@ -1,18 +1,10 @@
-FROM node:12
-
-# Create app directory
+FROM node:12 AS base
 WORKDIR /usr/src/app
+EXPOSE 3000
 
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
+FROM base AS build
 COPY package*.json ./
-
 RUN npm install
-# If you are building your code for production
-# RUN npm ci --only=production
-
-# Bundle app source
 COPY . .
 
 RUN sed -i -e 's/tempData: { .* },//g' src/controllers/authentication.controller.ts
@@ -21,6 +13,10 @@ RUN sed -i -e "s/\/\/to: data.user.email, \/\/ Prod/to: data.user.email,/g" src/
 
 RUN npx webpack
 
-EXPOSE 3000
+FROM base AS final
+WORKDIR /app
+
+COPY --from=build /usr/src/app/node_modules node_modules
+COPY --from=build /usr/src/app/dist dist
 
 CMD [ "node", "dist/App.js" ]
