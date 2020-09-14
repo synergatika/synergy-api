@@ -47,16 +47,9 @@ class EmailService {
           html: template.toString()
         };
         return Transporter.sendMail(mailOptions);
-      }).catch(error => { console.log("ERROR", error) });
-    // Dev
-    // to: `${process.env.TEST_EMAIL}` || options.to,
-    // Prod
-    // to: options.to,
+      }).catch(error => { return error });
   }
 
-  /**
-   *
-   */
   public emailVerification = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
     const lang: string = request.headers['content-language'] || 'en-EN';
@@ -199,7 +192,7 @@ class EmailService {
       to: data.receiver,
       subject: this.translation(lang).invitation.subject,//'User Invitation',
       html: '',
-      type: 'invitation',// `invitation-${lang.toString()}`,
+      type: 'invitation',
       locals: {
         ...this.translation(lang).common,
         ...this.translation(lang).invitation,

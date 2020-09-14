@@ -374,15 +374,9 @@ class MicrocreditCampaignsController implements Controller {
         (dates as any)[key] = ((dates as any)[key]).substring(0, ((dates as any)[key]).length - 3);
     });
 
-    console.log(dates);
-
     await serviceInstance.startNewMicrocredit(user.account.address,
       1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
       parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
-      // parseInt(((currentCampaign.redeemEnds).toString() + "000000")),
-      // parseInt(((currentCampaign.redeemStarts).toString() + "000000")),
-      // parseInt(((currentCampaign.startsAt).toString() + "000000")),
-      // parseInt(((currentCampaign.expiresAt).toString() + "000000")),
       currentCampaign.quantitative)
       .then(async (result: any) => {
 
@@ -690,11 +684,8 @@ class MicrocreditCampaignsController implements Controller {
       )
     );
 
-    console.log("Campaign with Statistics");
-    console.log(campaignsTokens[0]);
-
     response.status(200).send({
-      data: campaignsTokens[0], //campaigns[0],
+      data: campaignsTokens[0],
       code: 200
     });
   }
@@ -752,7 +743,6 @@ class MicrocreditCampaignsController implements Controller {
 
     const currentCampaign: Campaign = response.locals.campaign;
     if (currentCampaign.campaign_imageURL && (currentCampaign.campaign_imageURL).includes(partner_id)) {
-      //if (currentCampaign.campaign_imageURL) {
       var imageFile = (currentCampaign.campaign_imageURL).split('assets/items/');
       await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
     }
@@ -844,19 +834,12 @@ class MicrocreditCampaignsController implements Controller {
 
   private readDailyStatistics = async (campaigns: Campaign[], status: string) => {
 
-    // var _now: number = Date.now();
-    // var _date = new Date(_now);
-    // _date.setDate(1);
-    // _date.setHours(0, 0, 0, 0);
-    // _date.setMonth(_date.getMonth() - 12);
-
     let error: Error, statistics: MicrocreditCampaignStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
           { 'data.campaign_id': { $in: campaigns.map(a => (a.campaign_id).toString()) } },
           { 'type': status }
-          //   //{ 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
         ]
       }
     },

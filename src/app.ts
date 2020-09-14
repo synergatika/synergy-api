@@ -63,7 +63,6 @@ class App {
       DB_PASSWORD
     } = process.env;
 
-    // const mongo_location = 'mongodb://' + "127.0.0.1" + ':' + "27017" + '/' + "synergyDB";
     mongoose.connect('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME, {
       useCreateIndex: true,
       useNewUrlParser: true,
@@ -73,14 +72,6 @@ class App {
       console.log('*** Can Not Connect to Mongo Server:', 'mongodb://' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME)
       console.log(err)
     })
-
-    //mongoose.connect(`mongodb://${MONGO_USER}:${MONGO_PASSWORD}${MONGO_PATH}`);
-    //mongoose.connect('mongodb://' + "localhost" + ':' + "27017" + '/' + "synergyDB", {
-    // reconnectTries: Number.MAX_VALUE,
-    // autoReconnect: true,
-    // useNewUrlParser: true,
-    // useUnifiedTopology: true
-    //})
   }
 }
 

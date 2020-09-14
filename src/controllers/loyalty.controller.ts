@@ -122,8 +122,6 @@ class LoyaltyController implements Controller {
     this.router.get(`${this.path}/statistics`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       this.readLoyaltyStatistics);
-    //  this.router.get(`${this.path}/partners_info`, authMiddleware, this.partnersInfoLength);
-    //  this.router.get(`${this.path}/transactions_info`, authMiddleware, this.transactionInfoLength);
   }
 
   private readBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -244,10 +242,6 @@ class LoyaltyController implements Controller {
     const statisticsEarn: LoyaltyStatistics[] = await this.readStatistics((user._id).toString(), 'EarnPoints');
     const statisticsRedeem: LoyaltyStatistics[] = await this.readStatistics((user._id).toString(), 'RedeemPoints');
 
-    console.log("Loyalty Statistics");
-    console.log(statisticsEarn);
-    console.log(statisticsRedeem);
-
     response.status(200).send({
       data: {
         statisticsEarn: statisticsEarn[0],
@@ -353,109 +347,3 @@ class LoyaltyController implements Controller {
 }
 
 export default LoyaltyController;
-
-  // private readBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   const _member = request.user.account.address;
-  //
-  //   await serviceInstance.getLoyaltyAppContract()
-  //     .then((instance) => {
-  //       return instance.members(_member)
-  //         .then((results: any) => {
-  //           response.status(200).send({
-  //             data: {
-  //               address: results.memberAddress || null,
-  //               points: results.points || 0
-  //             },
-  //             code: 200
-  //           });
-  //         })
-  //         .catch((error: Error) => {
-  //           next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //         })
-  //     })
-  //     .catch((error) => {
-  //       next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //     })
-  // }
-  //
-  // private readActivity = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //
-  //   const user: User = request.user;
-  //
-  //   var _now: number = Date.now();
-  //   var _date = new Date(_now);
-  //   _date.setDate(1);
-  //   _date.setHours(0, 0, 0, 0);
-  //   _date.setMonth(_date.getMonth() - 12);
-  //
-  //   let error: Error, history: History[];
-  //   [error, history] = await to(this.transaction.aggregate([{
-  //     $match: {
-  //       $and: [
-  //         { 'member_id': (user._id).toString() },//    { 'to_id': (user._id).toString() }, //
-  //         { 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
-  //         { 'type': "EarnPoints" }
-  //       ]
-  //     }
-  //   },
-  //   {
-  //     $group: {
-  //       _id: '$to_id',
-  //       amount: { $sum: "$data.amount" },//  amount: { $sum: "$info.amount" }, //
-  //       stores: { "$addToSet": "$partner_id" },//  stores: { "$addToSet": "$from_id" }, //
-  //       transactions: { "$addToSet": "$_id" }
-  //     }
-  //   },
-  //   {
-  //     "$project": {
-  //       "amount": 1,
-  //       "stores": { "$size": "$stores" },
-  //       "transactions": { "$size": "$transactions" },
-  //     }
-  //   }]).exec().catch());
-  //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-  //
-  //   response.status(200).send({
-  //     data: (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 }),
-  //     code: 200
-  //   });
-  // }
-
-
-  // private partnersInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   await serviceInstance.getLoyaltyAppContract()
-  //     .then((instance) => {
-  //       return instance.partnersInfoLength()
-  //         .then((results: any) => {
-  //           response.status(200).send({
-  //             data: results,
-  //             code: 200
-  //           });
-  //         })
-  //         .catch((error: Error) => {
-  //           next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //         })
-  //     })
-  //     .catch((error) => {
-  //       next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //     })
-  // }
-  //
-  // private transactionInfoLength = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   await serviceInstance.getLoyaltyAppContract()
-  //     .then((instance) => {
-  //       return instance.transactionsInfoLength()
-  //         .then((results: any) => {
-  //           response.status(200).send({
-  //             data: results,
-  //             code: 200
-  //           });
-  //         })
-  //         .catch((error: Error) => {
-  //           next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //         })
-  //     })
-  //     .catch((error) => {
-  //       next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //     })
-  // }

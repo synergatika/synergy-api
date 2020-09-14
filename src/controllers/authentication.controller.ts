@@ -504,13 +504,6 @@ class AuthenticationController implements Controller {
         websiteURL: data.websiteURL
       },
       payments: JSON.parse(data.payments),
-      // payments: {
-      //   nationalBank: data.nationalBank,
-      //   pireausBank: data.pireausBank,
-      //   eurobank: data.eurobank,
-      //   alphaBank: data.alphaBank,
-      //   paypal: data.paypal
-      // },
       slug: await createSlug(request),
       sector: data.sector, access: 'partner',
       password: hashedPassword, account: account,
@@ -918,18 +911,6 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    /*
-        response.locals = {
-          user: {
-            user_id: user._id,
-            access: user.access,
-            email: user.email,
-            password: data.newPassword
-          }, account: account,
-          oldAccount: user.account
-        }
-        next();
-      */
     response.status(200).send({
       message: "Success! You Password has been Updated!",
       code: 200

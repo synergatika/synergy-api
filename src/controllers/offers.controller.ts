@@ -272,9 +272,6 @@ class OffersController implements Controller {
       )
     );
 
-    console.log("Offer with Statistics");
-    console.log(offerStatistics[0]);
-
     response.status(200).send({
       data: offerStatistics[0],
       code: 200
@@ -385,7 +382,6 @@ class OffersController implements Controller {
     if (error) return [];
 
     const byDate: LoyaltyStatistics[] = await this.readDailyStatistics(offers, status);
-    console.log(byDate);
     const fullStatistics = statistics.map((a: LoyaltyStatistics) =>
       Object.assign({}, a,
         {
@@ -399,19 +395,12 @@ class OffersController implements Controller {
 
   private readDailyStatistics = async (offers: Offer[], status: string) => {
 
-    // var _now: number = Date.now();
-    // var _date = new Date(_now);
-    // _date.setDate(1);
-    // _date.setHours(0, 0, 0, 0);
-    // _date.setMonth(_date.getMonth() - 12);
-
     let error: Error, statistics: LoyaltyStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
           { 'data.offer_id': { $in: offers.map(a => (a.offer_id).toString()) } },
           { 'type': status }
-          //   //{ 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
         ]
       }
     },

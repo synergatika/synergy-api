@@ -233,9 +233,6 @@ class MicrocreditSupportsController implements Controller {
       )
     );
 
-    console.log("Backer's Supports per Campaign");
-    console.log(supportsTransactions);
-
     response.status(200).send({
       data: supportsTransactions,
       code: 200
