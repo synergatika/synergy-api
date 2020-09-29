@@ -1,5 +1,6 @@
 const fs: any = require('fs');
 const Web3: any = require('web3');
+const quorumjs = require("quorum-js");
 const contract: any = require("@truffle/contract");
 
 export class BlockchainService {
@@ -28,6 +29,14 @@ export class BlockchainService {
 
   unlockWallet(encAccount: Object, password: string) {
     return this.web3.eth.accounts.decrypt(encAccount, password);
+  }
+
+  async getClusterStatus(): Promise<any> {
+    var provider = this.getHttpProvider();
+    this.web3.setProvider(provider);
+    quorumjs.extend(this.web3);
+
+    return this.web3.raft.cluster();
   }
 
   async isConnected(): Promise<boolean> {

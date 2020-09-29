@@ -19,11 +19,6 @@ const Email = require('email-templates');
 const email = new Email();
 
 /**
- * Exceptions
- */
-import NotFoundException from '../exceptions/NotFound.exception';
-
-/**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
@@ -65,7 +60,11 @@ class HelpController implements Controller {
       } else {
         const status = await Promise.race([timeOutPromise, serviceInstance.isConnected()]);
 
-        result['ethereum_api_status'] = status;
+        const clusterStatus = await Promise.race([timeOutPromise, serviceInstance.getClusterStatus()]);
+
+        result = this.parseClusterStatus(result, clusterStatus);
+
+        result['ethereum_api_up'] = status;
         result['ethereum_api_url'] = ETH_REMOTE_API;
         result['ethereum_api_ws_port'] = Number(ETH_REMOTE_WS);
         result['ethereum_api_rpc_port'] = Number(ETH_REMOTE_REST);
@@ -82,6 +81,27 @@ class HelpController implements Controller {
     }
     end_time = new Date().getTime();
     result['ethereum_time_to_connect'] = Number(end_time - start_time);
+
+    return result;
+  }
+
+  private parseClusterStatus = async(result: any, status: any) => {
+    let node_count = 0, node_minter_count = 0;
+
+    for (let index = 0; index < status.length; index++) {
+      const node = status[index];
+      result[`ethereum_node_${node.raftId}_id`] = node.nodeId;
+      result[`ethereum_node_${node.raftId}_role`] = node.role;
+      result[`ethereum_node_${node.raftId}_active`] = node.nodeActive;
+
+      if (node.role === "minter")
+      {
+        node_count += ((node.nodeActive) ? 1 : 0);
+        node_minter_count += 1;
+      } 
+    }
+
+    result[`ethereum_cluster_availability`] = (node_count * 100 / node_minter_count);
 
     return result;
   }
