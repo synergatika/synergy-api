@@ -13,7 +13,7 @@ const microcreditSupportSchema = new mongoose.Schema({
   },
   method: {
     type: String,
-    //enum: ['nationalBank', 'pireausBank', 'eurobank', 'alphaBank', 'paypal', 'store'],
+    // enum: ['nationalBank', 'pireausBank', 'eurobank', 'alphaBank', 'paypal', 'store'],
     default: 'store'
   },
   contractIndex: Number,
@@ -191,4 +191,5 @@ const userSchema = new mongoose.Schema({
 });
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
+
 export default userModel;
