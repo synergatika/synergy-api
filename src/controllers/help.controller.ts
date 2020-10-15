@@ -62,7 +62,7 @@ class HelpController implements Controller {
 
         const clusterStatus = await Promise.race([timeOutPromise, serviceInstance.getClusterStatus()]);
 
-        result = this.parseClusterStatus(result, clusterStatus);
+        result = await this.parseClusterStatus(result, clusterStatus);
 
         result['ethereum_api_up'] = status;
         result['ethereum_api_url'] = ETH_REMOTE_API;
@@ -78,6 +78,7 @@ class HelpController implements Controller {
     } catch (error) {
       result['ethereum_api_status'] = false;
       console.error('Blockchain connection is limited');
+      console.error(error);
     }
     end_time = new Date().getTime();
     result['ethereum_time_to_connect'] = Number(end_time - start_time);
