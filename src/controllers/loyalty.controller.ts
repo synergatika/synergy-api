@@ -44,6 +44,7 @@ import checkMiddleware from '../middleware/items/check.middleware';
 import balanceMiddleware from '../middleware/items/balance.middleware';
 import convertHelper from '../middleware/items/convert.helper';
 import OffsetHelper from '../middleware/items/offset.helper';
+import blockchainStatus from '../middleware/items/status.middleware';
 
 /**
  * Helper's Instance
@@ -68,21 +69,21 @@ class LoyaltyController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/earn/:_to`,
+    this.router.post(`${this.path}/earn/:_to`, blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsPartner, /*accessMiddleware.confirmPassword,*/
       validationBodyMiddleware(EarnPointsDto),
       usersMiddleware.member,
       balanceMiddleware.loyalty_activity,
       this.earnTokens);
 
-    this.router.post(`${this.path}/redeem/:_to`,
+    this.router.post(`${this.path}/redeem/:_to`, blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsPartner, /*accessMiddleware.confirmPassword,*/
       validationBodyMiddleware(RedeemPointsDto),
       usersMiddleware.member,
       balanceMiddleware.loyalty_balance, checkMiddleware.canRedeemPoints,
       this.redeemTokens);
 
-    this.router.post(`${this.path}/redeem/:partner_id/:offer_id/:_to`,
+    this.router.post(`${this.path}/redeem/:partner_id/:offer_id/:_to`, blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsPartner, /*accessMiddleware.confirmPassword,*/
       validationParamsMiddleware(OfferID),
       accessMiddleware.belongsTo,

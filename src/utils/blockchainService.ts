@@ -1,5 +1,5 @@
-const fs: any = require('fs');
-const Web3: any = require('web3');
+const fs: any = require("fs");
+const Web3: any = require("web3");
 const quorumjs = require("quorum-js");
 const contract: any = require("@truffle/contract");
 
@@ -8,17 +8,24 @@ export class BlockchainService {
   public address: any;
   public instance: any;
 
-  constructor(private hostname: string, private path: string, private_key: string) {
-    const {
-      ETH_REMOTE_WS
-    } = process.env;
-    this.web3 = new Web3(Web3.givenProvider || `ws://${hostname}:${ETH_REMOTE_WS}`);
+  constructor(
+    private hostname: string,
+    private path: string,
+    private_key: string
+  ) {
+    const { ETH_REMOTE_WS } = process.env;
+    this.web3 = new Web3(
+      Web3.givenProvider || `ws://${hostname}:${ETH_REMOTE_WS}`
+    );
     this.loadAdmin(private_key);
   }
 
   createWallet(password: string): any {
     var account = this.web3.eth.accounts.create(this.web3.utils.randomHex(32));
-    var encAccount = this.web3.eth.accounts.encrypt(account.privateKey, password);
+    var encAccount = this.web3.eth.accounts.encrypt(
+      account.privateKey,
+      password
+    );
     return encAccount;
   }
 
@@ -39,6 +46,24 @@ export class BlockchainService {
     return this.web3.raft.cluster();
   }
 
+  async isOk(): Promise<any> {
+    let node_count = 0;
+    let node_minter_count = 0;
+    const status =  await this.getClusterStatus();
+
+    for (let index = 0; index < status.length; index++) {
+      const node = status[index];
+
+      if (node.role === "minter") {
+        node_count += node.nodeActive ? 1 : 0;
+        node_minter_count += 1;
+      }
+    }
+
+    var availability = (node_count * 100) / node_minter_count;
+    return availability > 51;
+  }
+
   async isConnected(): Promise<boolean> {
     var provider = this.getHttpProvider();
     this.web3.setProvider(provider);
@@ -56,7 +81,7 @@ export class BlockchainService {
     const PointsTokenStorageContract = this.loadProxyContract();
     if (PointsTokenStorageContract == null) return null;
     const proxy = await PointsTokenStorageContract.deployed();
-    return (proxy != null) ? proxy.address : null;
+    return proxy != null ? proxy.address : null;
   }
 
   async getLoyaltyAppContract() {
@@ -84,7 +109,8 @@ export class BlockchainService {
     projectAvailableAt: Number,
     projectStartedAt: Number,
     projectFinishedAt: Number,
-    projectUseToken: boolean) {
+    projectUseToken: boolean
+  ) {
     const Project = this.loadImplementationMicrocreditContract();
     await this.unlockAdminAtNode();
     return await Project.new(
@@ -107,7 +133,17 @@ export class BlockchainService {
   }
 
   async unlockAdminAtNode() {
-    const status = await this.web3.eth.personal.unlockAccount(this.address.from, "", 600);
+    // console.log('Skip wallet unlock');
+    //   return true;
+    if (process.env.ETH_INSECURE == "true") {
+      console.log("Skip wallet unlock");
+      return true;
+    }
+    const status = await this.web3.eth.personal.unlockAccount(
+      this.address.from,
+      "",
+      600
+    );
     return status;
   }
 
@@ -115,18 +151,28 @@ export class BlockchainService {
     const account = this.web3.eth.accounts.privateKeyToAccount(privateKey);
     this.web3.eth.accounts.wallet.add(account);
     this.address = {
-      from: account.address
+      from: account.address,
     };
   }
 
   private loadProxyContract() {
-    const contractAsset = fs.existsSync(`${this.path}/PointsTokenStorageProxy.json`);
+    const contractAsset = fs.existsSync(
+      `${this.path}/PointsTokenStorageProxy.json`
+    );
     if (contractAsset) {
-      var PointsTokenStorageProxyData = fs.readFileSync(`${this.path}/PointsTokenStorageProxy.json`);
-      var PointsTokenStorageProxyDataParsed = JSON.parse(PointsTokenStorageProxyData);
+      var PointsTokenStorageProxyData = fs.readFileSync(
+        `${this.path}/PointsTokenStorageProxy.json`
+      );
+      var PointsTokenStorageProxyDataParsed = JSON.parse(
+        PointsTokenStorageProxyData
+      );
       var provider = this.getHttpProvider();
-      var PointsTokenStorageContract = contract(PointsTokenStorageProxyDataParsed);
-      PointsTokenStorageContract.setNetworkType(process.env.ETH_REMOTE_NETWORK_TYPE);
+      var PointsTokenStorageContract = contract(
+        PointsTokenStorageProxyDataParsed
+      );
+      PointsTokenStorageContract.setNetworkType(
+        process.env.ETH_REMOTE_NETWORK_TYPE
+      );
       PointsTokenStorageContract.setProvider(provider);
       return PointsTokenStorageContract;
     } else {
@@ -155,10 +201,10 @@ export class BlockchainService {
   }
 
   private getHttpProvider() {
-    const {
-      ETH_REMOTE_REST
-    } = process.env;
-    return new Web3.providers.HttpProvider(`http://${this.hostname}:${ETH_REMOTE_REST}`);
+    const { ETH_REMOTE_REST } = process.env;
+    return new Web3.providers.HttpProvider(
+      `http://${this.hostname}:${ETH_REMOTE_REST}`
+    );
   }
 }
 

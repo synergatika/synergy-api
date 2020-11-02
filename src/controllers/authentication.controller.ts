@@ -62,6 +62,7 @@ import accessMiddleware from '../middleware/auth/access.middleware';
 import authMiddleware from '../middleware/auth/auth.middleware';
 import FilesMiddleware from '../middleware/items/files.middleware';
 import SlugHelper from '../middleware/items/slug.helper';
+import blockchainStatus from '../middleware/items/status.middleware';
 
 /**
  * Helper's Instances
@@ -87,7 +88,7 @@ class AuthenticationController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/one-click/register`,
+    this.router.post(`${this.path}/one-click/register`, blockchainStatus,
       validationBodyMiddleware(EmailDto), this.oneClickRegister, this.registerAccount, emailService.userRegistration);
 
     this.router.get(`${this.path}/check_identifier/:identifier`,
@@ -102,15 +103,15 @@ class AuthenticationController implements Controller {
     this.router.post(`${this.path}/logout`,
       authMiddleware, this.loggingOut);
 
-    this.router.post(`${this.path}/auto-register/member`,
+    this.router.post(`${this.path}/auto-register/member`, blockchainStatus,
       validationBodyMiddleware(RegisterUserWithPasswordDto), this.authAutoRegisterMember, this.registerAccount, this.askVerification, emailService.emailVerification);
 
-    this.router.post(`${this.path}/auto-register/partner`,
+    this.router.post(`${this.path}/auto-register/partner`, blockchainStatus,
       uploadFile.single('imageURL'), validationBodyAndFileMiddleware(RegisterPartnerWithPasswordDto), this.authAutoRegisterPartner, this.registerAccount, this.askVerification, emailService.emailVerification);
 
-    this.router.post(`${this.path}/register/member`,
+    this.router.post(`${this.path}/register/member`, blockchainStatus,
       authMiddleware, accessMiddleware.registerMember, validationBodyMiddleware(RegisterUserWithoutPasswordDto), this.registerMember, this.registerAccount, emailService.userRegistration);
-    this.router.post(`${this.path}/register/partner`,
+    this.router.post(`${this.path}/register/partner`, blockchainStatus,
       authMiddleware, accessMiddleware.registerPartner, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(RegisterPartnerWithoutPasswordDto), this.registerPartner, this.registerAccount, emailService.userRegistration);
 
     this.router.put(`${this.path}/set_pass/:email`,
@@ -649,13 +650,6 @@ class AuthenticationController implements Controller {
     }
     const hashedPassword = await bcrypt.hash(data.newPassword, 10);
 
-    const now = new Date();
-    const seconds = parseInt(now.getTime().toString());
-
-    if (parseInt((user.createdAt).getTime().toString()) < 1590318932724) {
-      let account: Account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, data.oldPassword)).privateKey, user.email);
-      user.account = account;
-    }
     //  const account: Account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, data.oldPassword)).privateKey, data.newPassword);
 
     let error: Error, results: Object;
@@ -843,34 +837,34 @@ class AuthenticationController implements Controller {
     });
   }
 
-  private recoverAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data = response.locals;
+  // private recoverAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  //   const data = response.locals;
 
-    if (data.user.access === 'member') {
-      await serviceInstance.getLoyaltyAppContract()
-        .then((instance) => {
-          return instance.recoverPoints(data.oldAccount.address, data.account.address, serviceInstance.address)
-            .then(async (result: any) => {
-              await this.transaction.create({
-                ...result, type: "RecoverPoints"
-              });
-              next();
-            })
-            .catch((error: Error) => {
-              next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-            })
-        })
-        .catch((error: Error) => {
-          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-        });
-    } else if (data.user.access === 'partner') {
+  //   if (data.user.access === 'member') {
+  //     await serviceInstance.getLoyaltyAppContract()
+  //       .then((instance) => {
+  //         return instance.recoverPoints(data.oldAccount.address, data.account.address, serviceInstance.address)
+  //           .then(async (result: any) => {
+  //             await this.transaction.create({
+  //               ...result, type: "RecoverPoints"
+  //             });
+  //             next();
+  //           })
+  //           .catch((error: Error) => {
+  //             next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  //           })
+  //       })
+  //       .catch((error: Error) => {
+  //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  //       });
+  //   } else if (data.user.access === 'partner') {
 
-    }
-    response.status(200).send({
-      message: "Success! You Password has been Updated!",
-      code: 200
-    });
-  }
+  //   }
+  //   response.status(200).send({
+  //     message: "Success! You Password has been Updated!",
+  //     code: 200
+  //   });
+  // }
 
   private changePassOutside = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: ChangePassOutDto = request.body;

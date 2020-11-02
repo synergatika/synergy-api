@@ -1,30 +1,30 @@
-import * as express from 'express';
-import * as mongoose from 'mongoose';
-import to from 'await-to-ts';
-import { API_VERSION } from '../version';
+import * as express from "express";
+import * as mongoose from "mongoose";
+import to from "await-to-ts";
+import { API_VERSION } from "../version";
 
-const path = require('path');
+const path = require("path");
 
 /**
  * Blockchain Service
  */
-import { BlockchainService } from '../utils/blockchainService';
+import { BlockchainService } from "../utils/blockchainService";
 
 /**
  * Email Service
  */
-import * as nodemailer from 'nodemailer';
-import Transporter from '../utils/mailer'
-const Email = require('email-templates');
+import * as nodemailer from "nodemailer";
+import Transporter from "../utils/mailer";
+const Email = require("email-templates");
 const email = new Email();
 
 /**
  * Interfaces
  */
-import Controller from '../interfaces/controller.interface';
+import Controller from "../interfaces/controller.interface";
 
 class HelpController implements Controller {
-  public path = '/status';
+  public path = "/status";
   public router = express.Router();
 
   constructor() {
@@ -42,7 +42,7 @@ class HelpController implements Controller {
       ETH_API_ACCOUNT_PRIVKEY,
       ETH_REMOTE_WS,
       ETH_REMOTE_REST,
-      ETH_REMOTE_NETWORK_TYPE
+      ETH_REMOTE_NETWORK_TYPE,
     } = process.env;
 
     const timeOutPromise = new Promise(function (resolve, reject) {
@@ -51,43 +51,60 @@ class HelpController implements Controller {
       }, 5000);
     });
 
-    let start_time = new Date().getTime(), end_time = 0;
+    let start_time = new Date().getTime(),
+      end_time = 0;
     let serviceInstance = null;
     try {
-      serviceInstance = new BlockchainService(ETH_REMOTE_API, path.join(__dirname, ETH_CONTRACTS_PATH), ETH_API_ACCOUNT_PRIVKEY);
+      serviceInstance = new BlockchainService(
+        ETH_REMOTE_API,
+        path.join(__dirname, ETH_CONTRACTS_PATH),
+        ETH_API_ACCOUNT_PRIVKEY
+      );
       if (serviceInstance == null) {
-        result['ethereum_api_status'] = false;
+        result["ethereum_api_status"] = false;
       } else {
-        const status = await Promise.race([timeOutPromise, serviceInstance.isConnected()]);
+        const status = await Promise.race([
+          timeOutPromise,
+          serviceInstance.isConnected(),
+        ]);
 
-        const clusterStatus = await Promise.race([timeOutPromise, serviceInstance.getClusterStatus()]);
+        const clusterStatus = await Promise.race([
+          timeOutPromise,
+          serviceInstance.getClusterStatus(),
+        ]);
 
         result = await this.parseClusterStatus(result, clusterStatus);
 
-        result['ethereum_api_up'] = status;
-        result['ethereum_api_url'] = ETH_REMOTE_API;
-        result['ethereum_api_ws_port'] = Number(ETH_REMOTE_WS);
-        result['ethereum_api_rpc_port'] = Number(ETH_REMOTE_REST);
-        result['ethereum_api_type'] = ETH_REMOTE_NETWORK_TYPE;
-        result['ethereum_api_address'] = serviceInstance.address.from;
+        result["ethereum_api_up"] = status;
+        result["ethereum_api_is_ok"] = await serviceInstance.isOk();
+        result["ethereum_api_url"] = ETH_REMOTE_API;
+        result["ethereum_api_ws_port"] = Number(ETH_REMOTE_WS);
+        result["ethereum_api_rpc_port"] = Number(ETH_REMOTE_REST);
+        result["ethereum_api_type"] = ETH_REMOTE_NETWORK_TYPE;
+        result["ethereum_api_address"] = serviceInstance.address.from;
         if (status) {
-          result['ethereum_loyalty_app_address'] = await serviceInstance.getLoyaltyAppAddress();
-          result['ethereum_api_balance'] = parseInt(await serviceInstance.getBalance());
+          result[
+            "ethereum_loyalty_app_address"
+          ] = await serviceInstance.getLoyaltyAppAddress();
+          result["ethereum_api_balance"] = parseInt(
+            await serviceInstance.getBalance()
+          );
         }
       }
     } catch (error) {
-      result['ethereum_api_status'] = false;
-      console.error('Blockchain connection is limited');
+      result["ethereum_api_status"] = false;
+      console.error("Blockchain connection is limited");
       console.error(error);
     }
     end_time = new Date().getTime();
-    result['ethereum_time_to_connect'] = Number(end_time - start_time);
+    result["ethereum_time_to_connect"] = Number(end_time - start_time);
 
     return result;
-  }
+  };
 
   private parseClusterStatus = async (result: any, status: any) => {
-    let node_count = 0, node_minter_count = 0;
+    let node_count = 0,
+      node_minter_count = 0;
 
     for (let index = 0; index < status.length; index++) {
       const node = status[index];
@@ -96,24 +113,19 @@ class HelpController implements Controller {
       result[`ethereum_node_${node.raftId}_active`] = node.nodeActive;
 
       if (node.role === "minter") {
-        node_count += ((node.nodeActive) ? 1 : 0);
+        node_count += node.nodeActive ? 1 : 0;
         node_minter_count += 1;
       }
     }
 
-    result[`ethereum_cluster_availability`] = (node_count * 100 / node_minter_count);
+    result[`ethereum_cluster_availability`] =
+      (node_count * 100) / node_minter_count;
 
     return result;
-  }
+  };
 
   private checkMongoDB = async (result: any) => {
-    const {
-      DB_HOST,
-      DB_PORT,
-      DB_NAME,
-      DB_USER,
-      DB_PASSWORD
-    } = process.env;
+    const { DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD } = process.env;
 
     const timeOutPromise = new Promise(function (resolve, reject) {
       setTimeout(() => {
@@ -121,90 +133,110 @@ class HelpController implements Controller {
       }, 5000);
     });
 
-    let start_time = new Date().getTime(), end_time = 0;
+    let start_time = new Date().getTime(),
+      end_time = 0;
     let error, conn;
-    [error, conn] = await Promise.race([to(mongoose.connect(`mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`, {
-      useCreateIndex: true,
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      useFindAndModify: false,
-      reconnectTries: 5,
-      reconnectInterval: 500, // in ms
-    }).catch()), timeOutPromise]) as any;
+    [error, conn] = (await Promise.race([
+      to(
+        mongoose
+          .connect(
+            `mongodb://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`,
+            {
+              useCreateIndex: true,
+              useNewUrlParser: true,
+              useUnifiedTopology: true,
+              useFindAndModify: false,
+              reconnectTries: 5,
+              reconnectInterval: 500, // in ms
+            }
+          )
+          .catch()
+      ),
+      timeOutPromise,
+    ])) as any;
     end_time = new Date().getTime();
 
-    result['db_time_to_connect'] = Number(end_time - start_time);
+    result["db_time_to_connect"] = Number(end_time - start_time);
     if (error) {
-      result['db_connection_status'] = false;
+      result["db_connection_status"] = false;
     } else {
-      result['db_connection_status'] = true;
+      result["db_connection_status"] = true;
     }
 
     return result;
-  }
+  };
 
   private checkSMTP = async (result: any) => {
-    const {
-      EMAIL_HOST,
-      EMAIL_PORT,
-      EMAIL_USER,
-      EMAIL_FROM
-    } = process.env;
+    const { EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_FROM } = process.env;
 
-    let start_time = new Date().getTime(), end_time = 0;
+    let start_time = new Date().getTime(),
+      end_time = 0;
     let smtpIsOnline = false;
     try {
       smtpIsOnline = await Transporter.verify();
     } catch (error) {
-      console.error('SMTP connection is limited');
+      console.error("SMTP connection is limited");
     }
     end_time = new Date().getTime();
 
-    result['smtp_time_to_connect'] = Number(end_time - start_time);
-    result['smtp_status'] = smtpIsOnline;
+    result["smtp_time_to_connect"] = Number(end_time - start_time);
+    result["smtp_status"] = smtpIsOnline;
     if (smtpIsOnline == false) {
-      result['smtp_email_host'] = EMAIL_HOST;
-      result['smtp_email_port'] = Number(EMAIL_PORT);
-      result['smtp_email_user'] = EMAIL_USER;
-      result['smtp_email_from'] = EMAIL_FROM;
+      result["smtp_email_host"] = EMAIL_HOST;
+      result["smtp_email_port"] = Number(EMAIL_PORT);
+      result["smtp_email_user"] = EMAIL_USER;
+      result["smtp_email_from"] = EMAIL_FROM;
     } else {
       let emailInfo = {
-        to: `${process.env.EMAIL_USER}`,// 'synergatika@gmail.com',
+        to: `${process.env.EMAIL_USER}`, // 'synergatika@gmail.com',
         subject: "Test email",
         html: "<h3>Hello world?</h3><p>Test</p>",
-        type: '_test',
+        type: "_test",
         locals: { home_page: `${process.env.APP_URL}` },
       };
-      let error, results: object = {};
-      [error, results] = await to(Promise.all([email.render(emailInfo.type, emailInfo.locals)])
-        .then((template: object) => {
-          const mailOptions: nodemailer.SendMailOptions = {
-            from: process.env.EMAIL_FROM,
-            to: `${process.env.TEST_EMAIL}` || emailInfo.to,
-            subject: emailInfo.subject, // Subject line
-            html: template.toString() // html body
-          };
-          return Transporter.sendMail(mailOptions);
-        })
+      let error,
+        results: object = {};
+      [error, results] = await to(
+        Promise.all([email.render(emailInfo.type, emailInfo.locals)]).then(
+          (template: object) => {
+            const mailOptions: nodemailer.SendMailOptions = {
+              from: process.env.EMAIL_FROM,
+              to: `${process.env.TEST_EMAIL}` || emailInfo.to,
+              subject: emailInfo.subject, // Subject line
+              html: template.toString(), // html body
+            };
+            return Transporter.sendMail(mailOptions);
+          }
+        )
       );
-
     }
 
     return result;
-  }
+  };
 
-  private establishing = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  private establishing = async (
+    request: express.Request,
+    response: express.Response,
+    next: express.NextFunction
+  ) => {
     let result: any = {
-      api_version: API_VERSION
+      api_version: API_VERSION,
     };
 
     result = await this.checkEthereum(result);
     result = await this.checkMongoDB(result);
     result = await this.checkSMTP(result);
 
+    if (process.env.PRODUCTION == "false") {
+      result = {
+        ...result,
+        ...process.env,
+      };
+    }
+
     response.status(200).send(result);
 
     next();
-  }
+  };
 }
 export default HelpController;

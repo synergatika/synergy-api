@@ -53,6 +53,7 @@ import checkMiddleware from '../middleware/items/check.middleware';
 import balanceMiddleware from '../middleware/items/balance.middleware';
 import convertHelper from '../middleware/items/convert.helper';
 import OffsetHelper from '../middleware/items/offset.helper';
+import blockchainStatus from '../middleware/items/status.middleware';
 
 /**
  * Helper's Instance
@@ -92,7 +93,7 @@ class MicrocreditController implements Controller {
       balanceMiddleware.microcredit_balance,
       this.readBalance);
 
-    this.router.post(`${this.path}/one-click/:partner_id/:campaign_id/:token`,
+    this.router.post(`${this.path}/one-click/:partner_id/:campaign_id/:token`, blockchainStatus,
       oneClickMiddleware,
       validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto),
       usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
@@ -100,7 +101,7 @@ class MicrocreditController implements Controller {
       this.earnTokens,
       this.registerPromisedFund, this.registerReceivedFund);
 
-    this.router.post(`${this.path}/earn/:partner_id/:campaign_id`,
+    this.router.post(`${this.path}/earn/:partner_id/:campaign_id`, blockchainStatus,
       authMiddleware,
       validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto),
       usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
@@ -108,7 +109,7 @@ class MicrocreditController implements Controller {
       this.earnTokens,
       this.registerPromisedFund, this.registerReceivedFund);
 
-    this.router.post(`${this.path}/earn/:partner_id/:campaign_id/:_to`,
+    this.router.post(`${this.path}/earn/:partner_id/:campaign_id/:_to`, blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CampaignID),
       accessMiddleware.belongsTo,
@@ -118,7 +119,7 @@ class MicrocreditController implements Controller {
       this.earnTokensByPartner,
       this.registerPromisedFund, this.registerReceivedFund);
 
-    this.router.put(`${this.path}/confirm/:partner_id/:campaign_id/:support_id`,
+    this.router.put(`${this.path}/confirm/:partner_id/:campaign_id/:support_id`, blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(SupportID),
       accessMiddleware.belongsTo,
@@ -127,7 +128,7 @@ class MicrocreditController implements Controller {
       this.confirmSupportPayment,
       this.registerReceivedFund, this.registerRevertFund);
 
-    this.router.post(`${this.path}/redeem/:partner_id/:campaign_id/:support_id`,
+    this.router.post(`${this.path}/redeem/:partner_id/:campaign_id/:support_id`, blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(SupportID),
       accessMiddleware.belongsTo,

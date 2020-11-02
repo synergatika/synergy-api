@@ -54,6 +54,7 @@ import checkMiddleware from '../middleware/items/check.middleware';
 import FilesMiddleware from '../middleware/items/files.middleware';
 import SlugHelper from '../middleware/items/slug.helper';
 import OffsetHelper from '../middleware/items/offset.helper';
+import blockchainStatus from '../middleware/items/status.middleware';
 
 /**
  * Helper's Instance
@@ -80,7 +81,7 @@ class MicrocreditCampaignsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/one-click/:token`,
+    this.router.post(`${this.path}/one-click/:token`, blockchainStatus,
       oneClickMiddleware, accessMiddleware.onlyAsPartner,
       uploadFile.single('imageURL'),
       validationBodyAndFileMiddleware(CampaignDto),
@@ -125,7 +126,7 @@ class MicrocreditCampaignsController implements Controller {
       checkMiddleware.canEditMicrocredit,
       this.updateCampaign);
 
-    this.router.put(`${this.path}/:partner_id/:campaign_id/publish`,
+    this.router.put(`${this.path}/:partner_id/:campaign_id/publish`, blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CampaignID),
       accessMiddleware.belongsTo,
