@@ -27,5 +27,6 @@ export default function validateEnv() {
     TOKEN_LENGTH: num({ default: 32 }),
     SENTRY_URI: str(),
     PRODUCTION: bool({ default: true }),
+    RE_ESTABLISH_OPTION: bool({ default: false }),
   });
 }

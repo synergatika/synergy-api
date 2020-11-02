@@ -62,8 +62,8 @@ class App {
       DB_USER,
       DB_PASSWORD
     } = process.env;
-
-    mongoose.connect('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME, {
+    console.log('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME)
+    mongoose.connect('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + "?authSource=admin", {
       useCreateIndex: true,
       useNewUrlParser: true,
       useUnifiedTopology: true,

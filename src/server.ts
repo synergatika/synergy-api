@@ -18,6 +18,7 @@ import ContentController from './controllers/content.controller';
 import UsersController from './controllers/users.controller';
 
 import validateEnv from './utils/validateEnv';
+import ReEstablishController from './controllers/re-establish.controller';
 
 validateEnv();
 
@@ -36,7 +37,8 @@ const app = new App(
     new EventsController(),
     new HelpController(),
     new ContentController(),
-    new UsersController()
+    new UsersController(),
+    new ReEstablishController()
   ],
 );
 

@@ -32,6 +32,7 @@ describe("Initialize DB & Drop past Collections", () => {
       .end((err, res) => {
         res.should.have.status(200);
         res.body.should.be.a('object');
+        console.log(err)
         done();
       })
   });
@@ -46,7 +47,7 @@ describe("Initialize DB & Drop past Collections", () => {
         DB_PASSWORD
       } = process.env;
 
-      mongoose.connect('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME, {
+      mongoose.connect('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + "?authSource=admin", {
         useCreateIndex: true,
         useNewUrlParser: true,
         useUnifiedTopology: true,

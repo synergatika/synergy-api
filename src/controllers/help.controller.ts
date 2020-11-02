@@ -86,7 +86,7 @@ class HelpController implements Controller {
     return result;
   }
 
-  private parseClusterStatus = async(result: any, status: any) => {
+  private parseClusterStatus = async (result: any, status: any) => {
     let node_count = 0, node_minter_count = 0;
 
     for (let index = 0; index < status.length; index++) {
@@ -95,11 +95,10 @@ class HelpController implements Controller {
       result[`ethereum_node_${node.raftId}_role`] = node.role;
       result[`ethereum_node_${node.raftId}_active`] = node.nodeActive;
 
-      if (node.role === "minter")
-      {
+      if (node.role === "minter") {
         node_count += ((node.nodeActive) ? 1 : 0);
         node_minter_count += 1;
-      } 
+      }
     }
 
     result[`ethereum_cluster_availability`] = (node_count * 100 / node_minter_count);
