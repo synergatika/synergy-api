@@ -47,21 +47,25 @@ export class BlockchainService {
   }
 
   async isOk(): Promise<any> {
-    let node_count = 0;
-    let node_minter_count = 0;
-    const status =  await this.getClusterStatus();
-
-    for (let index = 0; index < status.length; index++) {
-      const node = status[index];
-
-      if (node.role === "minter") {
-        node_count += node.nodeActive ? 1 : 0;
-        node_minter_count += 1;
+    try {
+      let node_count = 0;
+      let node_minter_count = 0;
+      const status =  await this.getClusterStatus();
+  
+      for (let index = 0; index < status.length; index++) {
+        const node = status[index];
+  
+        if (node.role === "minter") {
+          node_count += node.nodeActive ? 1 : 0;
+          node_minter_count += 1;
+        }
       }
+  
+      var availability = (node_count * 100) / node_minter_count;
+      return availability > 51;
+    } catch (err) {
+      return true;
     }
-
-    var availability = (node_count * 100) / node_minter_count;
-    return availability > 51;
   }
 
   async isConnected(): Promise<boolean> {
