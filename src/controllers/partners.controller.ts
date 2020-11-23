@@ -8,6 +8,7 @@ import path from 'path';
  */
 import PartnerDto from '../usersDtos/partner.dto';
 import PartnerID from '../usersDtos/partner_id.params.dto';
+import PartnerPaymentsDto from '../usersDtos/partner_payments.dto';
 
 /**
  * Exceptions
@@ -25,6 +26,7 @@ import User from '../usersInterfaces/user.interface';
 /**
  * Middleware
  */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
 import validationBodyAndFileMiddleware from '../middleware/validators/body_file.validation';
 import validationParamsMiddleware from '../middleware/validators/params.validation';
 import authMiddleware from '../middleware/auth/auth.middleware';
@@ -59,6 +61,11 @@ class PartnersController implements Controller {
     this.router.get(`${this.path}/public/:offset`, this.readPartners);
     this.router.get(`${this.path}/:partner_id`, validationParamsMiddleware(PartnerID), this.readPartnerInfo);
     this.router.put(`${this.path}/:partner_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(PartnerID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(PartnerDto), this.updatePartnerInfo);
+
+    this.router.put(`${this.path}/payments/:partner_id`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(PartnerID), accessMiddleware.belongsTo,
+      validationBodyMiddleware(PartnerPaymentsDto), this.updatePartnerPayment);
   }
 
   private readPartners = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -141,13 +148,37 @@ class PartnersController implements Controller {
         'address.coordinates': [data.lat, data.long],
         'contact.phone': data.phone,
         'contact.websiteURL': data.websiteURL,
-        'payments': JSON.parse(data.payments),
+        //    'payments': JSON.parse(data.payments),
         // 'payments.nationalBank': data.nationalBank,
         // 'payments.pireausBank': data.pireausBank,
         // 'payments.eurobank': data.eurobank,
         // 'payments.alphaBank': data.alphaBank,
         // 'payments.paypal': data.paypal,
         'timetable': data.timetable,
+      }
+    }, {
+      "fields": { "name": 1, "imageURL": 1 },
+      "new": true
+    }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    response.status(200).send({
+      data: partner,
+      code: 200
+    })
+  }
+
+  private updatePartnerPayment = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const partner_id: PartnerID["partner_id"] = request.params.partner_id;
+    const data: PartnerPaymentsDto = request.body;
+    const user: User = request.user;
+
+    let error: Error, partner: Partner;
+    [error, partner] = await to(this.user.findOneAndUpdate({
+      _id: user._id
+    }, {
+      $set: {
+        'payments': data.payments,
       }
     }, {
       "fields": { "name": 1, "imageURL": 1 },

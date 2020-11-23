@@ -52,7 +52,20 @@ const microcreditTransactionSchema = new mongoose.Schema({
   partner_id: String,
   member_id: String,
 
-  data: dataSchema,
+  campaign_id: String,
+  support_id: String,
+  contractRef: String,
+  contractIndex: {
+    type: Number,
+    default: -1
+  },
+  payment_id: String,
+  method: String,
+  tokens: {
+    type: Number,
+    default: 0
+  },
+  // data: dataSchema,
 
   tx: String,
   receipt: receiptSchema,
@@ -62,8 +75,8 @@ const microcreditTransactionSchema = new mongoose.Schema({
     enum: ['PromiseFund', 'ReceiveFund', 'RevertFund', 'SpendFund'],
   },
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const microcreditTransactionModel = mongoose.model<MicrocreditTransaction & mongoose.Document>('MicrocreditTransaction', microcreditTransactionSchema);
 export default microcreditTransactionModel;

@@ -67,7 +67,7 @@ class CommunityController implements Controller {
 
     this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.sendInvitation, emailService.userInvitation);
 
-    this.router.post(`${this.path}/communicate`, validationBodyMiddleware(CommunicationDto), this.sendCommunication, emailService.userCommunication);
+    this.router.post(`${this.path}/communicate`, validationBodyMiddleware(CommunicationDto), this.sendCommunication, emailService.internalCommunication);
   }
 
   private sendCommunication = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

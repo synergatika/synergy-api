@@ -35,28 +35,29 @@ describe("Admin - Authentication", () => {
   describe("Admin - Register Partner (/auth)", () => {
     it("1. should create user as Partner - 200 EmailSent", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("auth/register/partner")
+        .post("auth/register/invite-partner")
         .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
-        .field('email', partner_a.email)
-        .field('name', partner_a.name)
-        .field('subtitle', partner_a.subtitle)
-        .field('description', partner_a.description)
-        .field('timetable', partner_a.timetable)
-        .field('phone', partner_a.contact.phone)
-        .field('websiteURL', partner_a.contact.websiteURL)
-        .field('street', partner_a.address.street)
-        .field('postCode', partner_a.address.postCode)
-        .field('city', partner_a.address.city)
-        .field('lat', partner_a.address.coordinates[0])
-        .field('long', partner_a.address.coordinates[1])
-        .field('sector', partner_a.sector)
-        .field('payments', JSON.stringify(partner_a.payments))
-        // .field('nationalBank', partner_a.payments.nationalBank)
-        // .field('pireausBank', partner_a.payments.pireausBank)
-        // .field('eurobank', partner_a.payments.eurobank)
-        // .field('alphaBank', partner_a.payments.alphaBank)
-        // .field('paypal', partner_a.payments.paypal)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.imageFile}`), `${partner_a.imageFile}`)
+        .send({
+          email: partner_a.email,
+          password: partner_a.password,
+          name: partner_a.name,
+          sector: partner_a.sector
+        })
+        // .field('email', partner_a.email)
+        // .field('name', partner_a.name)
+        // .field('subtitle', partner_a.subtitle)
+        // .field('description', partner_a.description)
+        // .field('timetable', partner_a.timetable)
+        // .field('phone', partner_a.contact.phone)
+        // .field('websiteURL', partner_a.contact.websiteURL)
+        // .field('street', partner_a.address.street)
+        // .field('postCode', partner_a.address.postCode)
+        // .field('city', partner_a.address.city)
+        // .field('lat', partner_a.address.coordinates[0])
+        // .field('long', partner_a.address.coordinates[1])
+        // .field('sector', partner_a.sector)
+        //        .field('payments', JSON.stringify(partner_a.payments))
+        //       .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.imageFile}`), `${partner_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -69,28 +70,29 @@ describe("Admin - Authentication", () => {
     });
     it("2. should create user as Partner - 200 EmailSent", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("auth/register/partner")
+        .post("auth/register/invite-partner")
         .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
-        .field('email', partner_b.email)
-        .field('name', partner_b.name)
-        .field('subtitle', partner_b.subtitle)
-        .field('description', partner_b.description)
-        .field('timetable', partner_b.timetable)
-        .field('phone', partner_b.contact.phone)
-        .field('websiteURL', partner_b.contact.websiteURL)
-        .field('street', partner_b.address.street)
-        .field('postCode', partner_b.address.postCode)
-        .field('city', partner_b.address.city)
-        .field('lat', partner_b.address.coordinates[0])
-        .field('long', partner_b.address.coordinates[1])
-        .field('sector', partner_b.sector)
-        .field('payments', JSON.stringify(partner_b.payments))
-        // .field('nationalBank', partner_b.payments.nationalBank)
-        // .field('pireausBank', partner_b.payments.pireausBank)
-        // .field('eurobank', partner_b.payments.eurobank)
-        // .field('alphaBank', partner_b.payments.alphaBank)
-        // .field('paypal', partner_b.payments.paypal)
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_b.imageFile}`), `${partner_b.imageFile}`)
+        .send({
+          email: partner_b.email,
+          password: partner_b.password,
+          name: partner_b.name,
+          sector: partner_b.sector
+        })
+        // .field('email', partner_b.email)
+        // .field('name', partner_b.name)
+        // .field('subtitle', partner_b.subtitle)
+        // .field('description', partner_b.description)
+        // .field('timetable', partner_b.timetable)
+        // .field('phone', partner_b.contact.phone)
+        // .field('websiteURL', partner_b.contact.websiteURL)
+        // .field('street', partner_b.address.street)
+        // .field('postCode', partner_b.address.postCode)
+        // .field('city', partner_b.address.city)
+        // .field('lat', partner_b.address.coordinates[0])
+        // .field('long', partner_b.address.coordinates[1])
+        // .field('sector', partner_b.sector)
+        // .field('payments', JSON.stringify(partner_b.payments))
+        // .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_b.imageFile}`), `${partner_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -103,7 +105,7 @@ describe("Admin - Authentication", () => {
   describe("Admin - Register Member (/auth)", () => {
     it("1. should create user as Member - 200 EmailSent", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("auth/register/member")
+        .post("auth/register/invite-member")
         .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
         .send({
           name: user_a.name,

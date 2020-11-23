@@ -21,7 +21,7 @@ import Partner from '../../usersInterfaces/partner.interface';
 import userModel from '../../models/user.model';
 
 async function member(request: RequestWithUser, response: Response, next: NextFunction) {
-  const _to: string = request.params._to;
+  const _to: string = request.params._to || request.user._id;
 
   let error: Error, member: Member;
   [error, member] = await to(userModel.findOne({
@@ -32,6 +32,8 @@ async function member(request: RequestWithUser, response: Response, next: NextFu
     "activated": 1
   }).catch());
 
+  console.log("Member")
+  console.log(member)
 
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!member) {

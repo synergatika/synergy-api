@@ -107,35 +107,80 @@ async function loyalty_activity(request: RequestWithUser, response: Response, ne
 
 async function microcredit_balance(request: RequestWithUser, response: Response, next: NextFunction) {
   const campaign: Campaign = response.locals.campaign;
-  const member: User = (response.locals.member) ? response.locals.member : request.user;
+  const member: User = response.locals.member;
 
+  console.log("Microcredit Balance"); console.log("member");
+  console.log(member);
+  console.log("campaign");
+  console.log(campaign);
   let error: Error, tokens: Tokens[];
-  [error, tokens] = await to(userModel.aggregate([{
-    $unwind: '$microcredit'
-  }, {
-    $unwind: '$microcredit.supports'
-  }, {
-    $match: {
-      $and: [
-        { 'microcredit._id': new ObjectId(campaign.campaign_id) },
-        { 'microcredit.supports.backer_id': (member._id).toString() }
-      ]
-    }
-  }, {
-    "$group": {
-      '_id': '$microcredit._id',
-      'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
-      'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
-    }
-  }]).exec().catch());
+  [error, tokens] = await to(microcreditTransactionModel.aggregate(
+    [
+      {
+        $match: {
+          $and: [{
+            'member_id': (member._id).toString()
+          }, {
+            'campaign_id': (campaign.campaign_id).toString()
+          }]
+        }
+      }, {
+        $project: {
+          _id: "$campaign_id",
+          campaign_id: 1,
+          earned: { $cond: [{ $eq: ['$type', 'PromiseFund'] }, '$tokens', 0] },
+          redeemed: { $cond: [{ $eq: ['$type', 'ReceiveFund'] }, '$tokens', 0] }
+        }
+      },
+      {
+        $group: {
+          _id: "$campaign_id",
+          earnedTokens: { $sum: '$earned' },
+          redeemedTokens: { $sum: '$redeemed' }
+        }
+      }]
+  ).exec().catch());
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
+  console.log("tokens");
+  console.log(tokens);
   response.locals["balance"] = {
-    '_id': tokens.length ? tokens[0]._id : campaign.campaign_id,
-    'initialTokens': tokens.length ? tokens[0].initialTokens : '0',
+    '_id': campaign.campaign_id,
+    'earnedTokens': tokens.length ? tokens[0].earnedTokens : '0',
     'redeemedTokens': tokens.length ? tokens[0].redeemedTokens : '0'
   };
   next();
+
+  // const campaign: Campaign = response.locals.campaign;
+  // const member: User = (response.locals.member) ? response.locals.member : request.user;
+
+  // let error: Error, tokens: Tokens[];
+  // [error, tokens] = await to(userModel.aggregate([{
+  //   $unwind: '$microcredit'
+  // }, {
+  //   $unwind: '$microcredit.supports'
+  // }, {
+  //   $match: {
+  //     $and: [
+  //       { 'microcredit._id': new ObjectId(campaign.campaign_id) },
+  //       { 'microcredit.supports.backer_id': (member._id).toString() }
+  //     ]
+  //   }
+  // }, {
+  //   "$group": {
+  //     '_id': '$microcredit._id',
+  //     'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+  //     'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
+  //   }
+  // }]).exec().catch());
+  // if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+  // response.locals["balance"] = {
+  //   '_id': tokens.length ? tokens[0]._id : campaign.campaign_id,
+  //   'initialTokens': tokens.length ? tokens[0].initialTokens : '0',
+  //   'redeemedTokens': tokens.length ? tokens[0].redeemedTokens : '0'
+  // };
+  // next();
 }
 
 async function microcredit_activity(request: RequestWithUser, response: Response, next: NextFunction) {

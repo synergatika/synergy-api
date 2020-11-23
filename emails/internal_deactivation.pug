@@ -49,8 +49,9 @@ table(border='0' cellpadding='0' cellspacing='0' width='100%')
         // start copy
         tr
           td(align='left' bgcolor='#ffffff' style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;")
-            p(style='margin: 0;') Your friend invite you to our community.
-            p(style='margin: 0;') Email: #{email}
+            p(style='margin: 0;') #{title}
+            p(style='margin: 0;') #{EMAIL_TEXT}: #{email}
+            p(style='margin: 0;') #{REASON_TEXT}: #{reason}
         // end copy
         // start copy
         tr
@@ -76,6 +77,15 @@ table(border='0' cellpadding='0' cellspacing='0' width='100%')
             p(style='margin: 0;')
               | #{FOOTER}
         // end permission
+        // start unsubscribe
+        tr
+          td(align='center' bgcolor='#e9ecef' style="padding: 12px 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #666;")
+            //
+              <p style="margin: 0;">To stop receiving these emails, you can <a href="https://sendgrid.com" target="_blank">unsubscribe</a> at any time.</p>
+              <p style="margin: 0;">Paste 1234 S. Broadway St. City, State 12345</p>
+              </td>
+              </tr>
+            // end unsubscribe
       // if (gte mso 9)|(IE)
   // end footer
 // end body

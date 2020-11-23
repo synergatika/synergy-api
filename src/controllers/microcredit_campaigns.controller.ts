@@ -372,9 +372,10 @@ class MicrocreditCampaignsController implements Controller {
       if (`${process.env.PRODUCTION}` == 'true')
         (dates as any)[key] = (dates as any)[key] + "000000";
       else
-        (dates as any)[key] = ((dates as any)[key]).substring(0, ((dates as any)[key]).length - 3);
+        (dates as any)[key] = ((dates as any)[key]).slice(0, ((dates as any)[key]).length - 3);
     });
-
+    console.log("dates")
+    console.log(dates)
     await serviceInstance.startNewMicrocredit(user.account.address,
       1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
       parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
@@ -673,7 +674,7 @@ class MicrocreditCampaignsController implements Controller {
 
     const statisticsPromise: MicrocreditCampaignStatistics[] = await this.readStatistics(campaigns, 'PromiseFund');
     const statisticsRedeem: MicrocreditCampaignStatistics[] = await this.readStatistics(campaigns, 'SpendFund');
-    const campaignsTokens = campaigns.map((a: Campaign) =>
+    const campaignsWithStatistics = campaigns.map((a: Campaign) =>
       Object.assign({}, a,
         {
           confirmedTokens: (confirmedTokens).find((b: Tokens) => (b._id).toString() === (a.campaign_id).toString()),
@@ -686,7 +687,7 @@ class MicrocreditCampaignsController implements Controller {
     );
 
     response.status(200).send({
-      data: campaignsTokens[0],
+      data: campaignsWithStatistics[0],
       code: 200
     });
   }
@@ -768,25 +769,50 @@ class MicrocreditCampaignsController implements Controller {
   private readTokens = async (campaigns: Campaign[], status: string) => {
 
     let error: Error, tokens: Tokens[];
-    [error, tokens] = await to(this.user.aggregate([{
-      $unwind: '$microcredit'
-    }, {
-      $unwind: '$microcredit.supports'
-    }, {
-      $match: {
-        $and: [
-          { 'microcredit._id': { $in: campaigns.map(a => a.campaign_id) } },
-          { 'microcredit.supports.status': status }
-        ]
-      }
-    }, {
-      "$group": {
-        '_id': '$microcredit._id',
-        'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
-        'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
-      }
-    }]).exec().catch());
+    [error, tokens] = await to(this.transaction.aggregate(
+      [
+        {
+          $match: {
+            'microcredit._id': { $in: campaigns.map(a => a.campaign_id) }
+          }
+        }, {
+          $project: {
+            _id: "$microcredit_id",
+            // member_id: 1,
+            earned: { $cond: [{ $eq: ['$type', 'PromiseFund'] }, '$tokens', 0] },
+            redeemed: { $cond: [{ $eq: ['$type', 'ReceiveFund'] }, '$tokens', 0] }
+          }
+        },
+        {
+          $group: {
+            _id: "$microcredit_id",
+            earnedTokens: { $sum: '$earned' },
+            redeemedTokens: { $sum: '$redeemed' }
+          }
+        }]
+    ).exec().catch());
     if (error) return [];
+
+    // let error: Error, tokens: Tokens[];
+    // [error, tokens] = await to(this.user.aggregate([{
+    //   $unwind: '$microcredit'
+    // }, {
+    //   $unwind: '$microcredit.supports'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       { 'microcredit._id': { $in: campaigns.map(a => a.campaign_id) } },
+    //       { 'microcredit.supports.status': status }
+    //     ]
+    //   }
+    // }, {
+    //   "$group": {
+    //     '_id': '$microcredit._id',
+    //     'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
+    //     'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
+    //   }
+    // }]).exec().catch());
+    // if (error) return [];
 
     return tokens;
   }
@@ -839,7 +865,7 @@ class MicrocreditCampaignsController implements Controller {
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
-          { 'data.campaign_id': { $in: campaigns.map(a => (a.campaign_id).toString()) } },
+          { 'campaign_id': { $in: campaigns.map(a => (a.campaign_id).toString()) } },
           { 'type': status }
         ]
       }
@@ -847,17 +873,17 @@ class MicrocreditCampaignsController implements Controller {
     {
       $group: {
         _id: {
-          campaign_id: "$data.campaign_id",
+          campaign_id: "$campaign_id",
           date: { day: { $dayOfMonth: "$createdAt" }, month: { $month: "$createdAt" }, year: { $year: "$createdAt" } }
         },
-        tokens: { $sum: "$data.tokens" },
+        tokens: { $sum: "$tokens" },
         users: { "$addToSet": "$member_id" },
         count: { "$addToSet": "$_id" }
       }
     },
     {
       $group: {
-        _id: "$_id.campaign_id",
+        _id: "$campaign_id",
         byDate: {
           $push: {
             date: "$_id.date", tokens: "$tokens", users: { "$size": "$users" }, usersArray: '$users', count: { "$size": "$count" }

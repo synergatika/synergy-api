@@ -68,12 +68,12 @@ class HelpController implements Controller {
           serviceInstance.isConnected(),
         ]);
 
-        const clusterStatus = await Promise.race([
-          timeOutPromise,
-          serviceInstance.getClusterStatus(),
-        ]);
+        // const clusterStatus = await Promise.race([
+        //   timeOutPromise,
+        //   serviceInstance.getClusterStatus(),
+        // ]);
 
-        result = await this.parseClusterStatus(result, clusterStatus);
+        // result = await this.parseClusterStatus(result, clusterStatus);
 
         result["ethereum_api_up"] = status;
         result["ethereum_api_is_ok"] = await serviceInstance.isOk();

@@ -122,7 +122,7 @@ describe("Admin - Content & Users", () => {
     });
     it("3. should NOT reactivate account | user is activated - 404 NotFound", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .put("users/reactivate/" + user_a._id)
+        .put("auth/activate/" + user_a._id)
         .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
         .end((err, res) => {
           res.should.have.status(404);
@@ -133,7 +133,7 @@ describe("Admin - Content & Users", () => {
     });
     it("4. should reactivate account - 200 Email Sent", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .put("users/reactivate/" + user_b._id)
+        .put("auth/activate/" + user_b._id)
         .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
         .end((err, res) => {
           res.should.have.status(200);

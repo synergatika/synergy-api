@@ -191,7 +191,7 @@ describe("Open Calls", () => {
   describe("One Click Register - Support (/auth || /microcredit)", () => {
     it("1. should register a user only email - 200 OneClickAction", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("auth/one-click/register")
+        .post("auth/register/one-click")
         .send({
           email: user_f.email
         }).end((err, res) => {
@@ -218,7 +218,7 @@ describe("Open Calls", () => {
     });
     it("3. should get onClickToken - 200 OneClickAction", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("auth/one-click/register")
+        .post("auth/register/one-click")
         .send({
           email: user_f.email
         }).end((err, res) => {

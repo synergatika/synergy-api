@@ -2,9 +2,33 @@ class Translation {
 
   public content = {
     ["en-EN" as string]: {
-      communication: {
-        "subject": "You have an Email from a User",
-        "title": "A user needs to communicate with our team.",
+      internal_activation: {
+        "subject": "[internal] Account Created",
+        "title": "A user has been registered and needs to become activated.",
+        "body": "",
+        "button": ""
+      },
+      internal_deactivation: {
+        "subject": "[internal] Account Deactivated",
+        "title": "A user has deactivate his/her account.",
+        "body": "",
+        "button": ""
+      },
+      internal_communication: {
+        "subject": "[internal] User Communication",
+        "title": "A user has sent an email to our team.",
+        "body": "",
+        "button": ""
+      },
+      new_support_partner: {
+        "subject": "Α user has promise a fund for your cause",
+        "title": "Supporting Info",
+        "body": "",
+        "button": ""
+      },
+      new_support_member: {
+        "subject": "Your support has been registered",
+        "title": "Please follow the instructions to complete it.",
         "body": "",
         "button": ""
       },
@@ -14,47 +38,70 @@ class Translation {
         "body": "",
         "button": ""
       },
-      deactivation: {
-        "subject": "Synergy Account deactivated",
-        "title": "A users ask to deactivate his/her account",
+      activation: {
+        "subject": "Welcome to Synergatika Team",
+        "title": "Please, follow the link, login and set up your profile",
         "body": "",
-        "button": ""
+        "button": "Log in"
       },
-      reactivation: {
-        "subject": "Synergy Account is Active again",
-        "title": "You account is active again",
+      deactivation: {
+        "subject": "Your account has been deactivated",
+        "title": "Contact to admin if you want to reactivated it",
         "body": "",
-        "button": ""
+        "button": "Log in"
       },
       registration: {
-        "subject": "Welcome to Synergy Team",
-        "title": "Login and update your password",
-        "body": "",
-        "button": ""
+        "subject": "Welcome to Synergatika Team",
+        "title": "An acount has been created for you.",
+        "body": "Please, follow the link, and login with the password bellow to reset your password",
+        "button": "Log In"
       },
       restoration: {
         "subject": "Update your Password",
-        "title": "Follow the link to update your password",
+        "title": "Please, follow the link to update your password",
         "body": "",
-        "button": ""
+        "button": "Restore"
       },
       verification: {
-        "subject": "You need to verify your account",
-        "title": "Follow the link to validate your email address",
-        "body": "",
-        "button": ""
+        "subject": "Verify your email address",
+        "title": "Please, follow the link to validate your email address.",
+        "body": "Your account will be activated by our Amdin soon.",
+        "button": "Veify"
       },
       common: {
+        "EMAIL_TEXT": "Email",
+        "REASON_TEXT": "Reason",
+        "PASSWORD_TEXT": "Password",
+        "METHOD_TEXT": "Payment Method",
+        "TOKENS_TEXT": "Amoount (€)",
         "IF_LINK": "If that doesn't work, copy and paste the following link in your browser:",
         "CHEERS": "Cheers",
-        "TEAM": "Synergy Team",
+        "TEAM": "Synergatika Team",
         "FOOTER": "You received this email because we received a request for your account. If you didn't request you can safely delete this email."
       }
     },
     ["el-EL" as string]: {
-      communication: {
+      internal_communication: {
         "subject": "Επικοινωνία από Χρήστη",
         "title": "Ένας χρήστης προσπαθεί να επικοινωνήσει με την Ομάδα",
+        "body": "",
+        "button": ""
+      },
+      internal_deactivation: {
+        "subject": "Ο Λογαριασμοός σας απενεργοποιήθηκε",
+        "title": "Ένας Χρήστης θέλει να απενεργοποιήσει το λογαρισμό του/της",
+        "body": "",
+        "button": ""
+      },
+      new_support_partner: {
+        "subject": "Ενας χρήστης έδωσε λεφτά",
+        "title": "Υποσχεση",
+        "body": "",
+        "button": ""
+      },
+      new_support_member: {
+        "subject": "Κατοχυρώθηκε η υπόσχεση",
+        "title": "Υποσχεση",
         "body": "",
         "button": ""
       },
@@ -64,41 +111,46 @@ class Translation {
         "body": "",
         "button": ""
       },
-      deactivation: {
-        "subject": "Ο Λογαριασμοός σας απενεργοποιήθηκε",
-        "title": "Ένας Χρήστης θέλει να απενεργοποιήσει το λογαρισμό του/της",
+      activation: {
+        "subject": "Καλώς ήρθατε στην κοινότητα του Synergatika",
+        "title": "Κάντε σύνδεση και οργανώστε τις προσωπικές σας πληροφορίες.",
         "body": "",
-        "button": ""
+        "button": "Είσοδος"
       },
-      reactivation: {
-        "subject": "Ο Λογαρισμός σας είναι Ενεγός και πάλι",
-        "title": "Καλώς ήρθες πίσω",
+      deactivation: {
+        "subject": "Ο λογαριασμός σας έχει απενεργοποιηθεί",
+        "title": "Επικοινωνήστε με το διαχειριστή για να τον ενεργοποιήσετε ξανα",
         "body": "",
-        "button": ""
+        "button": "Eίσοδος"
       },
       registration: {
-        "subject": "Καλώς ήρθατε στην κοινότητα του Synergy",
+        "subject": "Καλώς ήρθατε στην κοινότητα του Synergatika",
         "title": "Κάντε σύνδεση και ανανεώστε τον προσωρινό Κωδικό Πρόσβασης",
         "body": "",
-        "button": ""
+        "button": "Είσοδος"
       },
       restoration: {
         "subject": "Ανανέωση Κωδικού Πρόσβασης",
         "title": "Ακολουθήστε το παρακάτω λινκ",
         "body": "",
-        "button": ""
+        "button": "Ανάκτηση"
       },
       verification: {
         "subject": "Επιβεβαίωση Διεύθυνσης Ηλεκτρονικού Ταχυδρομείου",
         "title": "Ακολουθήστε το παρακάτω λινκ",
         "body": "",
-        "button": ""
+        "button": "Επιβεβαίωση"
       },
       common: {
+        "EMAIL_TEXT": "Email",
+        "REASON_TEXT": "Λόγος",
+        "PASSWORD_TEXT": "Password",
+        "METHOD_TEXT": "Μέθοδος Πληρωμής",
+        "TOKENS_TEXT": "Ποσό (€)",
         "IF_LINK": "Εαν δεν μεταφερθείτε αυτόματα στη σελίδα μας, κάντε αντιγραφή/επικόλληση τον παρακάτω συνδεσμο",
         "CHEERS": "Χαιρετισμούς",
         "TEAM": "η Ομάδα του Synergy",
-        "FOOTER": "Λάβατε αυτό το μήνυμα ηλεκτρονικού ταχυδρομίου, καθώς στάλθηκε μια αίτηση από το συγκεκριμένο λογαριασμό. Έαν, η αίτηση δεν στάλθηκε από εσάς, μπορείται να διαγράψετε με ασφάλεια αυτο το μήνυμα."
+        "FOOTER": "Λάβατε αυτό το μήνυμα ηλεκτρονικού ταχυδρομίου, καθώς στάλθηκε μια αίτηση για/από το συγκεκριμένο λογαριασμό. Έαν, η αίτηση δεν στάλθηκε από εσάς, μπορείται να διαγράψετε με ασφάλεια αυτο το μήνυμα."
       }
     }
   }

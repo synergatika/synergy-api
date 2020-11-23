@@ -517,31 +517,31 @@ describe("Partner - Offers, Posts, Events", () => {
           done();
         });
     });
-    it("9. should create/publish one-click campaign | 200 Updated", (done) => {
-      chai.request(`${process.env.API_URL}`)
-        .post("microcredit/campaigns/one-click/" + partner_c.oneClickToken)
-        .field('title', microcredit_c.title)
-        .field('terms', microcredit_c.terms)
-        .field('access', microcredit_c.access)
-        .field('description', microcredit_c.description)
-        .field('category', microcredit_c.category)
-        .field('subtitle', microcredit_c.subtitle)
-        .field('quantitative', microcredit_c.quantitative)
-        .field('stepAmount', microcredit_c.stepAmount)
-        .field('minAllowed', microcredit_c.minAllowed)
-        .field('maxAllowed', microcredit_c.maxAllowed)
-        .field('maxAmount', microcredit_c.maxAmount)
-        .field('redeemStarts', _newDate3.toString())
-        .field('redeemEnds', _newDate4.toString())
-        .field('startsAt', _newDate1.toString())
-        .field('expiresAt', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_c.imageFile}`), `${microcredit_c.imageFile}`)
-        .end((err, res) => {
-          res.should.have.status(200);
-          res.body.should.be.a('object');
-          res.body.should.have.property('message');
-          done();
-        });
-    });
+    // it("9. should create/publish one-click campaign | 200 Updated", (done) => {
+    //   chai.request(`${process.env.API_URL}`)
+    //     .post("microcredit/campaigns/one-click/" + partner_c.oneClickToken)
+    //     .field('title', microcredit_c.title)
+    //     .field('terms', microcredit_c.terms)
+    //     .field('access', microcredit_c.access)
+    //     .field('description', microcredit_c.description)
+    //     .field('category', microcredit_c.category)
+    //     .field('subtitle', microcredit_c.subtitle)
+    //     .field('quantitative', microcredit_c.quantitative)
+    //     .field('stepAmount', microcredit_c.stepAmount)
+    //     .field('minAllowed', microcredit_c.minAllowed)
+    //     .field('maxAllowed', microcredit_c.maxAllowed)
+    //     .field('maxAmount', microcredit_c.maxAmount)
+    //     .field('redeemStarts', _newDate3.toString())
+    //     .field('redeemEnds', _newDate4.toString())
+    //     .field('startsAt', _newDate1.toString())
+    //     .field('expiresAt', _newDate2.toString())
+    //     .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_c.imageFile}`), `${microcredit_c.imageFile}`)
+    //     .end((err, res) => {
+    //       res.should.have.status(200);
+    //       res.body.should.be.a('object');
+    //       res.body.should.have.property('message');
+    //       done();
+    //     });
+    // });
   });
 });

@@ -161,8 +161,14 @@ const userSchema = new mongoose.Schema({
   timetable: String,
   payments: [paymentsSchema],
 
-  email_verified: Boolean,
-  pass_verified: Boolean,
+  email_verified: {
+    type: Boolean,
+    default: true
+  },
+  pass_verified: {
+    type: Boolean,
+    default: true
+  },
   activated: {
     type: Boolean,
     default: true

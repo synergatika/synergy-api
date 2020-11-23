@@ -1,6 +1,6 @@
 interface Tokens {
   _id: string;
-  initialTokens: string;
+  earnedTokens: string;
   redeemedTokens: string;
 }
 export default Tokens;
