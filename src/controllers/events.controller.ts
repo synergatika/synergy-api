@@ -40,8 +40,10 @@ import OffsetHelper from '../middleware/items/offset.helper';
 /**
  * Helper's Instances
  */
-const uploadFile = FilesMiddleware.uploadItem;
+const uploadFile = FilesMiddleware.uploadFile;
+const existFile = FilesMiddleware.existsFile;
 const deleteFile = FilesMiddleware.deleteFile;
+const deleteSync = FilesMiddleware.deleteSync;
 const createSlug = SlugHelper.eventSlug;
 const offsetParams = OffsetHelper.offsetLimit;
 
@@ -62,12 +64,36 @@ class EventsController implements Controller {
   private initializeRoutes() {
     this.router.get(`${this.path}/public/:offset`, this.readPublicEvents);
     this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPrivateEvents);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(EventDto), this.createEvent);
+    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(EventDto), this.createEvent);
     this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPublicEventsByStore);
     this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPrivateEventsByStore);
     this.router.get(`${this.path}/:partner_id/:event_id`, validationParamsMiddleware(EventID), this.readEvent);
-    this.router.put(`${this.path}/:partner_id/:event_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(EventDto), itemsMiddleware.eventMiddleware, this.updateEvent);
+    this.router.put(`${this.path}/:partner_id/:event_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(EventDto), itemsMiddleware.eventMiddleware, this.updateEvent);
     this.router.delete(`${this.path}/:partner_id/:event_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, itemsMiddleware.eventMiddleware, this.deleteEvent);
+
+    this.router.post(`${this.path}/image`, authMiddleware, this.declareContentPath, uploadFile.array('content_image', 8), this.uploadContentImage);
+  }
+
+  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    request.params['path'] = 'static';
+    request.params['type'] = 'event';
+    next();
+  }
+
+  private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    request.params['path'] = 'content';
+    request.params['type'] = 'event';
+    next();
+  }
+
+  private uploadContentImage = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    response.status(200).send({
+      data: {
+        files: request.files,
+        path: `${process.env.API_URL}/assets/content/`
+      },
+      success: true
+    });
   }
 
   private readPrivateEvents = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -101,7 +127,7 @@ class EventsController implements Controller {
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',
-        description: '$events.description',
+        content: '$events.content',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
@@ -154,7 +180,7 @@ class EventsController implements Controller {
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',
-        description: '$events.description',
+        content: '$events.content',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
@@ -185,19 +211,20 @@ class EventsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-      $push: {
-        events: {
-          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-          "title": data.title,
-          "subtitle": data.subtitle,
-          "slug": await createSlug(request),
-          "description": data.description,
-          "access": data.access,
-          "location": data.location,
-          "dateTime": data.dateTime
+        $push: {
+          events: {
+            "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
+            "title": data.title,
+            "subtitle": data.subtitle,
+            "slug": await createSlug(request),
+            "content": data.content,
+            "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
+            "access": data.access,
+            "location": data.location,
+            "dateTime": data.dateTime
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new Event has been created!",
@@ -249,7 +276,7 @@ class EventsController implements Controller {
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',
-        description: '$events.description',
+        content: '$events.content',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
@@ -315,7 +342,7 @@ class EventsController implements Controller {
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',
-        description: '$events.description',
+        content: '$events.content',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
@@ -377,7 +404,7 @@ class EventsController implements Controller {
         event_imageURL: '$events.imageURL',
         title: '$events.title',
         subtitle: '$events.subtitle',
-        description: '$events.description',
+        content: '$events.content',
         location: '$events.location',
         dateTime: '$events.dateTime',
         access: '$events.access',
@@ -405,8 +432,20 @@ class EventsController implements Controller {
     const currentEvent: Event = response.locals.event;
     if ((currentEvent.event_imageURL && (currentEvent.event_imageURL).includes(partner_id)) && request.file) {
       //if (currentEvent.event_imageURL && request.file) {
-      var imageFile = (currentEvent.event_imageURL).split('assets/items/');
-      await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+      var imageFile = (currentEvent.event_imageURL).split('assets/static/');
+      await deleteFile(path.join(__dirname, '../assets/static/' + imageFile[1]));
+    }
+
+    if (currentEvent.contentFiles) {
+      var toDelete: string[] = [];
+      (currentEvent.contentFiles).forEach((element: string) => {
+        if ((data.contentFiles).indexOf(element) < 0) {
+          var imageFile = (element).split('assets/content/');
+          const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+          toDelete.push(file);
+        }
+      });
+      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
@@ -415,18 +454,19 @@ class EventsController implements Controller {
         _id: partner_id,
         'events._id': event_id
       }, {
-      '$set': {
-        'events.$._id': event_id,
-        'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentEvent.event_imageURL,
-        'events.$.title': data.title,
-        'events.$.slug': await createSlug(request),
-        'events.$.subtitle': data.subtitle,
-        'events.$.description': data.description,
-        'events.$.access': data.access,
-        'events.$.location': data.location,
-        'events.$.dateTime': data.dateTime,
-      }
-    }).catch());
+        '$set': {
+          'events.$._id': event_id,
+          'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentEvent.event_imageURL,
+          'events.$.title': data.title,
+          'events.$.slug': await createSlug(request),
+          'events.$.subtitle': data.subtitle,
+          'events.$.content': data.content,
+          "events.$.contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
+          'events.$.access': data.access,
+          'events.$.location': data.location,
+          'events.$.dateTime': data.dateTime,
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been updated!",
@@ -441,20 +481,30 @@ class EventsController implements Controller {
     const currentEvent: Event = response.locals.event;
     if (currentEvent.event_imageURL && (currentEvent.event_imageURL).includes(partner_id)) {
       //if (currentEvent.event_imageURL) {
-      var imageFile = (currentEvent.event_imageURL).split('assets/items/');
-      await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+      var imageFile = (currentEvent.event_imageURL).split('assets/static/');
+      await deleteFile(path.join(__dirname, '../assets/static/' + imageFile[1]));
+    }
+
+    if (currentEvent.contentFiles) {
+      var toDelete: string[] = [];
+      (currentEvent.contentFiles).forEach((element: string) => {
+        var imageFile = (element).split('assets/content/');
+        const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+        toDelete.push(file);
+      });
+      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne({
       _id: partner_id
     }, {
-      $pull: {
-        events: {
-          _id: event_id
+        $pull: {
+          events: {
+            _id: event_id
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been deleted!",

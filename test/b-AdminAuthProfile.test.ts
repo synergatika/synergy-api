@@ -63,8 +63,6 @@ describe("Admin - Authentication", () => {
           res.body.should.be.a('object');
           res.body.should.have.property('message');
           partner_a.tempPass = res.body.tempData.password;
-          console.log(err)
-          console.log(res.body)
           done();
         });
     });

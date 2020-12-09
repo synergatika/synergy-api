@@ -37,6 +37,11 @@ class EmailService {
     return (new Translation).content[lang];
   }
 
+  private defaultLang = (): string => {
+    return 'el-EL';
+    // return 'en-EN';
+  }
+
   private emailSender = (options: { type: any; locals: any; from: any; to: any; subject: any; }) => {
     return Promise.all([email.render(options.type, options.locals)])
       .then((template: object) => {
@@ -55,8 +60,9 @@ class EmailService {
   */
   public userRegistration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
-
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+    console.log("userRegistration")
+    console.log(data)
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
@@ -82,8 +88,9 @@ class EmailService {
 
   public emailVerification = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
-
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+    console.log("emailVerification")
+    console.log(data)
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
@@ -95,7 +102,7 @@ class EmailService {
         ...this.translation(lang).verification,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        link: `${process.env.APP_URL}auth/verify-email/${data.token}`
+        link: `${process.env.APP_URL}auth/verify-email/${data.extras.token}`
       },
     }
 
@@ -108,8 +115,9 @@ class EmailService {
 
   public passwordRestoration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
-
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+    console.log("passwordRestoration")
+    console.log(data)
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
@@ -121,7 +129,7 @@ class EmailService {
         ...this.translation(lang).restoration,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        link: `${process.env.APP_URL}auth/reset-password/${data.token}`
+        link: `${process.env.APP_URL}auth/reset-password/${data.extras.token}`
       },
     }
 
@@ -137,7 +145,7 @@ class EmailService {
   */
   public accountActivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
@@ -163,20 +171,21 @@ class EmailService {
 
   public accountDeactivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
-      subject: this.translation(lang).activation.subject,//'Account Activation',
+      subject: this.translation(lang).deactivation.subject,//'Account Activation',
       html: '',
-      type: 'activation',
+      type: 'deactivation',
       locals: {
         ...this.translation(lang).common,
-        ...this.translation(lang).activation,
+        ...this.translation(lang).deactivation,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        link: `${process.env.APP_URL}auth/login/`
+        link: `${process.env.APP_URL}auth/login/`,
+        reason: (data.decision == 'admin') ? this.translation(lang).deactivation.by_admin : this.translation(lang).deactivation.by_you,
       },
     }
 
@@ -190,7 +199,7 @@ class EmailService {
   /** (internal) Activation / Deactivation */
   public internalActivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
@@ -216,7 +225,7 @@ class EmailService {
 
   public internalDeactivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
@@ -247,8 +256,9 @@ class EmailService {
   */
   public internalCommunication = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
-
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+    console.log("internalCommunication")
+    console.log(data)
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: `${process.env.EMAIL_FROM}`,
@@ -277,8 +287,9 @@ class EmailService {
   */
   public userInvitation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
-
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+    console.log("userInvitation")
+    console.log(data)
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.receiver,
@@ -306,7 +317,7 @@ class EmailService {
   */
   public newSupportPartner = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
@@ -334,10 +345,8 @@ class EmailService {
 
   public newSupportMember = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
-    console.log("Method")
-    console.log(data.support.method)
-    console.log("-----")
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.member.email,

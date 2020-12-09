@@ -152,12 +152,15 @@ class LoyaltyController implements Controller {
           .then(async (result: any) => {
             await this.transaction.create({
               ...result,
-              partner_id: request.user._id, member_id: member._id,
+              partner_id: request.user._id,
+              partner_name: request.user.name,
+
+              member_id: member._id,
+
+              points: _points,
+              amount: _amount,
+
               type: "EarnPoints",
-              data: {
-                partner_name: request.user.name, partner_email: request.user.email,
-                points: _points, amount: _amount
-              },
             });
             response.status(201).send({
               data: result,
@@ -188,12 +191,18 @@ class LoyaltyController implements Controller {
 
             await this.transaction.create({
               ...result,
-              partner_id: request.user._id, member_id: member._id,
+              partner_id: request.user._id,
+              partner_name: request.user.name,
+
+              member_id: member._id,
+
+              offer_id: offer_id,
+              offer_title: offer_title,
+
+              points: _points,
+              quantity: data.quantity,
+
               type: (offer_id === '-1') ? "RedeemPoints" : "RedeemPointsOffer",
-              data: {
-                partner_name: request.user.name, partner_email: request.user.email,
-                points: _points, quantity: data.quantity, offer_id: offer_id, offer_title: offer_title
-              }
             });
             response.status(201).send({
               data: result,
@@ -223,9 +232,23 @@ class LoyaltyController implements Controller {
         { $or: [{ type: "EarnPoints" }, { type: "RedeemPoints" }, { type: "RedeemPointsOffer" }] }
       ]
     }).select({
-      "_id": 1, "type": 1,
-      "member_id": 1, "partner_id": 1,
-      "data": 1, "tx": 1,
+      "_id": 1,
+
+      "partner_id": 1,
+      "partner_name": 1,
+
+      "member_id": 1,
+
+      "points": 1,
+      "amount": 1,
+
+      "offer_id": 1,
+      "offer_title": 1,
+      "quantity": 1,
+
+      "type": 1,
+
+      "tx": 1,
       "createdAt": 1
     }).sort('-createdAt')
       .limit(offset.limit).skip(offset.skip)
@@ -266,8 +289,8 @@ class LoyaltyController implements Controller {
     {
       $group: {
         _id: '$partner_id',
-        amount: { $sum: "$data.amount" },
-        points: { $sum: "$data.points" },
+        amount: { $sum: "$amount" },
+        points: { $sum: "$points" },
         users: { "$addToSet": "$member_id" },
         count: { "$addToSet": "$_id" }
       }
@@ -313,8 +336,8 @@ class LoyaltyController implements Controller {
           partner_id: '$partner_id',
           date: { day: { $dayOfMonth: "$createdAt" }, month: { $month: "$createdAt" }, year: { $year: "$createdAt" } }
         },
-        amount: { $sum: "$data.amount" },
-        points: { $sum: "$data.points" },
+        amount: { $sum: "$amount" },
+        points: { $sum: "$points" },
         users: { "$addToSet": "$member_id" },
         count: { "$addToSet": "$_id" }
       }

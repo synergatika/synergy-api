@@ -30,7 +30,8 @@ import FilesMiddleware from '../middleware/items/files.middleware';
 /**
  * Helper's Instance
  */
-const uploadFile = FilesMiddleware.uploadPerson;
+const uploadFile = FilesMiddleware.uploadFile;
+const existFile = FilesMiddleware.existsFile;
 const deleteFile = FilesMiddleware.deleteFile;
 
 /**
@@ -49,7 +50,13 @@ class MembersController implements Controller {
 
   private initializeRoutes() {
     this.router.get(`${this.path}`, authMiddleware, this.readUserProfile);
-    this.router.put(`${this.path}`, authMiddleware, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(MemberDto), this.updateUserProfile);
+    this.router.put(`${this.path}`, authMiddleware, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(MemberDto), this.updateUserProfile);
+  }
+
+  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    request.params['path'] = 'static';
+    request.params['type'] = 'member';
+    next();
   }
 
   private readUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -75,24 +82,29 @@ class MembersController implements Controller {
     const data: MemberDto = request.body;
     const user: User = request.user;
 
-    if ((user.imageURL && (user.imageURL).includes(user._id)) && request.file) {
-      //if (user.imageURL && request.file) {
-      var imageFile = (user.imageURL).split('assets/profile/');
-      await deleteFile(path.join(__dirname, '../assets/profile/' + imageFile[1]));
+    if (user['imageURL'] && request.file) {
+      var imageFile = (user['imageURL']).split('assets/static/');
+      const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+      if (existFile(file)) await deleteFile(file);
     }
+    // if ((user.imageURL && (user.imageURL).includes(user._id)) && request.file) {
+    //   //if (user.imageURL && request.file) {
+    //   var imageFile = (user.imageURL).split('assets/profile/');
+    //   await deleteFile(path.join(__dirname, '../assets/profile/' + imageFile[1]));
+    // }
 
     let error: Error, member: Member;
     [error, member] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-      $set: {
-        name: data.name,
-        imageURL: (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL
-      }
-    }, {
-      "fields": { "name": 1, "imageURL": 1 },
-      "new": true
-    }).catch());
+        $set: {
+          name: data.name,
+          imageURL: (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : user.imageURL
+        }
+      }, {
+        "fields": { "name": 1, "imageURL": 1 },
+        "new": true
+      }).catch());
 
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 

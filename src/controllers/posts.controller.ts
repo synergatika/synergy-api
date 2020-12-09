@@ -39,8 +39,10 @@ import OffsetHelper from '../middleware/items/offset.helper';
 /**
  * Helper's Instance
  */
-const uploadFile = FilesMiddleware.uploadItem;
+const uploadFile = FilesMiddleware.uploadFile;
+const existFile = FilesMiddleware.existsFile;
 const deleteFile = FilesMiddleware.deleteFile;
+const deleteSync = FilesMiddleware.deleteSync;
 const createSlug = SlugHelper.postSlug;
 const offsetParams = OffsetHelper.offsetLimit;
 
@@ -61,12 +63,36 @@ class PostsController implements Controller {
   private initializeRoutes() {
     this.router.get(`${this.path}/public/:offset`, this.readPublicPosts);
     this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPrivatePosts);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(PostDto), this.createPost);
+    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(PostDto), this.createPost);
     this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPublicPostsByStore);
     this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPrivatePostsByStore);
     this.router.get(`${this.path}/:partner_id/:post_id`, validationParamsMiddleware(PostID), this.readPost);
-    this.router.put(`${this.path}/:partner_id/:post_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(PostDto), itemsMiddleware.postMiddleware, this.updatePost);
+    this.router.put(`${this.path}/:partner_id/:post_id`, authMiddleware, accessMiddleware.onlyAsPartner, this.declareStaticPath, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(PostDto), itemsMiddleware.postMiddleware, this.updatePost);
     this.router.delete(`${this.path}/:partner_id/:post_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, itemsMiddleware.postMiddleware, this.deletePost);
+
+    this.router.post(`${this.path}/image`, authMiddleware, this.declareContentPath, uploadFile.array('content_image', 8), this.uploadContentImage);
+  }
+
+  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    request.params['path'] = 'static';
+    request.params['type'] = 'post';
+    next();
+  }
+
+  private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    request.params['path'] = 'content';
+    request.params['type'] = 'post';
+    next();
+  }
+
+  private uploadContentImage = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    response.status(200).send({
+      data: {
+        files: request.files,
+        path: `${process.env.API_URL}assets/content/`
+      },
+      success: true
+    });
   }
 
   private readPrivatePosts = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -172,17 +198,18 @@ class PostsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-      $push: {
-        posts: {
-          "imageURL": (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : '',
-          "title": data.title,
-          "subtitle": data.subtitle,
-          "slug": await createSlug(request),
-          "content": data.content,
-          "access": data.access
+        $push: {
+          posts: {
+            "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
+            "title": data.title,
+            "subtitle": data.subtitle,
+            "slug": await createSlug(request),
+            "content": data.content,
+            "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
+            "access": data.access
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new Post has been created!",
@@ -353,8 +380,9 @@ class PostsController implements Controller {
         title: '$posts.title',
         subtitle: '$posts.subtitle',
         content: '$posts.content',
-        access: '$posts.access',
 
+        access: '$posts.access',
+        contentFiles: '$posts.contentFiles',
         createdAt: '$posts.createdAt'
       }
     }
@@ -376,11 +404,30 @@ class PostsController implements Controller {
     const data: PostDto = request.body;
 
     const currentPost: Post = response.locals.post;
-    if ((currentPost.post_imageURL && (currentPost.post_imageURL).includes(partner_id)) && request.file) {
-      //if (currentPost.post_imageURL && request.file) {
-      var imageFile = (currentPost.post_imageURL).split('assets/items/');
-      await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    if (currentPost['post_imageURL'] && request.file) {
+      var imageFile = (currentPost['post_imageURL']).split('assets/static/');
+      const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+      if (existFile(file)) await deleteFile(file);
     }
+
+    if (currentPost.contentFiles) {
+      var toDelete: string[] = [];
+      (currentPost.contentFiles).forEach((element: string) => {
+        if ((data.contentFiles).indexOf(element) < 0) {
+          var imageFile = (element).split('assets/content/');
+          const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+          toDelete.push(file);
+        }
+      });
+      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+    }
+
+    // const currentPost: Post = response.locals.post;
+    // if ((currentPost.post_imageURL && (currentPost.post_imageURL).includes(partner_id)) && request.file) {
+    //   //if (currentPost.post_imageURL && request.file) {
+    //   var imageFile = (currentPost.post_imageURL).split('assets/items/');
+    //   await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    // }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne(
@@ -388,16 +435,17 @@ class PostsController implements Controller {
         _id: partner_id,
         'posts._id': post_id
       }, {
-      '$set': {
-        'posts.$._id': post_id,
-        'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentPost.post_imageURL,
-        'posts.$.title': data.title,
-        'posts.$.slug': await createSlug(request),
-        'posts.$.subtitle': data.subtitle,
-        'posts.$.content': data.content,
-        'posts.$.access': data.access,
-      }
-    }).catch());
+        '$set': {
+          'posts.$._id': post_id,
+          'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentPost.post_imageURL,
+          'posts.$.title': data.title,
+          'posts.$.slug': await createSlug(request),
+          'posts.$.subtitle': data.subtitle,
+          'posts.$.content': data.content,
+          'posts.$.contentFiles': (data.contentFiles) ? data.contentFiles.split(',') : 0,
+          'posts.$.access': data.access,
+        }
+      }).catch());
 
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
@@ -411,22 +459,38 @@ class PostsController implements Controller {
     const post_id: PostID["post_id"] = request.params.post_id;
 
     const currentPost: Post = response.locals.post;
-    if (currentPost.post_imageURL && (currentPost.post_imageURL).includes(partner_id)) {
-      //if (currentPost.post_imageURL) {
-      var imageFile = (currentPost.post_imageURL).split('assets/items/');
-      await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    if (currentPost['post_imageURL']) {
+      var imageFile = (currentPost['post_imageURL']).split('assets/static/');
+      const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+      if (existFile(file)) await deleteFile(file);
     }
+
+    if (currentPost.contentFiles) {
+      var toDelete: string[] = [];
+      (currentPost.contentFiles).forEach((element: string) => {
+        var imageFile = (element).split('assets/content/');
+        const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+        toDelete.push(file);
+      });
+      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+    }
+    // const currentPost: Post = response.locals.post;
+    // if (currentPost.post_imageURL && (currentPost.post_imageURL).includes(partner_id)) {
+    //   //if (currentPost.post_imageURL) {
+    //   var imageFile = (currentPost.post_imageURL).split('assets/items/');
+    //   await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    // }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne({
       _id: partner_id
     }, {
-      $pull: {
-        posts: {
-          _id: post_id
+        $pull: {
+          posts: {
+            _id: post_id
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Post " + post_id + " has been deleted!",

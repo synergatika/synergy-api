@@ -109,7 +109,7 @@ class CheckMiddleware {
       return next(new NotFoundException('ZERO_AMOUNT')); //"Support Fund cannot be 0",
     }
     if ((partner) && (data.method !== 'store') &&
-      ((partner.payments).filter(function (el) {
+      ((partner.payments).filter(function(el) {
         return el.bic == data.method
       }).length == 0)) {
       //  !(Object.values(JSON.parse(JSON.stringify(partner.payments)))[(Object.keys(JSON.parse(JSON.stringify(partner.payments))).indexOf(data.method))])) {
@@ -130,22 +130,16 @@ class CheckMiddleware {
     if (campaign.startsAt > seconds) {
       return next(new NotFoundException('CAMPAIGN_NOT_STARTED')); //"Campaign's supporting period has not yet started",
     }
-    if (((support.status === 'ReceiveFund') || (support.status === 'SpendFund')) && (support.initialTokens - support.currentTokens > 0)) {
+    if (((support.type === 'ReceiveFund') || (support.type === 'SpendFund')) && (support.initialTokens - support.currentTokens > 0)) {
       return next(new NotFoundException('TOKENS_REDEEMED')); //"User has already redeem some tokens",
     }
-    if (((support.status === 'ReceiveFund') || (support.status === 'SpendFund')) && (campaign.redeemStarts < seconds)) {
+    if (((support.type === 'ReceiveFund') || (support.type === 'SpendFund')) && (campaign.redeemStarts < seconds)) {
       return next(new NotFoundException('CAMPAIGN_REDEEM_STARTED')); //"Campaign's redeeming has started",
     }
     if (campaign.redeemEnds < seconds) {
       return next(new NotFoundException('CAMPAIGN_REDEEM_ENDED')); //"Campaign's redeeming period has expired",
     }
 
-    console.log("Support")
-    console.log(support);
-    console.log("Campaign");
-    console.log(campaign)
-    console.log("campaign.redeemStarts < seconds", campaign.redeemStarts < seconds)
-    console.log("((support.status === 'ReceiveFund') || (support.status === 'SpendFund'))", ((support.status === 'ReceiveFund') || (support.status === 'SpendFund')))
     next();
   }
 
@@ -165,16 +159,12 @@ class CheckMiddleware {
     if (campaign.redeemEnds < seconds) {
       return next(new NotFoundException('CAMPAIGN_REDEEM_ENDED')); //"Campaign's redeeming period has expired",
     }
-    if ((support.status === 'PromiseFund') || (support.status === 'RevertFund')) {
+    if ((support.type === 'PromiseFund') || (support.type === 'RevertFund')) {
       return next(new NotFoundException('SUPPORT_NOT_PAID'));  // "User has not paid for the support",
     }
     if ((support.currentTokens) < _tokens) {
       return next(new NotFoundException('NOT_ENOUGH_TOKENS'));  //"User has not enough tokens to redeem",
     }
-    console.log("canRedeem")
-    console.log("support")
-    console.log(support)
-    console.log("_tokens", _tokens)
 
     next();
   }

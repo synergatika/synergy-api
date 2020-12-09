@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsEnum, IsArray, IsOptional } from 'class-validator';
 
 class EventDto {
   @IsOptional()
@@ -13,7 +13,11 @@ class EventDto {
   public subtitle: string;
 
   @IsString()
-  public description: string;
+  public content: string;
+
+  @IsOptional()
+  @IsString()
+  public contentFiles: string;
 
   @IsEnum(['public', 'private', 'partners'])
   public access: string;

@@ -22,14 +22,9 @@ async function blockchain_status(request: RequestWithUser, response: Response, n
   // next();
   await serviceInstance.isOk()
     .then((result: boolean) => {
-      console.log("Result --> ")
-      console.log(result)
       if (result) {
-        console.log(result)
-
         next();
       } else {
-        console.log(result)
         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || Limited Nodes. Contact Administrator`));
       }
     })

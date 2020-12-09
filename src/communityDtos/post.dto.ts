@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsEnum, IsArray, IsOptional } from 'class-validator';
 
 class PostDto {
   @IsOptional()
@@ -14,6 +14,10 @@ class PostDto {
 
   @IsString()
   public content: string;
+
+  @IsOptional()
+  @IsString()
+  public contentFiles: string;
 
   @IsEnum(['public', 'private', 'partners'])
   public access: string;

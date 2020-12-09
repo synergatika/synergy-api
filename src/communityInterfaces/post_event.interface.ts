@@ -10,6 +10,7 @@ interface PostEvent {
   title: string;
   subtitle: string;
   content: string;
+  contentFiles: string[];
   access: string;
   type: string;
   location: string;

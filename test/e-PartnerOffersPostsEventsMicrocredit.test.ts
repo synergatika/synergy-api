@@ -189,19 +189,21 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_a.title)
         .field('subtitle', event_a.subtitle)
-        .field('description', event_a.description)
+        .field('content', event_a.content)
         .field('access', event_a.access)
         .field('location', event_a.location)
         .field('dateTime', _newDate.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_a.imageFile}`), `${event_a.imageFile}`)
         .end((err, res) => {
+          console.log(err);
+          console.log(res.body);
           res.should.have.status(201);
           res.body.should.be.a('object');
           res.body.should.have.property('message');
           done();
         });
     });
-    it("2. should NOT create an event | as description is missing - 400 Bad Request", (done) => {
+    it("2. should NOT create an event | as content is missing - 400 Bad Request", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("events/")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
@@ -223,7 +225,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .post("events/")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
-        .field('description', event_b.description)
+        .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
@@ -266,7 +268,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
         .field('subtitle', event_b.subtitle)
-        .field('description', event_b.description)
+        .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
@@ -284,7 +286,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
         .field('subtitle', event_b.subtitle)
-        .field('description', event_b.description)
+        .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
@@ -313,7 +315,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
         .field('suntitle', event_b.title)
-        .field('description', event_b.description)
+        .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())

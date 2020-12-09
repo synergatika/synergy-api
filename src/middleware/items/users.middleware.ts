@@ -32,9 +32,6 @@ async function member(request: RequestWithUser, response: Response, next: NextFu
     "activated": 1
   }).catch());
 
-  console.log("Member")
-  console.log(member)
-
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!member) {
     return next(new NotFoundException('MEMBER_NOT_EXISTS'));

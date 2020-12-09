@@ -9,7 +9,8 @@ interface Event {
   event_imageURL: string;
   title: string;
   subtitle: string;
-  description: string;
+  content: string;
+  contentFiles: string[];
   access: string;
   location: string;
   dateTime: number;

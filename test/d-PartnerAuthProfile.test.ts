@@ -84,11 +84,6 @@ describe("Partner - Authentication & Profile", () => {
           password: partner_c.password,
           sector: partner_c.sector,
         })
-        // .field('email', partner_c.email)
-        // .field('name', partner_c.name)
-        // .field('password', partner_c.password)
-        // .field('payments', JSON.stringify(partner_c.payments))
-        // .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.imageFile}`), `${partner_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');
@@ -328,20 +323,14 @@ describe("Partner - Authentication & Profile", () => {
         .field('subtitle', partner_a.subtitle)
         .field('description', partner_a.updatedDescription)
         .field('timetable', partner_a.timetable)
-        .field('phone', partner_a.contact.phone)
-        .field('websiteURL', partner_a.contact.websiteURL)
+        .field('phone', partner_a.phone)
+        .field('contacts', JSON.stringify(partner_a.contacts))
         .field('street', partner_a.updatedAddress.street)
         .field('postCode', partner_a.updatedAddress.postCode)
         .field('city', partner_a.updatedAddress.city)
         .field('lat', partner_a.updatedAddress.coordinates[0])
         .field('long', partner_a.updatedAddress.coordinates[1])
         .field('sector', partner_a.sector)
-        .field('payments', JSON.stringify(partner_a.payments))
-        // .field('nationalBank', partner_a.payments.nationalBank)
-        // .field('pireausBank', partner_a.payments.pireausBank)
-        // .field('eurobank', partner_a.payments.eurobank)
-        // .field('alphaBank', partner_a.payments.alphaBank)
-        // .field('paypal', partner_a.payments.paypal)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`), `${partner_a.updatedAddress}`)
         .end((err, res) => {
           res.should.have.status(403);
@@ -357,20 +346,14 @@ describe("Partner - Authentication & Profile", () => {
         .field('subtitle', partner_a.subtitle)
         .field('description', partner_a.updatedDescription)
         .field('timetable', partner_a.timetable)
-        .field('phone', partner_a.contact.phone)
-        .field('websiteURL', partner_a.contact.websiteURL)
+        .field('phone', partner_a.phone)
+        .field('contacts', JSON.stringify(partner_a.contacts))
         .field('street', partner_a.updatedAddress.street)
         .field('postCode', partner_a.updatedAddress.postCode)
         .field('city', partner_a.updatedAddress.city)
         .field('lat', partner_a.updatedAddress.coordinates[0])
         .field('long', partner_a.updatedAddress.coordinates[1])
         .field('sector', partner_a.sector)
-        .field('payments', JSON.stringify(partner_a.payments))
-        // .field('nationalBank', partner_a.payments.nationalBank)
-        //     .field('pireausBank', partner_a.payments.pireausBank)
-        //     .field('eurobank', partner_a.payments.eurobank)
-        //     .field('alphaBank', partner_a.payments.alphaBank)
-        //     .field('paypal', partner_a.payments.paypal)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`), `${partner_a.updatedAddress}`)
         .end((err, res) => {
           res.should.have.status(400);
@@ -386,20 +369,14 @@ describe("Partner - Authentication & Profile", () => {
         .field('name', partner_a.name)
         .field('subtitle', partner_a.subtitle)
         .field('timetable', partner_a.timetable)
-        .field('phone', partner_a.contact.phone)
-        .field('websiteURL', partner_a.contact.websiteURL)
+        .field('phone', partner_a.phone)
+        .field('contacts', JSON.stringify(partner_a.contacts))
         .field('street', partner_a.updatedAddress.street)
         .field('postCode', partner_a.updatedAddress.postCode)
         .field('city', partner_a.updatedAddress.city)
         .field('lat', partner_a.updatedAddress.coordinates[0])
         .field('long', partner_a.updatedAddress.coordinates[1])
         .field('sector', partner_a.sector)
-        .field('payments', JSON.stringify(partner_a.payments))
-        // .field('nationalBank', partner_a.payments.nationalBank)
-        //   .field('pireausBank', partner_a.payments.pireausBank)
-        //   .field('eurobank', partner_a.payments.eurobank)
-        //   .field('alphaBank', partner_a.payments.alphaBank)
-        //   .field('paypal', partner_a.payments.paypal)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`), `${partner_a.updatedAddress}`)
         .end((err, res) => {
           res.should.have.status(200);
@@ -416,20 +393,14 @@ describe("Partner - Authentication & Profile", () => {
         .field('subtitle', partner_a.subtitle)
         .field('description', partner_a.updatedDescription)
         .field('timetable', partner_a.timetable)
-        .field('phone', partner_a.contact.phone)
-        .field('websiteURL', partner_a.contact.websiteURL)
+        .field('phone', partner_a.phone)
         .field('street', partner_a.updatedAddress.street)
         .field('postCode', partner_a.updatedAddress.postCode)
         .field('city', partner_a.updatedAddress.city)
         .field('lat', partner_a.updatedAddress.coordinates[0])
         .field('long', partner_a.updatedAddress.coordinates[1])
         .field('sector', partner_a.sector)
-        .field('payments', JSON.stringify(partner_a.payments))
-        // .field('nationalBank', partner_a.payments.nationalBank)
-        //   .field('pireausBank', partner_a.payments.pireausBank)
-        //   .field('eurobank', partner_a.payments.eurobank)
-        //   .field('alphaBank', partner_a.payments.alphaBank)
-        //   .field('paypal', partner_a.payments.paypal)
+        .field('contacts', JSON.stringify(partner_a.contacts))
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.updatedImageFile}`), `${partner_a.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
@@ -438,7 +409,7 @@ describe("Partner - Authentication & Profile", () => {
           done();
         });
     });
-    it("7. should update partner's payments - 200 Partner", (done) => {
+    it("6. should update partner's payments - 200 Partner", (done) => {
       chai.request(`${process.env.API_URL}`)
         .put("partners/payments/" + partner_a._id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)

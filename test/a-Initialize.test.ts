@@ -77,16 +77,16 @@ describe("Initialize DB & Drop past Collections", () => {
     return userModel.deleteMany({});
   });
   before(() => {
-    return rimraf.sync(path.join(__dirname, '../assets/profile/'));
+    return rimraf.sync(path.join(__dirname, '../assets/static/'));
   });
   before(() => {
-    return fs.mkdirSync(path.join(__dirname, '../assets/profile/'));
+    return fs.mkdirSync(path.join(__dirname, '../assets/static/'));
   });
   before(() => {
-    return rimraf.sync(path.join(__dirname, '../assets/items/'));
+    return rimraf.sync(path.join(__dirname, '../assets/content/'));
   });
   before(() => {
-    return fs.mkdirSync(path.join(__dirname, '../assets/items/'));
+    return fs.mkdirSync(path.join(__dirname, '../assets/content/'));
   });
   before(() => {
     return userModel.create({

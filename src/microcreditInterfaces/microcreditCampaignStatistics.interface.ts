@@ -1,9 +1,10 @@
 interface MicrocreditCampaignStatistics {
   _id: string;
-  points: number;
+  tokens: number;
   users: number;
-  quantity: number;
   usersArray: [string];
+  count: number;
+  byDate?: [];
   type: string;
 }
 export default MicrocreditCampaignStatistics;

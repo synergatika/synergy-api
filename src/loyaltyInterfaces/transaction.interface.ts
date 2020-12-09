@@ -1,18 +1,19 @@
 interface LoyaltyTransaction {
-  _id: string;
+  _id?: string;
+
+  partner_id: string;
+  partner_name: string;
 
   member_id: string;
-  partner_id: string;
+
+  offer_id: string;
+  offer_title: string;
+
+  points: number;
+  amount: number;
+  quantity: number;
 
   type: string;
-  data: {
-    partner_name: string;
-    partner_email: string;
-    points: number,
-    amount: number,
-    offer_id: string;
-    offer_title: string
-  };
 
   tx: string;
   createdAt: Date;

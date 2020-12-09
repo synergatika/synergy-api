@@ -67,7 +67,8 @@ import blockchainStatus from '../middleware/items/status.middleware';
 /**
  * Helper's Instances
  */
-const uploadFile = FilesMiddleware.uploadPerson;
+// const uploadFile = FilesMiddleware.uploadPerson;
+const uploadFile = FilesMiddleware.uploadFile;
 const renameFile = FilesMiddleware.renameFile;
 const createSlug = SlugHelper.partnerSlug;
 
@@ -97,7 +98,7 @@ class AuthenticationController implements Controller {
       // authMiddleware, accessMiddleware.registerMember, validationParamsMiddleware(EmailDto),
       validationBodyMiddleware(CardDto), this.link_card);
     this.router.put(`${this.path}/link_email/:card`,
-      //   authMiddleware, accessMiddleware.registerMember, validationParamsMiddleware(CardDto), 
+      //   authMiddleware, accessMiddleware.registerMember, validationParamsMiddleware(CardDto),
       validationBodyMiddleware(EmailDto), this.link_email, emailService.userRegistration);
 
     this.router.post(`${this.path}/authenticate`,
@@ -112,10 +113,10 @@ class AuthenticationController implements Controller {
       uploadFile.single('imageURL'), validationBodyAndFileMiddleware(RegisterPartnerWithPasswordDto), this.authAutoRegisterPartner, this.registerAccount, this.askVerification, emailService.emailVerification);
 
     this.router.post(`${this.path}/register/member`, blockchainStatus,
-      //   authMiddleware, accessMiddleware.registerMember, validationBodyMiddleware(RegisterUserWithoutPasswordDto), 
+      //   authMiddleware, accessMiddleware.registerMember, validationBodyMiddleware(RegisterUserWithoutPasswordDto),
       this.registerMember, this.registerAccount, emailService.userRegistration);
     this.router.post(`${this.path}/register/partner`, blockchainStatus,
-      //   authMiddleware, accessMiddleware.registerPartner, uploadFile.single('imageURL'), 
+      //   authMiddleware, accessMiddleware.registerPartner, uploadFile.single('imageURL'),
       validationBodyAndFileMiddleware(RegisterPartnerWithoutPasswordDto), this.registerPartner, this.registerAccount, emailService.userRegistration);
 
     this.router.put(`${this.path}/set_pass/:email`,
@@ -149,11 +150,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-        $set: {
-          oneClickToken: token.token,
-          oneClickExpiration: token.expiresAt
-        }
-      }).catch());
+          $set: {
+            oneClickToken: token.token,
+            oneClickExpiration: token.expiresAt
+          }
+        }).catch());
       if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
       response.status(200).send({
@@ -276,10 +277,10 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-      $set: {
-        card: data.card
-      }
-    }).catch());
+        $set: {
+          card: data.card
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -312,12 +313,12 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       card: card
     }, {
-      $set: {
-        email: data.email,
-        password: hashedPassword,
-        account: account
-      }
-    }).catch());
+        $set: {
+          email: data.email,
+          password: hashedPassword,
+          account: account
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {
@@ -340,88 +341,88 @@ class AuthenticationController implements Controller {
   }
 
   private authAutoRegisterMember
-    = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-      const data: RegisterUserWithPasswordDto = request.body;
+  = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterUserWithPasswordDto = request.body;
 
-      if (await this.user.findOne({ email: data.email })) {
-        return next(new NotFoundException('USER_EXISTS'));
-      } else {
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-        const account: Account = serviceInstance.createWallet(data.email);
-        //      const account: Account = serviceInstance.createWallet(data.password);
+    if (await this.user.findOne({ email: data.email })) {
+      return next(new NotFoundException('USER_EXISTS'));
+    } else {
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      const account: Account = serviceInstance.createWallet(data.email);
+      //      const account: Account = serviceInstance.createWallet(data.password);
 
-        let error: Error, results: User;
-        [error, results] = await to(this.user.create({
-          ...data, password: hashedPassword,
-          access: 'member', account: account,
-          email_verified: false, pass_verified: true
-        }).catch());
-        if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+      let error: Error, results: User;
+      [error, results] = await to(this.user.create({
+        ...data, password: hashedPassword,
+        access: 'member', account: account,
+        email_verified: false, pass_verified: true
+      }).catch());
+      if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-        request.params.email = data.email;
-        response.locals = {
-          user: {
-            user_id: results._id,
-            access: 'member',
-            email: data.email,
-            password: data.password
-          }, account: account
-        }
-        next();
+      request.params.email = data.email;
+      response.locals = {
+        user: {
+          user_id: results._id,
+          access: 'member',
+          email: data.email,
+          password: data.password
+        }, account: account
       }
+      next();
     }
+  }
 
   private authAutoRegisterPartner
-    = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-      const data: RegisterPartnerWithPasswordDto = request.body;
-      const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
+  = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterPartnerWithPasswordDto = request.body;
+    const token = this.generateToken(parseInt(process.env.TOKEN_LENGTH), parseInt(process.env.TOKEN_EXPIRATION));
 
-      if (await this.user.findOne({ email: data.email })) {
-        return next(new NotFoundException('USER_EXISTS'));
-      } else {
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-        // const account: Account = serviceInstance.createWallet(data.password);
-        const account: Account = serviceInstance.createWallet(data.email);
-        const user_id = new ObjectId();
+    if (await this.user.findOne({ email: data.email })) {
+      return next(new NotFoundException('USER_EXISTS'));
+    } else {
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      // const account: Account = serviceInstance.createWallet(data.password);
+      const account: Account = serviceInstance.createWallet(data.email);
+      const user_id = new ObjectId();
 
-        let error: Error, results: User;
-        [error, results] = await to(this.user.create({
-          _id: user_id, ...data,
-          // payments: JSON.parse(data.payments), password: hashedPassword,
-          access: 'partner', account: account,
-          email_verified: false, pass_verified: true,
-          oneClickToken: token.token, oneClickExpiration: token.expiresAt,
-          slug: await createSlug(request),
-          imageURL: `${process.env.API_URL}assets/profile/${user_id}${request.file.filename}`
-        }).catch());
-        if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+      let error: Error, results: User;
+      [error, results] = await to(this.user.create({
+        _id: user_id, ...data,
+        // payments: JSON.parse(data.payments), password: hashedPassword,
+        access: 'partner', account: account,
+        email_verified: false, pass_verified: true,
+        oneClickToken: token.token, oneClickExpiration: token.expiresAt,
+        slug: await createSlug(request),
+        imageURL: `${process.env.API_URL}assets/profile/${user_id}${request.file.filename}`
+      }).catch());
+      if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-        await renameFile(
-          path.join(__dirname, '../assets/profile/' + request.file.filename),
-          path.join(__dirname, '../assets/profile/' + results._id + request.file.filename));
+      await renameFile(
+        path.join(__dirname, '../assets/profile/' + request.file.filename),
+        path.join(__dirname, '../assets/profile/' + results._id + request.file.filename));
 
-        request.params.email = data.email;
-        response.locals = {
-          res: {
+      request.params.email = data.email;
+      response.locals = {
+        res: {
+          code: 200,
+          body: {
             code: 200,
-            body: {
-              code: 200,
-              data: {
-                registration: true,
-                oneClickToken: token.token
-              },
-            }
-          },
-          user: {
-            user_id: results._id,
-            access: 'partner',
-            email: data.email,
-            password: data.password
-          }, account: account
-        }
-        next();
+            data: {
+              registration: true,
+              oneClickToken: token.token
+            },
+          }
+        },
+        user: {
+          user_id: results._id,
+          access: 'partner',
+          email: data.email,
+          password: data.password
+        }, account: account
       }
+      next();
     }
+  }
 
   private registerMember = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RegisterUserWithoutPasswordDto = request.body;
@@ -660,11 +661,11 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-      $set: {
-        account: user.account,
-        password: hashedPassword
-      }
-    }).catch());
+        $set: {
+          account: user.account,
+          password: hashedPassword
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Your password has been Updated",
@@ -693,12 +694,12 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-      $set: {
-        //      account: account,
-        pass_verified: true,
-        password: hashedPassword
-      }
-    }).catch());
+        $set: {
+          //      account: account,
+          pass_verified: true,
+          password: hashedPassword
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Your password has been Updated",
@@ -722,11 +723,11 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-      $set: {
-        verificationToken: token.token,
-        verificationExpiration: token.expiresAt
-      }
-    }).catch());
+        $set: {
+          verificationToken: token.token,
+          verificationExpiration: token.expiresAt
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals["res"] = (response.locals.res) ? {
@@ -770,14 +771,14 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       verificationToken: data.token
     }, {
-      $set: {
-        email_verified: true,
-      },
-      $unset: {
-        verificationToken: "",
-        verificationExpiration: "",
-      }
-    }).catch());
+        $set: {
+          email_verified: true,
+        },
+        $unset: {
+          verificationToken: "",
+          verificationExpiration: "",
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Your Email Address has been Verified",
@@ -801,11 +802,11 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-      $set: {
-        restorationToken: token.token,
-        restorationExpiration: token.expiresAt
-      }
-    }).catch());
+        $set: {
+          restorationToken: token.token,
+          restorationExpiration: token.expiresAt
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {
@@ -895,18 +896,18 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       restorationToken: data.token
     }, {
-      $set: {
-        password: hashedPassword,
-        //          account: account
-      },
-      // $push: {
-      //   previousAccounts: user.account
-      // },
-      $unset: {
-        restorationToken: "",
-        restorationExpiration: ""
-      }
-    }).catch());
+        $set: {
+          password: hashedPassword,
+          //          account: account
+        },
+        // $push: {
+        //   previousAccounts: user.account
+        // },
+        $unset: {
+          restorationToken: "",
+          restorationExpiration: ""
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -922,16 +923,16 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: request.user._id
     }, {
-      $set: {
-        activated: false
-      },
-      $push: {
-        deactivations: {
-          reason: data.reason,
-          createdAt: new Date()
+        $set: {
+          activated: false
+        },
+        $push: {
+          deactivations: {
+            reason: data.reason,
+            createdAt: new Date()
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {

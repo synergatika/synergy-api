@@ -1,28 +1,24 @@
 interface MicrocreditTransaction {
   _id?: string;
+  support_id?: string,
 
   partner_id: string;
+  partner_name: string;
+
   member_id: string;
-  method: number;
-  tokens: number;
 
   campaign_id: string;
+  campaign_title: string;
+  address: string;
+
+  method: number;
   payment_id?: string;
+  tokens: number;
 
-
-  support_id?: string,
   contractIndex?: number;
   contractRef: string;
 
   type: string;
-  // data: {
-  //   campaign_id: string;
-  //   campaign_title: string;
-  //   address: string,
-  //   support_id: string,
-  //   contractIndex: number;
-  //   tokens: number;
-  // };
 
   tx: string;
   createdAt: Date;

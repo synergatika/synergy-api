@@ -22,22 +22,28 @@ var partner_a = {
   subtitle: "This is subtitle for partner a!",
   description: "This is description for partner a! This is description for partner a! This is description for partner a! This is description for partner a!",
   timetable: "Monday to Friday 10.00 - 18.00",
-  contact: {
-    phone: 2101021010,
-    websiteURL: "http://partner_a.gr"
-  },
+  phone: 2101021010,
   address: {
     street: "Street A",
     city: "Athens",
     postCode: 10677,
     coordinates: ['37.985560', '23.732720']
   },
+  contacts: [{
+    slug: 'WEB',
+    name: 'Website',
+    value: 'www.partner_c.gr'
+  }, {
+    slug: 'YT',
+    name: 'Youtube',
+    value: 'youtube.com/partner_c'
+  }],
   payments: [{
     bic: 'PIRBGRAA',
     name: 'PiraeusBank',
     value: 'GR9701168245531283734574714'
   }, {
-    bic: 'PAYPAL',
+    bic: 'PAYPAL.ME',
     name: 'Paypal',
     value: 'partner@synergy.io'
   }],
@@ -63,16 +69,22 @@ var partner_b = {
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
   sector: "Recreation and Culture",
   imageFile: "partner_b.png",
-  contact: {
-    phone: 2102021020,
-    websiteURL: "https://www.merchnat_b.gr/"
-  },
+  phone: 2102021020,
   address: {
     street: "Street B",
     city: "Athens",
     postCode: 10439,
     coordinates: ['37.990800', '23.725320']
   },
+  contacts: [{
+    slug: 'FB',
+    name: 'Facebook',
+    value: 'facebook.com/partner_a'
+  }, {
+    slug: 'TW',
+    name: 'Twitter',
+    value: 'twitter.com/partner_a'
+  }],
   payments: [{
     bic: 'PIRBGRAA',
     name: 'PiraeusBank',
@@ -95,10 +107,23 @@ var partner_c = {
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
   sector: "Recreation and Culture",
   imageFile: "partner_c.png",
+  contacts: [{
+    slug: 'FB',
+    name: 'Facebook',
+    value: 'facebook.com/partner_b'
+  }, {
+    slug: 'IG',
+    name: 'Instagram',
+    value: 'instagram.com/partner_b'
+  }],
   payments: [{
     bic: 'PIRBGRAA',
     name: 'PiraeusBank',
     value: 'GR9715968245559633797851234'
+  }, {
+    bic: 'PAYPAL.ME',
+    name: 'PayPal.Me',
+    value: 'paypal.me/partner_c'
   }],
   oneClickToken: ''
 }
@@ -213,7 +238,7 @@ var event_a = {
   access: 'partners',
   title: 'First Event (Partners)',
   subtitle: 'This is subtitle for event A',
-  description: 'This is description for event A! This is description for event A! This is description for event A!',
+  content: 'This is content for event A! This is content for event A! This is content for event A!',
   dateTime: '',
   location: 'Location Event A',
   imageFile: 'event_a.jpg'
@@ -223,7 +248,7 @@ var event_b = {
   access: 'public',
   title: 'Second Event (Public)',
   subtitle: 'This is subtitle for event B',
-  description: 'This is description for event B! This is description for event B! This is description for event B!',
+  content: 'This is content for event B! This is content for event B! This is content for event B!',
   dateTime: '',
   location: 'Location Event B',
   imageFile: 'event_b.jpg',

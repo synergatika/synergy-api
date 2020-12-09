@@ -1,36 +1,36 @@
 import * as mongoose from 'mongoose';
 import LoyaltyTransaction from '../loyaltyInterfaces/transaction.interface';
 
-const dataSchema = new mongoose.Schema({
-  partner_name: String,
-  partner_email: String,
+// const dataSchema = new mongoose.Schema({
+//   partner_name: String,
+//   partner_email: String,
+//
+//   points: Number,
+//   amount: {
+//     type: Number,
+//     default: -1
+//   },
+//   offer_id: {
+//     type: String,
+//     default: '-1'
+//   },
+//   offer_title: {
+//     type: String,
+//     default: null
+//   },
+//   quantity: {
+//     type: Number,
+//     default: 0
+//   }
+// }, { _id: false });
 
-  points: Number,
-  amount: {
-    type: Number,
-    default: -1
-  },
-  offer_id: {
-    type: String,
-    default: '-1'
-  },
-  offer_title: {
-    type: String,
-    default: null
-  },
-  quantity: {
-    type: Number,
-    default: 0
-  }
-}, { _id: false });
-
-const infoSchema = new mongoose.Schema({
-  from_name: String,
-  from_email: String,
-  to_email: String,
-  points: Number,
-  amount: Number
-}, { _id: false });
+// const infoSchema = new mongoose.Schema({
+//   from_name: String,
+//   from_email: String,
+//   to_email: String,
+//   points: Number,
+//   amount: Number
+// }, { _id: false });
 
 const receiptSchema = new mongoose.Schema({
   transactionHash: String,
@@ -54,13 +54,33 @@ const receiptSchema = new mongoose.Schema({
 const loyaltyTransactionSchema = new mongoose.Schema({
 
   partner_id: String,
+  partner_name: String,
+
   member_id: String,
 
-  from_id: String,
-  to_id: String,
+  offer_id: {
+    type: String,
+    default: '-1'
+  },
+  offer_title: {
+    type: String,
+    default: null
+  },
 
-  info: infoSchema,
-  data: dataSchema,
+  points: Number,
+  amount: {
+    type: Number,
+    default: 0,
+  },
+  quantity: {
+    type: Number,
+    default: 0,
+  },
+  // from_id: String,
+  // to_id: String,
+
+  // info: infoSchema,
+  // data: dataSchema,
 
   tx: String,
   receipt: receiptSchema,

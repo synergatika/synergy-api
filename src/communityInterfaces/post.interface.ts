@@ -10,6 +10,7 @@ interface Post {
   title: string;
   subtitle: string;
   content: string;
+  contentFiles: string[];
   access: string;
 
   createdAt: Date;

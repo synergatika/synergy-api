@@ -1,3 +1,5 @@
+const instance = 'Synergatika.gr';
+
 class Translation {
 
   public content = {
@@ -33,25 +35,27 @@ class Translation {
         "button": ""
       },
       invitation: {
-        "subject": "You have been invited to Synergy Community",
+        "subject": `You have been invited to ${instance} Community`,
         "title": "You 've got an invitation",
         "body": "",
         "button": ""
       },
       activation: {
-        "subject": "Welcome to Synergatika Team",
+        "subject": `Welcome to ${instance} Team`,
         "title": "Please, follow the link, login and set up your profile",
         "body": "",
         "button": "Log in"
       },
       deactivation: {
         "subject": "Your account has been deactivated",
-        "title": "Contact to admin if you want to reactivated it",
+        "title": "Your account status has change to \'Non Active\'",
+        "by_you": "after you request.",
+        "by_admin": "after Administrator´s decision.",
         "body": "",
         "button": "Log in"
       },
       registration: {
-        "subject": "Welcome to Synergatika Team",
+        "subject": `Welcome to ${instance} Team`,
         "title": "An acount has been created for you.",
         "body": "Please, follow the link, and login with the password bellow to reset your password",
         "button": "Log In"
@@ -76,20 +80,26 @@ class Translation {
         "TOKENS_TEXT": "Amoount (€)",
         "IF_LINK": "If that doesn't work, copy and paste the following link in your browser:",
         "CHEERS": "Cheers",
-        "TEAM": "Synergatika Team",
+        "TEAM": `${instance} Team`,
         "FOOTER": "You received this email because we received a request for your account. If you didn't request you can safely delete this email."
       }
     },
     ["el-EL" as string]: {
+      internal_activation: {
+        "subject": "[internal] Δημιουργία Λογαρισμού",
+        "title": "Ένας νεός Λογαρισμός έχει δημιουργηθεί και χρειάζεται ενεργοποίηση",
+        "body": "",
+        "button": ""
+      },
       internal_communication: {
-        "subject": "Επικοινωνία από Χρήστη",
+        "subject": "[internal] Μήνυμα απο Χρήστη",
         "title": "Ένας χρήστης προσπαθεί να επικοινωνήσει με την Ομάδα",
         "body": "",
         "button": ""
       },
       internal_deactivation: {
-        "subject": "Ο Λογαριασμοός σας απενεργοποιήθηκε",
-        "title": "Ένας Χρήστης θέλει να απενεργοποιήσει το λογαρισμό του/της",
+        "subject": "[internal] Απενεργοποίηση Λογαριασμού",
+        "title": "Ένας Χρήστης απενεργοποίησε το λογαρισμό του/της",
         "body": "",
         "button": ""
       },
@@ -106,25 +116,27 @@ class Translation {
         "button": ""
       },
       invitation: {
-        "subject": "Έχεις πρόσκληση για την Κοινότητα του Synergy",
+        "subject": `Έχεις πρόσκληση για την Κοινότητα του ${instance}`,
         "title": "Μόλις έλαβες μια πρόσκληση",
         "body": "",
         "button": ""
       },
       activation: {
-        "subject": "Καλώς ήρθατε στην κοινότητα του Synergatika",
+        "subject": `Καλώς ήρθατε στην κοινότητα του ${instance}`,
         "title": "Κάντε σύνδεση και οργανώστε τις προσωπικές σας πληροφορίες.",
         "body": "",
         "button": "Είσοδος"
       },
       deactivation: {
         "subject": "Ο λογαριασμός σας έχει απενεργοποιηθεί",
-        "title": "Επικοινωνήστε με το διαχειριστή για να τον ενεργοποιήσετε ξανα",
+        "title": "Η κατάσταση του λογαρισμού σας άλλαξε σε \'Ανενεργή\' ",
+        "by_you": "έπειτα από δική σας απαίτηση.",
+        "by_admin": "έπειτα από απόφαση του Διαχειριστή.",
         "body": "",
         "button": "Eίσοδος"
       },
       registration: {
-        "subject": "Καλώς ήρθατε στην κοινότητα του Synergatika",
+        "subject": `Καλώς ήρθατε στην κοινότητα του ${instance}`,
         "title": "Κάντε σύνδεση και ανανεώστε τον προσωρινό Κωδικό Πρόσβασης",
         "body": "",
         "button": "Είσοδος"
@@ -149,7 +161,7 @@ class Translation {
         "TOKENS_TEXT": "Ποσό (€)",
         "IF_LINK": "Εαν δεν μεταφερθείτε αυτόματα στη σελίδα μας, κάντε αντιγραφή/επικόλληση τον παρακάτω συνδεσμο",
         "CHEERS": "Χαιρετισμούς",
-        "TEAM": "η Ομάδα του Synergy",
+        "TEAM": `η Ομάδα του ${instance}`,
         "FOOTER": "Λάβατε αυτό το μήνυμα ηλεκτρονικού ταχυδρομίου, καθώς στάλθηκε μια αίτηση για/από το συγκεκριμένο λογαριασμό. Έαν, η αίτηση δεν στάλθηκε από εσάς, μπορείται να διαγράψετε με ασφάλεια αυτο το μήνυμα."
       }
     }

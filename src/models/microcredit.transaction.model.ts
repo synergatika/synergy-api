@@ -1,20 +1,20 @@
 import * as mongoose from 'mongoose';
 import MicrocreditTransaction from '../microcreditInterfaces/transaction.interface';
 
-const dataSchema = new mongoose.Schema({
-  campaign_id: String,
-  campaign_title: String,
-  address: String,
-  support_id: String,
-  contractIndex: {
-    type: Number,
-    default: -1
-  },
-  tokens: {
-    type: Number,
-    default: -1
-  },
-}, { _id: false });
+// const dataSchema = new mongoose.Schema({
+//   campaign_id: String,
+//   campaign_title: String,
+//   address: String,
+//   support_id: String,
+//   contractIndex: {
+//     type: Number,
+//     default: -1
+//   },
+//   tokens: {
+//     type: Number,
+//     default: -1
+//   },
+// }, { _id: false });
 
 const logsSchema = new mongoose.Schema({
   logIndex: Number,
@@ -49,21 +49,28 @@ const receiptSchema = new mongoose.Schema({
 }, { _id: false });
 
 const microcreditTransactionSchema = new mongoose.Schema({
+  support_id: String,
+
   partner_id: String,
+  partner_name: String,
+
   member_id: String,
 
   campaign_id: String,
-  support_id: String,
+  campaign_title: String,
+  address: String,
+
+  method: String,
+  payment_id: String,
+  tokens: {
+    type: Number,
+    default: 0
+  },
+
   contractRef: String,
   contractIndex: {
     type: Number,
     default: -1
-  },
-  payment_id: String,
-  method: String,
-  tokens: {
-    type: Number,
-    default: 0
   },
   // data: dataSchema,
 
@@ -75,8 +82,8 @@ const microcreditTransactionSchema = new mongoose.Schema({
     enum: ['PromiseFund', 'ReceiveFund', 'RevertFund', 'SpendFund'],
   },
 }, {
-  timestamps: true
-});
+    timestamps: true
+  });
 
 const microcreditTransactionModel = mongoose.model<MicrocreditTransaction & mongoose.Document>('MicrocreditTransaction', microcreditTransactionSchema);
 export default microcreditTransactionModel;

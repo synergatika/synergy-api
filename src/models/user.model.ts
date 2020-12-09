@@ -1,24 +1,24 @@
 import * as mongoose from 'mongoose';
 import User from '../usersInterfaces/user.interface';
 
-const microcreditSupportSchema = new mongoose.Schema({
-  backer_id: String,
-  payment_id: String,
-  initialTokens: Number,
-  redeemedTokens: Number,
-  status: {
-    type: String,
-    enum: ['order', 'confirmation', 'complete'],
-    default: 'order'
-  },
-  method: {
-    type: String,
-    // enum: ['nationalBank', 'pireausBank', 'eurobank', 'alphaBank', 'paypal', 'store'],
-    default: 'store'
-  },
-  contractIndex: Number,
-  contractRef: String
-}, { timestamps: true });
+// const microcreditSupportSchema = new mongoose.Schema({
+//   backer_id: String,
+//   payment_id: String,
+//   initialTokens: Number,
+//   redeemedTokens: Number,
+//   status: {
+//     type: String,
+//     enum: ['order', 'confirmation', 'complete'],
+//     default: 'order'
+//   },
+//   method: {
+//     type: String,
+//     // enum: ['nationalBank', 'pireausBank', 'eurobank', 'alphaBank', 'paypal', 'store'],
+//     default: 'store'
+//   },
+//   contractIndex: Number,
+//   contractRef: String
+// }, { timestamps: true });
 
 const microcreditCampaignSchema = new mongoose.Schema({
   title: String,
@@ -50,7 +50,7 @@ const microcreditCampaignSchema = new mongoose.Schema({
   address: String,
   transactionHash: String,
 
-  supports: [microcreditSupportSchema]
+  //  supports: [microcreditSupportSchema]
 }, { timestamps: true });
 
 const offerSchema = new mongoose.Schema({
@@ -68,6 +68,7 @@ const postSchema = new mongoose.Schema({
   slug: String,
   subtitle: String,
   content: String,
+  contentFiles: [String],
   imageURL: String,
   access: {
     type: String,
@@ -80,7 +81,8 @@ const eventSchema = new mongoose.Schema({
   title: String,
   slug: String,
   subtitle: String,
-  description: String,
+  content: String,
+  contentFiles: [String],
   imageURL: String,
   access: {
     type: String,
@@ -99,20 +101,15 @@ const addressSchema = new mongoose.Schema({
 }, { _id: false });
 
 const contactSchema = new mongoose.Schema({
-  phone: String,
-  websiteURL: String
+  slug: String,
+  name: String,
+  value: String,
 }, { _id: false });
 
-const paymentsSchema = new mongoose.Schema({
+const paymentSchema = new mongoose.Schema({
   bic: String,
   name: String,
   value: String,
-
-  //nationalBank: String,
-  //pireausBank: String,
-  //eurobank: String,
-  //alphaBank: String,
-  //paypal: String
 }, { _id: false });
 
 const authSchema = new mongoose.Schema({
@@ -155,11 +152,13 @@ const userSchema = new mongoose.Schema({
   },
   description: String,
   subtitle: String,
+  phone: String,
 
-  contact: contactSchema,
   address: addressSchema,
   timetable: String,
-  payments: [paymentsSchema],
+
+  contacts: [contactSchema],
+  payments: [paymentSchema],
 
   email_verified: {
     type: Boolean,
@@ -193,8 +192,8 @@ const userSchema = new mongoose.Schema({
     default: 'itself'
   }
 }, {
-  timestamps: true
-});
+    timestamps: true
+  });
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 

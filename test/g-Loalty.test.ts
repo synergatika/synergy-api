@@ -19,8 +19,6 @@ describe("Loyalty", () => {
           _amount: 100
         })
         .end((err, res) => {
-          console.log(err);
-          console.log(res.body);
           res.should.have.status(201);
           res.body.should.be.a('object');
           res.body.should.have.property('data');
@@ -37,8 +35,6 @@ describe("Loyalty", () => {
           _amount: 100
         })
         .end((err, res) => {
-          console.log(err);
-          console.log(res.body);
           res.should.have.status(201);
           res.body.should.be.a('object');
           res.body.should.have.property('data');

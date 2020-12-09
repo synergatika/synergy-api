@@ -84,7 +84,7 @@ async function loyalty_activity(request: RequestWithUser, response: Response, ne
   {
     $group: {
       _id: '$member_id',
-      amount: { $sum: "$data.amount" },
+      amount: { $sum: "$amount" },
       stores: { "$addToSet": "$partner_id" },
       transactions: { "$addToSet": "$_id" }
     }
@@ -109,10 +109,6 @@ async function microcredit_balance(request: RequestWithUser, response: Response,
   const campaign: Campaign = response.locals.campaign;
   const member: User = response.locals.member;
 
-  console.log("Microcredit Balance"); console.log("member");
-  console.log(member);
-  console.log("campaign");
-  console.log(campaign);
   let error: Error, tokens: Tokens[];
   [error, tokens] = await to(microcreditTransactionModel.aggregate(
     [
@@ -142,8 +138,6 @@ async function microcredit_balance(request: RequestWithUser, response: Response,
   ).exec().catch());
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-  console.log("tokens");
-  console.log(tokens);
   response.locals["balance"] = {
     '_id': campaign.campaign_id,
     'earnedTokens': tokens.length ? tokens[0].earnedTokens : '0',
