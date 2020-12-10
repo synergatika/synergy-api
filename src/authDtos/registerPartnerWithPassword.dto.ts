@@ -1,18 +1,9 @@
-import { IsString, IsNumber, IsEmail, IsEnum, IsOptional } from 'class-validator';
-import RegisterUserWithPasswordDto from './registerUserWithPassword.dto';
+import { IsString } from 'class-validator';
+import RegisterPartnerWithoutPasswordDto from './registerPartnerWithoutPassword.dto';
 
-class RegisterPartnerWithPasswordDto extends RegisterUserWithPasswordDto {
-  @IsOptional()
+class RegisterPartnerWithPasswordDto extends RegisterPartnerWithoutPasswordDto {
   @IsString()
-  public imageURL: string;
-
-  @IsOptional()
-  @IsString()
-  public description: string;
-
-  @IsOptional()
-  @IsString()
-  public payments: string;
+  public password: string;
 }
 
 export default RegisterPartnerWithPasswordDto;

@@ -1,3 +1,5 @@
+
+
 import * as express from 'express';
 import to from 'await-to-ts';
 import { ObjectId } from 'mongodb';
@@ -8,6 +10,7 @@ var path = require('path');
  */
 import PartnerID from '../usersDtos/partner_id.params.dto';
 import CampaignID from '../microcreditDtos/campaign_id.params.dto';
+import SupportID from '../microcreditDtos/support_id.params.dto';
 import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
 
 /**
@@ -60,9 +63,26 @@ class MicrocreditSupportsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/:offset`, authMiddleware, this.readAllBackerSupports);
-    this.router.get(`${this.path}/:partner_id/:campaign_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, this.readAllSupportsByCampaign);
-    this.router.get(`${this.path}/:partner_id/:campaign_id/:_to`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, validationParamsMiddleware(IdentifierDto), usersMiddleware.member, this.readBackerSupportsByCampaign);
+    this.router.get(`${this.path}/:offset`, 
+    authMiddleware, 
+    this.readAllBackerSupports);
+
+    this.router.get(`${this.path}/:partner_id/:campaign_id`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo,
+      this.readAllSupportsByCampaign);
+
+    this.router.get(`${this.path}/:partner_id/:campaign_id/:_to`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo,
+      validationParamsMiddleware(IdentifierDto), usersMiddleware.member,
+      this.readBackerSupportsByCampaign);
+  }
+
+  private defineSupportStatus(a: any) {
+    if (a.currentTokens == 0) return 'completed';
+    else if (a.type == 'PromiseFund' || a.type == 'RevertFund') return 'unpaid';
+    else if (a.type == 'ReceiveFund' || a.type == 'SpendFund') return 'paid';
   }
 
   private readAllBackerSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -73,18 +93,53 @@ class MicrocreditSupportsController implements Controller {
       limit: number, skip: number, greater: number
     } = offsetParams(params);
 
-    let error: Error, supports: any[]; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, supports] = await to(this.user.aggregate([{
+    let error: Error, supports: any[];
+    [error, supports] = await to(this.transaction.aggregate([
+      {
+        $match: {
+          'member_id': (user._id).toString()
+        }
+      },
+      { $sort: { date: 1 } },
+      {
+        $group:
+        {
+          _id: "$support_id",
+          campaign_id: { '$first': "$campaign_id" },
+          initialTokens: { '$first': "$tokens" },
+          currentTokens: { '$sum': '$tokens' },
+          method: { '$first': "$method" },
+          payment_id: { '$first': "$payment_id" },
+          type: { '$last': "$type" },
+          createdAt: { '$first': "$createdAt" },
+        }
+      }
+    ]).exec().catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    const campaigns: Campaign[] = await this.readCampaigns(supports);
+    const supportsWithCampaign = supports.map((a: Support) =>
+      Object.assign({}, a,
+        {
+          status: this.defineSupportStatus(a),
+          campaign: (campaigns).find((b: Campaign) => (b.campaign_id).toString() === (a.campaign_id).toString()),
+        }
+      )
+    );
+
+    response.status(200).send({
+      data: supportsWithCampaign,
+      code: 200
+    });
+  }
+
+  private readCampaigns = async (supports: Support[]) => {
+    let error: Error, campaigns: Campaign[];
+    [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
-      $unwind: '$microcredit.supports'
-    }, {
       $match: {
-        $and: [
-          { 'microcredit.supports.backer_id': (user._id).toString() },
-          { 'microcredit.redeemEnds': { $gt: offset.greater } },
-          { $expr: { $gt: ["$microcredit.supports.initialTokens", (offset.greater > 0) ? "$microcredit.supports.redeemedTokens" : 0] } }
-        ]
+        'microcredit._id': { $in: supports.map(a => new ObjectId(a.campaign_id)) }
       }
     }, {
       $project: {
@@ -92,14 +147,19 @@ class MicrocreditSupportsController implements Controller {
         partner_id: '$_id',
         partner_slug: '$slug',
         partner_name: '$name',
+        partner_email: '$email',
         partner_imageURL: '$imageURL',
+
         partner_payments: '$payments',
         partner_address: '$address',
+        partner_contacts: '$contacts',
+        partner_phone: '$phone',
 
         campaign_id: '$microcredit._id',
         campaign_slug: '$microcredit.slug',
         campaign_imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
+        subtitle: '$microcredit.subtitle',
         terms: '$microcredit.terms',
         description: '$microcredit.description',
         category: '$microcredit.category',
@@ -116,69 +176,56 @@ class MicrocreditSupportsController implements Controller {
         startsAt: '$microcredit.startsAt',
         expiresAt: '$microcredit.expiresAt',
 
-        support_id: '$microcredit.supports._id',
-        backer_id: '$microcredit.supports.backer_id',
-        initialTokens: '$microcredit.supports.initialTokens',
-        redeemedTokens: '$microcredit.supports.redeemedTokens',
-        method: '$microcredit.supports.method',
-        payment_id: '$microcredit.supports.payment_id',
-        status: '$microcredit.supports.status',
+        createdAt: '$microcredit.createdAt',
+        updatedAt: '$microcredit.updatedAt'
+      }
+    }]).exec().catch());
+    if (error) return [];
 
-        createdAt: '$microcredit.supports.createdAt',
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    response.status(200).send({
-      data: supports,
-      code: 200
-    });
+    return campaigns;
   }
 
   private readAllSupportsByCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
-    let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, supports] = await to(this.user.aggregate([{
-      $unwind: '$microcredit'
-    }, {
-      $unwind: '$microcredit.supports'
-    }, {
-      $match: {
-        $and: [{
-          _id: new ObjectId(partner_id)
-        }, {
-          'microcredit._id': new ObjectId(campaign_id)
-        }]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        campaign_id: '$microcredit._id',
-        support_id: '$microcredit.supports._id',
-        backer_id: '$microcredit.supports.backer_id',
-        initialTokens: '$microcredit.supports.initialTokens',
-        redeemedTokens: '$microcredit.supports.redeemedTokens',
-        method: '$microcredit.supports.method',
-        payment_id: '$microcredit.supports.payment_id',
-        status: '$microcredit.supports.status',
-        createdAt: '$microcredit.supports.createdAt',
-      }
-    }, {
-      $sort: {
-        status: -1
-      }
-    }
-    ]).exec().catch());
+    let error: Error, supports: any[];
+    [error, supports] = await to(this.transaction.aggregate(
+      [
+        {
+          $match: {
+            $and: [{
+              partner_id: partner_id
+            }, {
+              'campaign_id': campaign_id
+            }]
+          }
+        },
+        { $sort: { date: 1 } },
+        {
+          $group:
+          {
+            _id: "$support_id",
+            support_id: { '$first': "$support_id" },
+            campaign_id: { '$first': "$campaign_id" },
+            partner_id: { '$first': "$partner_id" },
+            member_id: { '$first': "$member_id" },
+            initialTokens: { '$first': "$tokens" },
+            currentTokens: { '$sum': '$tokens' },
+            method: { '$first': "$method" },
+            payment_id: { '$first': "$payment_id" },
+
+            type: { '$last': "$type" },
+            transactions: { "$addToSet": { _id: "$_id", tokens: '$tokens', type: '$type', tx: '$tx', createdAt: '$createdAt' } },
+            createdAt: { '$first': "$createdAt" },
+          }
+        }
+      ]
+    ).exec().catch());
+
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
-      data: supports,
+      data: supports.map(o => { return { ...o, status: this.defineSupportStatus(o) } }),
       code: 200
     });
   }
@@ -188,58 +235,54 @@ class MicrocreditSupportsController implements Controller {
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
     const member: User = response.locals.member;
 
-    let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, supports] = await to(this.user.aggregate([{
-      $unwind: '$microcredit'
-    }, {
-      $unwind: '$microcredit.supports'
-    }, {
-      $match: {
-        $and: [{
-          _id: new ObjectId(partner_id)
-        }, {
-          'microcredit._id': new ObjectId(campaign_id)
-        }, {
-          'microcredit.supports.backer_id': (member._id).toString()
-        }]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        campaign_id: '$microcredit._id',
-        support_id: '$microcredit.supports._id',
-        backer_id: '$microcredit.supports.backer_id',
-        initialTokens: '$microcredit.supports.initialTokens',
-        redeemedTokens: '$microcredit.supports.redeemedTokens',
-        method: '$microcredit.supports.method',
-        payment_id: '$microcredit.supports.payment_id',
-        status: '$microcredit.supports.status',
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
+    let error: Error, supports: any[];
+    [error, supports] = await to(this.transaction.aggregate(
+      [
+        {
+          $match: {
+            $and: [{
+              'partner_id': partner_id
+            }, {
+              'campaign_id': campaign_id
+            }, {
+              'member_id': (member._id).toString()
+            }]
+          }
+        },
+        { $sort: { date: 1 } },
+        {
+          $group:
+          {
+            _id: "$support_id",
+            support_id: { '$first': '$support_id' },
+            partner_id: { '$first': '$partner_id' },
+            campaign_id: { '$first': '$campaign_id' },
+            currentTokens: { '$sum': '$tokens' },
+            initialTokens: { '$first': "$tokens" },
+            method: { '$first': "$method" },
+            payment_id: { '$first': "$payment_id" },
+            type: { '$last': "$type" },
+            createdAt: { '$first': "$createdAt" },
+          }
+        }
+      ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     const transactions: { _id: string, transactions: MicrocreditTransaction[] }[] = await this.readTransactions(partner_id, (member._id).toString(), campaign_id);
-    const supportsTransactions = supports.map((a: Support) =>
+    const supportWithTransactions = supports.map((a: Support) =>
       Object.assign({}, a,
         {
-          transactions: ((transactions).find((e: { _id: string, transactions: MicrocreditTransaction[] }) => (e._id).toString() === (a.support_id).toString())).transactions,
+          status: this.defineSupportStatus(a),
+          transactions: (transactions.find((e: { _id: string, transactions: MicrocreditTransaction[] }) => e._id === a.support_id)).transactions
         }
       )
     );
 
     response.status(200).send({
-      data: supportsTransactions,
+      data: supportWithTransactions,
       code: 200
     });
   }
-
-
 
   private readTransactions = async (partner_id: string, member_id: string, campaign_id: string) => {
 
@@ -247,19 +290,21 @@ class MicrocreditSupportsController implements Controller {
     [error, transactions] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
-          { member_id: member_id }, { partner_id: partner_id }, { 'data.campaign_id': campaign_id },
+          { 'member_id': member_id }, { 'partner_id': partner_id }, { 'campaign_id': campaign_id },
           { $or: [{ type: "PromiseFund" }, { type: "SpendFund" }, { type: "ReceiveFund" }, { type: "RevertFund" }] }
         ]
       }
-    },
-    {
+    }, {
       $group: {
-        _id: '$data.support_id',
-        transactions: { "$addToSet": { id: "$_id", data: '$data', member_id: '$member_id', partner_id: 'partner_id', type: '$type', tx: '$tx', createdAt: '$createdAt' } }
+        _id: '$support_id',
+        transactions: {
+          "$addToSet": {
+            id: "$_id", tokens: '$tokens', member_id: '$member_id', partner_id: 'partner_id', type: '$type', tx: '$tx', createdAt: '$createdAt'
+          }
+        }
       }
-    },
-    {
-      "$project": {
+    }, {
+      $project: {
         "transactions": 1
       }
     }]).exec().catch());

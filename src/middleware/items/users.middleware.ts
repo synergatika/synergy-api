@@ -21,7 +21,7 @@ import Partner from '../../usersInterfaces/partner.interface';
 import userModel from '../../models/user.model';
 
 async function member(request: RequestWithUser, response: Response, next: NextFunction) {
-  const _to: string = request.params._to;
+  const _to: string = request.params._to || request.user._id;
 
   let error: Error, member: Member;
   [error, member] = await to(userModel.findOne({
@@ -31,7 +31,6 @@ async function member(request: RequestWithUser, response: Response, next: NextFu
     "email": 1, "card": 1,
     "activated": 1
   }).catch());
-
 
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!member) {
@@ -52,6 +51,7 @@ async function partner(request: RequestWithUser, response: Response, next: NextF
     _id: new ObjectId(partner_id), access: 'partner'
   }).select({
     "_id": 1, "payments": 1,
+    "address": 1,
     "activated": 1
   }).catch());
 

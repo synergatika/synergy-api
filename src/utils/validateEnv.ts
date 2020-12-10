@@ -10,6 +10,7 @@ export default function validateEnv() {
     DB_PORT: port(),
     DB_USER: str(),
     EMAIL_FROM: str({ default: 'Synergy | A Social and Solidarity Economy Toolkit' }),
+    EMAIL_TO: str(),
     EMAIL_HOST: host(),
     EMAIL_PASS: str(),
     EMAIL_PORT: port({ default: 587 }),

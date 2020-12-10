@@ -22,9 +22,7 @@ const receiptSchema = new mongoose.Schema({
 
 const registrationTransactionSchema = new mongoose.Schema({
 
-  data: {
-    user_id: String
-  },
+  user_id: String,
 
   tx: String,
   receipt: receiptSchema,

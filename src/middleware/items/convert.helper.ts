@@ -41,23 +41,42 @@ class ConvertHelper {
   }
 
   static indexToPayment(index: number): string {
-    let payment_id: string;
-
     var _date = new Date();
     const _year = ("0" + _date.getFullYear()).slice(-2);
-    const _day = ("0" + (_date.getMonth() + 1)).slice(-2);
+    const _month = ("0" + (_date.getMonth() + 1)).slice(-2);
+    const _day = ("0" + _date.getDate()).slice(-2);
 
-    if ((index.toString()).length < 3) {
-      payment_id = _year + _day + ("0" + index).slice(-2);
-    } else if ((index.toString()).length < 5) {
-      payment_id = _year + ("2" + index).slice(-4);
-    } else if ((index.toString()).length < 7) {
-      payment_id = ("1" + index).slice(-6);
-    } else {
-      payment_id = index.toString();
-    }
+    // if ((index.toString()).length < 3) {
+    //   payment_id = _year + _day + ("0" + index).slice(-2);
+    // } else if ((index.toString()).length < 5) {
+    //   payment_id = _year + ("2" + index).slice(-4);
+    // } else if ((index.toString()).length < 7) {
+    //   payment_id = ("1" + index).slice(-6);
+    // } else {
+    //   payment_id = index.toString();
+    // }
 
-    return payment_id;
+    // var _date = new Date();
+    // payment_id = ((_date.toString()).slice(-7) + ('00' + index).slice(-3)).slice(-10);
+
+    return `${_year}${_month}${_day}-` + ("0000" + index).slice(-10);
+    // let payment_id: string;
+    //
+    // var _date = new Date();
+    // const _year = ("0" + _date.getFullYear()).slice(-2);
+    // const _day = ("0" + (_date.getMonth() + 1)).slice(-2);
+    //
+    // if ((index.toString()).length < 3) {
+    //   payment_id = _year + _day + ("0" + index).slice(-2);
+    // } else if ((index.toString()).length < 5) {
+    //   payment_id = _year + ("2" + index).slice(-4);
+    // } else if ((index.toString()).length < 7) {
+    //   payment_id = ("1" + index).slice(-6);
+    // } else {
+    //   payment_id = index.toString();
+    // }
+    //
+    // return payment_id;
   }
 }
 export default ConvertHelper;

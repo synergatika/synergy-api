@@ -8,7 +8,7 @@ chai.use(require('chai-http'));
 
 import * as fs from 'fs';
 
-import { imagesLocation, partner_a, partner_c, user_a, offer_a, offer_b, post_a, post_b, event_a, event_b, microcredit_a, microcredit_b, microcredit_c, offers, events } from './_structs.test';
+import { imagesLocation, partner_a, partner_c, user_a, offer_a, offer_b, post_a, post_b, post_c, event_a, event_b, microcredit_a, microcredit_b, microcredit_c, offers, events } from './_structs.test';
 
 describe("Partner - Offers, Posts, Events", () => {
   describe("Partner - Offers (/loyalty/offers)", () => {
@@ -175,6 +175,23 @@ describe("Partner - Offers, Posts, Events", () => {
           done();
         });
     });
+    it("6. should create a post - 201 Created", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("posts/")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .field('title', post_c.title)
+        .field('subtitle', post_c.subtitle)
+        .field('content', post_c.content)
+        .field('contentFiles', post_c.contentFiles.join(''))
+        .field('access', post_c.access)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`), `${post_b.imageFile}`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
   });
   describe("Partner - Events (/events)", () => {
     var _date = new Date();
@@ -189,7 +206,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_a.title)
         .field('subtitle', event_a.subtitle)
-        .field('description', event_a.description)
+        .field('content', event_a.content)
         .field('access', event_a.access)
         .field('location', event_a.location)
         .field('dateTime', _newDate.toString())
@@ -201,7 +218,7 @@ describe("Partner - Offers, Posts, Events", () => {
           done();
         });
     });
-    it("2. should NOT create an event | as description is missing - 400 Bad Request", (done) => {
+    it("2. should NOT create an event | as content is missing - 400 Bad Request", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("events/")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
@@ -223,7 +240,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .post("events/")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
-        .field('description', event_b.description)
+        .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
@@ -266,7 +283,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
         .field('subtitle', event_b.subtitle)
-        .field('description', event_b.description)
+        .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
@@ -284,7 +301,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
         .field('subtitle', event_b.subtitle)
-        .field('description', event_b.description)
+        .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
@@ -313,7 +330,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
         .field('suntitle', event_b.title)
-        .field('description', event_b.description)
+        .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', _newDate2.toString())
@@ -517,31 +534,31 @@ describe("Partner - Offers, Posts, Events", () => {
           done();
         });
     });
-    it("9. should create/publish one-click campaign | 200 Updated", (done) => {
-      chai.request(`${process.env.API_URL}`)
-        .post("microcredit/campaigns/one-click/" + partner_c.oneClickToken)
-        .field('title', microcredit_c.title)
-        .field('terms', microcredit_c.terms)
-        .field('access', microcredit_c.access)
-        .field('description', microcredit_c.description)
-        .field('category', microcredit_c.category)
-        .field('subtitle', microcredit_c.subtitle)
-        .field('quantitative', microcredit_c.quantitative)
-        .field('stepAmount', microcredit_c.stepAmount)
-        .field('minAllowed', microcredit_c.minAllowed)
-        .field('maxAllowed', microcredit_c.maxAllowed)
-        .field('maxAmount', microcredit_c.maxAmount)
-        .field('redeemStarts', _newDate3.toString())
-        .field('redeemEnds', _newDate4.toString())
-        .field('startsAt', _newDate1.toString())
-        .field('expiresAt', _newDate2.toString())
-        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_c.imageFile}`), `${microcredit_c.imageFile}`)
-        .end((err, res) => {
-          res.should.have.status(200);
-          res.body.should.be.a('object');
-          res.body.should.have.property('message');
-          done();
-        });
-    });
+    // it("9. should create/publish one-click campaign | 200 Updated", (done) => {
+    //   chai.request(`${process.env.API_URL}`)
+    //     .post("microcredit/campaigns/one-click/" + partner_c.oneClickToken)
+    //     .field('title', microcredit_c.title)
+    //     .field('terms', microcredit_c.terms)
+    //     .field('access', microcredit_c.access)
+    //     .field('description', microcredit_c.description)
+    //     .field('category', microcredit_c.category)
+    //     .field('subtitle', microcredit_c.subtitle)
+    //     .field('quantitative', microcredit_c.quantitative)
+    //     .field('stepAmount', microcredit_c.stepAmount)
+    //     .field('minAllowed', microcredit_c.minAllowed)
+    //     .field('maxAllowed', microcredit_c.maxAllowed)
+    //     .field('maxAmount', microcredit_c.maxAmount)
+    //     .field('redeemStarts', _newDate3.toString())
+    //     .field('redeemEnds', _newDate4.toString())
+    //     .field('startsAt', _newDate1.toString())
+    //     .field('expiresAt', _newDate2.toString())
+    //     .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_c.imageFile}`), `${microcredit_c.imageFile}`)
+    //     .end((err, res) => {
+    //       res.should.have.status(200);
+    //       res.body.should.be.a('object');
+    //       res.body.should.have.property('message');
+    //       done();
+    //     });
+    // });
   });
 });

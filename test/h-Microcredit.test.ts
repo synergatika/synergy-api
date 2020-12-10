@@ -6,7 +6,7 @@ chai.should();
 chai.use(require('chai-as-promised'));
 chai.use(require('chai-http'));
 
-import { partner_a, user_a, microcredit_a, microcredit_b } from './_structs.test';
+import { partner_a, user_a, microcredit_a, microcredit_b, user_b } from './_structs.test';
 var a1_support_id: string = '';
 var a2_support_id: string = '';
 var a3_support_id: string = '';
@@ -176,7 +176,7 @@ describe("Microcredit", () => {
     it("12. should NOT promise fund | as less than min allowed - 404 Not Found", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("microcredit/earn/" + partner_a._id + "/" + microcredit_b._id)
-        .set('Authorization', 'Bearer ' + user_a.authToken)
+        .set('Authorization', 'Bearer ' + user_b.authToken)
         .send({
           method: 'PIRBGRAA',
           _amount: 10,

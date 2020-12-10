@@ -10,10 +10,11 @@ interface Partner extends User {
   subtitle: string;
   description: string;
   timetable: string;
+  phone: string;
 
-  contact: PartnerContact;
   address: PartnerAddress;
   payments: [PartnerPayment];
+  contacts: [PartnerContact];
 }
 
 export default Partner;

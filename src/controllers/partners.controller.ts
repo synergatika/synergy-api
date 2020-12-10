@@ -8,6 +8,7 @@ import path from 'path';
  */
 import PartnerDto from '../usersDtos/partner.dto';
 import PartnerID from '../usersDtos/partner_id.params.dto';
+import PartnerPaymentsDto from '../usersDtos/partner_payments.dto';
 
 /**
  * Exceptions
@@ -25,6 +26,7 @@ import User from '../usersInterfaces/user.interface';
 /**
  * Middleware
  */
+import validationBodyMiddleware from '../middleware/validators/body.validation';
 import validationBodyAndFileMiddleware from '../middleware/validators/body_file.validation';
 import validationParamsMiddleware from '../middleware/validators/params.validation';
 import authMiddleware from '../middleware/auth/auth.middleware';
@@ -36,7 +38,8 @@ import OffsetHelper from '../middleware/items/offset.helper';
 /**
  * Helper's Instance
  */
-const uploadFile = FilesMiddleware.uploadPerson;
+const uploadFile = FilesMiddleware.uploadFile;
+const existFile = FilesMiddleware.existsFile;
 const deleteFile = FilesMiddleware.deleteFile;
 const createSlug = SlugHelper.partnerSlug;
 const offsetParams = OffsetHelper.offsetLimit;
@@ -58,7 +61,23 @@ class PartnersController implements Controller {
   private initializeRoutes() {
     this.router.get(`${this.path}/public/:offset`, this.readPartners);
     this.router.get(`${this.path}/:partner_id`, validationParamsMiddleware(PartnerID), this.readPartnerInfo);
-    this.router.put(`${this.path}/:partner_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(PartnerID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(PartnerDto), this.updatePartnerInfo);
+
+    this.router.put(`${this.path}/:partner_id`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(PartnerID), accessMiddleware.belongsTo,
+      this.declareStaticPath, uploadFile.single('imageURL'),
+      validationBodyAndFileMiddleware(PartnerDto), this.updatePartnerInfo);
+
+    this.router.put(`${this.path}/payments/:partner_id`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(PartnerID), accessMiddleware.belongsTo,
+      validationBodyMiddleware(PartnerPaymentsDto), this.updatePartnerPayment);
+  }
+
+  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    request.params['path'] = 'static';
+    request.params['type'] = 'partner';
+    next();
   }
 
   private readPartners = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -71,11 +90,19 @@ class PartnersController implements Controller {
     [error, partners] = await to(this.user.find({
       access: 'partner'
     }).select({
-      "id": 1, "email": 1,
-      "name": 1, "slug": 1, "imageURL": 1,
-      "sector": 1, "description": 1, "subtitle": 1,
-      "contact": 1, "address": 1,
-      "payments": 1, "timetable": 1,
+      "id": 1,
+      "email": 1,
+      "name": 1,
+      "slug": 1,
+      "imageURL": 1,
+      "sector": 1,
+      "description": 1,
+      "subtitle": 1,
+      "timetable": 1,
+      "phone": 1,
+      "address": 1,
+      "contacts": 1,
+      "payments": 1,
       "createdAt": 1
     }).sort('-createdAt')
       .limit(offset.limit).skip(offset.skip)
@@ -98,11 +125,19 @@ class PartnersController implements Controller {
         { slug: partner_id }
       ]
     }).select({
-      "id": 1, "email": 1,
-      "name": 1, "slug": 1, "imageURL": 1,
-      "sector": 1, "description": 1, "subtitle": 1,
-      "contact": 1, "address": 1,
-      "payments": 1, "timetable": 1,
+      "id": 1,
+      "email": 1,
+      "name": 1,
+      "slug": 1,
+      "imageURL": 1,
+      "sector": 1,
+      "description": 1,
+      "subtitle": 1,
+      "timetable": 1,
+      "phone": 1,
+      "address": 1,
+      "contacts": 1,
+      "payments": 1,
       "createdAt": 1
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -118,41 +153,65 @@ class PartnersController implements Controller {
     const data: PartnerDto = request.body;
     const user: User = request.user;
 
-    if ((user.imageURL && (user.imageURL).includes(partner_id)) && request.file) {
-      // if (user.imageURL && request.file) {
-      var imageFile = (user.imageURL).split('assets/profile/');
-      await deleteFile(path.join(__dirname, '../assets/profile/' + imageFile[1]));
+    if (user['imageURL'] && request.file) {
+      var imageFile = (user['imageURL']).split('assets/static/');
+      const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+      if (existFile(file)) await deleteFile(file);
     }
+    // if ((user.imageURL && (user.imageURL).includes(partner_id)) && request.file) {
+    //   // if (user.imageURL && request.file) {
+    //   var imageFile = (user.imageURL).split('assets/profile/');
+    //   await deleteFile(path.join(__dirname, '../assets/profile/' + imageFile[1]));
+    // }
 
     let error: Error, partner: Partner;
     [error, partner] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-      $set: {
-        'name': data.name,
-        'slug': await createSlug(request),
-        'subtile': data.subtitle,
-        'description': data.description,
-        'imageURL': (request.file) ? `${process.env.API_URL}assets/profile/${request.file.filename}` : user.imageURL,
-        'sector': data.sector,
-        'address.city': data.city,
-        'address.postCode': data.postCode,
-        'address.street': data.street,
-        'address.coordinates': [data.lat, data.long],
-        'contact.phone': data.phone,
-        'contact.websiteURL': data.websiteURL,
-        'payments': JSON.parse(data.payments),
-        // 'payments.nationalBank': data.nationalBank,
-        // 'payments.pireausBank': data.pireausBank,
-        // 'payments.eurobank': data.eurobank,
-        // 'payments.alphaBank': data.alphaBank,
-        // 'payments.paypal': data.paypal,
-        'timetable': data.timetable,
-      }
+        $set: {
+          'name': data.name,
+          'slug': await createSlug(request),
+          'subtile': data.subtitle,
+          'description': data.description,
+          'imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : user.imageURL,
+          'sector': data.sector,
+          'phone': data.phone,
+          'address.city': data.city,
+          'address.postCode': data.postCode,
+          'address.street': data.street,
+          'address.coordinates': [data.lat, data.long],
+          'contact.phone': data.phone,
+          'contacts': JSON.parse(data.contacts),
+          'timetable': data.timetable
+        }
+      }, {
+        "fields": { "name": 1, "imageURL": 1 },
+        "new": true
+      }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    response.status(200).send({
+      data: partner,
+      code: 200
+    })
+  }
+
+  private updatePartnerPayment = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const partner_id: PartnerID["partner_id"] = request.params.partner_id;
+    const data: PartnerPaymentsDto = request.body;
+    const user: User = request.user;
+
+    let error: Error, partner: Partner;
+    [error, partner] = await to(this.user.findOneAndUpdate({
+      _id: user._id
     }, {
-      "fields": { "name": 1, "imageURL": 1 },
-      "new": true
-    }).catch());
+        $set: {
+          'payments': data.payments,
+        }
+      }, {
+        "fields": { "name": 1, "imageURL": 1 },
+        "new": true
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({

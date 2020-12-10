@@ -59,7 +59,7 @@ class UserController implements Controller {
 
   private initializeRoutes() {
     this.router.get(`${this.path}/:access/:offset`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(AccessDto), this.readUsers);
-    this.router.put(`${this.path}/reactivate/:user_id`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID), this.reactivateUser, emailService.accountReactivation);
+    // this.router.put(`${this.path}/reactivate/:user_id`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID), this.reactivateUser, emailService.accountReactivation);
   }
 
   private readUsers = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -86,40 +86,40 @@ class UserController implements Controller {
     });
   }
 
-  private reactivateUser = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const user_id: UserID["user_id"] = request.params.user_id;
+  // private reactivateUser = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   const user_id: UserID["user_id"] = request.params.user_id;
 
-    if (await this.user.findOne({ _id: user_id, activated: true })) {
-      next(new NotFoundException("USER_ACTIVATED"));
-    }
+  //   if (await this.user.findOne({ _id: user_id, activated: true })) {
+  //     next(new NotFoundException("USER_ACTIVATED"));
+  //   }
 
-    let error: Error, user: User; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, user] = await to(this.user.findOneAndUpdate({
-      _id: user_id
-    }, {
-      $set: {
-        'activated': true
-      }
-    }, {
-      "fields": { "email": 1, "name": 1, "acceess": 1 },
-      "new": true
-    }).catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+  //   let error: Error, user: User; // results = {"n": 1, "nModified": 1, "ok": 1}
+  //   [error, user] = await to(this.user.findOneAndUpdate({
+  //     _id: user_id
+  //   }, {
+  //     $set: {
+  //       'activated': true
+  //     }
+  //   }, {
+  //     "fields": { "email": 1, "name": 1, "acceess": 1 },
+  //     "new": true
+  //   }).catch());
+  //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    response.locals = {
-      res: {
-        code: 200,
-        body: {
-          message: "Account has been successfully activated.",
-          code: 200
-        }
-      },
-      user: {
-        email: user.email
-      }
-    };
-    next();
-  }
+  //   response.locals = {
+  //     res: {
+  //       code: 200,
+  //       body: {
+  //         message: "Account has been successfully activated.",
+  //         code: 200
+  //       }
+  //     },
+  //     user: {
+  //       email: user.email
+  //     }
+  //   };
+  //   next();
+  // }
 }
 
 export default UserController;

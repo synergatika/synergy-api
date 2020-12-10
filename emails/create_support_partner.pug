@@ -49,24 +49,11 @@ table(border='0' cellpadding='0' cellspacing='0' width='100%')
         // start copy
         tr
           td(align='left' bgcolor='#ffffff' style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;")
-            p(style='margin: 0;') #{title} #{reason}
-        // end copy
-        // start button
-        tr
-          td(align='left' bgcolor='#ffffff')
-            table(border='0' cellpadding='0' cellspacing='0' width='100%')
-              tr
-                td(align='center' bgcolor='#ffffff' style='padding: 12px;')
-                  table(border='0' cellpadding='0' cellspacing='0')
-                    tr
-                      td(align='center' bgcolor='#1a82e2' style='border-radius: 6px;')
-                        a(href=link, target='_blank', style="display: inline-block; padding: 16px 36px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;") #{button}
-        // end button
-        // start copy
-        tr
-          td(align='left' bgcolor='#ffffff' style="padding: 24px; font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 24px;")
-            p(style='margin: 0;') #{IF_LINK}
-            p(style='margin: 0;') #{link}
+            p(style='margin: 0;') #{title}
+            p(style='margin: 0;') #{CAMPAIGN_TEXT}: #{campaign}
+            p(style='margin: 0;') #{PAYMENT_TEXT}: #{payment}
+            p(style='margin: 0;') #{METHOD_TEXT}: #{method}
+            p(style='margin: 0;') #{TOKENS_TEXT}: #{tokens}
         // end copy
         // start copy
         tr

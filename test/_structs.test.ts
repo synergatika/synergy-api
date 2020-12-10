@@ -22,22 +22,28 @@ var partner_a = {
   subtitle: "This is subtitle for partner a!",
   description: "This is description for partner a! This is description for partner a! This is description for partner a! This is description for partner a!",
   timetable: "Monday to Friday 10.00 - 18.00",
-  contact: {
-    phone: 2101021010,
-    websiteURL: "http://partner_a.gr"
-  },
+  phone: 2101021010,
   address: {
     street: "Street A",
     city: "Athens",
     postCode: 10677,
     coordinates: ['37.985560', '23.732720']
   },
+  contacts: [{
+    slug: 'WEB',
+    name: 'Website',
+    value: 'www.partner_c.gr'
+  }, {
+    slug: 'YT',
+    name: 'Youtube',
+    value: 'youtube.com/partner_c'
+  }],
   payments: [{
     bic: 'PIRBGRAA',
     name: 'PiraeusBank',
     value: 'GR9701168245531283734574714'
   }, {
-    bic: 'PAYPAL',
+    bic: 'PAYPAL.ME',
     name: 'Paypal',
     value: 'partner@synergy.io'
   }],
@@ -63,16 +69,22 @@ var partner_b = {
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
   sector: "Recreation and Culture",
   imageFile: "partner_b.png",
-  contact: {
-    phone: 2102021020,
-    websiteURL: "https://www.merchnat_b.gr/"
-  },
+  phone: 2102021020,
   address: {
     street: "Street B",
     city: "Athens",
     postCode: 10439,
     coordinates: ['37.990800', '23.725320']
   },
+  contacts: [{
+    slug: 'FB',
+    name: 'Facebook',
+    value: 'facebook.com/partner_a'
+  }, {
+    slug: 'TW',
+    name: 'Twitter',
+    value: 'twitter.com/partner_a'
+  }],
   payments: [{
     bic: 'PIRBGRAA',
     name: 'PiraeusBank',
@@ -95,10 +107,23 @@ var partner_c = {
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
   sector: "Recreation and Culture",
   imageFile: "partner_c.png",
+  contacts: [{
+    slug: 'FB',
+    name: 'Facebook',
+    value: 'facebook.com/partner_b'
+  }, {
+    slug: 'IG',
+    name: 'Instagram',
+    value: 'instagram.com/partner_b'
+  }],
   payments: [{
     bic: 'PIRBGRAA',
     name: 'PiraeusBank',
     value: 'GR9715968245559633797851234'
+  }, {
+    bic: 'PAYPAL.ME',
+    name: 'PayPal.Me',
+    value: 'paypal.me/partner_c'
   }],
   oneClickToken: ''
 }
@@ -209,11 +234,20 @@ var post_b = {
   imageFile: 'post_b.png'
 }
 
+var post_c = {
+  access: 'public',
+  title: 'Rich Editor Post',
+  subtitle: 'A subtitle for Post',
+  content: `<h2>What is Lorem Ipsum?</h2><figure class="image image-style-side"><img src="http://localhost:3000/assets/content/post_1607530836341.jpg"><figcaption>Image Subtitle</figcaption></figure><p><strong>Lorem Ipsum</strong> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p><ul><li>One</li><li>Two</li><li>Three</li></ul><h2>Why do we use it?</h2><p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of&nbsp;</p><ol><li>One</li><li>Two&nbsp;</li><li>Three</li></ol><p>using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).</p><figure class="image"><img src="http://localhost:3000/assets/content/post_1607530836372.jpg"></figure><h2>Where does it come from?</h2><p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.</p><figure class="table"><table><tbody><tr><td>Name</td><td>Phone</td><td>Address</td></tr><tr><td>Chris Lorem</td><td>222222222</td><td>Here &amp; There 50, Athens 11111</td></tr></tbody></table></figure><p>The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.</p><p>&nbsp;</p><blockquote><p>There are many variations of passages of Lorem Ipsum available, but the majority</p></blockquote>`,
+  contentFiles: ['http://localhost:3000/assets/content/post_1607530836341.jpg', 'http://localhost:3000/assets/content/post_1607530836372.jpg'],
+  imageFile: 'post_b.png'
+}
+
 var event_a = {
   access: 'partners',
   title: 'First Event (Partners)',
   subtitle: 'This is subtitle for event A',
-  description: 'This is description for event A! This is description for event A! This is description for event A!',
+  content: 'This is content for event A! This is content for event A! This is content for event A!',
   dateTime: '',
   location: 'Location Event A',
   imageFile: 'event_a.jpg'
@@ -223,7 +257,7 @@ var event_b = {
   access: 'public',
   title: 'Second Event (Public)',
   subtitle: 'This is subtitle for event B',
-  description: 'This is description for event B! This is description for event B! This is description for event B!',
+  content: 'This is content for event B! This is content for event B! This is content for event B!',
   dateTime: '',
   location: 'Location Event B',
   imageFile: 'event_b.jpg',
@@ -396,7 +430,7 @@ export {
   partner_a, partner_b, partner_c,
   user_a, user_b, user_c, user_d, user_e, user_f,
   offer_a, offer_b, offer_c,
-  post_a, post_b,
+  post_a, post_b, post_c,
   event_a, event_b,
   microcredit_a, microcredit_b, microcredit_c,
   content_a,

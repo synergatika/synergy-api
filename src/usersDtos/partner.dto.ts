@@ -22,8 +22,6 @@ class PartnerDto {
   @IsOptional()
   @IsString()
   public sector: string;
-  // @IsEnum(Sector)
-  // public sector: Sector;
 
   @IsOptional()
   @IsString()
@@ -63,30 +61,6 @@ class PartnerDto {
 
   @IsOptional()
   @IsString()
-  public websiteURL: string;
-
-  @IsOptional()
-  @IsString()
-  public payments: string;
-
-  // @IsOptional()
-  // @IsString()
-  // public nationalBank: string;
-  //
-  // @IsOptional()
-  // @IsString()
-  // public pireausBank: string;
-  //
-  // @IsOptional()
-  // @IsString()
-  // public eurobank: string;
-  //
-  // @IsOptional()
-  // @IsString()
-  // public alphaBank: string;
-  //
-  // @IsOptional()
-  // @IsString()
-  // public paypal: string;
+  public contacts: string;
 }
 export default PartnerDto;

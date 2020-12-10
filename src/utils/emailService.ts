@@ -25,9 +25,9 @@ class EmailService {
 
 
   /** To add */
-  // Email: To member (when orders a microcredit campaign).
-  // Email: To partner (when a member orders a microcredit campaign).
-  // Email: To member (when a campaign status has change - order or paid).
+  // Email: To member (when orders a microcredit campaign). [OK]
+  // Email: To partner (when a member orders a microcredit campaign). [OK]
+  // Email: To member (when a campaign status has change - order or paid). [OK]
   // Email: To member (when the redeeming period starts).
   // Email: To member (when the redeeming period ends).
   // Email: To member (when redeem an order or part of an order).
@@ -35,6 +35,11 @@ class EmailService {
 
   private translation = (lang: string) => {
     return (new Translation).content[lang];
+  }
+
+  private defaultLang = (): string => {
+    return 'el-EL';
+    // return 'en-EN';
   }
 
   private emailSender = (options: { type: any; locals: any; from: any; to: any; subject: any; }) => {
@@ -50,12 +55,42 @@ class EmailService {
       }).catch(error => { return error });
   }
 
-  public emailVerification = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  /**
+  * Invitation(Registration) to User / Email Verification / Password Restoration
+  */
+  public userRegistration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
-      from: process.env.EMAIL_FROM,
+      from: `${process.env.EMAIL_FROM}`,
+      to: data.user.email,
+      subject: this.translation(lang).registration.subject,//'New Account',
+      html: '',
+      type: 'registration',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).registration,
+        logo_url: `${process.env.LOGO_URL}`,
+        home_page: `${process.env.APP_URL}`,
+        link: `${process.env.APP_URL}auth/login/`,
+        password: data.extras.tempPassword
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    response.status(data.res.code).send(data.res.body);
+  }
+
+  public emailVerification = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
       subject: this.translation(lang).verification.subject,//'Email Verification',
       html: '',
@@ -63,9 +98,9 @@ class EmailService {
       locals: {
         ...this.translation(lang).common,
         ...this.translation(lang).verification,
-        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        link: `${process.env.APP_URL}auth/verify-email/${data.token}`
+        link: `${process.env.APP_URL}auth/verify-email/${data.extras.token}`
       },
     }
 
@@ -78,10 +113,10 @@ class EmailService {
 
   public passwordRestoration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
-      from: process.env.EMAIL_FROM,
+      from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
       subject: this.translation(lang).restoration.subject,//'Password Restoration',
       html: '',
@@ -89,9 +124,9 @@ class EmailService {
       locals: {
         ...this.translation(lang).common,
         ...this.translation(lang).restoration,
-        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        link: `${process.env.APP_URL}auth/reset-password/${data.token}`
+        link: `${process.env.APP_URL}auth/reset-password/${data.extras.token}`
       },
     }
 
@@ -102,48 +137,23 @@ class EmailService {
     response.status(data.res.code).send(data.res.body);
   }
 
-  public userRegistration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  /**
+  * Actiovation Account / Deactivation Account
+  */
+  public accountActivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
-
-    if (data.user.email) {
-      let options = {
-        from: process.env.EMAIL_FROM,
-        to: data.user.email,
-        subject: this.translation(lang).registration.subject,//'New Account',
-        html: '',
-        type: 'registration',
-        locals: {
-          ...this.translation(lang).common,
-          ...this.translation(lang).registration,
-          logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
-          home_page: `${process.env.APP_URL}`,
-          link: `${process.env.APP_URL}auth/login/`,
-          password: data.user.password
-        },
-      }
-
-      let error, results: object = {};
-      [error, results] = await to(this.emailSender(options));
-      if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
-    }
-    response.status(data.res.code).send(data.res.body);
-  }
-
-  public accountReactivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
-      from: process.env.EMAIL_FROM,
+      from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
-      subject: this.translation(lang).reactivation.subject,//'Account Activation',
+      subject: this.translation(lang).activation.subject,//'Account Activation',
       html: '',
-      type: 'reactivation',
+      type: 'activation',
       locals: {
         ...this.translation(lang).common,
-        ...this.translation(lang).reactivation,
-        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        ...this.translation(lang).activation,
+        logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
         link: `${process.env.APP_URL}auth/login/`
       },
@@ -158,21 +168,22 @@ class EmailService {
 
   public accountDeactivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
-      from: process.env.EMAIL_FROM,
-      to: process.env.EMAIL_FROM,
-      subject: this.translation(lang).deactivation.subject,//'Account Deactivation',
+      from: `${process.env.EMAIL_FROM}`,
+      to: data.user.email,
+      subject: this.translation(lang).deactivation.subject,//'Account Activation',
       html: '',
       type: 'deactivation',
       locals: {
         ...this.translation(lang).common,
         ...this.translation(lang).deactivation,
-        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        email: data.user.email,
-        reason: `${data.reason}`
+        link: `${process.env.APP_URL}auth/login/`,
+        reason: (data.decision == 'admin') ?
+          `${this.translation(lang).deactivation.by_admin}` : `${this.translation(lang).deactivation.by_you}`
       },
     }
 
@@ -183,12 +194,100 @@ class EmailService {
     response.status(data.res.code).send(data.res.body);
   }
 
-  public userInvitation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  /** (internal) Activation / Deactivation */
+  public internalActivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
-      from: process.env.EMAIL_FROM,
+      from: `${process.env.EMAIL_FROM}`,
+      to: `${process.env.EMAIL_FROM}`,
+      subject: this.translation(lang).internal_activation.subject,//'Account Deactivation',
+      html: '',
+      type: 'internal_activation',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).internal_activation,
+        logo_url: `${process.env.LOGO_URL}`,
+        home_page: `${process.env.APP_URL}`,
+        email: data.user.email,
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    next();
+  }
+
+  public internalDeactivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM}`,
+      to: `${process.env.EMAIL_FROM}`,
+      subject: this.translation(lang).internal_deactivation.subject,//'Account Deactivation',
+      html: '',
+      type: 'internal_deactivation',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).internal_deactivation,
+        logo_url: `${process.env.LOGO_URL}`,
+        home_page: `${process.env.APP_URL}`,
+        email: data.user.email,
+        reason: `${data.reason}`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    next();
+    // response.status(data.res.code).send(data.res.body);
+  }
+
+  /**
+  * (internal) Communication By User
+  */
+  public internalCommunication = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM}`,
+      to: `${process.env.EMAIL_FROM}`,
+      subject: this.translation(lang).internal_deactivation.subject,//'User Communication',
+      html: '',
+      type: 'internal_deactivation',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).internal_deactivation,
+        logo_url: `${process.env.LOGO_URL}`,
+        home_page: `${process.env.APP_URL}`,
+        sender: data.sender,
+        content: `${data.content}`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    response.status(data.res.code).send(data.res.body);
+  }
+
+  /**
+  * Invitation to User
+  */
+  public userInvitation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM}`,
       to: data.receiver,
       subject: this.translation(lang).invitation.subject,//'User Invitation',
       html: '',
@@ -196,7 +295,7 @@ class EmailService {
       locals: {
         ...this.translation(lang).common,
         ...this.translation(lang).invitation,
-        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
         email: data.user.email
       },
@@ -209,23 +308,33 @@ class EmailService {
     response.status(data.res.code).send(data.res.body);
   }
 
-  public userCommunication = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  /**
+  * Notification for New Support to Partner & Member
+  */
+  public newSupportPartner = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+
+    if (response.locals['extras'].method.bic == 'store') {
+      return next();
+    }
+
     const data = response.locals;
-    const lang: string = request.headers['content-language'] || 'en-EN';
+    const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
-      from: process.env.EMAIL_FROM,
-      to: process.env.EMAIL_FROM,
-      subject: this.translation(lang).communication.subject,//'User Communication',
+      from: `${process.env.EMAIL_FROM}`,
+      to: data.partner.email,
+      subject: this.translation(lang).new_support_partner.subject,
       html: '',
-      type: 'communication',
+      type: 'create_support_partner',
       locals: {
         ...this.translation(lang).common,
-        ...this.translation(lang).communication,
-        logo_url: `https://app.synergatika.gr/assets/media/images/logo.png`,
+        ...this.translation(lang).new_support_partner,
+        logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        sender: data.sender,
-        content: `${data.content}`
+        campaign: `${data.support.campaign_title}`,
+        method: `${this.translation(lang).payments.filter((o) => { return o.bic == data.extras.method.bic })[0].title}`,
+        tokens: `${data.extras.tokens}`,
+        payment: `${data.support.payment_id}`
       },
     }
 
@@ -233,7 +342,86 @@ class EmailService {
     [error, results] = await to(this.emailSender(options));
     if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
-    response.status(data.res.code).send(data.res.body);
+    // response.status(data.res.code).send(data.res.body);
+    next();
+  }
+
+  public newSupportMember = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM}`,
+      to: data.member.email,
+      subject: this.translation(lang).new_support_member.subject,
+      html: '',
+      type: 'create_support_member',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).new_support_member,
+        title: (data.extras.status == 'paid') ? this.translation(lang).new_support_member.title_paid : this.translation(lang).new_support_member.title_unpaid,
+        logo_url: `${process.env.LOGO_URL}`,
+        home_page: `${process.env.APP_URL}`,
+        campaign: `${data.support.campaign_title}`,
+        method: `${data.extras.method.value}, 
+        ${this.translation(lang).payments.filter((o) => { return o.bic == data.extras.method.bic })[0].title}`,
+        tokens: `${data.extras.tokens}`,
+        payment: `${data.support.payment_id}`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    response.status(200).send({
+      data: {
+        support_id: data.support.support_id,
+        payment_id: data.support.payment_id,
+        status: data.support.status,
+        method: data.support.method,
+      },
+      code: 200
+    });
+    // response.status(data.res.code).send(data.res.body);
+    //  response.status(200).send({ data: response.locals.support, code: 200 })
+  }
+
+  public changeSupportStatus = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM}`,
+      to: data.member.email,
+      subject: `${this.translation(lang).change_support_status.subject} (${data.support.payment_id})`,
+      html: '',
+      type: 'change_support_status',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).change_support_status,
+        logo_url: `${process.env.LOGO_URL}`,
+        home_page: `${process.env.APP_URL}`,
+        status: (data.support.status == 'paid') ?
+          `'${this.translation(lang).change_support_status.paid}'` : `'${this.translation(lang).change_support_status.unpaid}'`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    response.status(200).send({
+      data: {
+        support_id: data.support.support_id,
+        payment_id: data.support.payment_id,
+        status: data.support.status,
+        method: data.support.method,
+      },
+      code: 200
+    });
+    // response.status(data.res.code).send(data.res.body);
+    //  response.status(200).send({ data: response.locals.support, code: 200 })
   }
 }
 export default EmailService;

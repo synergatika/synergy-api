@@ -19,23 +19,23 @@ import userModel from '../../models/user.model';
 
 class AccessMiddleware {
 
-  static registerPartner = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const user: User = request.user;
-    if (user.access === 'admin') {
-      next();
-    } else {
-      next(new ForbiddenException('Access to that resource is forbidden.'));
-    }
-  }
+  // static registerPartner = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  //   const user: User = request.user;
+  //   if (user.access === 'admin') {
+  //     next();
+  //   } else {
+  //     next(new ForbiddenException('Access to that resource is forbidden.'));
+  //   }
+  // }
 
-  static registerMember = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const user: User = request.user;
-    if ((user.access === 'admin') || (user.access === 'partner')) {
-      next();
-    } else {
-      next(new ForbiddenException('Access to that resource is forbidden.'));
-    }
-  }
+  // static registerMember = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  //   const user: User = request.user;
+  //   if ((user.access === 'admin') || (user.access === 'partner')) {
+  //     next();
+  //   } else {
+  //     next(new ForbiddenException('Access to that resource is forbidden.'));
+  //   }
+  // }
 
   static onlyAsAdmin = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const user: User = request.user;
@@ -49,6 +49,15 @@ class AccessMiddleware {
   static onlyAsPartner = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const user: User = request.user;
     if (user.access === 'partner') {
+      next();
+    } else {
+      next(new ForbiddenException('Access to that resource is forbidden.'));
+    }
+  }
+
+  static onlyAsAdminOrPartner = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const user: User = request.user;
+    if ((user.access === 'admin') || (user.access === 'partner')) {
       next();
     } else {
       next(new ForbiddenException('Access to that resource is forbidden.'));

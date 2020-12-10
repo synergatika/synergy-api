@@ -1,20 +1,20 @@
 import * as mongoose from 'mongoose';
 import MicrocreditTransaction from '../microcreditInterfaces/transaction.interface';
 
-const dataSchema = new mongoose.Schema({
-  campaign_id: String,
-  campaign_title: String,
-  address: String,
-  support_id: String,
-  contractIndex: {
-    type: Number,
-    default: -1
-  },
-  tokens: {
-    type: Number,
-    default: -1
-  },
-}, { _id: false });
+// const dataSchema = new mongoose.Schema({
+//   campaign_id: String,
+//   campaign_title: String,
+//   address: String,
+//   support_id: String,
+//   contractIndex: {
+//     type: Number,
+//     default: -1
+//   },
+//   tokens: {
+//     type: Number,
+//     default: -1
+//   },
+// }, { _id: false });
 
 const logsSchema = new mongoose.Schema({
   logIndex: Number,
@@ -49,10 +49,30 @@ const receiptSchema = new mongoose.Schema({
 }, { _id: false });
 
 const microcreditTransactionSchema = new mongoose.Schema({
+  support_id: String,
+
   partner_id: String,
+  partner_name: String,
+
   member_id: String,
 
-  data: dataSchema,
+  campaign_id: String,
+  campaign_title: String,
+  address: String,
+
+  method: String,
+  payment_id: String,
+  tokens: {
+    type: Number,
+    default: 0
+  },
+
+  contractRef: String,
+  contractIndex: {
+    type: Number,
+    default: -1
+  },
+  // data: dataSchema,
 
   tx: String,
   receipt: receiptSchema,

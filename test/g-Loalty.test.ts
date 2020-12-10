@@ -10,7 +10,7 @@ import { partner_a, user_a, user_c, user_d, offers } from './_structs.test';
 
 describe("Loyalty", () => {
   describe("Earn & Redeem", () => {
-    it("1. should earn points using email- 201 Created", (done) => {
+    it("1. should earn points using email - 201 Created", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("loyalty/earn/" + user_c.email)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
@@ -26,7 +26,7 @@ describe("Loyalty", () => {
           done();
         });
     });
-    it("2. should earn points using card- 201 Created", (done) => {
+    it("2. should earn points using card - 201 Created", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("loyalty/earn/" + user_d.card)
         .set('Authorization', 'Bearer ' + partner_a.authToken)

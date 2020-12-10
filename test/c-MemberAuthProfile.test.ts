@@ -92,7 +92,7 @@ describe("Member - Authentication & Profile", () => {
   describe("Member (Auto Registration) - Authentication (/auth)", () => {
     it("1. should create a new member - 200 EmailSent", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("auth/auto-register/member")
+        .post("auth/register/auto-member")
         .send({
           email: user_b.email,
           password: user_b.password,
@@ -172,7 +172,7 @@ describe("Member - Authentication & Profile", () => {
   describe("Member - Authentication (/auth)", () => {
     it("1. should NOT create a new member | as password is missing - 400 BadRequest", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("auth/auto-register/member")
+        .post("auth/register/auto-member")
         .send({
           email: 'random_email@email.com'
         })
@@ -185,8 +185,12 @@ describe("Member - Authentication & Profile", () => {
     });
     it("2. should NOT create user | as already exists - 404 NotFound", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("auth/auto-register/member")
-        .send(user_a)
+        .post("auth/register/auto-member")
+        .send({
+          email: user_b.email,
+          password: user_b.password,
+          name: user_b.name
+        })
         .end((err, res) => {
           res.should.have.status(404);
           res.body.should.be.a('object');

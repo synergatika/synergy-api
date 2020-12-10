@@ -19,17 +19,16 @@ import UnprocessableEntityException from '../../exceptions/UnprocessableEntity.e
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
 
 async function blockchain_status(request: RequestWithUser, response: Response, next: NextFunction) {
-  // next();
+
+  if (`${process.env.PRODUCTION}` == 'false') {
+    return next();
+  }
+
   await serviceInstance.isOk()
     .then((result: boolean) => {
-      console.log("Result --> ")
-      console.log(result)
       if (result) {
-        console.log(result)
-
         next();
       } else {
-        console.log(result)
         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || Limited Nodes. Contact Administrator`));
       }
     })

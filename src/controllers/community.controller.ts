@@ -67,7 +67,7 @@ class CommunityController implements Controller {
 
     this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.sendInvitation, emailService.userInvitation);
 
-    this.router.post(`${this.path}/communicate`, validationBodyMiddleware(CommunicationDto), this.sendCommunication, emailService.userCommunication);
+    this.router.post(`${this.path}/communicate`, validationBodyMiddleware(CommunicationDto), this.sendCommunication, emailService.internalCommunication);
   }
 
   private sendCommunication = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -131,7 +131,10 @@ class CommunityController implements Controller {
       $unwind: '$posts'
     }, {
       $match: {
-        'posts.access': 'public'
+        $and: [
+          { 'activated': true },
+          { 'posts.access': 'public' }
+        ]
       }
     }, {
       $project: {
@@ -164,6 +167,7 @@ class CommunityController implements Controller {
     }, {
       $match: {
         $and: [
+          { 'activated': true },
           { 'events.access': 'public' },
           { 'events.dateTime': { $gt: offset.greater } }
         ]
@@ -182,7 +186,7 @@ class CommunityController implements Controller {
         type: 'event',
         title: '$events.title',
         subtitle: '$events.subtitle',
-        content: '$events.description',
+        content: '$events.content',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
@@ -217,7 +221,10 @@ class CommunityController implements Controller {
       $unwind: '$posts'
     }, {
       $match: {
-        'posts.access': { $in: ['public', 'private', access] }
+        $and: [
+          { 'activated': true },
+          { 'posts.access': { $in: ['public', 'private', access] } }
+        ]
       }
     }, {
       $project: {
@@ -250,6 +257,7 @@ class CommunityController implements Controller {
     }, {
       $match: {
         $and: [
+          { 'activated': true },
           { 'events.access': { $in: ['public', 'private', access] } },
           { 'events.dateTime': { $gt: offset.greater } }
         ]
@@ -268,7 +276,7 @@ class CommunityController implements Controller {
         type: 'event',
         title: '$events.title',
         subtitle: '$events.subtitle',
-        content: '$events.description',
+        content: '$events.content',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
@@ -377,7 +385,7 @@ class CommunityController implements Controller {
         type: 'event',
         title: '$events.title',
         subtitle: '$events.subtitle',
-        content: '$events.description',
+        content: '$events.content',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',
@@ -487,7 +495,7 @@ class CommunityController implements Controller {
         type: 'event',
         title: '$events.title',
         subtitle: '$events.subtitle',
-        content: '$events.description',
+        content: '$events.content',
         access: '$events.access',
         location: '$events.location',
         dateTime: '$events.dateTime',

@@ -41,7 +41,8 @@ import OffsetHelper from '../middleware/items/offset.helper';
 /**
  * Helper's Instance
  */
-const uploadFile = FilesMiddleware.uploadItem;
+const uploadFile = FilesMiddleware.uploadFile;
+const existFile = FilesMiddleware.existsFile;
 const deleteFile = FilesMiddleware.deleteFile;
 const createSlug = SlugHelper.offerSlug;
 const offsetParams = OffsetHelper.offsetLimit;
@@ -64,11 +65,17 @@ class OffersController implements Controller {
 
   private initializeRoutes() {
     this.router.get(`${this.path}/public/:offset`, this.readAllOffers);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), this.createOffer);
+    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), this.createOffer);
     this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readOffersByStore);
     this.router.get(`${this.path}/:partner_id/:offer_id`, validationParamsMiddleware(OfferID), this.readOffer);
-    this.router.put(`${this.path}/:partner_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), itemsMiddleware.offerMiddleware, this.updateOffer);
+    this.router.put(`${this.path}/:partner_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), itemsMiddleware.offerMiddleware, this.updateOffer);
     this.router.delete(`${this.path}/:partner_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, itemsMiddleware.offerMiddleware, this.deleteOffer);
+  }
+
+  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    request.params['path'] = 'static';
+    request.params['type'] = 'loyalty';
+    next();
   }
 
   private readAllOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -129,18 +136,18 @@ class OffersController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-      $push: {
-        offers: {
-          "imageURL": `${process.env.API_URL}assets/items/${request.file.filename}`,
-          "title": data.title,
-          "subtitle": data.subtitle,
-          "slug": await createSlug(request),
-          "description": data.description,
-          "cost": data.cost,
-          "expiresAt": data.expiresAt
+        $push: {
+          offers: {
+            "imageURL": `${process.env.API_URL}assets/static/${request.file.filename}`,
+            "title": data.title,
+            "subtitle": data.subtitle,
+            "slug": await createSlug(request),
+            "description": data.description,
+            "cost": data.cost,
+            "expiresAt": data.expiresAt
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new offer has been created!",
@@ -283,12 +290,20 @@ class OffersController implements Controller {
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
     const data: OfferDto = request.body;
 
+
     const currentOffer: Offer = response.locals.offer;
-    if ((currentOffer.offer_imageURL && (currentOffer.offer_imageURL).includes(partner_id)) && request.file) {
-      //if (currentOffer.offer_imageURL && request.file) {
-      var imageFile = (currentOffer.offer_imageURL).split('assets/items/');
-      await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    if (currentOffer['offer_imageURL'] && request.file) {
+      var imageFile = (currentOffer['offer_imageURL']).split('assets/static/');
+      const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+      if (existFile(file)) await deleteFile(file);
     }
+
+    // const currentOffer: Offer = response.locals.offer;
+    // if ((currentOffer.offer_imageURL && (currentOffer.offer_imageURL).includes(partner_id)) && request.file) {
+    //   //if (currentOffer.offer_imageURL && request.file) {
+    //   var imageFile = (currentOffer.offer_imageURL).split('assets/items/');
+    //   await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    // }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne(
@@ -296,17 +311,17 @@ class OffersController implements Controller {
         _id: partner_id,
         'offers._id': offer_id
       }, {
-      '$set': {
-        'offers.$._id': offer_id,
-        'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/items/${request.file.filename}` : currentOffer.offer_imageURL,
-        'offers.$.title': data.title,
-        'offers.$.slug': await createSlug(request),
-        'offers.$.subtitle': data.subtitle,
-        'offers.$.description': data.description,
-        'offers.$.cost': data.cost,
-        'offers.$.expiresAt': data.expiresAt
-      }
-    }).catch());
+        '$set': {
+          'offers.$._id': offer_id,
+          'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentOffer.offer_imageURL,
+          'offers.$.title': data.title,
+          'offers.$.slug': await createSlug(request),
+          'offers.$.subtitle': data.subtitle,
+          'offers.$.description': data.description,
+          'offers.$.cost': data.cost,
+          'offers.$.expiresAt': data.expiresAt
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -320,21 +335,27 @@ class OffersController implements Controller {
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
 
     const currentOffer: Offer = response.locals.offer;
-    if (currentOffer.offer_imageURL && (currentOffer.offer_imageURL).includes(partner_id)) {
-      var imageFile = (currentOffer.offer_imageURL).split('assets/items/');
-      await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    if (currentOffer['offer_imageURL']) {
+      var imageFile = (currentOffer['offer_imageURL']).split('assets/static/');
+      const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+      if (existFile(file)) await deleteFile(file);
     }
+    // const currentOffer: Offer = response.locals.offer;
+    // if (currentOffer.offer_imageURL && (currentOffer.offer_imageURL).includes(partner_id)) {
+    //   var imageFile = (currentOffer.offer_imageURL).split('assets/items/');
+    //   await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
+    // }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne({
       _id: partner_id
     }, {
-      $pull: {
-        offers: {
-          _id: offer_id
+        $pull: {
+          offers: {
+            _id: offer_id
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Offer " + offer_id + " has been deleted!",
