@@ -85,6 +85,8 @@ class Translation {
         "EMAIL_TEXT": "Email",
         "REASON_TEXT": "Reason",
         "PASSWORD_TEXT": "Password",
+        "CAMPAIGN_TEXT": "Campaign",
+        "PAYMENT_TEXT": "Payment ID",
         "METHOD_TEXT": "Payment Method",
         "TOKENS_TEXT": "Amoount (€)",
         "IF_LINK": "If that doesn't work, copy and paste the following link in your browser:",
@@ -138,20 +140,20 @@ class Translation {
         "button": ""
       },
       new_support_partner: {
-        "subject": "Ενας χρήστης έδωσε λεφτά",
-        "title": "Υποσχεση",
+        "subject": "Μια νέα στήριξη μόλις καταγράφηκε",
+        "title": "Λεπτομέριες:",
         "body": "",
         "button": ""
       },
       new_support_member: {
-        "subject": "Κατοχυρώθηκε η υπόσχεση",
-        "title_paid": "H Πληρωμή της υπόσχεσης σας έχει καταγραφεί",
+        "subject": "H υπόσχεση της στήριξης σας καταγράφηκε",
+        "title_paid": "H Πληρωμή της υπόσχεσης σας έχει καταγραφεί.",
         "title_unpaid": "Ακολουθήστε τις οδηγίες για να ολοκληρωθεί η διαδικασία.",
         "body": "",
         "button": ""
       },
       change_support_status: {
-        "subject": "Νέα σχετικά με την παραγγελία σας",
+        "subject": "Νέα σχετικά με τη στήριξη σας",
         "title": "Η Κατάσταση της παραγγελίας άλλαξε σε ",
         "paid": "Εξόφληση",
         "unpaid": "Αναμονή Εξόφλησης",
@@ -200,6 +202,8 @@ class Translation {
         "EMAIL_TEXT": "Email",
         "REASON_TEXT": "Λόγος",
         "PASSWORD_TEXT": "Password",
+        "CAMPAIGN_TEXT": "Καμπάνια",
+        "PAYMENT_TEXT": "ID Πληρωμής",
         "METHOD_TEXT": "Μέθοδος Πληρωμής",
         "TOKENS_TEXT": "Ποσό (€)",
         "IF_LINK": "Εαν δεν μεταφερθείτε αυτόματα στη σελίδα μας, κάντε αντιγραφή/επικόλληση τον παρακάτω συνδεσμο",

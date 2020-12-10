@@ -182,7 +182,8 @@ class EmailService {
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
         link: `${process.env.APP_URL}auth/login/`,
-        reason: (data.decision == 'admin') ? this.translation(lang).deactivation.by_admin : this.translation(lang).deactivation.by_you,
+        reason: (data.decision == 'admin') ?
+          `${this.translation(lang).deactivation.by_admin}` : `${this.translation(lang).deactivation.by_you}`
       },
     }
 
@@ -330,8 +331,10 @@ class EmailService {
         ...this.translation(lang).new_support_partner,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        method: `${data.extras.method.name}`,
-        tokens: `${data.extras.tokens}`
+        campaign: `${data.support.campaign_title}`,
+        method: `${this.translation(lang).payments.filter((o) => { return o.bic == data.extras.method.bic })[0].title}`,
+        tokens: `${data.extras.tokens}`,
+        payment: `${data.support.payment_id}`
       },
     }
 
@@ -359,9 +362,11 @@ class EmailService {
         title: (data.extras.status == 'paid') ? this.translation(lang).new_support_member.title_paid : this.translation(lang).new_support_member.title_unpaid,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
+        campaign: `${data.support.campaign_title}`,
         method: `${data.extras.method.value}, 
         ${this.translation(lang).payments.filter((o) => { return o.bic == data.extras.method.bic })[0].title}`,
-        tokens: `${data.extras.tokens}`
+        tokens: `${data.extras.tokens}`,
+        payment: `${data.support.payment_id}`
       },
     }
 
@@ -389,7 +394,7 @@ class EmailService {
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.member.email,
-      subject: this.translation(lang).change_support_status.subject + " " + data.support.payment_id,
+      subject: `${this.translation(lang).change_support_status.subject} (${data.support.payment_id})`,
       html: '',
       type: 'change_support_status',
       locals: {
@@ -397,7 +402,8 @@ class EmailService {
         ...this.translation(lang).change_support_status,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        status: (data.support.status == 'paid') ? this.translation(lang).change_support_status.paid : this.translation(lang).change_support_status.unpaid
+        status: (data.support.status == 'paid') ?
+          `'${this.translation(lang).change_support_status.paid}'` : `'${this.translation(lang).change_support_status.unpaid}'`
       },
     }
 
