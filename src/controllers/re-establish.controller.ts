@@ -67,14 +67,16 @@ class ReEstablishController implements Controller {
                 "_id": 1,
                 "email": 1,
                 "access": 1,
-                "account": 1
+                "account": 1,
+                "card": 1
             }).catch());
             if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
             await Promise.all(users.map(async (user: User) => {
                 // users.forEach(async (user: User) => {
-                const account = serviceInstance.createWallet(user.email);
-                const newAccount = serviceInstance.unlockWallet(account, user.email);
+                const encryptBy = (user.email) ? user.email : user.card;
+                const account = serviceInstance.createWallet(encryptBy);
+                const newAccount = serviceInstance.unlockWallet(account, encryptBy);
                 if (user.access === 'member') {
                     await serviceInstance.getLoyaltyAppContract()
                         .then((instance) => {
@@ -82,7 +84,7 @@ class ReEstablishController implements Controller {
                                 .then(async (result: any) => {
                                     await this.registrationTransaction.create({
                                         ...result,
-                                        data: { user_id: user._id }, type: "RegisterMember"
+                                        user_id: user._id, type: "RegisterMember"
                                     });
                                 })
                                 .catch((error: Error) => {
@@ -104,7 +106,7 @@ class ReEstablishController implements Controller {
                                 .then(async (result: any) => {
                                     await this.registrationTransaction.create({
                                         ...result,
-                                        data: { user_id: user._id }, type: "RegisterPartner"
+                                        user_id: user._id, type: "RegisterPartner"
                                     });
                                 })
                                 .catch((error: Error) => {

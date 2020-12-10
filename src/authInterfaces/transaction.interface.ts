@@ -1,10 +1,8 @@
 interface RegistrationTransaction {
   _id: string;
 
+  user_id: string;
   type: string;
-  data: {
-    user_id: string;
-  }
 
   tx: string;
   createdAt: Date;
