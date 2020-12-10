@@ -115,8 +115,6 @@ describe("Member - Authentication & Profile", () => {
           password: user_b.password
         })
         .end((err, res) => {
-          console.log(err);
-          console.log(res.body);
           res.should.have.status(202);
           res.body.should.be.a('object');
           res.body.should.have.property('data');

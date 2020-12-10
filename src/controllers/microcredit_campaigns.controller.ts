@@ -679,14 +679,12 @@ class MicrocreditCampaignsController implements Controller {
     else if (!campaigns.length) {
       return next(new NotFoundException('CAMPAIGN_NOT_EXIST'));
     }
-    console.log(campaigns)
+
     const tokens: Tokens[] = await this.readTokens(campaigns);
     //const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
-    console.log(tokens)
     const statisticsPromise: MicrocreditCampaignStatistics[] = await this.readStatistics(campaigns, 'PromiseFund');
     const statisticsRedeem: MicrocreditCampaignStatistics[] = await this.readStatistics(campaigns, 'SpendFund');
-    console.log(statisticsPromise)
-    console.log(statisticsRedeem)
+
     const campaignsWithStatistics = campaigns.map((a: Campaign) =>
       Object.assign({}, a,
         {
@@ -765,11 +763,6 @@ class MicrocreditCampaignsController implements Controller {
       const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
       if (existFile(file)) await deleteFile(file);
     }
-    // const currentCampaign: Campaign = response.locals.campaign;
-    // if (currentCampaign.campaign_imageURL && (currentCampaign.campaign_imageURL).includes(partner_id)) {
-    //   var imageFile = (currentCampaign.campaign_imageURL).split('assets/items/');
-    //   await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
-    // }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne({
@@ -813,30 +806,8 @@ class MicrocreditCampaignsController implements Controller {
           }
         }]
     ).exec().catch());
-    console.log(error);
     if (error) return [];
 
-    // let error: Error, tokens: Tokens[];
-    // [error, tokens] = await to(this.user.aggregate([{
-    //   $unwind: '$microcredit'
-    // }, {
-    //   $unwind: '$microcredit.supports'
-    // }, {
-    //   $match: {
-    //     $and: [
-    //       { 'microcredit._id': { $in: campaigns.map(a => a.campaign_id) } },
-    //       { 'microcredit.supports.status': status }
-    //     ]
-    //   }
-    // }, {
-    //   "$group": {
-    //     '_id': '$microcredit._id',
-    //     'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
-    //     'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
-    //   }
-    // }]).exec().catch());
-    // if (error) return [];
-    console.log(tokens)
     return tokens;
   }
 
@@ -868,7 +839,6 @@ class MicrocreditCampaignsController implements Controller {
       }
     }
     ]).exec().catch());
-    console.log(error);
     if (error) return [];
 
     const byDate: any = await this.readDailyStatistics(campaigns, status);
@@ -921,11 +891,7 @@ class MicrocreditCampaignsController implements Controller {
       }
     }
     ]).exec().catch());
-    console.log("Error in DailyStatistics");
     if (error) return [];
-
-    console.log("Daily Statistics")
-    console.log(statistics);
 
     statistics.forEach((element: any) => {
       element.byDate.forEach((element: any) => {

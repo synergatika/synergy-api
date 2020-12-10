@@ -187,7 +187,6 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
   const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
   const support_id: SupportID["support_id"] = request.params.support_id;
 
-  console.log(partner_id + " " + campaign_id + " " + support_id)
   let error: Error, supports: Support[];
   [error, supports] = await to(transactionModel.aggregate(
     [
@@ -229,8 +228,6 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
     ]
   ).exec());
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-  console.log("supports")
-  console.log(supports)
 
   response.locals["support"] = { ...supports[0], support_id: supports[0]._id, _id: undefined };
   request.params["_to"] = supports[0].member_id;

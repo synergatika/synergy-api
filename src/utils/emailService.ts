@@ -27,7 +27,7 @@ class EmailService {
   /** To add */
   // Email: To member (when orders a microcredit campaign). [OK]
   // Email: To partner (when a member orders a microcredit campaign). [OK]
-  // Email: To member (when a campaign status has change - order or paid).
+  // Email: To member (when a campaign status has change - order or paid). [OK]
   // Email: To member (when the redeeming period starts).
   // Email: To member (when the redeeming period ends).
   // Email: To member (when redeem an order or part of an order).
@@ -61,8 +61,7 @@ class EmailService {
   public userRegistration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
     const lang: string = request.headers['content-language'] || this.defaultLang();
-    console.log("userRegistration")
-    console.log(data)
+
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
@@ -89,8 +88,7 @@ class EmailService {
   public emailVerification = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
     const lang: string = request.headers['content-language'] || this.defaultLang();
-    console.log("emailVerification")
-    console.log(data)
+
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
@@ -116,8 +114,7 @@ class EmailService {
   public passwordRestoration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
     const lang: string = request.headers['content-language'] || this.defaultLang();
-    console.log("passwordRestoration")
-    console.log(data)
+
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.user.email,
@@ -257,8 +254,7 @@ class EmailService {
   public internalCommunication = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
     const lang: string = request.headers['content-language'] || this.defaultLang();
-    console.log("internalCommunication")
-    console.log(data)
+
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: `${process.env.EMAIL_FROM}`,
@@ -288,8 +284,7 @@ class EmailService {
   public userInvitation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
     const lang: string = request.headers['content-language'] || this.defaultLang();
-    console.log("userInvitation")
-    console.log(data)
+
     let options = {
       from: `${process.env.EMAIL_FROM}`,
       to: data.receiver,
@@ -316,6 +311,11 @@ class EmailService {
   * Notification for New Support to Partner & Member
   */
   public newSupportPartner = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+
+    if (response.locals['extras'].method.bic == 'store') {
+      return next();
+    }
+
     const data = response.locals;
     const lang: string = request.headers['content-language'] || this.defaultLang();
 
@@ -356,9 +356,11 @@ class EmailService {
       locals: {
         ...this.translation(lang).common,
         ...this.translation(lang).new_support_member,
+        title: (data.extras.status == 'paid') ? this.translation(lang).new_support_member.title_paid : this.translation(lang).new_support_member.title_unpaid,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        method: `${data.extras.method.value}, ${data.extras.method.name}`,
+        method: `${data.extras.method.value}, 
+        ${this.translation(lang).payments.filter((o) => { return o.bic == data.extras.method.bic })[0].title}`,
         tokens: `${data.extras.tokens}`
       },
     }
@@ -367,8 +369,53 @@ class EmailService {
     [error, results] = await to(this.emailSender(options));
     if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
+    response.status(200).send({
+      data: {
+        support_id: data.support.support_id,
+        payment_id: data.support.payment_id,
+        status: data.support.status,
+        method: data.support.method,
+      },
+      code: 200
+    });
     // response.status(data.res.code).send(data.res.body);
-    response.status(200).send({ data: response.locals.support, code: 200 })
+    //  response.status(200).send({ data: response.locals.support, code: 200 })
+  }
+
+  public changeSupportStatus = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM}`,
+      to: data.member.email,
+      subject: this.translation(lang).change_support_status.subject + " " + data.support.payment_id,
+      html: '',
+      type: 'change_support_status',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).change_support_status,
+        logo_url: `${process.env.LOGO_URL}`,
+        home_page: `${process.env.APP_URL}`,
+        status: (data.support.status == 'paid') ? this.translation(lang).change_support_status.paid : this.translation(lang).change_support_status.unpaid
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    response.status(200).send({
+      data: {
+        support_id: data.support.support_id,
+        payment_id: data.support.payment_id,
+        status: data.support.status,
+        method: data.support.method,
+      },
+      code: 200
+    });
+    // response.status(data.res.code).send(data.res.body);
+    //  response.status(200).send({ data: response.locals.support, code: 200 })
   }
 }
 export default EmailService;

@@ -51,6 +51,7 @@ async function partner(request: RequestWithUser, response: Response, next: NextF
     _id: new ObjectId(partner_id), access: 'partner'
   }).select({
     "_id": 1, "payments": 1,
+    "address": 1,
     "activated": 1
   }).catch());
 

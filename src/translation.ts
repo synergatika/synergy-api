@@ -30,7 +30,16 @@ class Translation {
       },
       new_support_member: {
         "subject": "Your support has been registered",
-        "title": "Please follow the instructions to complete it.",
+        "title_paid": "Your support has been paid.",
+        "title_unpaid": "Please follow the instructions to complete it.",
+        "body": "",
+        "button": ""
+      },
+      change_support_status: {
+        "subject": "News about your order",
+        "title": "You support status has change to ",
+        "paid": "Paid",
+        "unpaid": "Unpaid",
         "body": "",
         "button": ""
       },
@@ -82,7 +91,32 @@ class Translation {
         "CHEERS": "Cheers",
         "TEAM": `${instance} Team`,
         "FOOTER": "You received this email because we received a request for your account. If you didn't request you can safely delete this email."
-      }
+      },
+      payments: [
+        {
+          bic: "ETHNGRAA",
+          title: 'National Bank of Greece',
+        }, {
+          bic: "PIRBGRAA",
+          title: 'Pireaus Bank',
+
+        }, {
+          bic: "EFGBGRAA",
+          title: 'EFG Eurobank Ergasias',
+        }, {
+          bic: "CRBAGRAA",
+          title: 'Alpha Bank A.E.',
+        }, {
+          bic: "PAYPAL",
+          title: 'PayPal'
+        }, {
+          bic: "PAYPAL.ME",
+          title: 'PayPal.Me'
+        }, {
+          bic: "store",
+          title: "Pay at the Store"
+        }
+      ]
     },
     ["el-EL" as string]: {
       internal_activation: {
@@ -111,7 +145,16 @@ class Translation {
       },
       new_support_member: {
         "subject": "Κατοχυρώθηκε η υπόσχεση",
-        "title": "Υποσχεση",
+        "title_paid": "H Πληρωμή της υπόσχεσης σας έχει καταγραφεί",
+        "title_unpaid": "Ακολουθήστε τις οδηγίες για να ολοκληρωθεί η διαδικασία.",
+        "body": "",
+        "button": ""
+      },
+      change_support_status: {
+        "subject": "Νέα σχετικά με την παραγγελία σας",
+        "title": "Η Κατάσταση της παραγγελίας άλλαξε σε ",
+        "paid": "Εξόφληση",
+        "unpaid": "Αναμονή Εξόφλησης",
         "body": "",
         "button": ""
       },
@@ -163,7 +206,31 @@ class Translation {
         "CHEERS": "Χαιρετισμούς",
         "TEAM": `η Ομάδα του ${instance}`,
         "FOOTER": "Λάβατε αυτό το μήνυμα ηλεκτρονικού ταχυδρομίου, καθώς στάλθηκε μια αίτηση για/από το συγκεκριμένο λογαριασμό. Έαν, η αίτηση δεν στάλθηκε από εσάς, μπορείται να διαγράψετε με ασφάλεια αυτο το μήνυμα."
-      }
+      },
+      payments: [
+        {
+          bic: "ETHNGRAA",
+          title: 'Εθνική Τράπεζα',
+        }, {
+          bic: "PIRBGRAA",
+          title: 'Τράπεζα Πειραιώς',
+        }, {
+          bic: "EFGBGRAA",
+          title: 'Eurobank Ergasias',
+        }, {
+          bic: "CRBAGRAA",
+          title: 'Alpha Bank',
+        }, {
+          bic: "PAYPAL",
+          title: 'PayPal'
+        }, {
+          bic: "PAYPAL.ME",
+          title: 'PayPal.Me'
+        }, {
+          bic: "store",
+          title: "Εξόφληση στο Κατάστημα"
+        }
+      ]
     }
   }
 }

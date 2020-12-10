@@ -109,8 +109,6 @@ describe("Microcredit", () => {
         .put("microcredit/confirm/" + partner_a._id + "/" + microcredit_a._id + "/" + a2_support_id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .end((err, res) => {
-          console.log(err);
-          console.log(res.body);
           res.should.have.status(404);
           res.body.should.be.a('object');
           res.body.should.have.property('message');

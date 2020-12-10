@@ -8,7 +8,7 @@ chai.use(require('chai-http'));
 
 import * as fs from 'fs';
 
-import { imagesLocation, partner_a, partner_c, user_a, offer_a, offer_b, post_a, post_b, event_a, event_b, microcredit_a, microcredit_b, microcredit_c, offers, events } from './_structs.test';
+import { imagesLocation, partner_a, partner_c, user_a, offer_a, offer_b, post_a, post_b, post_c, event_a, event_b, microcredit_a, microcredit_b, microcredit_c, offers, events } from './_structs.test';
 
 describe("Partner - Offers, Posts, Events", () => {
   describe("Partner - Offers (/loyalty/offers)", () => {
@@ -175,6 +175,23 @@ describe("Partner - Offers, Posts, Events", () => {
           done();
         });
     });
+    it("6. should create a post - 201 Created", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("posts/")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .field('title', post_c.title)
+        .field('subtitle', post_c.subtitle)
+        .field('content', post_c.content)
+        .field('contentFiles', post_c.contentFiles.join(''))
+        .field('access', post_c.access)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`), `${post_b.imageFile}`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
   });
   describe("Partner - Events (/events)", () => {
     var _date = new Date();
@@ -195,8 +212,6 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('dateTime', _newDate.toString())
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_a.imageFile}`), `${event_a.imageFile}`)
         .end((err, res) => {
-          console.log(err);
-          console.log(res.body);
           res.should.have.status(201);
           res.body.should.be.a('object');
           res.body.should.have.property('message');
