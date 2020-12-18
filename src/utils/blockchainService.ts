@@ -117,6 +117,14 @@ export class BlockchainService {
   ) {
     const Project = this.loadImplementationMicrocreditContract();
     await this.unlockAdminAtNode();
+
+    console.log(`------------------------------------------
+projectExpiredAt: ${projectExpiredAt}
+projectAvailableAt: ${projectAvailableAt}
+projectStartedAt: ${projectStartedAt}
+projectFinishedAt: ${projectFinishedAt}
+------------------------------------------`);
+
     return await Project.new(
       projectRaiseBy,
       projectMinimunAmount,
