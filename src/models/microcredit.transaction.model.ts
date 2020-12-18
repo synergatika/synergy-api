@@ -62,7 +62,13 @@ const microcreditTransactionSchema = new mongoose.Schema({
 
   method: String,
   payment_id: String,
+
   tokens: {
+    type: Number,
+    default: 0
+  },
+
+  payoff: {
     type: Number,
     default: 0
   },

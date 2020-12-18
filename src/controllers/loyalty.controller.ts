@@ -141,8 +141,7 @@ class LoyaltyController implements Controller {
 
   private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: EarnPointsDto = request.body;
-    const _amount = Math.round(data._amount);
-    const _points: number = _amount * response.locals.activity.rate;
+    const _points: number = Math.round(data._amount) * response.locals.activity.rate;
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
     const member = response.locals.member;
 
@@ -158,7 +157,7 @@ class LoyaltyController implements Controller {
               member_id: member._id,
 
               points: _points,
-              amount: _amount,
+              amount: data._amount,
 
               type: "EarnPoints",
             });
@@ -198,9 +197,10 @@ class LoyaltyController implements Controller {
 
               offer_id: offer_id,
               offer_title: offer_title,
+              quantity: data.quantity,
 
               points: _points,
-              quantity: data.quantity,
+              amount: (data._amount) ? (data._amount) * (-1) : 0,
 
               type: (offer_id === '-1') ? "RedeemPoints" : "RedeemPointsOffer",
             });

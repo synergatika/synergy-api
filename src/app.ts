@@ -4,8 +4,9 @@ import * as mongoose from 'mongoose';
 import Controller from './interfaces/controller.interface';
 import * as cookieParser from 'cookie-parser';
 import errorMiddleware from './middleware/errors/error.middleware'
-var path = require('path');
+import Schedule from './utils/schedule';
 
+var path = require('path');
 import * as cors from 'cors';
 
 const Sentry = require('@sentry/node');
@@ -17,7 +18,7 @@ class App {
     allowedHeaders: ["Access-Control-Allow-Origin", "Authorization", "Origin", "X-Requested-With", "Content-Type", "Accept", "X-Access-Token"],
     credentials: true,
     methods: "GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE",
-    origin: [`${process.env.APP_URL}`.slice(0, -1), 'https://open.synergatika.gr', 'http://localhost:4200'],
+    origin: [`${process.env.APP_URL}`.slice(0, -1), 'https://open.synergatika.gr', 'http://localhost:4200', 'http://localhost:4300'],
     preflightContinue: false
   };
 
@@ -29,12 +30,17 @@ class App {
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
     this.initializeErrorHandling();
+    this.startSchedule();
   }
 
   public listen() {
     this.app.listen(process.env.PORT, () => {
       console.log(`App listening on the port ${process.env.PORT}`);
     });
+  }
+
+  public startSchedule() {
+    Schedule.campaingStarts();
   }
 
   private initializeMiddlewares() {

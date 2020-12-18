@@ -88,7 +88,10 @@ class PartnersController implements Controller {
 
     let error: Error, partners: Partner[];
     [error, partners] = await to(this.user.find({
-      access: 'partner'
+      $and: [
+        { 'activated': true },
+        { 'access': 'partner' }
+      ]
     }).select({
       "id": 1,
       "email": 1,

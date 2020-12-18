@@ -60,6 +60,7 @@ const offerSchema = new mongoose.Schema({
   description: String,
   imageURL: String,
   cost: Number,
+  instructions: String,
   expiresAt: Number
 }, { timestamps: true });
 

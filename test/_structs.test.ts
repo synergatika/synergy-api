@@ -194,6 +194,7 @@ var offer_a = {
   title: 'First Offer',
   subtitle: 'This is subtitle for offer A',
   description: 'This is description for offer A! This is description for offer A! This is description for offer A!',
+  instructions: 'Instructions how to receive offer A!',
   cost: 80,
   expiresAt: '',
   imageFile: 'offer_a.png',
@@ -204,6 +205,7 @@ var offer_b = {
   title: 'Second Offer',
   subtitle: 'This is subtitle for offer B',
   description: 'This is description for offer B! This is description for offer B! This is description for offer B!',
+  instructions: 'Instructions how to receive offer B!',
   cost: 120,
   expiresAt: '',
   imageFile: 'offer_b.jpg',
@@ -213,6 +215,7 @@ var offer_c = {
   title: 'Third Offer',
   subtitle: 'This is subtitle for offer C',
   description: 'This is description for offer C! This is description for offer C! This is description for offer C!',
+  instructions: 'Instructions how to receive offer C!',
   cost: 100,
   expiresAt: '',
   imageFile: ''
@@ -345,6 +348,7 @@ type Offer = {
   offer_slug: '',
   subtitle: '',
   description: '',
+  instructions: '',
   cost: 0,
   expiresAt: 0,
   createdAt: ''

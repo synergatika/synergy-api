@@ -63,9 +63,9 @@ class MicrocreditSupportsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/:offset`, 
-    authMiddleware, 
-    this.readAllBackerSupports);
+    this.router.get(`${this.path}/:offset`,
+      authMiddleware,
+      this.readAllBackerSupports);
 
     this.router.get(`${this.path}/:partner_id/:campaign_id`,
       authMiddleware, accessMiddleware.onlyAsPartner,

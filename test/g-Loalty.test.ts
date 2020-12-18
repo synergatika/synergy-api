@@ -67,6 +67,7 @@ describe("Loyalty", () => {
         .send({
           password: partner_a.password,
           _points: 500,
+          _amount: 5,
         })
         .end((err, res) => {
           res.should.have.status(404);
@@ -82,6 +83,7 @@ describe("Loyalty", () => {
         .send({
           password: partner_a.password,
           _points: 100,
+          _amount: 1
         })
         .end((err, res) => {
           res.should.have.status(201);

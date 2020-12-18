@@ -30,18 +30,23 @@ class Translation {
       },
       new_support_member: {
         "subject": "Your support has been registered",
-        "title_paid": "Your support has been paid.",
-        "title_unpaid": "Please follow the instructions to complete it.",
+        "title": ["Your support has been paid.", "Please follow the instructions to complete it."],
         "body": "",
         "button": ""
       },
       change_support_status: {
         "subject": "News about your order",
-        "title": "You support status has change to ",
-        "paid": "Paid",
-        "unpaid": "Unpaid",
+        "title": ["You support status has change to \'Paid\'", "You support status has change to \'Unpaid\'"],
         "body": "",
         "button": ""
+      },
+      redeem_support: {
+        "subject": "Redeem Support Tokens",
+        "title": "You support has been redeemed ",
+      },
+      campaign_starts: {
+        "subject": "Microcredit Redeem Period starts",
+        "title": "Microcredit Redeem Period starts"
       },
       invitation: {
         "subject": `You have been invited to ${instance} Community`,
@@ -57,9 +62,7 @@ class Translation {
       },
       deactivation: {
         "subject": "Your account has been deactivated",
-        "title": "Your account status has change to \'Non Active\'",
-        "by_you": "after you request.",
-        "by_admin": "after Administrator´s decision.",
+        "title": ["Your account status has change to \'Non Active\' after Administrator´s decision.", "Your account status has change to \'Non Active\' after you request."],
         "body": "",
         "button": "Log in"
       },
@@ -147,16 +150,25 @@ class Translation {
       },
       new_support_member: {
         "subject": "H υπόσχεση της στήριξης σας καταγράφηκε",
-        "title_paid": "H Πληρωμή της υπόσχεσης σας έχει καταγραφεί.",
-        "title_unpaid": "Ακολουθήστε τις οδηγίες για να ολοκληρωθεί η διαδικασία.",
+        "title": ["H Πληρωμή της υπόσχεσης σας έχει καταγραφεί.", "Ακολουθήστε τις οδηγίες για να ολοκληρωθεί η διαδικασία."],
         "body": "",
         "button": ""
       },
       change_support_status: {
         "subject": "Νέα σχετικά με τη στήριξη σας",
-        "title": "Η Κατάσταση της παραγγελίας άλλαξε σε ",
-        "paid": "Εξόφληση",
-        "unpaid": "Αναμονή Εξόφλησης",
+        "title": ["Η Κατάσταση της παραγγελίας άλλαξε σε \'Εξόφληση\'", "Η Κατάσταση της παραγγελίας άλλαξε σε \'Αναμονή Εξόφλησης\'"],
+        "body": "",
+        "button": "",
+      },
+      redeem_support: {
+        "subject": "Πραγματοποιήθηκε επιτυχώς εξαργύρωση Υποστήριξης",
+        "title": "Πραγματοποιήθηκε επιτυχώς εξαργύρωση ",
+        "body": "",
+        "button": ""
+      },
+      campaign_starts: {
+        "subject": "Η περίοδος εξαργύρωσης ξεκινάει αύριο",
+        "title": "Η περίοδος εξαργύρωσης ξεκινάει αύριο",
         "body": "",
         "button": ""
       },
@@ -174,9 +186,7 @@ class Translation {
       },
       deactivation: {
         "subject": "Ο λογαριασμός σας έχει απενεργοποιηθεί",
-        "title": "Η κατάσταση του λογαρισμού σας άλλαξε σε \'Ανενεργή\' ",
-        "by_you": "έπειτα από δική σας απαίτηση.",
-        "by_admin": "έπειτα από απόφαση του Διαχειριστή.",
+        "title": ["Η κατάσταση του λογαρισμού σας άλλαξε σε \'Ανενεργή\' έπειτα από απόφαση του Διαχειριστή.", "Η κατάσταση του λογαρισμού σας άλλαξε σε \'Ανενεργή\' έπειτα από δική σας απαίτηση."],
         "body": "",
         "button": "Eίσοδος"
       },

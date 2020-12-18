@@ -34,6 +34,7 @@ import validationParamsMiddleware from '../middleware/validators/params.validati
 import authMiddleware from '../middleware/auth/auth.middleware';
 import accessMiddleware from '../middleware/auth/access.middleware';
 import itemsMiddleware from '../middleware/items/items.middleware';
+import convertHelper from '../middleware/items/convert.helper';
 import FilesMiddleware from '../middleware/items/files.middleware';
 import SlugHelper from '../middleware/items/slug.helper';
 import OffsetHelper from '../middleware/items/offset.helper';
@@ -90,7 +91,10 @@ class OffersController implements Controller {
       $unwind: '$offers'
     }, {
       $match: {
-        'offers.expiresAt': { $gt: offset.greater } // (offset[2] === 1) ? seconds : 0
+        $and: [
+          { 'activated': true },
+          { 'offers.expiresAt': { $gt: offset.greater } } // (offset[2] === 1) ? seconds : 0
+        ]
       }
     }, {
       $project: {
@@ -98,8 +102,13 @@ class OffersController implements Controller {
         partner_id: '$_id',
         partner_slug: '$slug',
         partner_name: '$name',
+        partner_email: '$email',
         partner_imageURL: '$imageURL',
+
+        partner_payments: '$payments',
         partner_address: '$address',
+        partner_contacts: '$contacts',
+        partner_phone: '$phone',
 
         offer_id: '$offers._id',
         offer_slug: '$offers.slug',
@@ -107,6 +116,7 @@ class OffersController implements Controller {
         title: '$offers.title',
         subtitle: '$offers.subtitle',
         description: '$offers.description',
+        instructions: '$offers.instructions',
         cost: '$offers.cost',
         expiresAt: '$offers.expiresAt',
 
@@ -143,8 +153,9 @@ class OffersController implements Controller {
             "subtitle": data.subtitle,
             "slug": await createSlug(request),
             "description": data.description,
+            "instructions": data.instructions,
             "cost": data.cost,
-            "expiresAt": data.expiresAt
+            "expiresAt": convertHelper.roundDate(data.expiresAt, 23)
           }
         }
       }).catch());
@@ -189,8 +200,13 @@ class OffersController implements Controller {
         partner_id: '$_id',
         partner_slug: '$slug',
         partner_name: '$name',
+        partner_email: '$email',
         partner_imageURL: '$imageURL',
+
+        partner_payments: '$payments',
         partner_address: '$address',
+        partner_contacts: '$contacts',
+        partner_phone: '$phone',
 
         offer_id: '$offers._id',
         offer_slug: '$offers.slug',
@@ -199,6 +215,7 @@ class OffersController implements Controller {
         subtitle: '$offers.subtitle',
         cost: '$offers.cost',
         description: '$offers.description',
+        instructions: '$offers.instructions',
         expiresAt: '$offers.expiresAt',
 
         createdAt: '$offers.createdAt',
@@ -249,8 +266,13 @@ class OffersController implements Controller {
         partner_id: '$_id',
         partner_slug: '$slug',
         partner_name: '$name',
+        partner_email: '$email',
         partner_imageURL: '$imageURL',
+
+        partner_payments: '$payments',
         partner_address: '$address',
+        partner_contacts: '$contacts',
+        partner_phone: '$phone',
 
         offer_id: '$offers._id',
         offer_slug: '$offers.slug',
@@ -259,6 +281,7 @@ class OffersController implements Controller {
         subtitle: '$offers.subtitle',
         cost: '$offers.cost',
         description: '$offers.description',
+        instructions: '$offers.instructions',
         expiresAt: '$offers.expiresAt',
 
         createdAt: '$offers.createdAt'
@@ -318,8 +341,9 @@ class OffersController implements Controller {
           'offers.$.slug': await createSlug(request),
           'offers.$.subtitle': data.subtitle,
           'offers.$.description': data.description,
+          'offers.$.instructions': data.instructions,
           'offers.$.cost': data.cost,
-          'offers.$.expiresAt': data.expiresAt
+          'offers.$.expiresAt': convertHelper.roundDate(data.expiresAt, 23)
         }
       }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -375,7 +399,7 @@ class OffersController implements Controller {
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
-          { 'data.offer_id': { $in: offers.map(a => (a.offer_id).toString()) } },
+          { 'offer_id': { $in: offers.map(a => (a.offer_id).toString()) } },
           { 'type': status }
           //{ 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
         ]
@@ -383,9 +407,9 @@ class OffersController implements Controller {
     },
     {
       $group: {
-        _id: '$data.offer_id',
-        points: { $sum: "$data.points" },
-        quantity: { $sum: "$data.quantity" },
+        _id: '$offer_id',
+        points: { $sum: "$points" },
+        quantity: { $sum: "$quantity" },
         users: { "$addToSet": "$member_id" },
         count: { "$addToSet": "$_id" }
       }
@@ -420,7 +444,7 @@ class OffersController implements Controller {
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
-          { 'data.offer_id': { $in: offers.map(a => (a.offer_id).toString()) } },
+          { 'offer_id': { $in: offers.map(a => (a.offer_id).toString()) } },
           { 'type': status }
         ]
       }
@@ -428,11 +452,11 @@ class OffersController implements Controller {
     {
       $group: {
         _id: {
-          offer_id: "$data.offer_id",
+          offer_id: "$offer_id",
           date: { day: { $dayOfMonth: "$createdAt" }, month: { $month: "$createdAt" }, year: { $year: "$createdAt" } }
         },
-        points: { $sum: "$data.points" },
-        quantity: { $sum: "$data.quantity" },
+        points: { $sum: "$points" },
+        quantity: { $sum: "$quantity" },
         users: { "$addToSet": "$member_id" },
         count: { "$addToSet": "$_id" }
       }

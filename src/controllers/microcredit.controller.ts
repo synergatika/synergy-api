@@ -148,7 +148,7 @@ class MicrocreditController implements Controller {
       itemsMiddleware.microcreditCampaign, itemsMiddleware.microcreditSupport, usersMiddleware.member,
       checkMiddleware.canRedeemMicrocredit,
       /*this.redeemTokens,*/
-      this.registerSpendFund);
+      this.registerSpendFund, emailService.redeemSupport);
 
     this.router.get(`${this.path}/badge`,
       authMiddleware,
@@ -234,7 +234,7 @@ class MicrocreditController implements Controller {
 
             if (data.method != 'store') {
               response.locals['extras'] = {
-                method: ((partner.payments).filter(function (el: PartnerPayment) { return el.bic == data.method })[0]),
+                method: ((partner.payments).filter(function(el: PartnerPayment) { return el.bic == data.method })[0]),
                 tokens: data._amount,
                 paid: data.paid
               }
@@ -246,6 +246,7 @@ class MicrocreditController implements Controller {
                   value: partner.address.street + ", " + partner.address.city + " " + partner.address.postCode
                 },
                 tokens: data._amount,
+                paid: data.paid
               }
             }
 
@@ -300,6 +301,7 @@ class MicrocreditController implements Controller {
               ...support,
               type: 'ReceiveFund',
               tokens: 0,
+              payoff: support.initialTokens
             });
 
             response.locals.support = {
@@ -347,7 +349,8 @@ class MicrocreditController implements Controller {
               ...result,
               ...support,
               type: 'RevertFund',
-              tokens: 0
+              tokens: 0,
+              payoff: support.initialTokens * (-1)
             });
 
             response.locals.support = {
@@ -399,10 +402,14 @@ class MicrocreditController implements Controller {
                 tokens: _tokens * (-1)
               });
 
-              response.status(200).send({
-                message: "Tokens spend",
-                code: 200
-              });
+              response.locals['extras'] = {
+                tokens: _tokens,
+              };
+              // response.status(200).send({
+              //   message: "Tokens spend",
+              //   code: 200
+              // });
+              next();
             })
             .catch((error: Error) => {
               next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
@@ -424,10 +431,15 @@ class MicrocreditController implements Controller {
                 tokens: _tokens * (-1)
               });
 
-              response.status(200).send({
-                message: "Tokens spend",
-                code: 200
-              });
+              response.locals['extras'] = {
+                tokens: _tokens,
+              };
+              next();
+
+              // response.status(200).send({
+              //   message: "Tokens spend",
+              //   code: 200
+              // });
             })
             .catch((error: Error) => {
               next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))

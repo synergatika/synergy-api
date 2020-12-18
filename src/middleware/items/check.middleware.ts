@@ -4,8 +4,8 @@ import * as bcrypt from 'bcrypt';
 /**
  * DTOs
  */
-import RedeemOfferDto from '../../loyaltyDtos/redeemOffer.dto';
 import EarnTokensDto from 'microcreditDtos/earnTokens.dto';
+import RedeemPointsDto from '../../loyaltyDtos/redeemPoints.dto';
 
 /**
  * Exceptions
@@ -31,7 +31,7 @@ class CheckMiddleware {
 
   static canRedeemPoints = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const balance = response.locals.balance;
-    const data: RedeemOfferDto = request.body;
+    const data: RedeemPointsDto = request.body;
 
     if (data._points > parseInt(balance.points, 10)) {
       return next(new NotFoundException('NOT_ENOUGH_POINTS'));
@@ -42,7 +42,7 @@ class CheckMiddleware {
   static canRedeemOffer = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const offer: Offer = response.locals.offer;
     const balance = response.locals.balance;
-    const data: RedeemOfferDto = request.body;
+    const data: RedeemPointsDto = request.body;
 
     const now = new Date();
     const seconds = parseInt(now.getTime().toString());

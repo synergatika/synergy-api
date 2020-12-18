@@ -1,6 +1,6 @@
 import { IsString, IsNumber, IsOptional } from 'class-validator';
 
-class RedeemPointsDto {
+class RedeemOfferDto {
   @IsString()
   public password: string;
 
@@ -9,6 +9,10 @@ class RedeemPointsDto {
 
   @IsOptional()
   @IsNumber()
+  public _amount: number;
+
+  @IsOptional()
+  @IsNumber()
   public quantity: number;
 }
-export default RedeemPointsDto;
+export default RedeemOfferDto;

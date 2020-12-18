@@ -51,6 +51,7 @@ import accessMiddleware from '../middleware/auth/access.middleware';
 import usersMiddleware from '../middleware/items/users.middleware';
 import itemsMiddleware from '../middleware/items/items.middleware';
 import checkMiddleware from '../middleware/items/check.middleware';
+import convertHelper from '../middleware/items/convert.helper';
 import FilesMiddleware from '../middleware/items/files.middleware';
 import SlugHelper from '../middleware/items/slug.helper';
 import OffsetHelper from '../middleware/items/offset.helper';
@@ -165,6 +166,7 @@ class MicrocreditCampaignsController implements Controller {
     }, {
       $match: {
         $and: [
+          { 'activated': true },
           { 'microcredit.access': { $in: ['public', 'private', access] } },
           { 'microcredit.status': 'published' },
           { 'microcredit.expiresAt': { $gt: offset.greater } }
@@ -248,6 +250,7 @@ class MicrocreditCampaignsController implements Controller {
     }, {
       $match: {
         $and: [
+          { 'activated': true },
           { 'microcredit.access': 'public' },
           { 'microcredit.status': 'published' },
           { 'microcredit.expiresAt': { $gt: offset.greater } }
@@ -341,10 +344,10 @@ class MicrocreditCampaignsController implements Controller {
             "minAllowed": data.minAllowed,
             "maxAllowed": data.maxAllowed,
             "maxAmount": data.maxAmount,
-            "redeemStarts": data.redeemStarts,
-            "redeemEnds": data.redeemEnds,
-            "startsAt": data.startsAt,
-            "expiresAt": data.expiresAt,
+            "redeemStarts": convertHelper.roundDate(data.redeemStarts, 5),
+            "redeemEnds": convertHelper.roundDate(data.redeemEnds, 23),
+            "startsAt": convertHelper.roundDate(data.startsAt, 5),
+            "expiresAt": convertHelper.roundDate(data.expiresAt, 23),
             "status": 'draft',
             "address": '',
             "transactionHash": ''
@@ -371,10 +374,10 @@ class MicrocreditCampaignsController implements Controller {
     const currentCampaign: Campaign = response.locals.campaign;
 
     const dates = {
-      startsAt: (currentCampaign.startsAt).toString(),
-      expiresAt: (currentCampaign.expiresAt).toString(),
-      redeemStarts: (currentCampaign.redeemStarts).toString(),
-      redeemEnds: (currentCampaign.redeemEnds).toString()
+      startsAt: (convertHelper.roundDate(currentCampaign.startsAt, 5)).toString(),
+      expiresAt: (convertHelper.roundDate(currentCampaign.expiresAt, 23)).toString(),
+      redeemStarts: (convertHelper.roundDate(currentCampaign.redeemStarts, 5)).toString(),
+      redeemEnds: (convertHelper.roundDate(currentCampaign.redeemEnds, 23)).toString()
     };
 
     Object.keys(dates).forEach((key: string) => {
@@ -739,10 +742,10 @@ class MicrocreditCampaignsController implements Controller {
           'microcredit.$.minAllowed': data.minAllowed,
           'microcredit.$.maxAllowed': data.maxAllowed,
           'microcredit.$.maxAmount': data.maxAmount,
-          'microcredit.$.redeemStarts': data.redeemStarts,
-          'microcredit.$.redeemEnds': data.redeemEnds,
-          'microcredit.$.startsAt': data.startsAt,
-          'microcredit.$.expiresAt': data.expiresAt,
+          'microcredit.$.redeemStarts': convertHelper.roundDate(data.redeemStarts, 5),
+          'microcredit.$.redeemEnds': convertHelper.roundDate(data.redeemEnds, 23),
+          'microcredit.$.startsAt': convertHelper.roundDate(data.startsAt, 5),
+          'microcredit.$.expiresAt': convertHelper.roundDate(data.expiresAt, 23),
         }
       }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -795,19 +798,25 @@ class MicrocreditCampaignsController implements Controller {
             _id: "$campaign_id",
             campaign_id: 1,
             earned: { $cond: [{ $eq: ['$type', 'PromiseFund'] }, '$tokens', 0] },
-            redeemed: { $cond: [{ $eq: ['$type', 'ReceiveFund'] }, '$tokens', 0] }
+            paid: { $cond: [{ $or: [{ $eq: ['$type', 'ReceiveFund'] }, { $eq: ['$type', 'RevertFund'] }] }, '$payoff', 0] },
+            redeemed: { $cond: [{ $eq: ['$type', 'SpendFund'] }, '$tokens', 0] }
           }
         },
         {
           $group: {
             _id: "$campaign_id",
             earnedTokens: { $sum: '$earned' },
+            paidTokens: { $sum: '$paid' },
             redeemedTokens: { $sum: '$redeemed' }
           }
         }]
     ).exec().catch());
     if (error) return [];
 
+    campaigns.forEach((el: Campaign) => {
+      if (tokens.findIndex(obj => obj._id == el.campaign_id) < 1)
+        tokens.push({ _id: el.campaign_id, earnedTokens: '0', paidTokens: '0', redeemedTokens: '0' })
+    });
     return tokens;
   }
 

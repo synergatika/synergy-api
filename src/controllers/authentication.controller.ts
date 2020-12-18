@@ -283,16 +283,18 @@ class AuthenticationController implements Controller {
       return next(new NotFoundException('USER_HAS_CARD'));
     } else if (await this.user.findOne({ card: data.card })) {
       return next(new NotFoundException('USER_EXISTS'));
+    } else if (!user.activated) {
+      return next(new NotFoundException('USER_DEACTIVATED'));
     }
 
     let results: Object;
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-      $set: {
-        card: data.card
-      }
-    }).catch());
+        $set: {
+          card: data.card
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -315,6 +317,8 @@ class AuthenticationController implements Controller {
       return next(new NotFoundException('USER_HAS_EMAIL'));
     } else if (await this.user.findOne({ email: data.email })) {
       return next(new NotFoundException('USER_EXISTS'));
+    } else if (!user.activated) {
+      return next(new NotFoundException('USER_DEACTIVATED'));
     }
 
     const tempPassword = this.generateToken(10, 1).token;
@@ -330,12 +334,12 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       card: card
     }, {
-      $set: {
-        email: data.email,
-        password: hashedPassword,
-        account: account
-      }
-    }).catch());
+        $set: {
+          email: data.email,
+          password: hashedPassword,
+          account: account
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {
@@ -369,11 +373,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-        $set: {
-          oneClickToken: token.token,
-          oneClickExpiration: token.expiresAt
-        }
-      }).catch());
+          $set: {
+            oneClickToken: token.token,
+            oneClickExpiration: token.expiresAt
+          }
+        }).catch());
       if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
       return response.status(200).send({
@@ -420,70 +424,70 @@ class AuthenticationController implements Controller {
   }
 
   private autoRegisterMember
-    = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-      const data: RegisterUserWithPasswordDto = request.body;
+  = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterUserWithPasswordDto = request.body;
 
-      const existingUser = await this.user.findOne({ email: data.email });
-      if (existingUser) {
-        return next(new NotFoundException('USER_EXISTS'));
-      }
-
-      let potensialUser = await this.initializeMember(
-        true,
-        this.hasBlockchain,
-        { ...data, createdBy: 'auto' }
-      );
-
-      let error: Error, user: User;
-      [error, user] = await to(this.user.create(
-        potensialUser.user
-      ).catch());
-      if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-      response.locals = {
-        user: user,
-        extras: potensialUser.extras,
-        res: this.prefixedResponse(200,
-          "Registration has been completed!",
-          {},
-          { "token": potensialUser.extras.token }
-        )
-      }
-      next();
+    const existingUser = await this.user.findOne({ email: data.email });
+    if (existingUser) {
+      return next(new NotFoundException('USER_EXISTS'));
     }
+
+    let potensialUser = await this.initializeMember(
+      true,
+      this.hasBlockchain,
+      { ...data, createdBy: 'auto' }
+    );
+
+    let error: Error, user: User;
+    [error, user] = await to(this.user.create(
+      potensialUser.user
+    ).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    response.locals = {
+      user: user,
+      extras: potensialUser.extras,
+      res: this.prefixedResponse(200,
+        "Registration has been completed!",
+        {},
+        { "token": potensialUser.extras.token }
+      )
+    }
+    next();
+  }
 
   private autoRegisterPartner
-    = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-      const data: RegisterPartnerWithPasswordDto = request.body;
+  = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterPartnerWithPasswordDto = request.body;
 
-      const existingUser = await this.user.findOne({ email: data.email });
-      if (existingUser) {
-        return next(new NotFoundException('USER_EXISTS'));
-      }
-
-      let potensialUser = await this.initializePartner(
-        true,
-        this.hasBlockchain,
-        { ...data, createdBy: 'auto', slug: await createSlug(request) }
-      );
-
-      let error: Error, user: User;
-      [error, user] = await to(this.user.create(
-        potensialUser.user
-      ).catch());
-      if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-      response.locals = {
-        user: user,
-        extras: potensialUser.extras,
-        res: this.prefixedResponse(200,
-          "Registration has been completed!",
-          {},
-          { "token": potensialUser.extras.token }
-        )
-      }
-      next();
+    const existingUser = await this.user.findOne({ email: data.email });
+    if (existingUser) {
+      return next(new NotFoundException('USER_EXISTS'));
     }
+
+    let potensialUser = await this.initializePartner(
+      true,
+      this.hasBlockchain,
+      { ...data, createdBy: 'auto', slug: await createSlug(request) }
+    );
+
+    let error: Error, user: User;
+    [error, user] = await to(this.user.create(
+      potensialUser.user
+    ).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    response.locals = {
+      user: user,
+      extras: potensialUser.extras,
+      res: this.prefixedResponse(200,
+        "Registration has been completed!",
+        {},
+        { "token": potensialUser.extras.token }
+      )
+    }
+    next();
+  }
 
   private inviteMember = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RegisterUserWithoutPasswordDto = request.body;
@@ -791,7 +795,7 @@ class AuthenticationController implements Controller {
       //   code: 202
       // });
       next();
-    } else if (!user.activated) {
+    } else if (!user.activated && user.access == 'member') {
       response.status(202).send({
         data: { action: 'need_account_activation' },
         code: 202
@@ -831,11 +835,11 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-      $set: {
-        //  account: user.account,
-        password: hashedPassword
-      }
-    }).catch());
+        $set: {
+          //  account: user.account,
+          password: hashedPassword
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Your password has been Updated",
@@ -858,11 +862,11 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-      $set: {
-        pass_verified: true,
-        password: await bcrypt.hash(data.newPassword, 10)
-      }
-    }).catch());
+        $set: {
+          pass_verified: true,
+          password: await bcrypt.hash(data.newPassword, 10)
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Your password has been Updated",
@@ -884,11 +888,11 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-      $set: {
-        verificationToken: token.token,
-        verificationExpiration: token.expiresAt
-      }
-    }).catch());
+        $set: {
+          verificationToken: token.token,
+          verificationExpiration: token.expiresAt
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals["res"] = (response.locals.res) ?
@@ -919,14 +923,14 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       verificationToken: data.token
     }, {
-      $set: {
-        email_verified: true,
-      },
-      $unset: {
-        verificationToken: "",
-        verificationExpiration: "",
-      }
-    }).catch());
+        $set: {
+          email_verified: true,
+        },
+        $unset: {
+          verificationToken: "",
+          verificationExpiration: "",
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -951,11 +955,11 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-      $set: {
-        restorationToken: token.token,
-        restorationExpiration: token.expiresAt
-      }
-    }).catch());
+        $set: {
+          restorationToken: token.token,
+          restorationExpiration: token.expiresAt
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {
@@ -999,14 +1003,14 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       restorationToken: data.token
     }, {
-      $set: {
-        password: hashedPassword,
-      },
-      $unset: {
-        restorationToken: "",
-        restorationExpiration: ""
-      }
-    }).catch());
+        $set: {
+          password: hashedPassword,
+        },
+        $unset: {
+          restorationToken: "",
+          restorationExpiration: ""
+        }
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -1026,13 +1030,13 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.findOneAndUpdate({
       _id: user_id
     }, {
-      $set: {
-        'activated': true
-      }
-    }, {
-      "fields": { "email": 1, "name": 1, "access": 1 },
-      "new": true
-    }).catch());
+        $set: {
+          'activated': true
+        }
+      }, {
+        "fields": { "email": 1, "name": 1, "access": 1 },
+        "new": true
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
 
@@ -1056,13 +1060,13 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.findOneAndUpdate({
       _id: user_id
     }, {
-      $set: {
-        'activated': false
-      }
-    }, {
-      "fields": { "email": 1, "name": 1, "access": 1 },
-      "new": true
-    }).catch());
+        $set: {
+          'activated': false
+        }
+      }, {
+        "fields": { "email": 1, "name": 1, "access": 1 },
+        "new": true
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
 
@@ -1083,16 +1087,16 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: request.user._id
     }, {
-      $set: {
-        activated: false
-      },
-      $push: {
-        deactivations: {
-          reason: data.reason,
-          createdAt: new Date()
+        $set: {
+          activated: false
+        },
+        $push: {
+          deactivations: {
+            reason: data.reason,
+            createdAt: new Date()
+          }
         }
-      }
-    }).catch());
+      }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {
