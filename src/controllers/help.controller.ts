@@ -211,6 +211,7 @@ class HelpController implements Controller {
           }
         )
       );
+      console.error(error);
     }
 
     return result;
