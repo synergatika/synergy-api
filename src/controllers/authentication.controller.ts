@@ -216,6 +216,9 @@ class AuthenticationController implements Controller {
    * invitePartner: Message ("User has been Invited to enjoy our Community!") EmailSent
    */
 
+  private sendResponse = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  }
+
   private checkIdentifier = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const identifier: IdentifierDto["identifier"] = request.params.identifier;
 
@@ -345,16 +348,6 @@ class AuthenticationController implements Controller {
     response.locals = {
       res: this.prefixedResponse(200, "User has been Invited to enjoy our Community!", {}, { "password": tempPassword }),
       extras: extras,
-      // res: {
-      //     code: 200,
-      //     body: {
-      //         // -- For Testing Purposes Only -- //
-      //         tempData: { "password": tempPassword },
-      //         // -- ////////////|\\\\\\\\\\\\ -- //
-      //         message: "User has been Invited to enjoy our Community!",
-      //         code: 200
-      //     }
-      // },
       user: {
         email: data.email,
         password: tempPassword
@@ -393,7 +386,7 @@ class AuthenticationController implements Controller {
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
     const encryptBy = email;
     let account: Account = serviceInstance.createWallet(encryptBy);
-    //  account = serviceInstance.createWallet(tempPassword);
+
     const extras = {
       encryptBy: encryptBy,
       tempPassword: tempPassword
@@ -401,24 +394,21 @@ class AuthenticationController implements Controller {
 
     let error: Error, user: User;
     [error, user] = await to(this.user.create({
-      email: email, password: hashedPassword,
-      access: 'member', account: account,
-      email_verified: true, pass_verified: false,
-      oneClickToken: token.token, oneClickExpiration: token.expiresAt,
-      createdBy: 'One-Click',
+      email: email,
+      password: hashedPassword,
+      access: 'member',
+      account: account,
+      pass_verified: false,
+      oneClickToken: token.token,
+      oneClickExpiration: token.expiresAt,
+      createdBy: 'One-Click'
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {
-      res: this.prefixedResponse(200, "", { "registration": true, "oneClickToken": token.token }, { "password": tempPassword }),
+      user: user,
       extras: extras,
-      user: {
-        user_id: user._id,
-        access: 'member',
-        email: email,
-        password: tempPassword,
-        account: account
-      }, account: account
+      res: this.prefixedResponse(200, "", { "registration": true, "oneClickToken": token.token }, { "password": tempPassword })
     }
     next();
   }
@@ -447,11 +437,7 @@ class AuthenticationController implements Controller {
     response.locals = {
       user: user,
       extras: potensialUser.extras,
-      res: this.prefixedResponse(200,
-        "Registration has been completed!",
-        {},
-        { "token": potensialUser.extras.token }
-      )
+      res: this.prefixedResponse(200, "Registration has been completed!", {}, { "token": potensialUser.extras.token })
     }
     next();
   }
@@ -622,7 +608,6 @@ class AuthenticationController implements Controller {
         verificationExpiration: token.expiresAt,
       }
     }
-
     return {
       user: user,
       extras: extras
@@ -782,18 +767,7 @@ class AuthenticationController implements Controller {
       request.params.email = data.email;
       response.locals = {
         res: this.prefixedResponse(202, "", { action: 'need_email_verification' }, {})
-        // res: {
-        //   code: 202,
-        //   body: {
-        //     code: 202,
-        //     data: { action: 'need_email_verification' },
-        //   }
-        //}
       }
-      // response.status(202).send({
-      //   data: { action: 'need_email_verification' },
-      //   code: 202
-      // });
       next();
     } else if (!user.activated && user.access == 'member') {
       response.status(202).send({
@@ -829,14 +803,11 @@ class AuthenticationController implements Controller {
     }
     const hashedPassword = await bcrypt.hash(data.newPassword, 10);
 
-    //  const account: Account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, data.oldPassword)).privateKey, data.newPassword);
-
     let error: Error, results: Object;
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
         $set: {
-          //  account: user.account,
           password: hashedPassword
         }
       }).catch());
@@ -997,7 +968,6 @@ class AuthenticationController implements Controller {
     }
 
     const hashedPassword = await bcrypt.hash(data.newPassword, 10);
-    //  const account = serviceInstance.createWallet(data.newPassword)
 
     let error: Error, results: Object;
     [error, results] = await to(this.user.updateOne({

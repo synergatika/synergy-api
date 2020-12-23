@@ -157,7 +157,7 @@ class MicrocreditCampaignsController implements Controller {
 
     const params: string = request.params.offset;
     const offset: {
-      limit: number, skip: number, greater: number
+      limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, campaigns: Campaign[];
@@ -241,7 +241,7 @@ class MicrocreditCampaignsController implements Controller {
 
     const params: string = request.params.offset;
     const offset: {
-      limit: number, skip: number, greater: number
+      limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, campaigns: Campaign[];
@@ -416,14 +416,15 @@ class MicrocreditCampaignsController implements Controller {
 
   private readPrivateCampaignsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: PartnerID["partner_id"] = request.params.partner_id;
-    const access = (request.user.access === 'partner') ? 'partners' : 'random';
-    const status = (request.user._id == partner_id) ? 'draft' : 'random';
     const user: User = request.user;
 
     const params: string = request.params.offset;
     const offset: {
-      limit: number, skip: number, greater: number
+      limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
+
+    const access = (request.user.access === 'partner') ? 'partners' : 'random';
+    const status = ((request.user._id == partner_id) && (offset.type)) ? 'draft' : 'random';
 
     let error: Error, campaigns: Campaign[];
     [error, campaigns] = await to(this.user.aggregate([{
@@ -520,7 +521,7 @@ class MicrocreditCampaignsController implements Controller {
 
     const params: string = request.params.offset;
     const offset: {
-      limit: number, skip: number, greater: number
+      limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, campaigns: Campaign[];

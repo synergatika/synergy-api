@@ -8,16 +8,10 @@ chai.use(require('chai-http'));
 
 import * as fs from 'fs';
 
-import { imagesLocation, partner_a, partner_c, user_a, offer_a, offer_b, post_a, post_b, post_c, event_a, event_b, microcredit_a, microcredit_b, microcredit_c, offers, events } from './_structs.test';
+import { imagesLocation, partner_a, partner_c, user_a, offer_a, offer_b, offer_d, post_a, post_b, post_c, event_a, event_b, microcredit_a, microcredit_b, microcredit_c, microcredit_d, microcredit_f, offers, events } from './_structs.test';
 
 describe("Partner - Offers, Posts, Events", () => {
   describe("Partner - Offers (/loyalty/offers)", () => {
-    var _date = new Date();
-    var _newDate = _date.setDate(_date.getDate() + 60);
-
-    var _date2 = new Date();
-    var _newDate2 = _date2.setDate(_date.getDate() + 75);
-
     it("1. should create an offer - 201 Created", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("loyalty/offers/")
@@ -27,7 +21,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('description', offer_a.description)
         .field('instructions', offer_a.instructions)
         .field('cost', offer_a.cost)
-        .field('expiresAt', _newDate.toString())
+        .field('expiresAt', offer_a.expiresAt)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_a.imageFile}`), `${offer_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
@@ -60,7 +54,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('description', offer_b.description)
         .field('instructions', offer_b.instructions)
         .field('cost', offer_b.cost)
-        .field('expiresAt', _newDate.toString())
+        .field('expiresAt', offer_b.expiresAt)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_b.imageFile}`), `${offer_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
@@ -80,7 +74,7 @@ describe("Partner - Offers, Posts, Events", () => {
           done();
         });
     });
-    it("5. should update a offer - 200 Updated", (done) => {
+    it("5. should update an offer - 200 Updated", (done) => {
       chai.request(`${process.env.API_URL}`)
         .put("loyalty/offers/" + partner_a._id + "/" + offers[0].offer_id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
@@ -89,10 +83,28 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('description', offer_a.description)
         .field('instructions', offer_a.instructions)
         .field('cost', offer_a.cost)
-        .field('expiresAt', _newDate2.toString())
+        .field('expiresAt', offer_a.expiresAt)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_a.updatedImageFile}`), `${offer_a.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+    it("6. should create an offer - 200 Updated", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("loyalty/offers/")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .field('title', offer_d.title)
+        .field('subtitle', offer_d.subtitle)
+        .field('description', offer_d.description)
+        .field('instructions', offer_d.instructions)
+        .field('cost', offer_d.cost)
+        .field('expiresAt', offer_d.expiresAt)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${offer_d.imageFile}`), `${offer_d.imageFile}`)
+        .end((err, res) => {
+          res.should.have.status(201);
           res.body.should.be.a('object');
           res.body.should.have.property('message');
           done();
@@ -196,13 +208,8 @@ describe("Partner - Offers, Posts, Events", () => {
         });
     });
   });
+
   describe("Partner - Events (/events)", () => {
-    var _date = new Date();
-    var _newDate = _date.setDate(_date.getDate() + 20);
-
-    var _date2 = new Date();
-    var _newDate2 = _date2.setDate(_date.getDate() + 35);
-
     it("1. should create an event - 201 Created", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("events/")
@@ -212,7 +219,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('content', event_a.content)
         .field('access', event_a.access)
         .field('location', event_a.location)
-        .field('dateTime', _newDate.toString())
+        .field('dateTime', event_a.dateTime)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_a.imageFile}`), `${event_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
@@ -229,7 +236,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('subtitle', event_a.subtitle)
         .field('access', event_a.access)
         .field('location', event_a.location)
-        .field('dateTime', _newDate.toString())
+        .field('dateTime', event_a.dateTime)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_a.imageFile}`), `${event_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(400);
@@ -246,7 +253,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
-        .field('dateTime', _newDate2.toString())
+        .field('dateTime', event_b.dateTime)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.imageFile}`), `${event_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
@@ -289,7 +296,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
-        .field('dateTime', _newDate2.toString())
+        .field('dateTime', event_b.dateTime)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.updatedImageFile}`), `${event_b.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(404);
@@ -307,7 +314,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
-        .field('dateTime', _newDate2.toString())
+        .field('dateTime', event_b.dateTime)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.updatedImageFile}`), `${event_b.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
@@ -336,7 +343,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('content', event_b.content)
         .field('access', event_b.access)
         .field('location', event_b.location)
-        .field('dateTime', _newDate2.toString())
+        .field('dateTime', event_b.dateTime)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${event_b.updatedImageFile}`), `${event_b.updatedImageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
@@ -357,16 +364,8 @@ describe("Partner - Offers, Posts, Events", () => {
         });
     });
   });
-  describe("Partner - Microcredit Campaigns", () => {
-    var _date_1 = new Date();
-    var _newDate1 = _date_1.setDate(_date_1.getDate() - 10);
-    var _date_2 = new Date();
-    var _newDate2 = _date_2.setDate(_date_2.getDate() + 50);
-    var _date_3 = new Date();
-    var _newDate3 = _date_3.setDate(_date_3.getDate() + 50);
-    var _date_4 = new Date();
-    var _newDate4 = _date_4.setDate(_date_4.getDate() + 200);
 
+  describe("Partner - Microcredit Campaigns", () => {
     it("1. should create campaign | 201 Campaign", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("microcredit/campaigns/")
@@ -382,10 +381,10 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('minAllowed', microcredit_a.minAllowed)
         .field('maxAllowed', microcredit_a.maxAllowed)
         .field('maxAmount', microcredit_a.maxAmount)
-        .field('redeemStarts', _newDate1.toString())
-        .field('redeemEnds', _newDate4.toString())
-        .field('startsAt', _newDate1.toString())
-        .field('expiresAt', _newDate2.toString())
+        .field('redeemStarts', microcredit_a.redeemStarts)
+        .field('redeemEnds', microcredit_a.redeemEnds)
+        .field('startsAt', microcredit_a.startsAt)
+        .field('expiresAt', microcredit_a.expiresAt)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_a.imageFile}`), `${microcredit_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
@@ -421,10 +420,10 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('minAllowed', microcredit_a.minAllowed)
         .field('maxAllowed', microcredit_a.maxAllowed)
         .field('maxAmount', microcredit_a.maxAmount)
-        .field('redeemStarts', _newDate1.toString())
-        .field('redeemEnds', _newDate4.toString())
-        .field('startsAt', _newDate1.toString())
-        .field('expiresAt', _newDate2.toString())
+        .field('redeemStarts', microcredit_a.redeemStarts)
+        .field('redeemEnds', microcredit_a.redeemEnds)
+        .field('startsAt', microcredit_a.startsAt)
+        .field('expiresAt', microcredit_a.expiresAt)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_a.imageFile}`), `${microcredit_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
@@ -459,10 +458,10 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('minAllowed', microcredit_a.minAllowed)
         .field('maxAllowed', microcredit_a.maxAllowed)
         .field('maxAmount', microcredit_a.maxAmount)
-        .field('redeemStarts', _newDate1.toString())
-        .field('redeemEnds', _newDate4.toString())
-        .field('startsAt', _newDate1.toString())
-        .field('expiresAt', _newDate2.toString())
+        .field('redeemStarts', microcredit_a.redeemStarts)
+        .field('redeemEnds', microcredit_a.redeemEnds)
+        .field('startsAt', microcredit_a.startsAt)
+        .field('expiresAt', microcredit_a.expiresAt)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_a.imageFile}`), `${microcredit_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(404);
@@ -486,10 +485,10 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('minAllowed', microcredit_b.minAllowed)
         .field('maxAllowed', microcredit_b.maxAllowed)
         .field('maxAmount', microcredit_b.maxAmount)
-        .field('redeemStarts', _newDate1.toString())
-        .field('redeemEnds', _newDate2.toString())
-        .field('startsAt', _newDate3.toString())
-        .field('expiresAt', _newDate4.toString())
+        .field('redeemStarts', microcredit_b.redeemStarts)
+        .field('redeemEnds', microcredit_b.redeemEnds)
+        .field('startsAt', microcredit_b.startsAt)
+        .field('expiresAt', microcredit_b.expiresAt)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_b.imageFile}`), `${microcredit_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(400);
@@ -513,10 +512,10 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('minAllowed', microcredit_b.minAllowed)
         .field('maxAllowed', microcredit_b.maxAllowed)
         .field('maxAmount', microcredit_b.maxAmount)
-        .field('redeemStarts', _newDate3.toString())
-        .field('redeemEnds', _newDate4.toString())
-        .field('startsAt', _newDate1.toString())
-        .field('expiresAt', _newDate2.toString())
+        .field('redeemStarts', microcredit_b.redeemStarts)
+        .field('redeemEnds', microcredit_b.redeemEnds)
+        .field('startsAt', microcredit_b.startsAt)
+        .field('expiresAt', microcredit_b.expiresAt)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_b.imageFile}`), `${microcredit_b.imageFile}`)
         .end((err, res) => {
           res.should.have.status(201);
@@ -529,6 +528,111 @@ describe("Partner - Offers, Posts, Events", () => {
     it("8. should publish campaign | 200 Updated", (done) => {
       chai.request(`${process.env.API_URL}`)
         .put("microcredit/campaigns/" + partner_a._id + "/" + microcredit_b._id + "/publish")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+    it("9. should create campaign | 201 Campaign", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/campaigns/")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .field('title', microcredit_d.title)
+        .field('terms', microcredit_d.terms)
+        .field('access', microcredit_d.access)
+        .field('description', microcredit_d.description)
+        .field('category', microcredit_d.category)
+        .field('subtitle', microcredit_d.subtitle)
+        .field('quantitative', microcredit_d.quantitative)
+        .field('stepAmount', microcredit_d.stepAmount)
+        .field('minAllowed', microcredit_d.minAllowed)
+        .field('maxAllowed', microcredit_d.maxAllowed)
+        .field('maxAmount', microcredit_d.maxAmount)
+        .field('redeemStarts', microcredit_d.redeemStarts)
+        .field('redeemEnds', microcredit_d.redeemEnds)
+        .field('startsAt', microcredit_d.startsAt)
+        .field('expiresAt', microcredit_d.expiresAt)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_d.imageFile}`), `${microcredit_d.imageFile}`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          done();
+        });
+    });
+    it("10. should create campaign | 201 Campaign", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/campaigns/")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .field('title', microcredit_f.title)
+        .field('terms', microcredit_f.terms)
+        .field('access', microcredit_f.access)
+        .field('description', microcredit_f.description)
+        .field('category', microcredit_f.category)
+        .field('subtitle', microcredit_f.subtitle)
+        .field('quantitative', microcredit_f.quantitative)
+        .field('stepAmount', microcredit_f.stepAmount)
+        .field('minAllowed', microcredit_f.minAllowed)
+        .field('maxAllowed', microcredit_f.maxAllowed)
+        .field('maxAmount', microcredit_f.maxAmount)
+        .field('redeemStarts', microcredit_f.redeemStarts)
+        .field('redeemEnds', microcredit_f.redeemEnds)
+        .field('startsAt', microcredit_f.startsAt)
+        .field('expiresAt', microcredit_f.expiresAt)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_f.imageFile}`), `${microcredit_f.imageFile}`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          microcredit_f._id = res.body.data._id;
+          done();
+        });
+    });
+    it("11. should publish campaign | 200 Updated", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .put("microcredit/campaigns/" + partner_a._id + "/" + microcredit_f._id + "/publish")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+    it("12. should create campaign | 201 Campaign", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("microcredit/campaigns/")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .field('title', microcredit_c.title)
+        .field('terms', microcredit_c.terms)
+        .field('access', microcredit_c.access)
+        .field('description', microcredit_c.description)
+        .field('category', microcredit_c.category)
+        .field('subtitle', microcredit_c.subtitle)
+        .field('quantitative', microcredit_c.quantitative)
+        .field('stepAmount', microcredit_c.stepAmount)
+        .field('minAllowed', microcredit_c.minAllowed)
+        .field('maxAllowed', microcredit_c.maxAllowed)
+        .field('maxAmount', microcredit_c.maxAmount)
+        .field('redeemStarts', microcredit_c.redeemStarts)
+        .field('redeemEnds', microcredit_c.redeemEnds)
+        .field('startsAt', microcredit_c.startsAt)
+        .field('expiresAt', microcredit_c.expiresAt)
+        .attach('imageURL', fs.readFileSync(`${imagesLocation}/${microcredit_c.imageFile}`), `${microcredit_c.imageFile}`)
+        .end((err, res) => {
+          res.should.have.status(201);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          microcredit_c._id = res.body.data._id;
+          done();
+        });
+    });
+    it("13. should publish campaign | 200 Updated", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .put("microcredit/campaigns/" + partner_a._id + "/" + microcredit_c._id + "/publish")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .end((err, res) => {
           res.should.have.status(200);

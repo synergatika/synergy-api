@@ -90,7 +90,7 @@ class MicrocreditSupportsController implements Controller {
     const params: string = request.params.offset;
 
     const offset: {
-      limit: number, skip: number, greater: number
+      limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, supports: any[];

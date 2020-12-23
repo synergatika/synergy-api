@@ -455,7 +455,7 @@ class MicrocreditController implements Controller {
     const params: string = request.params.offset;
     const user: User = request.user;
     const offset: {
-      limit: number, skip: number, greater: number
+      limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, transactions: MicrocreditTransaction[];

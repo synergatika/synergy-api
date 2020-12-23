@@ -83,7 +83,7 @@ class PartnersController implements Controller {
   private readPartners = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const params: string = request.params.offset;
     const offset: {
-      limit: number, skip: number, greater: number
+      limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, partners: Partner[];
