@@ -63,9 +63,9 @@ class MicrocreditSupportsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/:offset`, 
-    authMiddleware, 
-    this.readAllBackerSupports);
+    this.router.get(`${this.path}/:offset`,
+      authMiddleware,
+      this.readAllBackerSupports);
 
     this.router.get(`${this.path}/:partner_id/:campaign_id`,
       authMiddleware, accessMiddleware.onlyAsPartner,
@@ -90,7 +90,7 @@ class MicrocreditSupportsController implements Controller {
     const params: string = request.params.offset;
 
     const offset: {
-      limit: number, skip: number, greater: number
+      limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, supports: any[];

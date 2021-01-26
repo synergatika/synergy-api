@@ -41,7 +41,7 @@ import OffsetHelper from '../middleware/items/offset.helper';
 /**
  * Helper's Instances
  */
-const offsetParams = OffsetHelper.offseIndex;
+const offsetParams = OffsetHelper.offsetIndex;
 
 /**
  * Models
@@ -123,7 +123,7 @@ class CommunityController implements Controller {
 
     const params: string = request.params.offset;
     const offset: {
-      index: number, count: number, greater: number
+      index: number, count: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
@@ -213,7 +213,7 @@ class CommunityController implements Controller {
 
     const params: string = request.params.offset;
     const offset: {
-      index: number, count: number, greater: number
+      index: number, count: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
@@ -301,7 +301,7 @@ class CommunityController implements Controller {
 
     const params: string = request.params.offset;
     const offset: {
-      index: number, count: number, greater: number
+      index: number, count: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
@@ -411,7 +411,7 @@ class CommunityController implements Controller {
 
     const params: string = request.params.offset;
     const offset: {
-      index: number, count: number, greater: number
+      index: number, count: number, greater: number, type: boolean
     } = offsetParams(params);
 
     let error: Error, posts: PostEvent[], events: PostEvent[];

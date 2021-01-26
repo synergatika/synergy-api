@@ -9,6 +9,7 @@ interface Campaign {
   partner_id: string;
   partner_slug: string;
   partner_imageURL: string;
+
   partner_address: PartnerAddress;
   partner_phone: string;
   partner_contacts: [PartnerContact];

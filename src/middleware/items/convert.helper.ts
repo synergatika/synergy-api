@@ -78,5 +78,12 @@ class ConvertHelper {
     //
     // return payment_id;
   }
+
+  static roundDate(date: number, hour: number): number {
+    var _date = new Date(parseInt(date.toString()));
+    _date.setHours(hour); _date.setMinutes(0); _date.setSeconds(0); _date.setMilliseconds(0);
+
+    return parseInt(_date.getTime().toString());
+  }
 }
 export default ConvertHelper;

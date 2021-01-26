@@ -15,6 +15,10 @@ class OfferDto {
   @IsString()
   public description: string;
 
+  @IsOptional()
+  @IsString()
+  public instructions: string;
+
   @IsString()
   public cost: number;
 
