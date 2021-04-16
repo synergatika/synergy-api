@@ -217,20 +217,20 @@ describe("Partner - Authentication & Profile", () => {
           done();
         });
     });
-    it("5. should NOT link a card | has already card - 404 NotFound", (done) => {
-      chai.request(`${process.env.API_URL}`)
-        .put("auth/link_card/" + user_e.email)
-        .set('Authorization', 'Bearer ' + partner_a.authToken)
-        .send({
-          card: '1111111111111111'
-        })
-        .end((err, res) => {
-          res.should.have.status(404);
-          res.body.should.be.a('object');
-          res.body.should.have.property('message');
-          done();
-        });
-    });
+    // it("5. should NOT link a card | has already card - 404 NotFound", (done) => {
+    //   chai.request(`${process.env.API_URL}`)
+    //     .put("auth/link_card/" + user_e.email)
+    //     .set('Authorization', 'Bearer ' + partner_a.authToken)
+    //     .send({
+    //       card: '1111111111111111'
+    //     })
+    //     .end((err, res) => {
+    //       res.should.have.status(404);
+    //       res.body.should.be.a('object');
+    //       res.body.should.have.property('message');
+    //       done();
+    //     });
+    // });
     it("6. should NOT link an email | has already email - 404 NotFound", (done) => {
       chai.request(`${process.env.API_URL}`)
         .put("auth/link_email/" + user_e.card)

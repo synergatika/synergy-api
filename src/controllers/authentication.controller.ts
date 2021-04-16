@@ -282,8 +282,8 @@ class AuthenticationController implements Controller {
 
     if (!user) {
       return next(new NotFoundException('WRONG_CREDENTIALS'));
-    } else if (user.card) {
-      return next(new NotFoundException('USER_HAS_CARD'));
+      // } else if (user.card) {
+      //   return next(new NotFoundException('USER_HAS_CARD'));
     } else if (await this.user.findOne({ card: data.card })) {
       return next(new NotFoundException('USER_EXISTS'));
     } else if (!user.activated) {
@@ -414,66 +414,66 @@ class AuthenticationController implements Controller {
   }
 
   private autoRegisterMember
-  = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: RegisterUserWithPasswordDto = request.body;
+    = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+      const data: RegisterUserWithPasswordDto = request.body;
 
-    const existingUser = await this.user.findOne({ email: data.email });
-    if (existingUser) {
-      return next(new NotFoundException('USER_EXISTS'));
+      const existingUser = await this.user.findOne({ email: data.email });
+      if (existingUser) {
+        return next(new NotFoundException('USER_EXISTS'));
+      }
+
+      let potensialUser = await this.initializeMember(
+        true,
+        this.hasBlockchain,
+        { ...data, createdBy: 'auto' }
+      );
+
+      let error: Error, user: User;
+      [error, user] = await to(this.user.create(
+        potensialUser.user
+      ).catch());
+      if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+      response.locals = {
+        user: user,
+        extras: potensialUser.extras,
+        res: this.prefixedResponse(200, "Registration has been completed!", {}, { "token": potensialUser.extras.token })
+      }
+      next();
     }
-
-    let potensialUser = await this.initializeMember(
-      true,
-      this.hasBlockchain,
-      { ...data, createdBy: 'auto' }
-    );
-
-    let error: Error, user: User;
-    [error, user] = await to(this.user.create(
-      potensialUser.user
-    ).catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-    response.locals = {
-      user: user,
-      extras: potensialUser.extras,
-      res: this.prefixedResponse(200, "Registration has been completed!", {}, { "token": potensialUser.extras.token })
-    }
-    next();
-  }
 
   private autoRegisterPartner
-  = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data: RegisterPartnerWithPasswordDto = request.body;
+    = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+      const data: RegisterPartnerWithPasswordDto = request.body;
 
-    const existingUser = await this.user.findOne({ email: data.email });
-    if (existingUser) {
-      return next(new NotFoundException('USER_EXISTS'));
+      const existingUser = await this.user.findOne({ email: data.email });
+      if (existingUser) {
+        return next(new NotFoundException('USER_EXISTS'));
+      }
+
+      let potensialUser = await this.initializePartner(
+        true,
+        this.hasBlockchain,
+        { ...data, createdBy: 'auto', slug: await createSlug(request) }
+      );
+
+      let error: Error, user: User;
+      [error, user] = await to(this.user.create(
+        potensialUser.user
+      ).catch());
+      if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+      response.locals = {
+        user: user,
+        extras: potensialUser.extras,
+        res: this.prefixedResponse(200,
+          "Registration has been completed!",
+          {},
+          { "token": potensialUser.extras.token }
+        )
+      }
+      next();
     }
-
-    let potensialUser = await this.initializePartner(
-      true,
-      this.hasBlockchain,
-      { ...data, createdBy: 'auto', slug: await createSlug(request) }
-    );
-
-    let error: Error, user: User;
-    [error, user] = await to(this.user.create(
-      potensialUser.user
-    ).catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-    response.locals = {
-      user: user,
-      extras: potensialUser.extras,
-      res: this.prefixedResponse(200,
-        "Registration has been completed!",
-        {},
-        { "token": potensialUser.extras.token }
-      )
-    }
-    next();
-  }
 
   private inviteMember = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: RegisterUserWithoutPasswordDto = request.body;
