@@ -20,7 +20,7 @@ var partner_a = {
   email: "partner_a@email.gr",
   password: "partner_a",
   tempPass: '',
-  sector: "Durables (Technology)",
+  sector: "Durables (Technology)", // "606daa442bc8e70588534115",
   imageFile: "partner_1.jpg",
   subtitle: "This is subtitle for partner a!",
   description: "This is description for partner a! This is description for partner a! This is description for partner a! This is description for partner a!",
@@ -70,7 +70,7 @@ var partner_b = {
   subtitle: "This is subtitle for partner b!",
   description: "This is description for partner b! This is description for partner b! This is description for partner b! This is description for partner b!",
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
-  sector: "Recreation and Culture",
+  sector: "Recreation and Culture", //"606daa442bc8e70588534118",
   imageFile: "partner_2.jpg",
   phone: 2102021020,
   address: {
@@ -108,7 +108,7 @@ var partner_c = {
   subtitle: "This is subtitle for partner c!",
   description: "This is description for partner c! This is description for partner c! This is description for partner c! This is description for partner c!",
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
-  sector: "Recreation and Culture",
+  sector: "Recreation and Culture",//  "606daa442bc8e7058853411c",
   imageFile: "partner_3.jpg",
   contacts: [{
     slug: 'FB',

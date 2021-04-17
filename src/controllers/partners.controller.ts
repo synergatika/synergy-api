@@ -156,6 +156,11 @@ class PartnersController implements Controller {
     const data: PartnerDto = request.body;
     const user: User = request.user;
 
+    console.log("data");
+    console.log(data);
+    console.log("request.file");
+    console.log(request.file);
+
     if (user['imageURL'] && request.file) {
       var imageFile = (user['imageURL']).split('assets/static/');
       const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
@@ -174,7 +179,7 @@ class PartnersController implements Controller {
         $set: {
           'name': data.name,
           'slug': await createSlug(request),
-          'subtile': data.subtitle,
+          'subtitle': data.subtitle,
           'description': data.description,
           'imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : user.imageURL,
           'sector': data.sector,
