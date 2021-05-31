@@ -4,13 +4,13 @@ import * as bcrypt from 'bcrypt';
 /**
  * Exceptions
  */
-import ForbiddenException from '../../exceptions/Forbidden.exception';
+import { ForbiddenException } from '../../_exceptions/index';
 
 /**
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import User from '../../usersInterfaces/user.interface';
+import { User } from '../../_interfaces/index';
 
 /**
  * Models

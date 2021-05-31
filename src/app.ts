@@ -68,7 +68,7 @@ class App {
       DB_USER,
       DB_PASSWORD
     } = process.env;
-    console.log('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME)
+
     mongoose.connect('mongodb://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME + "?authSource=admin", {
       useCreateIndex: true,
       useNewUrlParser: true,
@@ -76,7 +76,6 @@ class App {
       useFindAndModify: false
     }).catch((err) => {
       console.log('*** Can Not Connect to Mongo Server:', 'mongodb://' + DB_HOST + ":" + DB_PORT + "/" + DB_NAME)
-      console.log(err)
     })
   }
 }

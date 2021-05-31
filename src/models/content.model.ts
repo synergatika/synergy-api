@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import Content from '../contentInterfaces/content.interface';
+import { Content } from '../_interfaces/index';
 
 const contentSchema = new mongoose.Schema({
   name: String,

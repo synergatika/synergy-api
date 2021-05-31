@@ -7,23 +7,19 @@ import latinize from 'latinize';
 /**
  * DTOs
  */
-import ContentID from '../contentDtos/content_id.params.dto';
-import ContentDto from '../contentDtos/content.dto';
-import SectorsDto from '../contentDtos/sectors.dto';
+import { ContentDto, SectorsDto, ContentID } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-import NotFoundException from '../exceptions/NotFound.exception';
+import { UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import Content from '../contentInterfaces/content.interface';
-import Sector from '../contentInterfaces/sector.interface';
+import { Content, Sector } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -63,8 +59,6 @@ class ContentController implements Controller {
     let error: Error, sectors: Sector[];
     [error, sectors] = await to(this.sector.find().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    console.log("sectors")
-    console.log(sectors)
     response.status(200).send({
       data: sectors,
       code: 200
@@ -73,40 +67,40 @@ class ContentController implements Controller {
 
   private updateSectors = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: SectorsDto = request.body;
+    console.log("Sectors To Update");
     console.log(data);
     let error: Error, sectors: Sector[];
     [error, sectors] = await to(this.sector.find().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    var toUpdate: Sector[] = data.sectors.filter((o) => { return o._id != '0' }).map((o) => { return { slug: latinize((o.en_title).toLowerCase()).split(' ').join('_'), el_title: o.el_title, en_title: o.en_title } });
-    var toDelete: ObjectId[] = [];
+    console.log("Sectors Current");
+    console.log(sectors);
+
+    var toUpdate: Sector[] = data.sectors.filter((o) => { return o._id != '0' }).map((o) => { return { _id: o._id, slug: latinize((o.en_title).toLowerCase()).split(' ').join('_'), el_title: o.el_title, en_title: o.en_title } });
+    var toDelete: ObjectId[] = sectors.map((o) => { return new ObjectId(o._id) });
     var toInsert: Sector[] = data.sectors.filter((o) => { return o._id == '0' }).map((o) => { return { slug: latinize((o.en_title).toLowerCase()).split(' ').join('_'), el_title: o.el_title, en_title: o.en_title } });
+
+    // sectors.forEach(el => {
+    //   if (toUpdate.map((x) => { return (x._id); }).indexOf(el._id.toString()) == -1) {
+    //     toDelete.push(new ObjectId(el._id));
+    //   }
+    // });
 
     console.log(toUpdate);
     console.log(toDelete);
     console.log(toInsert);
 
-    sectors.forEach(el => {
-      if (toUpdate.map((x) => { return x._id; }).indexOf(el._id) == -1) {
-        toDelete.push(new ObjectId(el._id));
-      }
-    });
-
     let error_1: Error, result_1: any;
     [error_1, result_1] = await to(this.sector.deleteMany(
       { _id: { $in: toDelete } }
     ).catch());
-    console.log('error_1');
-    console.log(error_1);
-    if (error_1) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+    if (error_1) return next(new UnprocessableEntityException(`DB ERROR || ${error_1}`));
 
     let error_2: Error, result_2: any;
     [error_2, result_2] = await to(this.sector.insertMany(
       toInsert
     ).catch());
-    console.log('error_2');
-    console.log(error_2);
-    if (error_2) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+    if (error_2) return next(new UnprocessableEntityException(`DB ERROR || ${error_2}`));
 
     //toUpdate.forEach(element => {
     let error_3: Error, result_3: any;
@@ -114,11 +108,7 @@ class ContentController implements Controller {
       toUpdate
     ).catch());
     //  });
-
-    console.log('error_3');
-    console.log(error_3);
-
-    if (error_3) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+    if (error_3) return next(new UnprocessableEntityException(`DB ERROR || ${error_3}`));
 
     response.status(200).send({
       message: 'Success! Sectors has been Updated!',
@@ -179,14 +169,14 @@ class ContentController implements Controller {
     [error, results] = await to(this.content.updateOne({
       _id: content_id
     }, {
-        $set: {
-          name: data.name,
-          el_title: data.el_title,
-          en_title: data.en_title,
-          el_content: data.el_content,
-          en_content: data.en_content
-        }
-      }).catch());
+      $set: {
+        name: data.name,
+        el_title: data.el_title,
+        en_title: data.en_title,
+        el_content: data.el_content,
+        en_content: data.en_content
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({

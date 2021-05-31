@@ -6,22 +6,19 @@ import path from 'path';
 /**
  * DTOs
  */
-import PartnerDto from '../usersDtos/partner.dto';
-import PartnerID from '../usersDtos/partner_id.params.dto';
-import PartnerPaymentsDto from '../usersDtos/partner_payments.dto';
+import { PartnerDto, PartnerPaymentsDto, PartnerID } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
+import { UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
-import Partner from '../usersInterfaces/partner.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
+import { User, Partner, UserAccess } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -90,7 +87,7 @@ class PartnersController implements Controller {
     [error, partners] = await to(this.user.find({
       $and: [
         { 'activated': true },
-        { 'access': 'partner' }
+        { 'access': UserAccess.PARTNER }
       ]
     }).select({
       "id": 1,
@@ -176,26 +173,26 @@ class PartnersController implements Controller {
     [error, partner] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-        $set: {
-          'name': data.name,
-          'slug': await createSlug(request),
-          'subtitle': data.subtitle,
-          'description': data.description,
-          'imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : user.imageURL,
-          'sector': data.sector,
-          'phone': data.phone,
-          'address.city': data.city,
-          'address.postCode': data.postCode,
-          'address.street': data.street,
-          'address.coordinates': [data.lat, data.long],
-          'contact.phone': data.phone,
-          'contacts': JSON.parse(data.contacts),
-          'timetable': data.timetable
-        }
-      }, {
-        "fields": { "name": 1, "imageURL": 1 },
-        "new": true
-      }).catch());
+      $set: {
+        'name': data.name,
+        'slug': await createSlug(request),
+        'subtitle': data.subtitle,
+        'description': data.description,
+        'imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : user.imageURL,
+        'sector': data.sector,
+        'phone': data.phone,
+        'address.city': data.city,
+        'address.postCode': data.postCode,
+        'address.street': data.street,
+        'address.coordinates': [data.lat, data.long],
+        'contact.phone': data.phone,
+        'contacts': JSON.parse(data.contacts),
+        'timetable': data.timetable
+      }
+    }, {
+      "fields": { "name": 1, "imageURL": 1 },
+      "new": true
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -213,13 +210,13 @@ class PartnersController implements Controller {
     [error, partner] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-        $set: {
-          'payments': data.payments,
-        }
-      }, {
-        "fields": { "name": 1, "imageURL": 1 },
-        "new": true
-      }).catch());
+      $set: {
+        'payments': data.payments,
+      }
+    }, {
+      "fields": { "name": 1, "imageURL": 1 },
+      "new": true
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({

@@ -19,25 +19,19 @@ validateEnv();
 /**
  * DTOs
  */
-import CampaignDto from '../microcreditDtos/campaign.dto'
-import PartnerID from '../usersDtos/partner_id.params.dto'
-import CampaignID from '../microcreditDtos/campaign_id.params.dto'
+import { PartnerID, CampaignID, CampaignDto } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-import NotFoundException from '../exceptions/NotFound.exception';
+import { NotFoundException, UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
-import Campaign from '../microcreditInterfaces/campaign.interface';
-import Tokens from '../microcreditInterfaces/tokens.interface';
-import MicrocreditCampaignStatistics from '../microcreditInterfaces/microcreditCampaignStatistics.interface';
+import { User, MicrocreditCampaign, MicrocreditTokens, MicrocreditStatistics } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -63,6 +57,7 @@ import blockchainStatus from '../middleware/items/status.middleware';
 const uploadFile = FilesMiddleware.uploadFile;
 const existFile = FilesMiddleware.existsFile;
 const deleteFile = FilesMiddleware.deleteFile;
+const deleteSync = FilesMiddleware.deleteSync;
 const createSlug = SlugHelper.microcreditSlug;
 const offsetParams = OffsetHelper.offsetLimit;
 
@@ -77,6 +72,8 @@ class MicrocreditCampaignsController implements Controller {
   public router = express.Router();
   private user = userModel;
   private transaction = transactionModel;
+
+  private campaignHours: number[] = [5, 20];
 
   constructor() {
     this.initializeRoutes();
@@ -93,11 +90,11 @@ class MicrocreditCampaignsController implements Controller {
       this.registerMicrocredit);
 
     this.router.get(`${this.path}/public/:offset`,
-      this.readPublicCampaigns);
+      this.readCampaigns);
 
     this.router.get(`${this.path}/private/:offset`,
       authMiddleware,
-      this.readPrivateCampaigns);
+      this.readCampaigns);
 
     this.router.post(`${this.path}/`,
       authMiddleware, accessMiddleware.onlyAsPartner,
@@ -107,12 +104,12 @@ class MicrocreditCampaignsController implements Controller {
 
     this.router.get(`${this.path}/public/:partner_id/:offset`,
       validationParamsMiddleware(PartnerID),
-      this.readPublicCampaignsByStore);
+      this.readCampaignsByStore);
 
     this.router.get(`${this.path}/private/:partner_id/:offset`,
       authMiddleware,
       validationParamsMiddleware(PartnerID),
-      this.readPrivateCampaignsByStore);
+      this.readCampaignsByStore);
 
     this.router.get(`${this.path}/:partner_id/:campaign_id`,
       validationParamsMiddleware(CampaignID),
@@ -144,6 +141,8 @@ class MicrocreditCampaignsController implements Controller {
       itemsMiddleware.microcreditCampaign,
       checkMiddleware.canEditMicrocredit,
       this.deleteCampaign);
+
+    this.router.post(`${this.path}/image`, authMiddleware, this.declareContentPath, uploadFile.array('content_image', 8), this.uploadContentImage);
   }
 
   private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -152,147 +151,51 @@ class MicrocreditCampaignsController implements Controller {
     next();
   }
 
-  private readPrivateCampaigns = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const access = (request.user.access === 'partner') ? 'partners' : 'random';
+  private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    request.params['path'] = 'content';
+    request.params['type'] = 'microcredit';
+    next();
+  }
 
-    const params: string = request.params.offset;
-    const offset: {
-      limit: number, skip: number, greater: number, type: boolean
-    } = offsetParams(params);
-
-    let error: Error, campaigns: Campaign[];
-    [error, campaigns] = await to(this.user.aggregate([{
-      $unwind: '$microcredit'
-    }, {
-      $match: {
-        $and: [
-          { 'activated': true },
-          { 'microcredit.access': { $in: ['public', 'private', access] } },
-          { 'microcredit.status': 'published' },
-          { 'microcredit.expiresAt': { $gt: offset.greater } }
-        ]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_email: '$email',
-        partner_imageURL: '$imageURL',
-
-        partner_payments: '$payments',
-        partner_address: '$address',
-        partner_contacts: '$contacts',
-        partner_phone: '$phone',
-
-        campaign_id: '$microcredit._id',
-        campaign_slug: '$microcredit.slug',
-        campaign_imageURL: '$microcredit.imageURL',
-        title: '$microcredit.title',
-        subtitle: '$microcredit.subtitle',
-        terms: '$microcredit.terms',
-        description: '$microcredit.description',
-        category: '$microcredit.category',
-        access: '$microcredit.access',
-
-        quantitative: '$microcredit.quantitative',
-        stepAmount: '$microcredit.stepAmount',
-        minAllowed: '$microcredit.minAllowed',
-        maxAllowed: '$microcredit.maxAllowed',
-        maxAmount: '$microcredit.maxAmount',
-
-        redeemStarts: '$microcredit.redeemStarts',
-        redeemEnds: '$microcredit.redeemEnds',
-        startsAt: '$microcredit.startsAt',
-        expiresAt: '$microcredit.expiresAt',
-
-        createdAt: '$microcredit.createdAt',
-        updatedAt: '$microcredit.updatedAt'
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-    // const confirmedTokens: Tokens[] = await this.readTokens(campaigns, 'confirmation');
-    // const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
-
-    // const campaignsTokens = campaigns.map((a: Campaign) =>
-    //   Object.assign({}, a,
-    //     {
-    //       confirmedTokens: (confirmedTokens).find((b: Tokens) => (b._id).toString() === (a.campaign_id).toString()),
-    //       orderedTokens: (orderedTokens).find((c: Tokens) => (c._id).toString() === (a.campaign_id).toString()),
-    //     }
-    //   )
-    // );
+  private uploadContentImage = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     response.status(200).send({
-      data: campaigns, // campaignsTokens,
-      code: 200
+      data: {
+        files: request.files,
+        path: `${process.env.API_URL}assets/content/`
+      },
+      success: true
     });
   }
 
-  private readPublicCampaigns = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  private readCampaigns = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
+    /** Params & Filters */
     const params: string = request.params.offset;
     const offset: {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    let error: Error, campaigns: Campaign[];
+    const access_filter: string[] = ['public'];
+    if (request.user) access_filter.push('private');
+    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+    /** ***** */
+
+    let error: Error, campaigns: MicrocreditCampaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match: {
         $and: [
           { 'activated': true },
-          { 'microcredit.access': 'public' },
+          { 'microcredit.access': { $in: access_filter } },
           { 'microcredit.status': 'published' },
           { 'microcredit.expiresAt': { $gt: offset.greater } }
         ]
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_email: '$email',
-        partner_imageURL: '$imageURL',
-
-        partner_payments: '$payments',
-        partner_address: '$address',
-        partner_contacts: '$contacts',
-        partner_phone: '$phone',
-
-        campaign_id: '$microcredit._id',
-        campaign_slug: '$microcredit.slug',
-        campaign_imageURL: '$microcredit.imageURL',
-        title: '$microcredit.title',
-        subtitle: '$microcredit.subtitle',
-        terms: '$microcredit.terms',
-        description: '$microcredit.description',
-        category: '$microcredit.category',
-        access: '$microcredit.access',
-
-        quantitative: '$microcredit.quantitative',
-        stepAmount: '$microcredit.stepAmount',
-        minAllowed: '$microcredit.minAllowed',
-        maxAllowed: '$microcredit.maxAllowed',
-        maxAmount: '$microcredit.maxAmount',
-
-        redeemStarts: '$microcredit.redeemStarts',
-        redeemEnds: '$microcredit.redeemEnds',
-        startsAt: '$microcredit.startsAt',
-        expiresAt: '$microcredit.expiresAt',
-
-        createdAt: '$microcredit.createdAt',
-        updatedAt: '$microcredit.updatedAt'
+        partner: this.projectPartner(),
+        ...this.projectMicrocredit()
       }
     }, {
       $sort: {
@@ -304,19 +207,8 @@ class MicrocreditCampaignsController implements Controller {
     ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    // const confirmedTokens: Tokens[] = await this.readTokens(campaigns, 'confirmation');
-    // const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
-
-    // const campaignsTokens = campaigns.map((a: Campaign) =>
-    //   Object.assign({}, a,
-    //     {
-    //       confirmedTokens: (confirmedTokens).find((b: Tokens) => (b._id).toString() === (a.campaign_id).toString()),
-    //       orderedTokens: (orderedTokens).find((c: Tokens) => (c._id).toString() === (a.campaign_id).toString()),
-    //     }
-    //   )
-    // );
     response.status(200).send({
-      data: campaigns, // campaignsTokens,
+      data: campaigns,
       code: 200
     });
   }
@@ -329,37 +221,39 @@ class MicrocreditCampaignsController implements Controller {
     [error, results] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-        $push: {
-          microcredit: {
-            "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
-            "title": data.title,
-            "subtitle": data.subtitle,
-            "slug": await createSlug(request),
-            "terms": data.terms,
-            "access": data.access,
-            "description": data.description,
-            "category": data.category,
-            "quantitative": data.quantitative,
-            "stepAmount": data.stepAmount,
-            "minAllowed": data.minAllowed,
-            "maxAllowed": data.maxAllowed,
-            "maxAmount": data.maxAmount,
-            "redeemStarts": convertHelper.roundDate(data.redeemStarts, 5),
-            "redeemEnds": convertHelper.roundDate(data.redeemEnds, 23),
-            "startsAt": convertHelper.roundDate(data.startsAt, 5),
-            "expiresAt": convertHelper.roundDate(data.expiresAt, 23),
-            "status": 'draft',
-            "address": '',
-            "transactionHash": ''
-          }
+      $push: {
+        microcredit: {
+          "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
+          "title": data.title,
+          "subtitle": data.subtitle,
+          "slug": await createSlug(request),
+          "terms": data.terms,
+          "access": data.access,
+          "description": data.description,
+          'contentFiles': (data.contentFiles) ? data.contentFiles.split(',') : 0,
+          "category": data.category,
+          "quantitative": data.quantitative,
+          "redeemable": data.redeemable,
+          "stepAmount": data.stepAmount,
+          "minAllowed": data.minAllowed,
+          "maxAllowed": data.maxAllowed,
+          "maxAmount": data.maxAmount,
+          "redeemStarts": convertHelper.roundDate(data.redeemStarts, this.campaignHours[0]),
+          "redeemEnds": convertHelper.roundDate(data.redeemEnds, this.campaignHours[1]),
+          "startsAt": convertHelper.roundDate(data.startsAt, this.campaignHours[0]),
+          "expiresAt": convertHelper.roundDate(data.expiresAt, this.campaignHours[1]),
+          "status": 'draft',
+          "address": '',
+          "transactionHash": ''
         }
-      }, { new: true }).catch());
+      }
+    }, { new: true }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     const currentCampaign = results.microcredit[results["microcredit"].length - 1];
 
     if (request.params && request.params.token) {
       response.locals["campaign"] = currentCampaign;
-      response.locals.campaign.campaign_id = currentCampaign._id;
+      response.locals.campaign._id = currentCampaign._id;
       next();
     } else {
       response.status(201).send({
@@ -371,13 +265,13 @@ class MicrocreditCampaignsController implements Controller {
 
   private registerMicrocredit = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
-    const currentCampaign: Campaign = response.locals.campaign;
+    const currentCampaign: MicrocreditCampaign = response.locals.campaign;
 
     const dates = {
-      startsAt: (convertHelper.roundDate(currentCampaign.startsAt, 5)).toString(),
-      expiresAt: (convertHelper.roundDate(currentCampaign.expiresAt, 23)).toString(),
-      redeemStarts: (convertHelper.roundDate(currentCampaign.redeemStarts, 5)).toString(),
-      redeemEnds: (convertHelper.roundDate(currentCampaign.redeemEnds, 23)).toString()
+      startsAt: (convertHelper.roundDate(currentCampaign.startsAt, this.campaignHours[0])).toString(),
+      expiresAt: (convertHelper.roundDate(currentCampaign.expiresAt, this.campaignHours[1])).toString(),
+      redeemStarts: (convertHelper.roundDate(currentCampaign.redeemStarts, this.campaignHours[0])).toString(),
+      redeemEnds: (convertHelper.roundDate(currentCampaign.redeemEnds, this.campaignHours[1])).toString()
     };
 
     Object.keys(dates).forEach((key: string) => {
@@ -395,17 +289,17 @@ class MicrocreditCampaignsController implements Controller {
 
         await this.user.updateOne({
           _id: user._id,
-          'microcredit._id': currentCampaign.campaign_id
+          'microcredit._id': currentCampaign._id
         }, {
-            '$set': {
-              'microcredit.$.status': 'published', // published
-              'microcredit.$.address': result.address,
-              'microcredit.$.transactionHash': result.transactionHash,
-            }
-          });
+          '$set': {
+            'microcredit.$.status': 'published', // published
+            'microcredit.$.address': result.address,
+            'microcredit.$.transactionHash': result.transactionHash,
+          }
+        });
 
         response.status(200).send({
-          message: "Success! Microcredit Campaign with ID: " + currentCampaign.campaign_id + " has been published!",
+          message: "Success! Microcredit Campaign with ID: " + currentCampaign._id + " has been published!",
           code: 200
         });
       })
@@ -414,80 +308,41 @@ class MicrocreditCampaignsController implements Controller {
       })
   }
 
-  private readPrivateCampaignsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private readCampaignsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: PartnerID["partner_id"] = request.params.partner_id;
-    const user: User = request.user;
 
+    /** Params & Filters */
     const params: string = request.params.offset;
     const offset: {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    const access = (request.user.access === 'partner') ? 'partners' : 'random';
-    const status = ((request.user._id == partner_id) && (offset.type)) ? 'draft' : 'random';
+    const access_filter: string[] = ['public'];
+    if (request.user) access_filter.push('private');
+    if (request.user && request.user.access == 'partner') access_filter.push('partners');
 
-    let error: Error, campaigns: Campaign[];
+    const status_filter: string[] = ['published'];
+    if (request.user && request.user._id == partner_id) status_filter.push('draft');
+
+    const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+    /** ***** */
+
+    let error: Error, campaigns: MicrocreditCampaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match: {
-        $or: [
-          {
-            $and: [
-              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
-              { 'microcredit.access': { $in: ['public', 'private', access] } },
-              { 'microcredit.status': { $in: ['published', status] } },
-              { 'microcredit.expiresAt': { $gt: offset.greater } }
-            ]
-          },
-          {
-            $and: [
-              { slug: partner_id },
-              { 'microcredit.access': { $in: ['public', 'private', access] } },
-              { 'microcredit.status': { $in: ['published', status] } },
-              { 'microcredit.expiresAt': { $gt: offset.greater } }
-            ]
-          }
+        $and: [
+          partner_filter,
+          { 'microcredit.access': { $in: access_filter } },
+          { 'microcredit.status': { $in: status_filter } },
+          { 'microcredit.expiresAt': { $gt: offset.greater } }
         ]
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_name: '$name',
-        partner_email: '$email',
-        partner_slug: '$slug',
-        partner_imageURL: '$imageURL',
-
-        partner_payments: '$payments',
-        partner_address: '$address',
-        partner_contacts: '$contacts',
-        partner_phone: '$phone',
-
-        campaign_id: '$microcredit._id',
-        campaign_slug: '$microcredit.slug',
-        campaign_imageURL: '$microcredit.imageURL',
-        title: '$microcredit.title',
-        subtitle: '$microcredit.subtitle',
-        terms: '$microcredit.terms',
-        description: '$microcredit.description',
-        category: '$microcredit.category',
-        access: '$microcredit.access',
-        status: '$microcredit.status',
-
-        quantitative: '$microcredit.quantitative',
-        stepAmount: '$microcredit.stepAmount',
-        minAllowed: '$microcredit.minAllowed',
-        maxAllowed: '$microcredit.maxAllowed',
-        maxAmount: '$microcredit.maxAmount',
-
-        redeemStarts: '$microcredit.redeemStarts',
-        redeemEnds: '$microcredit.redeemEnds',
-        startsAt: '$microcredit.startsAt',
-        expiresAt: '$microcredit.expiresAt',
-
-        createdAt: '$microcredit.createdAt',
-        updatedAt: '$microcredit.updatedAt'
+        partner: this.projectPartner(),
+        ...this.projectMicrocredit()
       }
     }, {
       $sort: {
@@ -499,116 +354,8 @@ class MicrocreditCampaignsController implements Controller {
     ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    // const confirmedTokens: Tokens[] = await this.readTokens(campaigns, 'confirmation');
-    // const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
-
-    // const campaignsTokens = campaigns.map((a: Campaign) =>
-    //   Object.assign({}, a,
-    //     {
-    //       confirmedTokens: (confirmedTokens).find((b: Tokens) => (b._id).toString() === (a.campaign_id).toString()),
-    //       orderedTokens: (orderedTokens).find((c: Tokens) => (c._id).toString() === (a.campaign_id).toString()),
-    //     }
-    //   )
-    // );
     response.status(200).send({
-      data: campaigns, // campaignsTokens,
-      code: 200
-    });
-  }
-
-  private readPublicCampaignsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const partner_id: PartnerID["partner_id"] = request.params.partner_id;
-
-    const params: string = request.params.offset;
-    const offset: {
-      limit: number, skip: number, greater: number, type: boolean
-    } = offsetParams(params);
-
-    let error: Error, campaigns: Campaign[];
-    [error, campaigns] = await to(this.user.aggregate([{
-      $unwind: '$microcredit'
-    }, {
-      $match: {
-        $or: [
-          {
-            $and: [
-              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
-              { 'microcredit.access': 'public' },
-              { 'microcredit.status': 'published' },
-              { 'microcredit.expiresAt': { $gt: offset.greater } }
-            ]
-          },
-          {
-            $and: [
-              { slug: partner_id },
-              { 'microcredit.access': 'public' },
-              { 'microcredit.status': 'published' },
-              { 'microcredit.expiresAt': { $gt: offset.greater } }
-            ]
-          }
-        ]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_name: '$name',
-        partner_email: '$email',
-        partner_slug: '$slug',
-        partner_imageURL: '$imageURL',
-
-        partner_payments: '$payments',
-        partner_address: '$address',
-        partner_contacts: '$contacts',
-        partner_phone: '$phone',
-
-        campaign_id: '$microcredit._id',
-        campaign_slug: '$microcredit.slug',
-        campaign_imageURL: '$microcredit.imageURL',
-        title: '$microcredit.title',
-        subtitle: '$microcredit.subtitle',
-        terms: '$microcredit.terms',
-        description: '$microcredit.description',
-        category: '$microcredit.category',
-        access: '$microcredit.access',
-
-        quantitative: '$microcredit.quantitative',
-        stepAmount: '$microcredit.stepAmount',
-        minAllowed: '$microcredit.minAllowed',
-        maxAllowed: '$microcredit.maxAllowed',
-        maxAmount: '$microcredit.maxAmount',
-
-        redeemStarts: '$microcredit.redeemStarts',
-        redeemEnds: '$microcredit.redeemEnds',
-        startsAt: '$microcredit.startsAt',
-        expiresAt: '$microcredit.expiresAt',
-
-        createdAt: '$microcredit.createdAt',
-        updatedAt: '$microcredit.updatedAt'
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-    // const confirmedTokens: Tokens[] = await this.readTokens(campaigns, 'confirmation');
-    // const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
-
-    // const campaignsTokens = campaigns.map((a: Campaign) =>
-    //   Object.assign({}, a,
-    //     {
-    //       confirmedTokens: (confirmedTokens).find((b: Tokens) => (b._id).toString() === (a.campaign_id).toString()),
-    //       orderedTokens: (orderedTokens).find((c: Tokens) => (c._id).toString() === (a.campaign_id).toString()),
-    //     }
-    //   )
-    // );
-    response.status(200).send({
-      data: campaigns, // campaignsTokens,
+      data: campaigns,
       code: 200
     });
   }
@@ -617,66 +364,26 @@ class MicrocreditCampaignsController implements Controller {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
-    let error: Error, campaigns: Campaign[];
+    /** Params & Filters */
+    const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+    const microcredit_filter = ObjectId.isValid(campaign_id) ? { 'microcredit._id': new ObjectId(campaign_id) } : { 'microcredit.slug': campaign_id };
+    /** ***** * ***** */
+
+    let error: Error, campaigns: MicrocreditCampaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
       $match:
       {
-        $or: [
-          {
-            $and: [{
-              _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId()
-            }, {
-              'microcredit._id': ObjectId.isValid(campaign_id) ? new ObjectId(campaign_id) : new ObjectId()
-            }]
-          },
-          {
-            $and: [{
-              slug: partner_id
-            }, {
-              'microcredit.slug': campaign_id
-            }]
-          }
+        $and: [
+          partner_filter,
+          microcredit_filter
         ]
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_name: '$name',
-        partner_email: '$email',
-        partner_slug: '$slug',
-        partner_imageURL: '$imageURL',
-
-        partner_payments: '$payments',
-        partner_address: '$address',
-        partner_contacts: '$contacts',
-        partner_phone: '$phone',
-
-        campaign_id: '$microcredit._id',
-        campaign_slug: '$microcredit.slug',
-        campaign_imageURL: '$microcredit.imageURL',
-        title: '$microcredit.title',
-        subtitle: '$microcredit.subtitle',
-        terms: '$microcredit.terms',
-        description: '$microcredit.description',
-        category: '$microcredit.category',
-        access: '$microcredit.access',
-
-        quantitative: '$microcredit.quantitative',
-        stepAmount: '$microcredit.stepAmount',
-        minAllowed: '$microcredit.minAllowed',
-        maxAllowed: '$microcredit.maxAllowed',
-        maxAmount: '$microcredit.maxAmount',
-
-        redeemStarts: '$microcredit.redeemStarts',
-        redeemEnds: '$microcredit.redeemEnds',
-        startsAt: '$microcredit.startsAt',
-        expiresAt: '$microcredit.expiresAt',
-
-        supports: '$microcredit.supports',
-        createdAt: '$microcredit.createdAt'
+        partner: this.projectPartner(),
+        ...this.projectMicrocredit()
       }
     }]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -684,19 +391,19 @@ class MicrocreditCampaignsController implements Controller {
       return next(new NotFoundException('CAMPAIGN_NOT_EXIST'));
     }
 
-    const tokens: Tokens[] = await this.readTokens(campaigns);
+    const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
     //const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
-    const statisticsPromise: MicrocreditCampaignStatistics[] = await this.readStatistics(campaigns, 'PromiseFund');
-    const statisticsRedeem: MicrocreditCampaignStatistics[] = await this.readStatistics(campaigns, 'SpendFund');
+    const statisticsPromise: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'PromiseFund');
+    const statisticsRedeem: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'SpendFund');
 
-    const campaignsWithStatistics = campaigns.map((a: Campaign) =>
+    const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
       Object.assign({}, a,
         {
-          tokens: (tokens).find((b: Tokens) => (b._id).toString() === (a.campaign_id).toString()),
+          tokens: (tokens).find((b: MicrocreditTokens) => (b._id).toString() === (a._id).toString()),
           //orderedTokens: (orderedTokens).find((c: Tokens) => (c._id).toString() === (a.campaign_id).toString()),
           statistics: {
-            earned: (statisticsPromise).find((e: MicrocreditCampaignStatistics) => (e._id).toString() === (a.campaign_id).toString()),
-            redeemed: (statisticsRedeem).find((d: MicrocreditCampaignStatistics) => (d._id).toString() === (a.campaign_id).toString()),
+            earned: (statisticsPromise).find((e: MicrocreditStatistics) => (e._id).toString() === (a._id).toString()),
+            redeemed: (statisticsRedeem).find((d: MicrocreditStatistics) => (d._id).toString() === (a._id).toString()),
           }
           // statisticsPromise: (statisticsPromise).find((e: MicrocreditCampaignStatistics) => (e._id).toString() === (a.campaign_id).toString()),
           // statisticsRedeem: (statisticsRedeem).find((d: MicrocreditCampaignStatistics) => (d._id).toString() === (a.campaign_id).toString()),
@@ -715,11 +422,13 @@ class MicrocreditCampaignsController implements Controller {
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
     const data: CampaignDto = request.body;
 
-    const currentCampaign: Campaign = response.locals.campaign;
-    if ((currentCampaign.campaign_imageURL && (currentCampaign.campaign_imageURL).includes(partner_id)) && request.file) {
-      //if (currentCampaign.campaign_imageURL && request.file) {
-      var imageFile = (currentCampaign.campaign_imageURL).split('assets/static/');
-      await deleteFile(path.join(__dirname, '../assets/static/' + imageFile[1]));
+    const currentCampaign: MicrocreditCampaign = response.locals.campaign;
+    if ((currentCampaign['imageURL'] && (currentCampaign['imageURL']).includes('assets/static/')) && request.file) {
+      await this.removeFile(currentCampaign);
+    }
+
+    if (currentCampaign.contentFiles) {
+      this.removeRichEditorFiles(currentCampaign, data, true);
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
@@ -728,27 +437,29 @@ class MicrocreditCampaignsController implements Controller {
         _id: partner_id,
         'microcredit._id': campaign_id
       }, {
-        '$set': {
-          'microcredit.$._id': campaign_id,
-          'microcredit.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentCampaign.campaign_imageURL,
-          'microcredit.$.title': data.title,
-          'microcredit.$.slug': await createSlug(request),
-          'microcredit.$.subtitle': data.subtitle,
-          'microcredit.$.terms': data.terms,
-          'microcredit.$.access': data.access,
-          'microcredit.$.description': data.description,
-          'microcredit.$.category': data.category,
-          'microcredit.$.quantitative': data.quantitative,
-          'microcredit.$.stepAmount': data.stepAmount,
-          'microcredit.$.minAllowed': data.minAllowed,
-          'microcredit.$.maxAllowed': data.maxAllowed,
-          'microcredit.$.maxAmount': data.maxAmount,
-          'microcredit.$.redeemStarts': convertHelper.roundDate(data.redeemStarts, 5),
-          'microcredit.$.redeemEnds': convertHelper.roundDate(data.redeemEnds, 23),
-          'microcredit.$.startsAt': convertHelper.roundDate(data.startsAt, 5),
-          'microcredit.$.expiresAt': convertHelper.roundDate(data.expiresAt, 23),
-        }
-      }).catch());
+      '$set': {
+        'microcredit.$._id': campaign_id,
+        'microcredit.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentCampaign.imageURL,
+        'microcredit.$.title': data.title,
+        'microcredit.$.slug': await createSlug(request),
+        'microcredit.$.subtitle': data.subtitle,
+        'microcredit.$.terms': data.terms,
+        'microcredit.$.access': data.access,
+        'microcredit.$.description': data.description,
+        'microcredit.$.contentFiles': (data.contentFiles) ? data.contentFiles.split(',') : 0,
+        'microcredit.$.category': data.category,
+        'microcredit.$.quantitative': data.quantitative,
+        'microcredit.$.redeemable': data.redeemable,
+        'microcredit.$.stepAmount': data.stepAmount,
+        'microcredit.$.minAllowed': data.minAllowed,
+        'microcredit.$.maxAllowed': data.maxAllowed,
+        'microcredit.$.maxAmount': data.maxAmount,
+        'microcredit.$.redeemStarts': convertHelper.roundDate(data.redeemStarts, this.campaignHours[0]),
+        'microcredit.$.redeemEnds': convertHelper.roundDate(data.redeemEnds, this.campaignHours[1]),
+        'microcredit.$.startsAt': convertHelper.roundDate(data.startsAt, this.campaignHours[0]),
+        'microcredit.$.expiresAt': convertHelper.roundDate(data.expiresAt, this.campaignHours[1]),
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -761,23 +472,25 @@ class MicrocreditCampaignsController implements Controller {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
-    const currentCampaign: Campaign = response.locals.campaign;
-    if (currentCampaign['campaign_imageURL']) {
-      var imageFile = (currentCampaign['campaign_imageURL']).split('assets/static/');
-      const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
-      if (existFile(file)) await deleteFile(file);
+    const currentCampaign: MicrocreditCampaign = response.locals.campaign;
+    if ((currentCampaign['imageURL']) && (currentCampaign['imageURL']).includes('assets/static/')) {
+      await this.removeFile(currentCampaign);
+    }
+
+    if (currentCampaign.contentFiles) {
+      this.removeRichEditorFiles(currentCampaign, null, false);
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
     [error, results] = await to(this.user.updateOne({
       _id: partner_id
     }, {
-        $pull: {
-          microcredit: {
-            _id: campaign_id
-          }
+      $pull: {
+        microcredit: {
+          _id: campaign_id
         }
-      }).catch());
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Microcredit Campaign with ID: " + campaign_id + " has been deleted!",
@@ -785,14 +498,103 @@ class MicrocreditCampaignsController implements Controller {
     });
   }
 
-  private readTokens = async (campaigns: Campaign[]) => {
+  /**
+   *  
+   * Local Function Section 
+   *
+   * */
 
-    let error: Error, tokens: Tokens[];
+  /** Project Partner (Local Function) */
+  private projectPartner() {
+    return {
+      _id: '$_id',
+      name: '$name',
+      email: '$email',
+      slug: '$slug',
+      imageURL: '$imageURL',
+      payments: '$payments',
+      address: '$address',
+      contacts: '$contacts',
+      phone: '$phone',
+    };
+  }
+
+  /** Project Microcredit (Local Function) */
+  private projectMicrocredit() {
+    return {
+      _id: '$microcredit._id',
+      slug: '$microcredit.slug',
+      imageURL: '$microcredit.imageURL',
+
+      title: '$microcredit.title',
+      subtitle: '$microcredit.subtitle',
+      terms: '$microcredit.terms',
+      description: '$microcredit.description',
+      category: '$microcredit.category',
+      status: '$microcredit.status',
+      access: '$microcredit.access',
+
+      quantitative: '$microcredit.quantitative',
+      redeemable: '$microcredit.redeemable',
+
+      stepAmount: '$microcredit.stepAmount',
+      minAllowed: '$microcredit.minAllowed',
+      maxAllowed: '$microcredit.maxAllowed',
+      maxAmount: '$microcredit.maxAmount',
+
+      redeemStarts: '$microcredit.redeemStarts',
+      redeemEnds: '$microcredit.redeemEnds',
+      startsAt: '$microcredit.startsAt',
+      expiresAt: '$microcredit.expiresAt',
+
+      createdAt: '$microcredit.createdAt',
+      updatedAt: '$microcredit.updatedAt'
+    };
+  }
+
+  /** Remove File (Local Function) */
+  private async removeFile(currentMicrocredit: MicrocreditCampaign) {
+    var imageFile = (currentMicrocredit['imageURL']).split('assets/static/');
+    const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+    if (existFile(file)) await deleteFile(file);
+  }
+
+  /** Remove Content Files (Local Function) */
+  private async removeRichEditorFiles(currentMicrocredit: MicrocreditCampaign, newMicrocredit: CampaignDto, isUpdated: boolean) {
+    var toDelete: string[] = [];
+
+    if (isUpdated) {
+      (currentMicrocredit.contentFiles).forEach((element: string) => {
+        if ((newMicrocredit.contentFiles).indexOf(element) < 0) {
+          var imageFile = (element).split('assets/content/');
+          const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+          toDelete.push(file);
+        }
+      });
+      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+    } else {
+      (currentMicrocredit.contentFiles).forEach((element: string) => {
+        var imageFile = (element).split('assets/content/');
+        const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+        toDelete.push(file);
+      });
+      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+    }
+  }
+
+  /**
+   *  
+   * Tokens & Statistics Section 
+   *
+   * */
+  private readTokens = async (campaigns: MicrocreditCampaign[]) => {
+
+    let error: Error, tokens: MicrocreditTokens[];
     [error, tokens] = await to(this.transaction.aggregate(
       [
         {
           $match: {
-            'campaign_id': { $in: campaigns.map(a => (a.campaign_id).toString()) }
+            'campaign_id': { $in: campaigns.map(a => (a._id).toString()) }
           }
         }, {
           $project: {
@@ -814,20 +616,20 @@ class MicrocreditCampaignsController implements Controller {
     ).exec().catch());
     if (error) return [];
 
-    campaigns.forEach((el: Campaign) => {
-      if (tokens.findIndex(obj => obj._id == el.campaign_id) < 1)
-        tokens.push({ _id: el.campaign_id, earnedTokens: '0', paidTokens: '0', redeemedTokens: '0' })
+    campaigns.forEach((el: MicrocreditCampaign) => {
+      if (tokens.findIndex(obj => obj._id == el._id) < 1)
+        tokens.push({ _id: el._id, earnedTokens: '0', paidTokens: '0', redeemedTokens: '0' })
     });
     return tokens;
   }
 
-  private readStatistics = async (campaigns: Campaign[], status: string) => {
+  private readStatistics = async (campaigns: MicrocreditCampaign[], status: string) => {
 
-    let error: Error, statistics: MicrocreditCampaignStatistics[];
+    let error: Error, statistics: MicrocreditStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
-          { 'campaign_id': { $in: campaigns.map(a => (a.campaign_id).toString()) } },
+          { 'campaign_id': { $in: campaigns.map(a => (a._id).toString()) } },
           { 'type': status }
         ]
       }
@@ -852,10 +654,10 @@ class MicrocreditCampaignsController implements Controller {
     if (error) return [];
 
     const byDate: any = await this.readDailyStatistics(campaigns, status);
-    const fullStatistics = statistics.map((a: MicrocreditCampaignStatistics) =>
+    const fullStatistics = statistics.map((a: MicrocreditStatistics) =>
       Object.assign({}, a,
         {
-          byDate: ((byDate).find((e: MicrocreditCampaignStatistics) => (e._id).toString() === (a._id).toString())).byDate,
+          byDate: ((byDate).find((e: MicrocreditStatistics) => (e._id).toString() === (a._id).toString())).byDate,
         }
       )
     );
@@ -863,13 +665,13 @@ class MicrocreditCampaignsController implements Controller {
     return fullStatistics;
   }
 
-  private readDailyStatistics = async (campaigns: Campaign[], status: string) => {
+  private readDailyStatistics = async (campaigns: MicrocreditCampaign[], status: string) => {
 
-    let error: Error, statistics: MicrocreditCampaignStatistics[];
+    let error: Error, statistics: MicrocreditStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
-          { 'campaign_id': { $in: campaigns.map(a => (a.campaign_id).toString()) } },
+          { 'campaign_id': { $in: campaigns.map(a => (a._id).toString()) } },
           { 'type': status }
         ]
       }

@@ -230,14 +230,14 @@ class HelpController implements Controller {
     result = await this.checkMongoDB(result);
     result = await this.checkSMTP(result);
 
-    if (process.env.PRODUCTION == "false") {
-      result = {
-        ...result,
-        ...process.env,
-      };
-    }
+     if (process.env.PRODUCTION == "false") {
+       result = {
+         ...result,
+         ...process.env
+       };
+     }
 
-    response.status(200).send(result);
+    response.status(200).send({ ...result, current_date: new Date() });
 
     next();
   };

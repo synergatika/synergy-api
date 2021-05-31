@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import Invitation from '../communityInterfaces/invitation.interface';
+import { Invitation } from '../_interfaces/index';
 
 const invitationSchema = new mongoose.Schema({
 

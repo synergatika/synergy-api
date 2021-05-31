@@ -19,7 +19,7 @@ const deleteSync = FilesMiddleware.deleteSync;
 /**
  * Exceptions
  */
-import HttpException from '../../exceptions/HttpException';
+import { HttpException } from '../../_exceptions/index';
 
 function validationBody<T>(type: any): express.RequestHandler {
   return (req, res, next) => {

@@ -1,5 +1,4 @@
 import { NextFunction, Response } from 'express';
-import to from 'await-to-ts'
 var path = require('path');
 
 /**
@@ -11,7 +10,7 @@ const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.j
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../../exceptions/UnprocessableEntity.exception';
+import { UnprocessableEntityException } from '../../_exceptions/index';
 
 /**
  * Interfaces

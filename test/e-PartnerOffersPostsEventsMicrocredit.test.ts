@@ -9,6 +9,7 @@ chai.use(require('chai-http'));
 import * as fs from 'fs';
 
 import { imagesLocation, partner_a, partner_c, user_a, offer_a, offer_b, offer_d, post_a, post_b, post_c, event_a, event_b, microcredit_a, microcredit_b, microcredit_c, microcredit_d, microcredit_f, offers, events } from './_structs.test';
+import { Console } from '@sentry/node/dist/integrations';
 
 describe("Partner - Offers, Posts, Events", () => {
   describe("Partner - Offers (/loyalty/offers)", () => {
@@ -65,7 +66,7 @@ describe("Partner - Offers, Posts, Events", () => {
     });
     it("4. should read offer - 200 Offer", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .get("loyalty/offers/" + partner_a._id + "/" + offers[0].offer_id)
+        .get("loyalty/offers/" + partner_a._id + "/" + offers[0]._id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .end((err, res) => {
           res.should.have.status(200);
@@ -76,7 +77,7 @@ describe("Partner - Offers, Posts, Events", () => {
     });
     it("5. should update an offer - 200 Updated", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .put("loyalty/offers/" + partner_a._id + "/" + offers[0].offer_id)
+        .put("loyalty/offers/" + partner_a._id + "/" + offers[0]._id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', offer_a.title)
         .field('subtitle', offer_a.subtitle)
@@ -119,7 +120,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + user_a.authToken)
         .field('title', post_a.title)
         .field('subtitle', post_a.subtitle)
-        .field('content', post_a.content)
+        .field('description', post_a.description)
         .field('access', post_a.access)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_a.imageFile}`), `${post_a.imageFile}`)
         .end((err, res) => {
@@ -150,7 +151,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', post_a.title)
         .field('subtitle', post_a.subtitle)
-        .field('content', post_a.content)
+        .field('description', post_a.description)
         .field('access', post_a.access)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_a.imageFile}`), `${post_a.imageFile}`)
         .end((err, res) => {
@@ -165,7 +166,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .post("posts/")
         .set('Authorization', 'Bearer ' + 'random_token')
         .field('title', post_b.title)
-        .field('content', post_b.content)
+        .field('description', post_b.description)
         .field('access', post_b.access)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`), `${post_b.imageFile}`)
         .end((err, res) => {
@@ -180,7 +181,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .post("posts/")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', post_b.title)
-        .field('content', post_b.content)
+        .field('description', post_b.description)
         .field('access', post_b.access)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`), `${post_b.imageFile}`)
         .end((err, res) => {
@@ -196,7 +197,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', post_c.title)
         .field('subtitle', post_c.subtitle)
-        .field('content', post_c.content)
+        .field('description', post_c.description)
         .field('contentFiles', post_c.contentFiles.join(''))
         .field('access', post_c.access)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`), `${post_b.imageFile}`)
@@ -216,7 +217,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_a.title)
         .field('subtitle', event_a.subtitle)
-        .field('content', event_a.content)
+        .field('description', event_a.description)
         .field('access', event_a.access)
         .field('location', event_a.location)
         .field('dateTime', event_a.dateTime)
@@ -228,7 +229,7 @@ describe("Partner - Offers, Posts, Events", () => {
           done();
         });
     });
-    it("2. should NOT create an event | as content is missing - 400 Bad Request", (done) => {
+    it("2. should NOT create an event | as description is missing - 400 Bad Request", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("events/")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
@@ -250,7 +251,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .post("events/")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
-        .field('content', event_b.content)
+        .field('description', event_b.description)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', event_b.dateTime)
@@ -279,7 +280,7 @@ describe("Partner - Offers, Posts, Events", () => {
     });
     it("5. should ΝΟΤ delete event | not belongs to - 403 Forbidden", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .put("events/" + '5e6a7f6f6e9b481292dcb376' + "/" + events[0].event_id)
+        .put("events/" + '5e6a7f6f6e9b481292dcb376' + "/" + events[0]._id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .end((err, res) => {
           res.should.have.status(403);
@@ -293,7 +294,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
         .field('subtitle', event_b.subtitle)
-        .field('content', event_b.content)
+        .field('description', event_b.description)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', event_b.dateTime)
@@ -307,11 +308,11 @@ describe("Partner - Offers, Posts, Events", () => {
     });
     it("7. should update event - 200 Updated", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .put("events/" + partner_a._id + "/" + events[0].event_id)
+        .put("events/" + partner_a._id + "/" + events[0]._id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
         .field('subtitle', event_b.subtitle)
-        .field('content', event_b.content)
+        .field('description', event_b.description)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', event_b.dateTime)
@@ -325,7 +326,7 @@ describe("Partner - Offers, Posts, Events", () => {
     });
     it("8. should delete event - 200 Deleted", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .delete("events/" + partner_a._id + "/" + events[0].event_id)
+        .delete("events/" + partner_a._id + "/" + events[0]._id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .end((err, res) => {
           res.should.have.status(200);
@@ -340,7 +341,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .field('title', event_b.title)
         .field('suntitle', event_b.title)
-        .field('content', event_b.content)
+        .field('description', event_b.description)
         .field('access', event_b.access)
         .field('location', event_b.location)
         .field('dateTime', event_b.dateTime)
@@ -354,7 +355,7 @@ describe("Partner - Offers, Posts, Events", () => {
     });
     it("10. should read an event - 200 Event", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .get("events/" + partner_a._id + "/" + events[1].event_id)
+        .get("events/" + partner_a._id + "/" + events[1]._id)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .end((err, res) => {
           res.should.have.status(200);
@@ -377,6 +378,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('category', microcredit_a.category)
         .field('subtitle', microcredit_a.subtitle)
         .field('quantitative', microcredit_a.quantitative)
+        .field('redeemable', microcredit_a.redeemable)
         .field('stepAmount', microcredit_a.stepAmount)
         .field('minAllowed', microcredit_a.minAllowed)
         .field('maxAllowed', microcredit_a.maxAllowed)
@@ -416,6 +418,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('category', microcredit_a.category)
         .field('subtitle', microcredit_a.subtitle)
         .field('quantitative', microcredit_a.quantitative)
+        .field('redeemable', microcredit_a.redeemable)
         .field('stepAmount', microcredit_a.stepAmount)
         .field('minAllowed', microcredit_a.minAllowed)
         .field('maxAllowed', microcredit_a.maxAllowed)
@@ -454,6 +457,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('category', microcredit_a.category)
         .field('subtitle', microcredit_a.subtitle)
         .field('quantitative', microcredit_a.quantitative)
+        .field('redeemable', microcredit_a.redeemable)
         .field('stepAmount', microcredit_a.stepAmount)
         .field('minAllowed', microcredit_a.minAllowed)
         .field('maxAllowed', microcredit_a.maxAllowed)
@@ -481,6 +485,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('category', microcredit_b.category)
         .field('subtitle', microcredit_b.subtitle)
         .field('quantitative', microcredit_b.quantitative)
+        .field('redeemable', microcredit_b.redeemable)
         .field('stepAmount', microcredit_b.stepAmount)
         .field('minAllowed', microcredit_b.minAllowed)
         .field('maxAllowed', microcredit_b.maxAllowed)
@@ -508,6 +513,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('category', microcredit_b.category)
         .field('subtitle', microcredit_b.subtitle)
         .field('quantitative', microcredit_b.quantitative)
+        .field('redeemable', microcredit_b.redeemable)
         .field('stepAmount', microcredit_b.stepAmount)
         .field('minAllowed', microcredit_b.minAllowed)
         .field('maxAllowed', microcredit_b.maxAllowed)
@@ -547,6 +553,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('category', microcredit_d.category)
         .field('subtitle', microcredit_d.subtitle)
         .field('quantitative', microcredit_d.quantitative)
+        .field('redeemable', microcredit_d.redeemable)
         .field('stepAmount', microcredit_d.stepAmount)
         .field('minAllowed', microcredit_d.minAllowed)
         .field('maxAllowed', microcredit_d.maxAllowed)
@@ -574,6 +581,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('category', microcredit_f.category)
         .field('subtitle', microcredit_f.subtitle)
         .field('quantitative', microcredit_f.quantitative)
+        .field('redeemable', microcredit_f.redeemable)
         .field('stepAmount', microcredit_f.stepAmount)
         .field('minAllowed', microcredit_f.minAllowed)
         .field('maxAllowed', microcredit_f.maxAllowed)
@@ -613,6 +621,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('category', microcredit_c.category)
         .field('subtitle', microcredit_c.subtitle)
         .field('quantitative', microcredit_c.quantitative)
+        .field('redeemable', microcredit_c.redeemable)
         .field('stepAmount', microcredit_c.stepAmount)
         .field('minAllowed', microcredit_c.minAllowed)
         .field('maxAllowed', microcredit_c.maxAllowed)

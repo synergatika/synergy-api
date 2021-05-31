@@ -12,16 +12,14 @@ const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.j
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-import NotFoundException from '../exceptions/NotFound.exception';
+import { NotFoundException, UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
-import Campaign from 'microcreditInterfaces/campaign.interface';
+import { User, MicrocreditCampaign, Member, Partner } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -38,6 +36,7 @@ import userModel from '../models/user.model';
 import registrationTransactionModel from '../models/registration.transaction.model';
 import loyaltyTransactionModel from '../models/loyalty.transaction.model';
 import microcreditTransactionModel from '../models/microcredit.transaction.model';
+import { RegisterUserWithoutPasswordDto } from '_dtos';
 
 class ReEstablishController implements Controller {
     public path = '/establish';
@@ -168,7 +167,7 @@ class ReEstablishController implements Controller {
                 var _newDate4 = _date_4.setDate(_date_4.getDate() + 300);
             }
 
-            let error: Error, campaigns: Campaign[];
+            let error: Error, campaigns: MicrocreditCampaign[];
             [error, campaigns] = await to(this.user.aggregate([{
                 $unwind: '$microcredit'
             }, {
@@ -267,7 +266,7 @@ class ReEstablishController implements Controller {
         if (`${process.env.RE_ESTABLISH_OPTION}` == 'true') {
             await this.microcreditTransaction.deleteMany({});
 
-            let error: Error, campaigns: Campaign[];
+            let error: Error, campaigns: MicrocreditCampaign[];
             [error, campaigns] = await to(this.user.aggregate([{
                 $unwind: '$microcredit'
             }, {
@@ -295,15 +294,15 @@ class ReEstablishController implements Controller {
             ]).exec().catch());
             if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-            campaigns.forEach(async (campaign: Campaign) => {
+            campaigns.forEach(async (campaign: MicrocreditCampaign) => {
                 let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
                 [error, results] = await to(this.user.updateOne(
                     {
-                        _id: campaign.partner_id,
-                        'microcredit._id': campaign.campaign_id
+                        _id: campaign.partner._id,
+                        'microcredit._id': campaign._id
                     }, {
                     '$set': {
-                        'microcredit.$._id': campaign.campaign_id,
+                        'microcredit.$._id': campaign._id,
                         'microcredit.$.supports': []
                     }
                 }).catch());

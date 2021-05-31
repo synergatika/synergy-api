@@ -17,12 +17,13 @@ var fs = require('fs')
 var rimraf = require("rimraf");
 
 
-import { defaultAdmin, content_a } from './_structs.test';
+import { defaultAdmin, content_a, sector_a } from './_structs.test';
 import userModel from '../src/models/user.model';
 import registrationTransactionModel from '../src/models/registration.transaction.model';
 import loyaltyTransactionModel from '../src/models/loyalty.transaction.model';
 import microcreditTransactionModel from '../src/models/microcredit.transaction.model';
 import contentModel from '../src/models/content.model';
+import sectorModel from '../src/models/sector.model';
 
 describe("Initialize DB & Drop past Collections", () => {
 
@@ -65,6 +66,9 @@ describe("Initialize DB & Drop past Collections", () => {
     return contentModel.deleteOne({ name: content_a.name });
   });
   before(() => {
+    return sectorModel.deleteOne({ slug: sector_a.slug });
+  });
+  before(() => {
     return registrationTransactionModel.deleteMany({});
   });
   before(() => {
@@ -91,7 +95,7 @@ describe("Initialize DB & Drop past Collections", () => {
   before(() => {
     return userModel.create({
       email: defaultAdmin.email,
-      access: 'admin',
+      access: defaultAdmin.access,
       password: bcrypt.hashSync(defaultAdmin.password, 10),
       email_verified: true,
       pass_verified: true

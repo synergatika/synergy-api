@@ -5,15 +5,13 @@ import { ObjectId } from 'mongodb';
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../../exceptions/UnprocessableEntity.exception';
-import NotFoundException from '../../exceptions/NotFound.exception';
+import { NotFoundException, UnprocessableEntityException } from '../../_exceptions/index';
 
 /**
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import Member from '../../usersInterfaces/member.interface';
-import Partner from '../../usersInterfaces/partner.interface';
+import { Member, Partner, UserAccess } from '../../_interfaces/index';
 
 /**
  * Models
@@ -48,7 +46,7 @@ async function partner(request: RequestWithUser, response: Response, next: NextF
 
   let error: Error, partner: Partner;
   [error, partner] = await to(userModel.findOne({
-    _id: new ObjectId(partner_id), access: 'partner'
+    _id: new ObjectId(partner_id), access: UserAccess.PARTNER
   }).select({
     "_id": 1, "payments": 1,
     "address": 1,

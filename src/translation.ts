@@ -70,6 +70,7 @@ class Translation {
         "subject": `Welcome to ${instance} Team`,
         "title": "An acount has been created for you.",
         "body": "Please, follow the link, and login with the password bellow to reset your password",
+        "registeredBy": ["Your account has been created after transaction with ", "Your Account has been created by Administrator"],
         "button": "Log In"
       },
       restoration: {
@@ -195,7 +196,8 @@ class Translation {
         "subject": `Καλώς ήρθατε στην κοινότητα του ${instance}`,
         "title": "Κάντε σύνδεση και ανανεώστε τον προσωρινό Κωδικό Πρόσβασης",
         "body": "",
-        "button": "Είσοδος"
+        "button": "Είσοδος",
+        "registeredBy": ["Ο Λογαρισμός σας δημιουργήθηκε μετά απο συναλλαγή με το κατάστημα ", "Ο Λογαρισμός σας δημιουργήθηκε από τον διαχειριστή"],
       },
       restoration: {
         "subject": "Ανανέωση Κωδικού Πρόσβασης",

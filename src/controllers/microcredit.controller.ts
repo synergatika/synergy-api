@@ -20,31 +20,19 @@ const emailService = new EmailService();
 /**
  * DTOs
  */
-import PartnerID from '../usersDtos/partner_id.params.dto';
-import CampaignID from '../microcreditDtos/campaign_id.params.dto';
-import SupportID from '../microcreditDtos/support_id.params.dto';
-import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
-import EarnTokensDto from '../microcreditDtos/earnTokens.dto';
-import RedeemTokensDto from '../microcreditDtos/redeemTokens.dto';
+import { IdentifierToDto, EarnTokensDto, RedeemTokensDto, CampaignID, SupportID } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
+import { UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
-import Partner from '../usersInterfaces/partner.interface';
-import Campaign from '../microcreditInterfaces/campaign.interface';
-import Support from '../microcreditInterfaces/support.interface';
-import MicrocreditTransaction from '../microcreditInterfaces/transaction.interface';
-import History from '../microcreditInterfaces/history.interface';
-import Tokens from '../microcreditInterfaces/tokens.interface';
-import PartnerPayment from '../usersInterfaces/partner_payment.interface';
+import { User, Partner, PartnerPayment, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -125,7 +113,7 @@ class MicrocreditController implements Controller {
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, usersMiddleware.partner,
       validationBodyMiddleware(EarnTokensDto), itemsMiddleware.microcreditCampaign,
-      validationParamsMiddleware(IdentifierDto), usersMiddleware.member,
+      validationParamsMiddleware(IdentifierToDto), usersMiddleware.member,
       balanceMiddleware.microcredit_balance,  /*  this.readBackerTokens, */
       checkMiddleware.canEarnMicrocredit,
       /*this.earnTokensByPartner,*/
@@ -190,7 +178,7 @@ class MicrocreditController implements Controller {
 
     const member: User = response.locals.member;
     const partner: Partner = response.locals.partner;
-    const campaign: Campaign = response.locals.campaign;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
     //const support: Support = response.locals.support;
 
     // const contractIndex = (await this.transaction.find({ partner_id: partner_id, type: 'PromiseFund' })).length;
@@ -234,7 +222,7 @@ class MicrocreditController implements Controller {
 
             if (data.method != 'store') {
               response.locals['extras'] = {
-                method: ((partner.payments).filter(function(el: PartnerPayment) { return el.bic == data.method })[0]),
+                method: ((partner.payments).filter(function (el: PartnerPayment) { return el.bic == data.method })[0]),
                 tokens: data._amount,
                 paid: data.paid
               }
@@ -285,8 +273,8 @@ class MicrocreditController implements Controller {
     //const support_id: Support["support_id"] = response.locals.support.support_id || response.locals.support._id;
     const data: EarnTokensDto = request.body;
 
-    const campaign: Campaign = response.locals.campaign;
-    const support: Support = response.locals.support;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
+    const support: MicrocreditSupport = response.locals.support;
 
     if (((Object.keys(data).length > 0) && !data.paid) || ((support.type == 'ReceiveFund') || (support.type == 'SpendFund'))) {
       return next();
@@ -334,8 +322,8 @@ class MicrocreditController implements Controller {
     // const partner_id: SupportID["partner_id"] = request.params.partner_id;
     // const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
     // const support_id: Support["support_id"] = request.params.support_id;
-    const campaign: Campaign = response.locals.campaign;
-    const support: Support = response.locals.support;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
+    const support: MicrocreditSupport = response.locals.support;
 
     if ((support.type == 'PromiseFund') || (support.type == 'RevertFund')) {
       return next();
@@ -387,8 +375,8 @@ class MicrocreditController implements Controller {
     const _tokens: number = Math.round(data._tokens);
 
     const member: User = response.locals.member;
-    const campaign: Campaign = response.locals.campaign;
-    const support: Support = response.locals.support;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
+    const support: MicrocreditSupport = response.locals.support;
 
     if (campaign.quantitative) {
       await serviceInstance.getMicrocredit(campaign.address)

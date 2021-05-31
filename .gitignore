@@ -61,3 +61,10 @@ typings/
 dist
 
 assets
+
+src/_models
+
+src/exceptions
+
+src/middleware/items/_next
+

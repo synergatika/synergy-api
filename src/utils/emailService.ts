@@ -16,7 +16,7 @@ const Email = require('email-templates');
 const email = new Email();
 
 // Exceptions
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
+import { UnprocessableEntityException } from '../_exceptions/index';
 // Interfaces
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 
@@ -89,7 +89,9 @@ class EmailService {
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
         link: `${process.env.APP_URL}auth/login/`,
-        password: data.extras.tempPassword
+        password: data.extras.tempPassword,
+        registeredBy: (data.registrationType == 'one-click') ? '' : (request.user && request.user.access == 'admin') ?
+          `${this.translation(lang).registration.registeredBy[1]}` : `${this.translation(lang).registration.registeredBy[0]} ${request.user.name}`
       },
     }
 

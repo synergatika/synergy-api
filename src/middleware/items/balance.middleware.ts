@@ -10,22 +10,15 @@ import { BlockchainService } from '../../utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
 /**
- * DTOs
- */
-import Campaign from '../../microcreditInterfaces/campaign.interface';
-import History from '../../loyaltyInterfaces/history.interface';
-import Tokens from '../../microcreditInterfaces/tokens.interface';
-
-/**
  * Exceptions
  */
-import UnprocessableEntityException from '../../exceptions/UnprocessableEntity.exception';
+import { UnprocessableEntityException } from '../../_exceptions/index';
 
 /**
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import User from '../../usersInterfaces/user.interface';
+import { User, MicrocreditCampaign, History, MicrocreditTokens } from '../../_interfaces/index';
 
 /**
  * Middleware
@@ -35,7 +28,6 @@ import convertHelper from './convert.helper';
 /**
  * Models
  */
-import userModel from '../../models/user.model';
 import loyaltyTransactionModel from '../../models/loyalty.transaction.model';
 import microcreditTransactionModel from '../../models/microcredit.transaction.model';
 
@@ -106,10 +98,10 @@ async function loyalty_activity(request: RequestWithUser, response: Response, ne
 }
 
 async function microcredit_balance(request: RequestWithUser, response: Response, next: NextFunction) {
-  const campaign: Campaign = response.locals.campaign;
+  const campaign: MicrocreditCampaign = response.locals.campaign;
   const member: User = response.locals.member;
 
-  let error: Error, tokens: Tokens[];
+  let error: Error, tokens: MicrocreditTokens[];
   [error, tokens] = await to(microcreditTransactionModel.aggregate(
     [
       {
@@ -117,7 +109,7 @@ async function microcredit_balance(request: RequestWithUser, response: Response,
           $and: [{
             'member_id': (member._id).toString()
           }, {
-            'campaign_id': (campaign.campaign_id).toString()
+            'campaign_id': (campaign._id).toString()
           }]
         }
       }, {
@@ -139,42 +131,11 @@ async function microcredit_balance(request: RequestWithUser, response: Response,
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
   response.locals["balance"] = {
-    '_id': campaign.campaign_id,
+    '_id': campaign._id,
     'earnedTokens': tokens.length ? tokens[0].earnedTokens : '0',
     'redeemedTokens': tokens.length ? tokens[0].redeemedTokens : '0'
   };
   next();
-
-  // const campaign: Campaign = response.locals.campaign;
-  // const member: User = (response.locals.member) ? response.locals.member : request.user;
-
-  // let error: Error, tokens: Tokens[];
-  // [error, tokens] = await to(userModel.aggregate([{
-  //   $unwind: '$microcredit'
-  // }, {
-  //   $unwind: '$microcredit.supports'
-  // }, {
-  //   $match: {
-  //     $and: [
-  //       { 'microcredit._id': new ObjectId(campaign.campaign_id) },
-  //       { 'microcredit.supports.backer_id': (member._id).toString() }
-  //     ]
-  //   }
-  // }, {
-  //   "$group": {
-  //     '_id': '$microcredit._id',
-  //     'initialTokens': { '$sum': '$microcredit.supports.initialTokens' },
-  //     'redeemedTokens': { '$sum': '$microcredit.supports.redeemedTokens' }
-  //   }
-  // }]).exec().catch());
-  // if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-  // response.locals["balance"] = {
-  //   '_id': tokens.length ? tokens[0]._id : campaign.campaign_id,
-  //   'initialTokens': tokens.length ? tokens[0].initialTokens : '0',
-  //   'redeemedTokens': tokens.length ? tokens[0].redeemedTokens : '0'
-  // };
-  // next();
 }
 
 async function microcredit_activity(request: RequestWithUser, response: Response, next: NextFunction) {
@@ -220,10 +181,6 @@ async function microcredit_activity(request: RequestWithUser, response: Response
     convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 });
 
   next();
-  // response.status(200).send({
-  //   data: (history.length) ? convertHelper.activityToBagde(history[0]) : convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 }),
-  //   code: 200
-  // });
 }
 
 export default {

@@ -11,25 +11,19 @@ const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.j
 /**
  * DTOs
  */
-import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
-import EarnPointsDto from '../loyaltyDtos/earnPoints.dto';
-import RedeemPointsDto from '../loyaltyDtos/redeemPoints.dto';
-import OfferID from '../loyaltyDtos/offer_id.params.dto'
+import { IdentifierToDto, EarnPointsDto, RedeemPointsDto, OfferID } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
+import { UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
-import LoyaltyTransaction from '../loyaltyInterfaces/transaction.interface';
-import History from '../loyaltyInterfaces/history.interface';
-import LoyaltyStatistics from '../loyaltyInterfaces/loyaltyStatistics.interface';
+import { User, LoyaltyStatistics } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -56,7 +50,6 @@ const offsetParams = OffsetHelper.offsetLimit;
  */
 import userModel from '../models/user.model';
 import transactionModel from '../models/loyalty.transaction.model';
-import Offer from 'loyaltyInterfaces/offer.interface';
 
 class LoyaltyController implements Controller {
   public path = '/loyalty';
@@ -103,7 +96,7 @@ class LoyaltyController implements Controller {
       this.readBalance);
     this.router.get(`${this.path}/balance/:_to`,
       authMiddleware, accessMiddleware.onlyAsPartner,
-      validationParamsMiddleware(IdentifierDto),
+      validationParamsMiddleware(IdentifierToDto),
       usersMiddleware.member,
       balanceMiddleware.loyalty_balance,
       this.readBalance);
@@ -115,7 +108,7 @@ class LoyaltyController implements Controller {
 
     this.router.get(`${this.path}/badge/:_to`,
       authMiddleware, accessMiddleware.onlyAsPartner,
-      validationParamsMiddleware(IdentifierDto),
+      validationParamsMiddleware(IdentifierToDto),
       usersMiddleware.member,
       balanceMiddleware.loyalty_activity,
       this.readActivity);

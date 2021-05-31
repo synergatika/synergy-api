@@ -1,5 +1,7 @@
 // import { object } from "prop-types";
 
+import { LoyaltyOffer, MicrocreditCampaign, Post, Event, UserAccess, Content, Sector } from "../src/_interfaces";
+
 // const imagesLocation = '/mnt/c/Users/Dimitris Sociality/Documents/Notes (Projects)/Synergy/Synargy Demo Images/Demo Images';
 // const imagesLocation = '/mnt/c/Users/dmytakis/Documents/MyDocuments/Software Engineering (Projects)/Synergy/Synergy Demo Images';
 var path = require('path');
@@ -11,6 +13,7 @@ var defaultAdmin = {
   name: "Admin",
   email: "admin@gmail.com",
   password: "admin",
+  access: UserAccess.ADMIN,
   authToken: '',
   _id: '',
 };
@@ -20,7 +23,7 @@ var partner_a = {
   email: "partner_a@email.gr",
   password: "partner_a",
   tempPass: '',
-  sector: "Durables (Technology)", // "606daa442bc8e70588534115",
+  sector: "60af868b310add0479d3f474", //"Durables (Technology)", //
   imageFile: "partner_1.jpg",
   subtitle: "This is subtitle for partner a!",
   description: "This is description for partner a! This is description for partner a! This is description for partner a! This is description for partner a!",
@@ -70,7 +73,7 @@ var partner_b = {
   subtitle: "This is subtitle for partner b!",
   description: "This is description for partner b! This is description for partner b! This is description for partner b! This is description for partner b!",
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
-  sector: "Recreation and Culture", //"606daa442bc8e70588534118",
+  sector: "60af868b310add0479d3f475", //"Recreation and Culture", //
   imageFile: "partner_2.jpg",
   phone: 2102021020,
   address: {
@@ -108,7 +111,7 @@ var partner_c = {
   subtitle: "This is subtitle for partner c!",
   description: "This is description for partner c! This is description for partner c! This is description for partner c! This is description for partner c!",
   timetable: "Μonday, Tuesday, Thursday, Friday 9.00-21.00 <br>Wednesday 9.00-16.00 <br>Saturday 10.00-16.00",
-  sector: "Recreation and Culture",//  "606daa442bc8e7058853411c",
+  sector: "60af868b310add0479d3f476",//"Recreation and Culture",// 
   imageFile: "partner_3.jpg",
   contacts: [{
     slug: 'FB',
@@ -251,7 +254,7 @@ var post_a = {
   access: 'public',
   title: 'First Post (Public)',
   subtitle: 'This is subtitle for post A',
-  content: 'This is content for post A! This is content for post A! This is content for post A!',
+  description: 'This is content for post A! This is content for post A! This is content for post A!',
   imageFile: 'post_1.jpg'
 }
 
@@ -259,7 +262,7 @@ var post_b = {
   access: 'private',
   title: 'Second Post (Private)',
   subtitle: 'This is subtitle for post B',
-  content: 'This is content for post B! This is content for post B! This is content for post B!',
+  description: 'This is content for post B! This is content for post B! This is content for post B!',
   imageFile: 'post_2.jpg'
 }
 
@@ -267,7 +270,7 @@ var post_c = {
   access: 'public',
   title: 'Rich Editor Post',
   subtitle: 'A subtitle for Post',
-  content: `<h2>What is Lorem Ipsum?</h2><figure class="image image-style-side"><img src="http://localhost:3000/assets/content/post_1607530836341.jpg"><figcaption>Image Subtitle</figcaption></figure><p><strong>Lorem Ipsum</strong> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p><ul><li>One</li><li>Two</li><li>Three</li></ul><h2>Why do we use it?</h2><p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of&nbsp;</p><ol><li>One</li><li>Two&nbsp;</li><li>Three</li></ol><p>using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).</p><figure class="image"><img src="http://localhost:3000/assets/content/post_1607530836372.jpg"></figure><h2>Where does it come from?</h2><p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.</p><figure class="table"><table><tbody><tr><td>Name</td><td>Phone</td><td>Address</td></tr><tr><td>Chris Lorem</td><td>222222222</td><td>Here &amp; There 50, Athens 11111</td></tr></tbody></table></figure><p>The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.</p><p>&nbsp;</p><blockquote><p>There are many variations of passages of Lorem Ipsum available, but the majority</p></blockquote>`,
+  description: `<h2>What is Lorem Ipsum?</h2><figure class="image image-style-side"><img src="http://localhost:3000/assets/content/post_1607530836341.jpg"><figcaption>Image Subtitle</figcaption></figure><p><strong>Lorem Ipsum</strong> is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.</p><ul><li>One</li><li>Two</li><li>Three</li></ul><h2>Why do we use it?</h2><p>It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of&nbsp;</p><ol><li>One</li><li>Two&nbsp;</li><li>Three</li></ol><p>using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).</p><figure class="image"><img src="http://localhost:3000/assets/content/post_1607530836372.jpg"></figure><h2>Where does it come from?</h2><p>Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.</p><figure class="table"><table><tbody><tr><td>Name</td><td>Phone</td><td>Address</td></tr><tr><td>Chris Lorem</td><td>222222222</td><td>Here &amp; There 50, Athens 11111</td></tr></tbody></table></figure><p>The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.</p><p>&nbsp;</p><blockquote><p>There are many variations of passages of Lorem Ipsum available, but the majority</p></blockquote>`,
   contentFiles: ['http://localhost:3000/assets/content/post_1607530836341.jpg', 'http://localhost:3000/assets/content/post_1607530836372.jpg'],
   imageFile: 'post_3.jpg'
 }
@@ -276,7 +279,7 @@ var event_a = {
   access: 'partners',
   title: 'First Event (Partners)',
   subtitle: 'This is subtitle for event A',
-  content: 'This is content for event A! This is content for event A! This is content for event A!',
+  description: 'This is content for event A! This is content for event A! This is content for event A!',
   dateTime: _newDate3,
   location: 'Location Event A',
   imageFile: 'event_1.jpg'
@@ -286,7 +289,7 @@ var event_b = {
   access: 'public',
   title: 'Second Event (Public)',
   subtitle: 'This is subtitle for event B',
-  content: 'This is content for event B! This is content for event B! This is content for event B!',
+  description: 'This is content for event B! This is content for event B! This is content for event B!',
   dateTime: _newDate4,
   location: 'Location Event B',
   imageFile: 'event_2.jpg',
@@ -302,6 +305,7 @@ var microcredit_a = {
   category: 'Technology',
   subtitle: 'This is subtitle',
   quantitative: true,
+  redeemable: true,
   stepAmount: 5,
   minAllowed: 10,
   maxAllowed: 50,
@@ -323,6 +327,7 @@ var microcredit_b = {
   category: 'Technology',
   subtitle: 'This is subtitle',
   quantitative: false,
+  redeemable: true,
   stepAmount: 0,
   minAllowed: 15,
   maxAllowed: 15,
@@ -343,6 +348,7 @@ var microcredit_c = {
   category: 'Technology',
   subtitle: 'This is subtitle',
   quantitative: true,
+  redeemable: true,
   stepAmount: 0,
   minAllowed: 10,
   maxAllowed: 50,
@@ -363,6 +369,7 @@ var microcredit_d = {
   category: 'Technology',
   subtitle: 'This is subtitle',
   quantitative: true,
+  redeemable: true,
   stepAmount: 0,
   minAllowed: 10,
   maxAllowed: 50,
@@ -383,6 +390,7 @@ var microcredit_e = {
   category: 'Technology',
   subtitle: 'This is subtitle',
   quantitative: true,
+  redeemable: true,
   stepAmount: 0,
   minAllowed: 10,
   maxAllowed: 50,
@@ -403,6 +411,7 @@ var microcredit_f = {
   category: 'Technology',
   subtitle: 'This is subtitle',
   quantitative: true,
+  redeemable: true,
   stepAmount: 0,
   minAllowed: 10,
   maxAllowed: 50,
@@ -423,96 +432,111 @@ var content_a = {
   updated_en_content: 'Updated English Content'
 };
 
-type Offer = {
-  partner_id: '',
-  partner_imageURL: '',
-  partner_name: '',
-  partner_slug: '',
-  offer_id: '',
-  offer_imageURL: '',
-  title: '',
-  offer_slug: '',
-  subtitle: '',
-  description: '',
-  instructions: '',
-  cost: 0,
-  expiresAt: 0,
-  createdAt: ''
-}
+var sector_a = {
+  slug: 'Test Sector',
+  el_title: 'Ελληνικός Τίτλος Sector',
+  en_title: 'English Title Sector',
+};
 
-type Post = {
-  partner_id: '',
-  partner_imageURL: '',
-  partner_name: '',
-  partner_slug: '',
-  post_id: '',
-  post_imageURL: '',
-  title: '',
-  post_slug: '',
-  subtitle: '',
-  content: '',
-  type: '',
-  access: '',
-  createdAt: ''
-}
+// type Offer = {
+//   partner: {
+//     _id: '',
+//     imageURL: '',
+//     name: '',
+//     slug: '',
+//   },
+//   _id: '',
+//   imageURL: '',
+//   slug: '',
+//   title: '',
+//   subtitle: '',
+//   description: '',
+//   instructions: '',
+//   cost: 0,
+//   expiresAt: 0,
+//   createdAt: ''
+// }
 
-type Event = {
-  partner_id: '',
-  partner_imageURL: '',
-  partner_name: '',
-  partner_slug: '',
-  event_id: '',
-  event_imageURL: '',
-  title: '',
-  event_slug: '',
-  subtitle: '',
-  description: '',
-  location: '',
-  dateTime: 0,
-  access: '',
-  createdAt: ''
-}
+// type Post = {
+//   partner: {
+//     _id: '',
+//     imageURL: '',
+//     name: '',
+//     slug: '',
+//   }
+//   _id: '',
+//   imageURL: '',
+//   slug: '',
+//   title: '',
+//   subtitle: '',
+//   content: '',
+//   type: '',
+//   access: '',
+//   createdAt: ''
+// }
 
-type MicrocreditCampaign = {
-  partner_id: '',
-  partner_imageURL: '',
-  partner_name: '',
-  merchnat_slug: '',
-  campaign_id: '',
-  campaign_imageURL: '',
-  title: '',
-  campaign_slug: '',
-  terms: '',
-  access: '',
-  description: '',
-  category: '',
-  subtitle: '',
-  quantitative: false,
-  stepAmount: 0,
-  minAllowed: 0,
-  maxAllowed: 0,
-  maxAmount: 0,
-  redeemStarts: 0,
-  redeemEnds: 0,
-  startsAt: 0,
-  expiresAt: 0,
-  createdAt: ''
-}
+// type Event = {
+//   partner: {
+//     _id: '',
+//     imageURL: '',
+//     name: '',
+//     slug: '',
+//   },
+//   _id: '',
+//   imageURL: '',
+//   title: '',
+//   slug: '',
+//   subtitle: '',
+//   description: '',
+//   location: '',
+//   dateTime: 0,
+//   access: '',
+//   createdAt: ''
+// }
 
-type Content = {
-  _id: '',
-  name: '',
-  el_title: '',
-  en_title: '',
-  el_content: '',
-  en_content: ''
-}
+// type MicrocreditCampaign = {
+//   partner: {
+//     _id: '',
+//     imageURL: '',
+//     slug: '',
+//     name: ''
+//   },
+//   _id: '',
+//   imageURL: '',
+//   title: '',
+//   slug: '',
+//   terms: '',
+//   access: '',
+//   description: '',
+//   category: '',
+//   subtitle: '',
+//   quantitative: false,
+//   stepAmount: 0,
+//   minAllowed: 0,
+//   maxAllowed: 0,
+//   maxAmount: 0,
+//   redeemStarts: 0,
+//   redeemEnds: 0,
+//   startsAt: 0,
+//   expiresAt: 0,
+//   createdAt: ''
+// }
 
-var offers: Offer[] = new Array();
+// type Content = {
+//   _id: '',
+//   name: '',
+//   el_title: '',
+//   en_title: '',
+//   el_content: '',
+//   en_content: ''
+// }
+
+var offers: LoyaltyOffer[] = new Array();
 var posts: Post[] = new Array();
 var events: Event[] = new Array();
 var microcreditCampaigns: MicrocreditCampaign[] = new Array();
 var content: Content[] = new Array();
+var sectors: Sector[] = new Array();
 
 export {
   imagesLocation,
@@ -523,6 +547,6 @@ export {
   post_a, post_b, post_c,
   event_a, event_b,
   microcredit_a, microcredit_b, microcredit_c, microcredit_d, microcredit_e, microcredit_f,
-  content_a,
-  offers, posts, events, microcreditCampaigns, content
+  content_a, sector_a,
+  offers, posts, events, microcreditCampaigns, content, sectors
 }

@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import MicrocreditTransaction from '../microcreditInterfaces/transaction.interface';
+import { MicrocreditTransaction } from '../_interfaces/index';
 
 // const dataSchema = new mongoose.Schema({
 //   campaign_id: String,
@@ -88,8 +88,8 @@ const microcreditTransactionSchema = new mongoose.Schema({
     enum: ['PromiseFund', 'ReceiveFund', 'RevertFund', 'SpendFund'],
   },
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const microcreditTransactionModel = mongoose.model<MicrocreditTransaction & mongoose.Document>('MicrocreditTransaction', microcreditTransactionSchema);
 export default microcreditTransactionModel;

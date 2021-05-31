@@ -1,7 +1,9 @@
 import 'dotenv/config';
 import App from './app';
 
-// Controllers
+/**
+ * Controller
+ */
 import AuthenticationController from './controllers/authentication.controller';
 import MembersController from './controllers/members.controller';
 import PartnersController from './controllers/partners.controller';
@@ -16,10 +18,9 @@ import CommunityController from './controllers/community.controller';
 import HelpController from './controllers/help.controller';
 import ContentController from './controllers/content.controller';
 import UsersController from './controllers/users.controller';
-
-import validateEnv from './utils/validateEnv';
 import ReEstablishController from './controllers/re-establish.controller';
 
+import validateEnv from './utils/validateEnv';
 validateEnv();
 
 const app = new App(

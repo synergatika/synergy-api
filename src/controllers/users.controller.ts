@@ -12,21 +12,20 @@ const emailService = new EmailService();
 /**
  * DTOs
  */
-import UserID from '../usersDtos/user_id.params.dto';
-import AccessDto, { Access } from '../usersDtos/access.params.dto';
+import { AccessDto, UserID } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-import NotFoundException from '../exceptions/NotFound.exception';
+import { UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
-import User from '../usersInterfaces/user.interface';
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
+import { User, UserAccess } from '../_interfaces/index';
+
 //import Content from '../contentInterfaces/content.interface';
 
 /**
@@ -63,7 +62,7 @@ class UserController implements Controller {
   }
 
   private readUsers = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const access: AccessDto['access'] = request.params.access as Access;
+    const access: AccessDto['access'] = request.params.access as UserAccess;
     const params: string = request.params.offset;
 
     const offset: {

@@ -1,23 +1,16 @@
 import * as express from 'express';
-import to from 'await-to-ts'
-import { ObjectId } from 'mongodb';
 import latinize from 'latinize';
-
 
 /**
  * DTOs
  */
-import RegisterPartnerWithPasswordDto from 'authDtos/registerPartnerWithPassword.dto';
-import OfferDto from '../../loyaltyDtos/offer.dto';
-import PostDto from '../../communityDtos/post.dto';
-import EventDto from '../../communityDtos/event.dto';
-import CampaignDto from '../../microcreditDtos/campaign.dto';
+import { OfferDto, PostDto, EventDto, CampaignDto } from '../../_dtos/index';
 
 /**
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import User from '../../usersInterfaces/user.interface';
+import { User } from '../../_interfaces/index';
 
 /**
  * Models

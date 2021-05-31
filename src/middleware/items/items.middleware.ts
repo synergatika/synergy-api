@@ -5,27 +5,18 @@ import { ObjectId } from 'mongodb';
 /**
  * DTOs
  */
-import OfferID from '../../loyaltyDtos/offer_id.params.dto';
-import PostID from '../../communityDtos/post_id.params.dto';
-import EventID from '../../communityDtos/event_id.params.dto';
-import CampaignID from '../../microcreditDtos/campaign_id.params.dto';
-import SupportID from '../../microcreditDtos/support_id.params.dto';
+import { OfferID, PostID, EventID, CampaignID, SupportID } from '../../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../../exceptions/UnprocessableEntity.exception';
-import NotFoundException from '../../exceptions/NotFound.exception';
+import { NotFoundException, UnprocessableEntityException } from '../../_exceptions/index';
 
 /**
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import Offer from '../../loyaltyInterfaces/offer.interface';
-import Post from '../../communityInterfaces/post.interface';
-import Event from '../../communityInterfaces/event.interface';
-import Campaign from '../../microcreditInterfaces/campaign.interface';
-import Support from '../../microcreditInterfaces/support.interface';
+import { LoyaltyOffer, Post, Event, MicrocreditCampaign, MicrocreditSupport } from '../../_interfaces/index';
 
 /**
  * Models
@@ -37,7 +28,7 @@ async function offer(request: RequestWithUser, response: Response, next: NextFun
   const partner_id: OfferID["partner_id"] = request.params.partner_id;
   const offer_id: OfferID["offer_id"] = request.params.offer_id;
 
-  let error: Error, offers: Offer[];
+  let error: Error, offers: LoyaltyOffer[];
   [error, offers] = await to(userModel.aggregate([{
     $unwind: '$offers'
   }, {
@@ -51,9 +42,8 @@ async function offer(request: RequestWithUser, response: Response, next: NextFun
     }
   }, {
     $project: {
-      _id: false,
-      offer_id: '$offers._id',
-      offer_imageURL: '$offers.imageURL',
+      _id: '$offers._id',
+      imageURL: '$offers.imageURL',
       title: '$offers.title',
       cost: '$offers.cost'
     }
@@ -86,9 +76,8 @@ async function post(request: RequestWithUser, response: Response, next: NextFunc
     }
   }, {
     $project: {
-      _id: false,
-      post_id: '$posts._id',
-      post_imageURL: '$posts.imageURL',
+      _id: '$posts._id',
+      imageURL: '$posts.imageURL',
       title: '$posts.title',
     }
   }]).exec().catch());
@@ -120,9 +109,8 @@ async function event(request: RequestWithUser, response: Response, next: NextFun
     }
   }, {
     $project: {
-      _id: false,
-      event_id: '$events._id',
-      event_imageURL: '$events.imageURL',
+      _id: '$events._id',
+      imageURL: '$events.imageURL',
       title: '$events.title',
     }
   }]).exec().catch());
@@ -140,7 +128,7 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
   const partner_id: CampaignID["partner_id"] = request.params.partner_id;
   const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
-  let error: Error, campaigns: Campaign[];
+  let error: Error, campaigns: MicrocreditCampaign[];
   [error, campaigns] = await to(userModel.aggregate([{
     $unwind: '$microcredit'
   }, {
@@ -154,14 +142,14 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
     }
   }, {
     $project: {
-      _id: false,
-      campaign_id: '$microcredit._id',
-      campaign_imageURL: '$microcredit.imageURL',
+      _id: '$microcredit._id',
+      imageURL: '$microcredit.imageURL',
       title: '$microcredit.title',
       address: '$microcredit.address',
       status: '$microcredit.status',
 
       quantitative: '$microcredit.quantitative',
+      redeemable: '$microcredit.redeemable',
       stepAmount: '$microcredit.stepAmount',
       maxAmount: '$microcredit.maxAmount',
       maxAllowed: '$microcredit.maxAllowed',
@@ -187,7 +175,7 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
   const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
   const support_id: SupportID["support_id"] = request.params.support_id;
 
-  let error: Error, supports: Support[];
+  let error: Error, supports: MicrocreditSupport[];
   [error, supports] = await to(transactionModel.aggregate(
     [
       {

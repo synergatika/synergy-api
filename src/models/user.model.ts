@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import User from '../usersInterfaces/user.interface';
+import { User } from '../_interfaces/index';
 
 // const microcreditSupportSchema = new mongoose.Schema({
 //   backer_id: String,
@@ -26,11 +26,17 @@ const microcreditCampaignSchema = new mongoose.Schema({
   slug: String,
   terms: String,
   description: String,
+  contentFiles: [String],
+
   category: String,
   imageURL: String,
   access: String,
 
   quantitative: Boolean,
+  redeemable: {
+    type: Boolean,
+    default: true
+  },
   stepAmount: Number,
   minAllowed: Number,
   maxAllowed: Number,
@@ -68,7 +74,7 @@ const postSchema = new mongoose.Schema({
   title: String,
   slug: String,
   subtitle: String,
-  content: String,
+  description: String,
   contentFiles: [String],
   imageURL: String,
   access: {
@@ -82,7 +88,7 @@ const eventSchema = new mongoose.Schema({
   title: String,
   slug: String,
   subtitle: String,
-  content: String,
+  description: String,
   contentFiles: [String],
   imageURL: String,
   access: {
@@ -193,8 +199,8 @@ const userSchema = new mongoose.Schema({
     default: 'itself'
   }
 }, {
-    timestamps: true
-  });
+  timestamps: true
+});
 
 const userModel = mongoose.model<User & mongoose.Document>('User', userSchema);
 

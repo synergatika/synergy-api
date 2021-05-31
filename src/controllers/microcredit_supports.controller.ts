@@ -8,25 +8,19 @@ var path = require('path');
 /**
  * DTOs
  */
-import PartnerID from '../usersDtos/partner_id.params.dto';
-import CampaignID from '../microcreditDtos/campaign_id.params.dto';
-import SupportID from '../microcreditDtos/support_id.params.dto';
-import IdentifierDto from '../loyaltyDtos/identifier.params.dto';
+import { IdentifierToDto, CampaignID } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
+import { UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
-import Campaign from '../microcreditInterfaces/campaign.interface';
-import Support from '../microcreditInterfaces/support.interface';
-import MicrocreditTransaction from '../microcreditInterfaces/transaction.interface';
+import { User, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, SupportStatus } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -75,14 +69,14 @@ class MicrocreditSupportsController implements Controller {
     this.router.get(`${this.path}/:partner_id/:campaign_id/:_to`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo,
-      validationParamsMiddleware(IdentifierDto), usersMiddleware.member,
+      validationParamsMiddleware(IdentifierToDto), usersMiddleware.member,
       this.readBackerSupportsByCampaign);
   }
 
   private defineSupportStatus(a: any) {
-    if (a.currentTokens == 0) return 'completed';
-    else if (a.type == 'PromiseFund' || a.type == 'RevertFund') return 'unpaid';
-    else if (a.type == 'ReceiveFund' || a.type == 'SpendFund') return 'paid';
+    if (a.currentTokens == 0) return SupportStatus.COMPLETED;
+    else if (a.type == 'PromiseFund' || a.type == 'RevertFund') return SupportStatus.UNPAID;
+    else if (a.type == 'ReceiveFund' || a.type == 'SpendFund') return SupportStatus.PAID;
   }
 
   private readAllBackerSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -117,12 +111,12 @@ class MicrocreditSupportsController implements Controller {
     ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    const campaigns: Campaign[] = await this.readCampaigns(supports);
-    const supportsWithCampaign = supports.map((a: Support) =>
+    const campaigns: MicrocreditCampaign[] = await this.readCampaigns(supports);
+    const supportsWithCampaign = supports.map((a: MicrocreditSupport) =>
       Object.assign({}, a,
         {
           status: this.defineSupportStatus(a),
-          campaign: (campaigns).find((b: Campaign) => (b.campaign_id).toString() === (a.campaign_id).toString()),
+          campaign: (campaigns).find((b: MicrocreditCampaign) => (b._id).toString() === (a.campaign_id).toString()),
         }
       )
     );
@@ -133,8 +127,8 @@ class MicrocreditSupportsController implements Controller {
     });
   }
 
-  private readCampaigns = async (supports: Support[]) => {
-    let error: Error, campaigns: Campaign[];
+  private readCampaigns = async (supports: MicrocreditSupport[]) => {
+    let error: Error, campaigns: MicrocreditCampaign[];
     [error, campaigns] = await to(this.user.aggregate([{
       $unwind: '$microcredit'
     }, {
@@ -143,21 +137,21 @@ class MicrocreditSupportsController implements Controller {
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_email: '$email',
-        partner_imageURL: '$imageURL',
+        partner: {
+          _id: '$_id',
+          slug: '$slug',
+          name: '$name',
+          email: '$email',
+          imageURL: '$imageURL',
 
-        partner_payments: '$payments',
-        partner_address: '$address',
-        partner_contacts: '$contacts',
-        partner_phone: '$phone',
-
-        campaign_id: '$microcredit._id',
-        campaign_slug: '$microcredit.slug',
-        campaign_imageURL: '$microcredit.imageURL',
+          payments: '$payments',
+          address: '$address',
+          contacts: '$contacts',
+          phone: '$phone',
+        },
+        _id: '$microcredit._id',
+        slug: '$microcredit.slug',
+        imageURL: '$microcredit.imageURL',
         title: '$microcredit.title',
         subtitle: '$microcredit.subtitle',
         terms: '$microcredit.terms',
@@ -166,6 +160,7 @@ class MicrocreditSupportsController implements Controller {
         access: '$microcredit.access',
 
         quantitative: '$microcredit.quantitative',
+        redeemable: '$microcredit.redeemable',
         stepAmount: '$microcredit.stepAmount',
         minAllowed: '$microcredit.minAllowed',
         maxAllowed: '$microcredit.maxAllowed',
@@ -269,7 +264,7 @@ class MicrocreditSupportsController implements Controller {
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     const transactions: { _id: string, transactions: MicrocreditTransaction[] }[] = await this.readTransactions(partner_id, (member._id).toString(), campaign_id);
-    const supportWithTransactions = supports.map((a: Support) =>
+    const supportWithTransactions = supports.map((a: MicrocreditSupport) =>
       Object.assign({}, a,
         {
           status: this.defineSupportStatus(a),

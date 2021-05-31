@@ -4,14 +4,13 @@ import * as jwt from 'jsonwebtoken';
 /**
  * Exceptions
  */
-import UnauthorizedException from '../../exceptions/Unauthorized.exception';
+import { UnauthorizedException } from '../../_exceptions/index';
 
 /**
  * Interfaces
  */
-import DataStoredInToken from '../../authInterfaces/dataStoredInToken';
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import User from '../../usersInterfaces/user.interface';
+import { User, DataStoredInToken } from '../../_interfaces/index';
 
 /**
  * Models

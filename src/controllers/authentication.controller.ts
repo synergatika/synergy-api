@@ -1,7 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import * as express from 'express';
 import * as jwt from 'jsonwebtoken';
-import * as nodemailer from 'nodemailer';
 import to from 'await-to-ts';
 import path from 'path';
 
@@ -24,37 +23,28 @@ const emailService = new EmailService();
 /**
  * DTOs
  */
-import AuthenticationDto from '../authDtos/authentication.dto';
-import RegisterUserWithPasswordDto from '../authDtos/registerUserWithPassword.dto';
-import RegisterUserWithoutPasswordDto from '../authDtos/registerUserWithoutPassword.dto';
-import RegisterPartnerWithPasswordDto from '../authDtos/registerPartnerWithPassword.dto';
-import RegisterPartnerWithoutPasswordDto from '../authDtos/registerPartnerWithoutPassword.dto';
-import CheckTokenDto from '../authDtos/checkToken.dto';
-import ChangePassInDto from '../authDtos/changePassIn.dto';
-import ChangePassOutDto from '../authDtos/changePassOut.dto';
-import EmailDto from '../authDtos/email.params.dto';
-import CardDto from '../authDtos/card.params.dto';
-import IdentifierDto from '../authDtos/identifier.params.dto';
-import DeactivatationDto from '../authDtos/deactivation.dto';
-import UserID from '../usersDtos/user_id.params.dto';
+import {
+  AuthenticationDto,
+  RegisterUserWithPasswordDto, RegisterUserWithoutPasswordDto, RegisterPartnerWithPasswordDto, RegisterPartnerWithoutPasswordDto,
+  CheckTokenDto,
+  ChangePassInDto, ChangePassOutDto,
+  EmailDto, CardDto,
+  IdentifierDto,
+  DeactivationDto,
+  UserID
+} from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import NotFoundException from '../exceptions/NotFound.exception';
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
+import { NotFoundException, UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
-import DataStoredInToken from '../authInterfaces/dataStoredInToken';
-import TokenData from '../authInterfaces/tokenData.interface';
-import AuthTokenData from '../authInterfaces/authTokenData.interface';
-import User from '../usersInterfaces/user.interface';
-import Member from '../usersInterfaces/member.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import Account from '../usersInterfaces/account.interface';
+import { User, Member, Account, TokenData, DataStoredInToken, AuthTokenData, UserAccess } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -63,15 +53,12 @@ import validationBodyMiddleware from '../middleware/validators/body.validation';
 import validationParamsMiddleware from '../middleware/validators/params.validation';
 import accessMiddleware from '../middleware/auth/access.middleware';
 import authMiddleware from '../middleware/auth/auth.middleware';
-import FilesMiddleware from '../middleware/items/files.middleware';
 import SlugHelper from '../middleware/items/slug.helper';
 import blockchainStatus from '../middleware/items/status.middleware';
 
 /**
  * Helper's Instances
  */
-// const uploadFile = FilesMiddleware.uploadPerson;
-// const renameFile = FilesMiddleware.renameFile;
 const createSlug = SlugHelper.partnerSlug;
 
 /**
@@ -185,7 +172,7 @@ class AuthenticationController implements Controller {
      * Activate - Deactivate Account
      */
     this.router.put(`${this.path}/deactivate`,
-      authMiddleware, validationBodyMiddleware(DeactivatationDto),
+      authMiddleware, validationBodyMiddleware(DeactivationDto),
       this.autoDeactivation,
       emailService.internalDeactivation,
       emailService.accountDeactivation);
@@ -215,9 +202,6 @@ class AuthenticationController implements Controller {
    * inviteMember: Message ("User has been Invited to enjoy our Community!") EmailSent
    * invitePartner: Message ("User has been Invited to enjoy our Community!") EmailSent
    */
-
-  private sendResponse = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  }
 
   private checkIdentifier = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const identifier: IdentifierDto["identifier"] = request.params.identifier;
@@ -294,10 +278,10 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-        $set: {
-          card: data.card
-        }
-      }).catch());
+      $set: {
+        card: data.card
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -337,16 +321,18 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       card: card
     }, {
-        $set: {
-          email: data.email,
-          password: hashedPassword,
-          account: account
-        }
-      }).catch());
+      $set: {
+        email: data.email,
+        password: hashedPassword,
+        account: account
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {
       res: this.prefixedResponse(200, "User has been Invited to enjoy our Community!", {}, { "password": tempPassword }),
+      registeredBy: request.user,
+      registrationType: 'invite',
       extras: extras,
       user: {
         email: data.email,
@@ -366,11 +352,11 @@ class AuthenticationController implements Controller {
       [error, results] = await to(this.user.updateOne({
         email: email
       }, {
-          $set: {
-            oneClickToken: token.token,
-            oneClickExpiration: token.expiresAt
-          }
-        }).catch());
+        $set: {
+          oneClickToken: token.token,
+          oneClickExpiration: token.expiresAt
+        }
+      }).catch());
       if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
       return response.status(200).send({
@@ -396,7 +382,7 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.create({
       email: email,
       password: hashedPassword,
-      access: 'member',
+      access: UserAccess.MEMBER,
       account: account,
       pass_verified: false,
       oneClickToken: token.token,
@@ -407,6 +393,7 @@ class AuthenticationController implements Controller {
 
     response.locals = {
       user: user,
+      registrationType: 'one-click',
       extras: extras,
       res: this.prefixedResponse(200, "", { "registration": true, "oneClickToken": token.token }, { "password": tempPassword })
     }
@@ -499,6 +486,8 @@ class AuthenticationController implements Controller {
 
     response.locals = {
       user: user,
+      registeredBy: request.user,
+      registrationType: 'invite',
       extras: potensialUser.extras,
       res: this.prefixedResponse(200,
         "User has been Invited to enjoy our Community!",
@@ -532,6 +521,8 @@ class AuthenticationController implements Controller {
     response.locals = {
       user: user,
       extras: potensialUser.extras,
+      registeredBy: request.user,
+      registrationType: 'invite',
       res: this.prefixedResponse(200,
         "User has been Invited to enjoy our Community!",
         {},
@@ -807,10 +798,10 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-        $set: {
-          password: hashedPassword
-        }
-      }).catch());
+      $set: {
+        password: hashedPassword
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Your password has been Updated",
@@ -833,12 +824,13 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-        $set: {
-          pass_verified: true,
-          password: await bcrypt.hash(data.newPassword, 10)
-        }
-      }).catch());
+      $set: {
+        pass_verified: true,
+        password: await bcrypt.hash(data.newPassword, 10)
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
     response.status(200).send({
       message: "Success! Your password has been Updated",
       code: 200
@@ -859,11 +851,11 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-        $set: {
-          verificationToken: token.token,
-          verificationExpiration: token.expiresAt
-        }
-      }).catch());
+      $set: {
+        verificationToken: token.token,
+        verificationExpiration: token.expiresAt
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals["res"] = (response.locals.res) ?
@@ -894,14 +886,14 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       verificationToken: data.token
     }, {
-        $set: {
-          email_verified: true,
-        },
-        $unset: {
-          verificationToken: "",
-          verificationExpiration: "",
-        }
-      }).catch());
+      $set: {
+        email_verified: true,
+      },
+      $unset: {
+        verificationToken: "",
+        verificationExpiration: "",
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -926,11 +918,11 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       email: email
     }, {
-        $set: {
-          restorationToken: token.token,
-          restorationExpiration: token.expiresAt
-        }
-      }).catch());
+      $set: {
+        restorationToken: token.token,
+        restorationExpiration: token.expiresAt
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {
@@ -946,7 +938,10 @@ class AuthenticationController implements Controller {
   private checkRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: CheckTokenDto = request.body;
 
-    let user: User = await this.user.findOne({ restorationToken: data.token, restorationExpiration: { $gt: this.currentDateTime() } });
+    let user: User = await this.user.findOne({
+      restorationToken: data.token,
+      restorationExpiration: { $gt: this.currentDateTime() }
+    });
     if (!user) {
       return next(new NotFoundException("WRONG_TOKEN"));
     }
@@ -960,9 +955,10 @@ class AuthenticationController implements Controller {
   private changePassOutside = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: ChangePassOutDto = request.body;
 
-    let user: User = await this.user.findOne(
-      { restorationToken: data.token, restorationExpiration: { $gt: this.currentDateTime() } }
-    );
+    let user: User = await this.user.findOne({
+      restorationToken: data.token,
+      restorationExpiration: { $gt: this.currentDateTime() }
+    });
     if (!user) {
       return next(new NotFoundException("WRONG_TOKEN"));
     }
@@ -973,14 +969,14 @@ class AuthenticationController implements Controller {
     [error, results] = await to(this.user.updateOne({
       restorationToken: data.token
     }, {
-        $set: {
-          password: hashedPassword,
-        },
-        $unset: {
-          restorationToken: "",
-          restorationExpiration: ""
-        }
-      }).catch());
+      $set: {
+        password: hashedPassword,
+      },
+      $unset: {
+        restorationToken: "",
+        restorationExpiration: ""
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -1000,13 +996,13 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.findOneAndUpdate({
       _id: user_id
     }, {
-        $set: {
-          'activated': true
-        }
-      }, {
-        "fields": { "email": 1, "name": 1, "access": 1 },
-        "new": true
-      }).catch());
+      $set: {
+        'activated': true
+      }
+    }, {
+      "fields": { "email": 1, "name": 1, "access": 1 },
+      "new": true
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
 
@@ -1030,13 +1026,13 @@ class AuthenticationController implements Controller {
     [error, user] = await to(this.user.findOneAndUpdate({
       _id: user_id
     }, {
-        $set: {
-          'activated': false
-        }
-      }, {
-        "fields": { "email": 1, "name": 1, "access": 1 },
-        "new": true
-      }).catch());
+      $set: {
+        'activated': false
+      }
+    }, {
+      "fields": { "email": 1, "name": 1, "access": 1 },
+      "new": true
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
 
@@ -1051,22 +1047,22 @@ class AuthenticationController implements Controller {
   }
 
   private autoDeactivation = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const data: DeactivatationDto = request.body;
+    const data: DeactivationDto = request.body;
 
     let error: Error, results: Object;
     [error, results] = await to(this.user.updateOne({
       _id: request.user._id
     }, {
-        $set: {
-          activated: false
-        },
-        $push: {
-          deactivations: {
-            reason: data.reason,
-            createdAt: new Date()
-          }
+      $set: {
+        activated: false
+      },
+      $push: {
+        deactivations: {
+          reason: data.reason,
+          createdAt: new Date()
         }
-      }).catch());
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.locals = {

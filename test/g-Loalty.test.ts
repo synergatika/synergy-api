@@ -44,7 +44,7 @@ describe("Loyalty", () => {
     });
     it("3. should use points using email with offer - 201 Created", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .post("loyalty/redeem/" + partner_a._id + "/" + offers[0].offer_id + "/" + user_c.email)
+        .post("loyalty/redeem/" + partner_a._id + "/" + offers[0]._id + "/" + user_c.email)
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .send({
           password: partner_a.password,

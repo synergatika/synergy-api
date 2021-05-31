@@ -1,28 +1,21 @@
-import { NextFunction, Response } from 'express';
-import * as bcrypt from 'bcrypt';
+interface OffsetLimit {
+  limit: number;
+  skip: number;
+  greater: number;
+  type: boolean;
+}
 
-/**
- * Exceptions
- */
-import ForbiddenException from '../../exceptions/Forbidden.exception';
-
-/**
- * Interfaces
- */
-import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import Offer from '../../loyaltyInterfaces/offer.interface';
-import Campaign from '../../microcreditInterfaces/campaign.interface';
-import Support from '../../microcreditInterfaces/support.interface';
-
-/**
- * Models
- */
-import userModel from '../../models/user.model';
+interface OffsetIndex {
+  index: number;
+  count: number;
+  greater: number;
+  type: boolean;
+}
 
 class OffsetHelper {
 
   // offset: [number, number, number] = [items per page, current page, active or all]
-  static offsetLimit = (params: string) => {
+  static offsetLimit = (params: string): OffsetLimit => {
     if (!params) return { limit: Number.MAX_SAFE_INTEGER, skip: 0, greater: 0, type: true }
     const splittedParams: string[] = params.split("-");
 
@@ -37,7 +30,7 @@ class OffsetHelper {
     };
   }
 
-  static offsetIndex = (params: string) => {
+  static offsetIndex = (params: string): OffsetIndex => {
     if (!params) return { index: 0, count: Number.MAX_SAFE_INTEGER, greater: 0, type: true }
     const splittedParams: string[] = params.split("-");
 

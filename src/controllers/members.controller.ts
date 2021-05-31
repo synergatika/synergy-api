@@ -5,20 +5,19 @@ import path from 'path';
 /**
  * DTOs
  */
-import MemberDto from '../usersDtos/member.dto';
+import { MemberDto } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
+import { UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
-import Member from '../usersInterfaces/member.interface';
+import { User, Member } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -97,14 +96,14 @@ class MembersController implements Controller {
     [error, member] = await to(this.user.findOneAndUpdate({
       _id: user._id
     }, {
-        $set: {
-          name: data.name,
-          imageURL: (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : user.imageURL
-        }
-      }, {
-        "fields": { "name": 1, "imageURL": 1 },
-        "new": true
-      }).catch());
+      $set: {
+        name: data.name,
+        imageURL: (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : user.imageURL
+      }
+    }, {
+      "fields": { "name": 1, "imageURL": 1 },
+      "new": true
+    }).catch());
 
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 

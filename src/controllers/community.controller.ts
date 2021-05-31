@@ -12,22 +12,19 @@ const emailService = new EmailService();
 /**
  * DTOs
  */
-import InvitationDto from '../communityDtos/invitation.dto'
-import CommunicationDto from '../communityDtos/communication.dto'
+import { CommunicationDto, InvitationDto, PartnerID } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception'
+import { UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import User from '../usersInterfaces/user.interface';
-import PartnerID from '../usersDtos/partner_id.params.dto'
-import PostEvent from '../communityInterfaces/post_event.interface';
+import { User, PostEvent } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -60,10 +57,10 @@ class CommunityController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/public/:offset`, this.readPublicPostsEvents);
-    this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPrivatePostsEvents);
-    this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPublicPostsEventsByStore);
-    this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPrivatePostsEventsByStore);
+    this.router.get(`${this.path}/public/:offset`, this.readPostsEvents);
+    this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPostsEvents);
+    this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPostsEventsByStore);
+    this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPostsEventsByStore);
 
     this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.sendInvitation, emailService.userInvitation);
 
@@ -119,12 +116,18 @@ class CommunityController implements Controller {
     return comparison;
   }
 
-  private readPublicPostsEvents = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  private readPostsEvents = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
+    /** Params & Filters */
     const params: string = request.params.offset;
     const offset: {
       index: number, count: number, greater: number, type: boolean
     } = offsetParams(params);
+
+    const access_filter: string[] = ['public'];
+    if (request.user) access_filter.push('private');
+    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+    /** ***** * ***** */
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
     [error, posts] = await to(this.user.aggregate([{
@@ -133,27 +136,13 @@ class CommunityController implements Controller {
       $match: {
         $and: [
           { 'activated': true },
-          { 'posts.access': 'public' }
+          { 'posts.access': { $in: access_filter } }
         ]
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        post_event_id: '$posts._id',
-        post_event_slug: '$posts.slug',
-        post_event_imageURL: '$posts.imageURL',
-        type: 'post',
-        title: '$posts.title',
-        subtitle: '$posts.subtitle',
-        content: '$posts.content',
-        access: '$posts.access',
-
-        createdAt: '$posts.createdAt'
+        partner: this.projectPartner(),
+        ...this.projectPost()
       }
     }, {
       $sort: {
@@ -168,30 +157,14 @@ class CommunityController implements Controller {
       $match: {
         $and: [
           { 'activated': true },
-          { 'events.access': 'public' },
+          { 'events.access': { $in: access_filter } },
           { 'events.dateTime': { $gt: offset.greater } }
         ]
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        post_event_id: '$events._id',
-        post_event_slug: '$events.slug',
-        post_event_imageURL: '$events.imageURL',
-        type: 'event',
-        title: '$events.title',
-        subtitle: '$events.subtitle',
-        content: '$events.content',
-        access: '$events.access',
-        location: '$events.location',
-        dateTime: '$events.dateTime',
-
-        createdAt: '$posts.createdAt'
+        partner: this.projectPartner(),
+        ...this.projectEvent()
       }
     }, {
       $sort: {
@@ -199,22 +172,28 @@ class CommunityController implements Controller {
       }
     }
     ]).exec().catch());
-
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
-      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count), //    singers.sort(compare);
+      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
     });
-    //products.slice(index,index+count)
   }
 
-  private readPrivatePostsEvents = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const access = (request.user.access === 'partner') ? 'partners' : 'random';
+  private readPostsEventsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const partner_id: PartnerID["partner_id"] = request.params.partner_id;
 
+    /** Params & Filters */
     const params: string = request.params.offset;
     const offset: {
       index: number, count: number, greater: number, type: boolean
     } = offsetParams(params);
+
+    const access_filter: string[] = ['public'];
+    if (request.user) access_filter.push('private');
+    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+
+    const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+    /** ***** * ***** */
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
     [error, posts] = await to(this.user.aggregate([{
@@ -222,28 +201,14 @@ class CommunityController implements Controller {
     }, {
       $match: {
         $and: [
-          { 'activated': true },
-          { 'posts.access': { $in: ['public', 'private', access] } }
+          partner_filter,
+          { 'posts.access': { $in: access_filter } }
         ]
-      }
+      },
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        post_event_id: '$posts._id',
-        post_event_slug: '$posts.slug',
-        post_event_imageURL: '$posts.imageURL',
-        type: 'post',
-        title: '$posts.title',
-        subtitle: '$posts.subtitle',
-        content: '$posts.content',
-        access: '$posts.access',
-
-        createdAt: '$posts.createdAt'
+        partner: this.projectPartner(),
+        ...this.projectPost()
       }
     }, {
       $sort: {
@@ -257,31 +222,15 @@ class CommunityController implements Controller {
     }, {
       $match: {
         $and: [
-          { 'activated': true },
-          { 'events.access': { $in: ['public', 'private', access] } },
+          partner_filter,
+          { 'events.access': { $in: access_filter } },
           { 'events.dateTime': { $gt: offset.greater } }
         ]
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        post_event_id: '$events._id',
-        post_event_slug: '$events.slug',
-        post_event_imageURL: '$events.imageURL',
-        type: 'event',
-        title: '$events.title',
-        subtitle: '$events.subtitle',
-        content: '$events.content',
-        access: '$events.access',
-        location: '$events.location',
-        dateTime: '$events.dateTime',
-
-        createdAt: '$posts.createdAt'
+        partner: this.projectPartner(),
+        ...this.projectEvent()
       }
     }, {
       $sort: {
@@ -296,223 +245,61 @@ class CommunityController implements Controller {
     });
   }
 
-  private readPublicPostsEventsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const partner_id: PartnerID["partner_id"] = request.params.partner_id;
+  /**
+  *  
+  * Local Function Section 
+  *
+  * */
 
-    const params: string = request.params.offset;
-    const offset: {
-      index: number, count: number, greater: number, type: boolean
-    } = offsetParams(params);
-
-    let error: Error, posts: PostEvent[], events: PostEvent[];
-    [error, posts] = await to(this.user.aggregate([{
-      $unwind: '$posts'
-    }, {
-      $match: {
-        $or: [
-          {
-            $and: [
-              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
-              { 'posts.access': 'public' }
-            ]
-          },
-          {
-            $and: [
-              { slug: partner_id },
-              { 'posts.access': 'public' }
-            ]
-          }
-        ]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        post_event_id: '$posts._id',
-        post_event_slug: '$posts.slug',
-        post_event_imageURL: '$posts.imageURL',
-        type: 'post',
-        title: '$posts.title',
-        subtitle: '$posts.subtitle',
-        content: '$posts.content',
-        access: '$posts.access',
-
-        createdAt: '$posts.createdAt'
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
-
-    [error, events] = await to(this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match: {
-        $or: [
-          {
-            $and: [
-              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
-              { 'events.access': 'public' },
-              { 'events.dateTime': { $gt: offset.greater } }
-            ]
-          },
-          {
-            $and: [
-              { slug: partner_id },
-              { 'events.access': 'public' },
-              { 'events.dateTime': { $gt: offset.greater } }
-            ]
-          }
-        ]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        post_event_id: '$events._id',
-        post_event_slug: '$events.slug',
-        post_event_imageURL: '$events.imageURL',
-        type: 'event',
-        title: '$events.title',
-        subtitle: '$events.subtitle',
-        content: '$events.content',
-        access: '$events.access',
-        location: '$events.location',
-        dateTime: '$events.dateTime',
-
-        createdAt: '$posts.createdAt'
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    response.status(200).send({
-      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
-      code: 200
-    });
+  /** Project Partner (Local Function) */
+  private projectPartner() {
+    return {
+      _id: '$_id',
+      name: '$name',
+      email: '$email',
+      slug: '$slug',
+      imageURL: '$imageURL',
+      payments: '$payments',
+      address: '$address',
+      contacts: '$contacts',
+      phone: '$phone',
+    };
   }
 
-  private readPrivatePostsEventsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const partner_id: PartnerID["partner_id"] = request.params.partner_id;
-    const access = (request.user.access === 'partner') ? 'partners' : 'random';
+  /** Project Post (Local Function) */
+  private projectPost() {
+    return {
+      _id: '$posts._id',
+      slug: '$posts.slug',
+      imageURL: '$posts.imageURL',
+      type: 'post',
+      title: '$posts.title',
+      subtitle: '$posts.subtitle',
+      description: '$posts.description',
+      access: '$posts.access',
 
-    const params: string = request.params.offset;
-    const offset: {
-      index: number, count: number, greater: number, type: boolean
-    } = offsetParams(params);
+      createdAt: '$posts.createdAt',
+      updatedAt: '$posts.updatedAt'
+    };
+  }
 
-    let error: Error, posts: PostEvent[], events: PostEvent[];
-    [error, posts] = await to(this.user.aggregate([{
-      $unwind: '$posts'
-    }, {
-      $match: {
-        $or: [
-          {
-            $and: [
-              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
-              { 'posts.access': { $in: ['public', 'private', access] } }
-            ]
-          },
-          {
-            $and: [
-              { slug: partner_id },
-              { 'posts.access': { $in: ['public', 'private', access] } }
-            ]
-          }
-        ]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
+  /** Project Event (Local Function) */
+  private projectEvent() {
+    return {
+      _id: '$events._id',
+      slug: '$events.slug',
+      imageURL: '$events.imageURL',
+      type: 'event',
+      title: '$events.title',
+      subtitle: '$events.subtitle',
+      description: '$events.description',
+      access: '$events.access',
+      location: '$events.location',
+      dateTime: '$events.dateTime',
 
-        post_event_id: '$posts._id',
-        post_event_slug: '$posts.slug',
-        post_event_imageURL: '$posts.imageURL',
-        type: 'post',
-        title: '$posts.title',
-        subtitle: '$posts.subtitle',
-        content: '$posts.content',
-        access: '$posts.access',
-
-        createdAt: '$posts.createdAt'
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
-
-    [error, events] = await to(this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match: {
-        $or: [
-          {
-            $and: [
-              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
-              { 'events.access': { $in: ['public', 'private', access] } },
-              { 'events.dateTime': { $gt: offset.greater } }
-            ]
-          },
-          {
-            $and: [
-              { slug: partner_id },
-              { 'events.access': { $in: ['public', 'private', access] } },
-              { 'events.dateTime': { $gt: offset.greater } }
-            ]
-          }
-        ]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        post_event_id: '$events._id',
-        post_event_slug: '$events.slug',
-        post_event_imageURL: '$events.imageURL',
-        type: 'event',
-        title: '$events.title',
-        subtitle: '$events.subtitle',
-        content: '$events.content',
-        access: '$events.access',
-        location: '$events.location',
-        dateTime: '$events.dateTime',
-
-        createdAt: '$events.createdAt'
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    response.status(200).send({
-      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
-      code: 200
-    });
+      createdAt: '$events.createdAt',
+      updatedAt: '$events.updatedAt'
+    };
   }
 }
 

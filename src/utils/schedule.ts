@@ -11,9 +11,7 @@ const emailService = new EmailService();
 /**
  * Interfaces
  */
-import Campaign from '../microcreditInterfaces/campaign.interface';
-import User from '../usersInterfaces/user.interface';
-import Support from '../microcreditInterfaces/support.interface';
+import { User, MicrocreditCampaign, MicrocreditSupport } from '../_interfaces/index';
 
 /**
  * Models
@@ -45,13 +43,14 @@ class Schedule {
       const secondsStart = parseInt(nowStarts.getTime().toString());
       const secondsEnd = parseInt(nowEnds.getTime().toString());
 
-      let error: Error, campaigns: Campaign[];
+      let error: Error, campaigns: MicrocreditCampaign[];
       [error, campaigns] = await to(this.user.aggregate([{
         $unwind: '$microcredit'
       }, {
         $match: {
           $and: [
             { 'microcredit.status': 'published' },
+            { 'microcredit.redeemable': true },
             { 'microcredit.redeemStarts': { $gt: secondsStart } },
             { 'microcredit.redeemStarts': { $lt: secondsEnd } },
           ]
@@ -102,11 +101,11 @@ class Schedule {
       ]).exec().catch());
       if (error) return;
 
-      const supports: Support[] = await this.readSupports(campaigns);
-      const campaignWithSupports = campaigns.map((a: Campaign) =>
+      const supports: MicrocreditSupport[] = await this.readSupports(campaigns);
+      const campaignWithSupports = campaigns.map((a: MicrocreditCampaign) =>
         Object.assign({}, a,
           {
-            supports: (supports).filter((b: Support) => (b.campaign_id).toString() === (a.campaign_id).toString()),
+            supports: (supports).filter((b: MicrocreditSupport) => (b.campaign_id).toString() === (a._id).toString()),
           }
         )
       );
@@ -118,13 +117,13 @@ class Schedule {
     });
   }
 
-  public readSupports = async (campaigns: Campaign[]) => {
+  public readSupports = async (campaigns: MicrocreditCampaign[]) => {
 
     let error: Error, supports: any[];
     [error, supports] = await to(this.transaction.aggregate([
       {
         $match: {
-          'campaign_id': { $in: campaigns.map(a => (a.campaign_id).toString()) }
+          'campaign_id': { $in: campaigns.map(a => (a._id).toString()) }
         }
       },
       { $sort: { date: 1 } },
@@ -145,7 +144,7 @@ class Schedule {
     if (error) return;
 
     const users: User[] = await this.readUsers(supports);
-    const supportsWithUsers = supports.map((a: Support) =>
+    const supportsWithUsers = supports.map((a: MicrocreditSupport) =>
       Object.assign({}, a,
         {
           member_email: (users).find((b: User) => (b._id).toString() === (a._id).toString()).email,
@@ -156,10 +155,10 @@ class Schedule {
     return supportsWithUsers;
   }
 
-  public readUsers = async (supports: Support[]) => {
+  public readUsers = async (supports: MicrocreditSupport[]) => {
     let error: Error, users: User[];
 
-    [error, users] = await to(this.user.find({ _id: { $in: supports.map((a: Support) => (a._id)) } }).select({
+    [error, users] = await to(this.user.find({ _id: { $in: supports.map((a: MicrocreditSupport) => (a._id)) } }).select({
       "_id": 1, "email": 1,
     }).catch());
 

@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import Sector from '../contentInterfaces/sector.interface';
+import { Sector } from '../_interfaces/index';
 
 const sectorSchema = new mongoose.Schema({
   slug: String,

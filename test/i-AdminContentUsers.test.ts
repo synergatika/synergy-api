@@ -6,10 +6,10 @@ chai.should();
 chai.use(require('chai-as-promised'));
 chai.use(require('chai-http'));
 
-import { defaultAdmin, content_a, content, user_a, user_b } from './_structs.test';
+import { defaultAdmin, content_a, content, sectors, user_a, user_b, sector_a } from './_structs.test';
 
 describe("Admin - Content & Users", () => {
-  describe("Admin - Content (/content)", () => {
+  describe("Admin - Content & Sectors (/content)", () => {
     it("1. should create content - 200 Created", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("content")
@@ -93,6 +93,35 @@ describe("Admin - Content & Users", () => {
           res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('data');
+          done();
+        });
+    });
+    it("6. should read sectors - 200 Sectors", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .get("content/sectors")
+        .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          let i = 0;
+          for (i = 0; i < (res.body.data).length; i++) {
+            sectors.push((res.body.data)[i]);
+          }
+          done();
+        });
+    });
+    it("7. should update sectors - 200 Updated", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("content/sectors")
+        .set('Authorization', 'Bearer ' + defaultAdmin.authToken)
+        .send({
+          sectors: [...sectors, sector_a]
+        })
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
           done();
         });
     });

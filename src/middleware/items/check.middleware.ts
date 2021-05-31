@@ -1,31 +1,20 @@
 import { NextFunction, Response } from 'express';
-import * as bcrypt from 'bcrypt';
 
 /**
  * DTOs
  */
-import EarnTokensDto from 'microcreditDtos/earnTokens.dto';
-import RedeemPointsDto from '../../loyaltyDtos/redeemPoints.dto';
+import { EarnTokensDto, RedeemPointsDto } from '../../_dtos/index';
 
 /**
  * Exceptions
  */
-import NotFoundException from '../../exceptions/NotFound.exception';
+import { NotFoundException } from '../../_exceptions/index';
 
 /**
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import Partner from '../../usersInterfaces/partner.interface';
-import Offer from '../../loyaltyInterfaces/offer.interface';
-import Campaign from '../../microcreditInterfaces/campaign.interface';
-import Support from '../../microcreditInterfaces/support.interface';
-import Tokens from '../../microcreditInterfaces/tokens.interface';
-
-/**
- * Models
- */
-import userModel from '../../models/user.model';
+import { Partner, LoyaltyOffer, MicrocreditCampaign, MicrocreditSupport, MicrocreditTokens } from '../../_interfaces/index';
 
 class CheckMiddleware {
 
@@ -40,7 +29,7 @@ class CheckMiddleware {
   }
 
   static canRedeemOffer = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const offer: Offer = response.locals.offer;
+    const offer: LoyaltyOffer = response.locals.offer;
     const balance = response.locals.balance;
     const data: RedeemPointsDto = request.body;
 
@@ -56,7 +45,7 @@ class CheckMiddleware {
   }
 
   static canPublishMicrocredit = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const campaign: Campaign = response.locals.campaign;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
     const partner: Partner = response.locals.partner;
 
     if (!partner.payments || !partner.payments.length) {
@@ -69,7 +58,7 @@ class CheckMiddleware {
   }
 
   static canEditMicrocredit = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const campaign: Campaign = response.locals.campaign;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
 
     if (campaign.status !== 'draft') {
       return next(new NotFoundException('CAMPAIGN_PUBLISHED'));
@@ -79,9 +68,9 @@ class CheckMiddleware {
 
 
   static canEarnMicrocredit = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const campaign: Campaign = response.locals.campaign;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
     const partner: Partner = response.locals.partner;
-    const balance: Tokens = response.locals.balance;
+    const balance: MicrocreditTokens = response.locals.balance;
     const data: EarnTokensDto = request.body;
 
     const now = new Date();
@@ -109,7 +98,7 @@ class CheckMiddleware {
       return next(new NotFoundException('ZERO_AMOUNT')); //"Support Fund cannot be 0",
     }
     if ((partner) && (data.method !== 'store') &&
-      ((partner.payments).filter(function(el) {
+      ((partner.payments).filter(function (el) {
         return el.bic == data.method
       }).length == 0)) {
       //  !(Object.values(JSON.parse(JSON.stringify(partner.payments)))[(Object.keys(JSON.parse(JSON.stringify(partner.payments))).indexOf(data.method))])) {
@@ -119,8 +108,8 @@ class CheckMiddleware {
   }
 
   static canConfirmRevertPayment = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const campaign: Campaign = response.locals.campaign;
-    const support: Support = response.locals.support;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
+    const support: MicrocreditSupport = response.locals.support;
 
     const now = new Date();
     const seconds = parseInt(now.getTime().toString());
@@ -144,8 +133,8 @@ class CheckMiddleware {
   }
 
   static canRedeemMicrocredit = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const campaign: Campaign = response.locals.campaign;
-    const support: Support = response.locals.support;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
+    const support: MicrocreditSupport = response.locals.support;
     const _tokens = Math.round(request.body._tokens);
 
     const now = new Date();

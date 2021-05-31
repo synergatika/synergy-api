@@ -6,23 +6,19 @@ import path from 'path';
 /**
  * DTOs
  */
-import EventDto from '../communityDtos/event.dto'
-import PartnerID from '../usersDtos/partner_id.params.dto'
-import EventID from '../communityDtos/event_id.params.dto'
+import { PartnerID, EventID, EventDto } from '../_dtos/index';
 
 /**
  * Exceptions
  */
-import UnprocessableEntityException from '../exceptions/UnprocessableEntity.exception';
-import NotFoundException from '../exceptions/NotFound.exception';
+import { NotFoundException, UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import Controller from '../interfaces/controller.interface';
-import User from '../usersInterfaces/user.interface';
-import Event from '../communityInterfaces/event.interface';
+import { User, Event } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -62,11 +58,11 @@ class EventsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/public/:offset`, this.readPublicEvents);
-    this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPrivateEvents);
+    this.router.get(`${this.path}/public/:offset`, this.readEvents);
+    this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readEvents);
     this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(EventDto), this.createEvent);
-    this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPublicEventsByStore);
-    this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPrivateEventsByStore);
+    this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readEventsByStore);
+    this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readEventsByStore);
     this.router.get(`${this.path}/:partner_id/:event_id`, validationParamsMiddleware(EventID), this.readEvent);
     this.router.put(`${this.path}/:partner_id/:event_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(EventDto), itemsMiddleware.eventMiddleware, this.updateEvent);
     this.router.delete(`${this.path}/:partner_id/:event_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, itemsMiddleware.eventMiddleware, this.deleteEvent);
@@ -90,19 +86,24 @@ class EventsController implements Controller {
     response.status(200).send({
       data: {
         files: request.files,
-        path: `${process.env.API_URL}/assets/content/`
+        path: `${process.env.API_URL}assets/content/`
       },
       success: true
     });
   }
 
-  private readPrivateEvents = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const access = (request.user.access === 'partner') ? 'partners' : 'random';
+  private readEvents = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
+    /** Params & Filters */
     const params: string = request.params.offset;
     const offset: {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
+
+    const access_filter: string[] = ['public'];
+    if (request.user) access_filter.push('private');
+    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+    /** ***** * ***** */
 
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
@@ -110,30 +111,14 @@ class EventsController implements Controller {
     }, {
       $match: {
         $and: [
-          { 'events.access': { $in: ['public', 'private', access] } },
+          { 'events.access': { $in: access_filter } },
           { 'events.dateTime': { $gt: offset.greater } }
         ]
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        event_id: '$events._id',
-        event_slug: '$events.slug',
-        event_imageURL: '$events.imageURL',
-        title: '$events.title',
-        subtitle: '$events.subtitle',
-        content: '$events.content',
-        access: '$events.access',
-        location: '$events.location',
-        dateTime: '$events.dateTime',
-
-        createdAt: '$events.createdAt',
-        updatedAt: '$events.updatedAt'
+        partner: this.projectPartner(),
+        ...this.projectEvent()
       }
     }, {
       $sort: {
@@ -150,58 +135,44 @@ class EventsController implements Controller {
     });
   }
 
-  private readPublicEvents = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  // private readPublicEvents = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
 
-    const params: string = request.params.offset;
-    const offset: {
-      limit: number, skip: number, greater: number, type: boolean
-    } = offsetParams(params);
+  //   /** Params & Filters */
+  //   const params: string = request.params.offset;
+  //   const offset: {
+  //     limit: number, skip: number, greater: number, type: boolean
+  //   } = offsetParams(params);
+  //   /** ***** * ***** */
 
-    let error: Error, events: Event[];
-    [error, events] = await to(this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match: {
-        $and: [
-          { 'events.access': 'public' },
-          { 'events.dateTime': { $gt: offset.greater } }
-        ]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        event_id: '$events._id',
-        event_slug: '$events.slug',
-        event_imageURL: '$events.imageURL',
-        title: '$events.title',
-        subtitle: '$events.subtitle',
-        content: '$events.content',
-        access: '$events.access',
-        location: '$events.location',
-        dateTime: '$events.dateTime',
-
-        createdAt: '$events.createdAt',
-        updatedAt: '$events.updatedAt'
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    response.status(200).send({
-      data: events,
-      code: 200
-    });
-  }
+  //   let error: Error, events: Event[];
+  //   [error, events] = await to(this.user.aggregate([{
+  //     $unwind: '$events'
+  //   }, {
+  //     $match: {
+  //       $and: [
+  //         { 'events.access': 'public' },
+  //         { 'events.dateTime': { $gt: offset.greater } }
+  //       ]
+  //     }
+  //   }, {
+  //     $project: {
+  //       partner: this.projectPartner(),
+  //       ...this.projectEvent()
+  //     }
+  //   }, {
+  //     $sort: {
+  //       updatedAt: -1
+  //     }
+  //   },
+  //   { $limit: offset.limit },
+  //   { $skip: offset.skip }
+  //   ]).exec().catch());
+  //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+  //   response.status(200).send({
+  //     data: events,
+  //     code: 200
+  //   });
+  // }
 
   private createEvent = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: EventDto = request.body;
@@ -211,20 +182,20 @@ class EventsController implements Controller {
     [error, results] = await to(this.user.updateOne({
       _id: user._id
     }, {
-        $push: {
-          events: {
-            "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
-            "title": data.title,
-            "subtitle": data.subtitle,
-            "slug": await createSlug(request),
-            "content": data.content,
-            "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
-            "access": data.access,
-            "location": data.location,
-            "dateTime": data.dateTime
-          }
+      $push: {
+        events: {
+          "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
+          "title": data.title,
+          "subtitle": data.subtitle,
+          "slug": await createSlug(request),
+          "description": data.description,
+          "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
+          "access": data.access,
+          "location": data.location,
+          "dateTime": data.dateTime
         }
-      }).catch());
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new Event has been created!",
@@ -232,57 +203,36 @@ class EventsController implements Controller {
     });
   }
 
-  private readPrivateEventsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private readEventsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: PartnerID["partner_id"] = request.params.partner_id;
-    const access = (request.user.access === 'partner') ? 'partners' : 'random';
 
+    /** Params & Filters */
     const params: string = request.params.offset;
     const offset: {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
+
+    const access_filter: string[] = ['public'];
+    if (request.user) access_filter.push('private');
+    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+
+    const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+    /** ***** * ***** */
 
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
       $unwind: '$events'
     }, {
       $match: {
-        $or: [
-          {
-            $and: [
-              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
-              { 'events.access': { $in: ['public', 'private', access] } },
-              { 'events.dateTime': { $gt: offset.greater } }
-            ]
-          },
-          {
-            $and: [
-              { slug: partner_id },
-              { 'events.access': { $in: ['public', 'private', access] } },
-              { 'events.dateTime': { $gt: offset.greater } }
-            ]
-          }
+        $and: [
+          partner_filter,
+          { 'events.access': { $in: access_filter } }
         ]
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        event_id: '$events._id',
-        event_slug: '$events.slug',
-        event_imageURL: '$events.imageURL',
-        title: '$events.title',
-        subtitle: '$events.subtitle',
-        content: '$events.content',
-        access: '$events.access',
-        location: '$events.location',
-        dateTime: '$events.dateTime',
-
-        createdAt: '$events.createdAt',
-        updatedAt: '$events.updatedAt'
+        partner: this.projectPartner(),
+        ...this.projectEvent()
       }
     }, {
       $sort: {
@@ -299,117 +249,73 @@ class EventsController implements Controller {
     });
   }
 
-  private readPublicEventsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const partner_id: PartnerID["partner_id"] = request.params.partner_id;
+  // private readPublicEventsByStore = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  //   const partner_id: PartnerID["partner_id"] = request.params.partner_id;
 
-    const params: string = request.params.offset;
-    const offset: {
-      limit: number, skip: number, greater: number, type: boolean
-    } = offsetParams(params);
+  //   /** Params & Filters */
+  //   const params: string = request.params.offset;
+  //   const offset: {
+  //     limit: number, skip: number, greater: number, type: boolean
+  //   } = offsetParams(params);
 
-    let error: Error, events: Event[];
-    [error, events] = await to(this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match: {
-        $or: [
-          {
-            $and: [
-              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
-              { 'events.access': 'public' },
-              { 'events.dateTime': { $gt: offset.greater } }
-            ]
-          },
-          {
-            $and: [
-              { slug: partner_id },
-              { 'events.access': 'public' },
-              { 'events.dateTime': { $gt: offset.greater } }
-            ]
-          }
-        ]
-      }
-    }, {
-      $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_imageURL: '$imageURL',
-        partner_name: '$name',
+  //   const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+  //   /** ***** * ***** */
 
-        event_id: '$events._id',
-        event_slug: '$event_slug',
-        event_imageURL: '$events.imageURL',
-        title: '$events.title',
-        subtitle: '$events.subtitle',
-        content: '$events.content',
-        access: '$events.access',
-        location: '$events.location',
-        dateTime: '$events.dateTime',
+  //   let error: Error, events: Event[];
+  //   [error, events] = await to(this.user.aggregate([{
+  //     $unwind: '$events'
+  //   }, {
+  //     $match: {
+  //       $and: [
+  //         partner_filter,
+  //         { 'events.access': 'public' }
+  //       ]
+  //     }
+  //   }, {
+  //     $project: {
+  //       partner: this.projectPartner(),
+  //       ...this.projectEvent()
+  //     }
+  //   }, {
+  //     $sort: {
+  //       updatedAt: -1
+  //     }
+  //   },
+  //   { $limit: offset.limit },
+  //   { $skip: offset.skip }
+  //   ]).exec().catch());
 
-        createdAt: '$events.createdAt',
-        updatedAt: '$events.updatedAt'
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
-
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    response.status(200).send({
-      data: events,
-      code: 200
-    });
-  }
+  //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+  //   response.status(200).send({
+  //     data: events,
+  //     code: 200
+  //   });
+  // }
 
   private readEvent = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const partner_id: EventID["partner_id"] = request.params.partner_id;
     const event_id: EventID["event_id"] = request.params.event_id;
 
+    /** Params & Filters */
+    const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+    const event_filter = ObjectId.isValid(event_id) ? { 'events._id': new ObjectId(event_id) } : { 'events.slug': event_id };
+    /** ***** * ***** */
+
     let error: Error, events: Event[];
     [error, events] = await to(this.user.aggregate([{
       $unwind: '$events'
     }, {
       $match: {
-        $or: [
-          {
-            $and: [
-              { _id: ObjectId.isValid(partner_id) ? new ObjectId(partner_id) : new ObjectId() },
-              { 'events._id': ObjectId.isValid(event_id) ? new ObjectId(event_id) : new ObjectId() }
-            ]
-          },
-          {
-            $and: [
-              { slug: partner_id },
-              { 'events.slug': event_id }
-            ]
-          }
+        $and: [
+          partner_filter,
+          event_filter
         ]
 
       }
     }, {
       $project: {
-        _id: false,
-        partner_id: '$_id',
-        partner_slug: '$slug',
-        partner_name: '$name',
-        partner_imageURL: '$imageURL',
-
-        event_id: '$events._id',
-        event_slug: '$events.slug',
-        event_imageURL: '$events.imageURL',
-        title: '$events.title',
-        subtitle: '$events.subtitle',
-        content: '$events.content',
-        location: '$events.location',
-        dateTime: '$events.dateTime',
-        access: '$events.access',
-
-        createdAt: '$events.createdAt'
+        partenr: this.projectPartner(),
+        ...this.projectEvent()
       }
     }
     ]).exec().catch());
@@ -430,22 +336,12 @@ class EventsController implements Controller {
     const data: EventDto = request.body;
 
     const currentEvent: Event = response.locals.event;
-    if ((currentEvent.event_imageURL && (currentEvent.event_imageURL).includes(partner_id)) && request.file) {
-      //if (currentEvent.event_imageURL && request.file) {
-      var imageFile = (currentEvent.event_imageURL).split('assets/static/');
-      await deleteFile(path.join(__dirname, '../assets/static/' + imageFile[1]));
+    if ((currentEvent['imageURL'] && (currentEvent['imageURL']).includes('assets/static/')) && request.file) {
+      await this.removeFile(currentEvent);
     }
 
     if (currentEvent.contentFiles) {
-      var toDelete: string[] = [];
-      (currentEvent.contentFiles).forEach((element: string) => {
-        if ((data.contentFiles).indexOf(element) < 0) {
-          var imageFile = (element).split('assets/content/');
-          const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
-          toDelete.push(file);
-        }
-      });
-      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+      this.removeRichEditorFiles(currentEvent, data, true);
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
@@ -454,19 +350,19 @@ class EventsController implements Controller {
         _id: partner_id,
         'events._id': event_id
       }, {
-        '$set': {
-          'events.$._id': event_id,
-          'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentEvent.event_imageURL,
-          'events.$.title': data.title,
-          'events.$.slug': await createSlug(request),
-          'events.$.subtitle': data.subtitle,
-          'events.$.content': data.content,
-          "events.$.contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
-          'events.$.access': data.access,
-          'events.$.location': data.location,
-          'events.$.dateTime': data.dateTime,
-        }
-      }).catch());
+      '$set': {
+        'events.$._id': event_id,
+        'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentEvent.imageURL,
+        'events.$.title': data.title,
+        'events.$.slug': await createSlug(request),
+        'events.$.subtitle': data.subtitle,
+        'events.$.description': data.description,
+        "events.$.contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
+        'events.$.access': data.access,
+        'events.$.location': data.location,
+        'events.$.dateTime': data.dateTime,
+      }
+    }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been updated!",
@@ -479,14 +375,91 @@ class EventsController implements Controller {
     const event_id: EventID["event_id"] = request.params.event_id;
 
     const currentEvent: Event = response.locals.event;
-    if (currentEvent.event_imageURL && (currentEvent.event_imageURL).includes(partner_id)) {
-      //if (currentEvent.event_imageURL) {
-      var imageFile = (currentEvent.event_imageURL).split('assets/static/');
-      await deleteFile(path.join(__dirname, '../assets/static/' + imageFile[1]));
+    if (currentEvent.imageURL && (currentEvent.imageURL).includes('assets/static/')) {
+      await this.removeFile(currentEvent);
     }
 
     if (currentEvent.contentFiles) {
-      var toDelete: string[] = [];
+      this.removeRichEditorFiles(currentEvent, null, false);
+    }
+
+    let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
+    [error, results] = await to(this.user.updateOne({
+      _id: partner_id
+    }, {
+      $pull: {
+        events: {
+          _id: event_id
+        }
+      }
+    }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+    response.status(200).send({
+      message: "Success! Event " + event_id + " has been deleted!",
+      code: 200
+    });
+  }
+
+  /**
+   *  
+   * Local Function Section 
+   *
+   * */
+
+  /** Project Partner (Local Function) */
+  private projectPartner() {
+    return {
+      _id: '$_id',
+      name: '$name',
+      email: '$email',
+      slug: '$slug',
+      imageURL: '$imageURL',
+      payments: '$payments',
+      address: '$address',
+      contacts: '$contacts',
+      phone: '$phone',
+    };
+  }
+
+  /** Project Event (Local Function) */
+  private projectEvent() {
+    return {
+      _id: '$events._id',
+      slug: '$events.slug',
+      imageURL: '$events.imageURL',
+      title: '$events.title',
+      subtitle: '$events.subtitle',
+      description: '$events.description',
+      location: '$events.location',
+      dateTime: '$events.dateTime',
+      access: '$events.access',
+
+      createdAt: '$events.createdAt',
+      updatedAt: '$events.updatedAt'
+    };
+  }
+
+  /** Remove File (Local Function) */
+  private async removeFile(currentEvent: Event) {
+    var imageFile = (currentEvent['imageURL']).split('assets/static/');
+    const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+    if (existFile(file)) await deleteFile(file);
+  }
+
+  /** Remove Content Files (Local Function) */
+  private async removeRichEditorFiles(currentEvent: Event, newEvent: EventDto, isUpdated: boolean) {
+    var toDelete: string[] = [];
+
+    if (isUpdated) {
+      (currentEvent.contentFiles).forEach((element: string) => {
+        if ((newEvent.contentFiles).indexOf(element) < 0) {
+          var imageFile = (element).split('assets/content/');
+          const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+          toDelete.push(file);
+        }
+      });
+      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+    } else {
       (currentEvent.contentFiles).forEach((element: string) => {
         var imageFile = (element).split('assets/content/');
         const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
@@ -494,22 +467,6 @@ class EventsController implements Controller {
       });
       toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
     }
-
-    let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne({
-      _id: partner_id
-    }, {
-        $pull: {
-          events: {
-            _id: event_id
-          }
-        }
-      }).catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    response.status(200).send({
-      message: "Success! Event " + event_id + " has been deleted!",
-      code: 200
-    });
   }
 }
 

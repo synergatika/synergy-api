@@ -1,17 +1,15 @@
 import { NextFunction, Response } from 'express';
-import * as jwt from 'jsonwebtoken';
 
 /**
  * Exceptions
  */
-import UnauthorizedException from '../../exceptions/Unauthorized.exception';
+import { UnauthorizedException } from '../../_exceptions/index';
 
 /**
  * Interfaces
  */
-import DataStoredInToken from '../../authInterfaces/dataStoredInToken';
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import User from '../../usersInterfaces/user.interface';
+import { User } from '../../_interfaces/index';
 
 /**
  * Models
@@ -27,17 +25,9 @@ async function oneClickMiddleware(request: RequestWithUser, response: Response, 
 
       const now = new Date();
       const seconds = parseInt(now.getTime().toString());
-      const user: User = await userModel.findOne(
-        {
-          oneClickToken: token, oneClickExpiration: { $gt: seconds }
-        }
-        // const user: User = await userModel.findOneAndUpdate({ oneClickToken: token, oneClickExpiration: { $gt: seconds } },
-        //   {
-        //     $set: {
-        //       oneClickToken: null, oneClickExpiration: null
-        //     }
-        //   }
-      ).select({
+      const user: User = await userModel.findOne({
+        oneClickToken: token, oneClickExpiration: { $gt: seconds }
+      }).select({
         "_id": 1,
         "email": 1, "password": 1,
         "name": 1, "imageURL": 1,
