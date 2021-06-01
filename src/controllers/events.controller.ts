@@ -314,7 +314,7 @@ class EventsController implements Controller {
       }
     }, {
       $project: {
-        partenr: this.projectPartner(),
+        partner: this.projectPartner(),
         ...this.projectEvent()
       }
     }
