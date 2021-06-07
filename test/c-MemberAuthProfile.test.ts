@@ -8,7 +8,7 @@ chai.use(require('chai-http'));
 
 import * as fs from 'fs';
 
-import { imagesLocation, user_a, user_b } from './_structs.test';
+import { imagesLocation, user_a, user_b, user_g } from './_structs.test';
 
 describe("Member - Authentication & Profile", () => {
   describe("Member (Admin Registration) - Authentication (/auth)", () => {
@@ -302,6 +302,85 @@ describe("Member - Authentication & Profile", () => {
           res.body.should.be.a('object');
           res.body.should.have.property('data');
           res.body.data.action.should.be.equal('need_account_activation');
+          done();
+        });
+    });
+  });
+  describe("Member - Deletion (/auth)", () => {
+    it("1. should create a new member - 200 EmailSent", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("auth/register/auto-member")
+        .send({
+          email: user_g.email,
+          password: user_g.password,
+          name: user_g.name
+        })
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          res.body.should.have.property('tempData')
+          user_g.verificationToken = res.body.tempData.token;
+          done();
+        })
+    });
+    it("2. should verify a user's email address - 200 Updated", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("auth/verify_email")
+        .send({
+          "token": user_g.verificationToken
+        })
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+    it("3. should authenticate user - 200 Authenticate", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("auth/authenticate")
+        .send({
+          email: user_g.email,
+          password: user_g.password
+        })
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          res.body.data.should.be.a('object');
+          res.body.data.should.have.property('user');
+          res.body.data.should.have.property('token');
+          user_g.authToken = res.body.data.token.token;
+          user_g._id = res.body.data.user._id;
+          done();
+        });
+    });
+    it("4. should delete member's account - 200 Email Sent", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .put("auth/delete")
+        .set('Authorization', 'Bearer ' + user_g.authToken)
+        .send({
+          password: user_g.password,
+        })
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
+          done();
+        });
+    });
+    it("5. sould NOT authenticate member | account is deleted - 404 Not Found", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .post("auth/authenticate/")
+        .send({
+          email: user_g.email,
+          password: user_g.password
+        })
+        .end((err, res) => {
+          res.should.have.status(404);
+          res.body.should.be.a('object');
+          res.body.should.have.property('message');
           done();
         });
     });

@@ -16,6 +16,12 @@ class Translation {
         "body": "",
         "button": ""
       },
+      internal_deletion: {
+        "subject": "[internal] Account Deletion",
+        "title": "A user has removed his/her account.",
+        "body": "",
+        "button": ""
+      },
       internal_communication: {
         "subject": "[internal] User Communication",
         "title": "A user has sent an email to our team.",
@@ -65,6 +71,11 @@ class Translation {
         "title": ["Your account status has change to \'Non Active\' after Administrator´s decision.", "Your account status has change to \'Non Active\' after you request."],
         "body": "",
         "button": "Log in"
+      },
+      deletion: {
+        "subject": "Your account has been removed",
+        "title": "Thank you! We hope to see you again",
+        "body": "",
       },
       registration: {
         "subject": `Welcome to ${instance} Team`,
@@ -144,6 +155,12 @@ class Translation {
         "body": "",
         "button": ""
       },
+      internal_deletion: {
+        "subject": "[internal] Διαγραφή Λογαρισμού",
+        "title": "Ένας Χρήστης διέγραψε το λογαρισμό του/της",
+        "body": "",
+        "button": ""
+      },
       new_support_partner: {
         "subject": "Μια νέα στήριξη μόλις καταγράφηκε",
         "title": "Λεπτομέριες:",
@@ -191,6 +208,11 @@ class Translation {
         "title": ["Η κατάσταση του λογαρισμού σας άλλαξε σε \'Ανενεργή\' έπειτα από απόφαση του Διαχειριστή.", "Η κατάσταση του λογαρισμού σας άλλαξε σε \'Ανενεργή\' έπειτα από δική σας απαίτηση."],
         "body": "",
         "button": "Eίσοδος"
+      },
+      deletion: {
+        "subject": "Ο λογαρισμός σας έχει αφαιρεθεί",
+        "title": "Ευχαριστούμε! Ελπίζουμε να σας ξαναδούμε σύντομα",
+        "body": "",
       },
       registration: {
         "subject": `Καλώς ήρθατε στην κοινότητα του ${instance}`,

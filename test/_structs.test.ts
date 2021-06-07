@@ -196,6 +196,17 @@ var user_f = {
   tempPass: ''
 };
 
+var user_g = {
+  name: "Member 7",
+  email: "member7@email.com",
+  password: 'member7',
+  authToken: '',
+  verificationToken: '',
+  restorationToken: '',
+  tempPass: '',
+  _id: ''
+};
+
 var _date1 = new Date();
 var _newDate1 = (_date1.setDate(_date1.getDate() - 20)).toString();
 var _date2 = new Date();
@@ -542,7 +553,7 @@ export {
   imagesLocation,
   defaultAdmin,
   partner_a, partner_b, partner_c,
-  user_a, user_b, user_c, user_d, user_e, user_f,
+  user_a, user_b, user_c, user_d, user_e, user_f, user_g,
   offer_a, offer_b, offer_c, offer_d,
   post_a, post_b, post_c,
   event_a, event_b,

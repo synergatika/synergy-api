@@ -11,6 +11,7 @@ export * from './lib/registerUserWithoutPassword.dto';
 export * from './lib/registerUserWithPassword.dto';
 
 export * from './lib/deactivation.dto';
+export * from './lib/deletion.dto';
 
 export * from './lib/identifier.params.dto';
 export * from './lib/email.params.dto';
