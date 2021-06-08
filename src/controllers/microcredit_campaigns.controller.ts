@@ -31,7 +31,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, MicrocreditCampaign, MicrocreditTokens, MicrocreditStatistics } from '../_interfaces/index';
+import { User, MicrocreditCampaign, MicrocreditTokens, MicrocreditStatistics, SupportStatus } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -393,8 +393,8 @@ class MicrocreditCampaignsController implements Controller {
 
     const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
     //const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
-    const statisticsPromise: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'PromiseFund');
-    const statisticsRedeem: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'SpendFund');
+    const statisticsPromise: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'ReceiveFund', 'confirmed');
+    const statisticsRedeem: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'SpendFund', 'redeemed');
 
     const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
       Object.assign({}, a,
@@ -623,21 +623,53 @@ class MicrocreditCampaignsController implements Controller {
     return tokens;
   }
 
-  private readStatistics = async (campaigns: MicrocreditCampaign[], status: string) => {
+
+  private readRevertSupports = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
+    let error: Error, supports: any[];
+    [error, supports] = await to(this.transaction.aggregate([
+      {
+        $match: {
+          'campaign_id': { $in: campaigns.map(a => (a._id).toString()) }
+        },
+      },
+      { $sort: { status: 1 } },
+      {
+        $group:
+        {
+          _id: "$support_id",
+          campaign_id: { '$first': "$campaign_id" },
+          initialTokens: { '$first': "$tokens" },
+          currentTokens: { '$sum': '$tokens' },
+          method: { '$first': "$method" },
+          payment_id: { '$first': "$payment_id" },
+          type: { '$last': "$type" },
+          createdAt: { '$first': "$createdAt" },
+        }
+      }
+    ]).exec().catch());
+
+    return supports.filter((o: any) => { return o.type == 'RevertFund' })
+  }
+
+  private readStatistics = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
+
+    const sumarize = (type == "confirmed") ? "$payoff" : "$tokens"
+    const supports = (type == "confirmed") ? (await this.readRevertSupports(campaigns, status, type)).map(a => (a._id).toString()) : [];
 
     let error: Error, statistics: MicrocreditStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
           { 'campaign_id': { $in: campaigns.map(a => (a._id).toString()) } },
-          { 'type': status }
+          { 'type': status },
+          { 'support_id': { $nin: supports } }
         ]
       }
     },
     {
       $group: {
         _id: '$campaign_id',
-        tokens: { $sum: "$tokens" },
+        tokens: { $sum: sumarize },
         users: { "$addToSet": "$member_id" },
         count: { "$addToSet": "$_id" }
       }
@@ -653,7 +685,7 @@ class MicrocreditCampaignsController implements Controller {
     ]).exec().catch());
     if (error) return [];
 
-    const byDate: any = await this.readDailyStatistics(campaigns, status);
+    const byDate: any = await this.readDailyStatistics(campaigns, status, type);
     const fullStatistics = statistics.map((a: MicrocreditStatistics) =>
       Object.assign({}, a,
         {
@@ -665,14 +697,18 @@ class MicrocreditCampaignsController implements Controller {
     return fullStatistics;
   }
 
-  private readDailyStatistics = async (campaigns: MicrocreditCampaign[], status: string) => {
+  private readDailyStatistics = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
+
+    const sumarize = (type == "confirmed") ? "$payoff" : "$tokens"
+    const supports = (type == "confirmed") ? (await this.readRevertSupports(campaigns, status, type)).map(a => (a._id).toString()) : [];
 
     let error: Error, statistics: MicrocreditStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
         $and: [
           { 'campaign_id': { $in: campaigns.map(a => (a._id).toString()) } },
-          { 'type': status }
+          { 'type': status },
+          { 'support_id': { $nin: supports } }
         ]
       }
     },
@@ -682,7 +718,7 @@ class MicrocreditCampaignsController implements Controller {
           campaign_id: "$campaign_id",
           date: { day: { $dayOfMonth: "$createdAt" }, month: { $month: "$createdAt" }, year: { $year: "$createdAt" } }
         },
-        tokens: { $sum: "$tokens" },
+        tokens: { $sum: sumarize },
         users: { "$addToSet": "$member_id" },
         count: { "$addToSet": "$_id" }
       }
