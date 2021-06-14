@@ -159,7 +159,7 @@ class EmailService {
   }
 
   /**
-  * Actiovation Account / Deactivation Account
+  * Actiovation Account / Deactivation Account / Deletion Account
   */
   public accountActivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
@@ -219,7 +219,35 @@ class EmailService {
     response.status(data.res.code).send(data.res.body);
   }
 
-  /** (internal) Activation / Deactivation */
+  public accountDeletion = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM}`,
+      to: data.user.email,
+      cc: ``,
+      bcc: ``,
+      subject: this.translation(lang).deletion.subject,//'Account Activation',
+      html: '',
+      type: 'deletion',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).deletion,
+        logo_url: `${process.env.LOGO_URL}`,
+        home_page: `${process.env.APP_URL}`,
+        link: `${process.env.APP_URL}auth/login/`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    response.status(data.res.code).send(data.res.body);
+  }
+
+  /** (internal) Activation / Deactivation / Deletion */
   public internalActivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const data = response.locals;
     const lang: string = request.headers['content-language'] || this.defaultLang();
@@ -267,6 +295,35 @@ class EmailService {
         home_page: `${process.env.APP_URL}`,
         email: data.user.email,
         reason: `${data.reason}`
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    next();
+    // response.status(data.res.code).send(data.res.body);
+  }
+
+  public internalDeletion = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+    const data = response.locals;
+    const lang: string = request.headers['content-language'] || this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM}`,
+      to: `${process.env.EMAIL_FROM}`,
+      cc: ``,
+      bcc: ``,
+      subject: this.translation(lang).internal_deletion.subject,//'Account Deactivation',
+      html: '',
+      type: 'internal_deletion',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).internal_deletion,
+        logo_url: `${process.env.LOGO_URL}`,
+        home_page: `${process.env.APP_URL}`,
+        email: data.user.email
       },
     }
 

@@ -30,8 +30,8 @@ import {
   ChangePassInDto, ChangePassOutDto,
   EmailDto, CardDto,
   IdentifierDto,
-  DeactivationDto,
-  UserID
+  DeactivationDto, DeletionDto,
+  UserID,
 } from '../_dtos/index';
 
 /**
@@ -186,6 +186,12 @@ class AuthenticationController implements Controller {
       authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID),
       this.deactivateUser,
       emailService.accountDeactivation);
+
+    this.router.put(`${this.path}/delete`,
+      authMiddleware,
+      this.autoDeletion,
+      emailService.internalDeletion,
+      emailService.accountDeletion);
   }
 
   /**
@@ -1072,6 +1078,31 @@ class AuthenticationController implements Controller {
       },
       reason: data.reason,
       decision: 'user'
+    };
+    next();
+  }
+
+  private autoDeletion = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: DeletionDto = request.body;
+
+    let user: User = await this.user.findOne({
+      _id: request.user._id
+    });
+    if ((!user) || (!(await bcrypt.compare(data.password, user.password)))) {
+      return next(new NotFoundException('WRONG_CREDENTIALS'));
+    }
+
+    let error: Error, results: Object;
+    [error, results] = await to(this.user.deleteOne({
+      _id: request.user._id
+    }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    response.locals = {
+      res: this.prefixedResponse(200, "Your account has been successfully deactivated.", {}, {}),
+      user: {
+        email: request.user.email
+      },
     };
     next();
   }
