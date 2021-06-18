@@ -153,11 +153,6 @@ class PartnersController implements Controller {
     const data: PartnerDto = request.body;
     const user: User = request.user;
 
-    console.log("data");
-    console.log(data);
-    console.log("request.file");
-    console.log(request.file);
-
     if (user['imageURL'] && request.file) {
       var imageFile = (user['imageURL']).split('assets/static/');
       const file = path.join(__dirname, '../assets/static/' + imageFile[1]);

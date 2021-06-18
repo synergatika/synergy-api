@@ -207,8 +207,17 @@ class MicrocreditCampaignsController implements Controller {
     ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
+    const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
+    const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
+      Object.assign({}, a,
+        {
+          tokens: (tokens).find((b: MicrocreditTokens) => (b._id).toString() === (a._id).toString()),
+        }
+      )
+    );
+
     response.status(200).send({
-      data: campaigns,
+      data: campaignsWithStatistics,
       code: 200
     });
   }
@@ -322,7 +331,7 @@ class MicrocreditCampaignsController implements Controller {
     if (request.user && request.user.access == 'partner') access_filter.push('partners');
 
     const status_filter: string[] = ['published'];
-    if (request.user && request.user._id == partner_id) status_filter.push('draft');
+    if ((request.user && request.user._id == partner_id) && offset.type) status_filter.push('draft');
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
     /** ***** */
@@ -354,8 +363,17 @@ class MicrocreditCampaignsController implements Controller {
     ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
+    const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
+    const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
+      Object.assign({}, a,
+        {
+          tokens: (tokens).find((b: MicrocreditTokens) => (b._id).toString() === (a._id).toString()),
+        }
+      )
+    );
+
     response.status(200).send({
-      data: campaigns,
+      data: campaignsWithStatistics,
       code: 200
     });
   }

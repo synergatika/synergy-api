@@ -67,28 +67,14 @@ class ContentController implements Controller {
 
   private updateSectors = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: SectorsDto = request.body;
-    console.log("Sectors To Update");
-    console.log(data);
+
     let error: Error, sectors: Sector[];
     [error, sectors] = await to(this.sector.find().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    console.log("Sectors Current");
-    console.log(sectors);
-
     var toUpdate: Sector[] = data.sectors.filter((o) => { return o._id != '0' }).map((o) => { return { _id: o._id, slug: latinize((o.en_title).toLowerCase()).split(' ').join('_'), el_title: o.el_title, en_title: o.en_title } });
     var toDelete: ObjectId[] = sectors.map((o) => { return new ObjectId(o._id) });
     var toInsert: Sector[] = data.sectors.filter((o) => { return o._id == '0' }).map((o) => { return { slug: latinize((o.en_title).toLowerCase()).split(' ').join('_'), el_title: o.el_title, en_title: o.en_title } });
-
-    // sectors.forEach(el => {
-    //   if (toUpdate.map((x) => { return (x._id); }).indexOf(el._id.toString()) == -1) {
-    //     toDelete.push(new ObjectId(el._id));
-    //   }
-    // });
-
-    console.log(toUpdate);
-    console.log(toDelete);
-    console.log(toInsert);
 
     let error_1: Error, result_1: any;
     [error_1, result_1] = await to(this.sector.deleteMany(
