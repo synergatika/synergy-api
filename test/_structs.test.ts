@@ -221,7 +221,7 @@ var _date6 = new Date();
 var _newDate6 = (_date6.setDate(_date6.getDate() + 200)).toString();
 
 var offer_a = {
-  title: 'First Offer',
+  title: 'Πρώτη Προσφορά (ελληνικά)',
   subtitle: 'This is subtitle for offer A',
   description: 'This is description for offer A! This is description for offer A! This is description for offer A!',
   instructions: 'Instructions how to receive offer A!',

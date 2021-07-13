@@ -378,13 +378,20 @@ class MicrocreditCampaignsController implements Controller {
     });
   }
 
+  checkObjectIdValidity(id: string) {
+    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
+      return true;
+
+    return false;
+  }
+
   private readCampaign = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
     /** Params & Filters */
-    const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
-    const microcredit_filter = ObjectId.isValid(campaign_id) ? { 'microcredit._id': new ObjectId(campaign_id) } : { 'microcredit.slug': campaign_id };
+    const partner_filter = this.checkObjectIdValidity(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+    const microcredit_filter = this.checkObjectIdValidity(campaign_id) ? { 'microcredit._id': new ObjectId(campaign_id) } : { 'microcredit.slug': campaign_id };
     /** ***** * ***** */
 
     let error: Error, campaigns: MicrocreditCampaign[];

@@ -292,13 +292,20 @@ class EventsController implements Controller {
   //   });
   // }
 
+  checkObjectIdValidity(id: string) {
+    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
+      return true;
+
+    return false;
+  }
+
   private readEvent = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const partner_id: EventID["partner_id"] = request.params.partner_id;
     const event_id: EventID["event_id"] = request.params.event_id;
 
     /** Params & Filters */
-    const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
-    const event_filter = ObjectId.isValid(event_id) ? { 'events._id': new ObjectId(event_id) } : { 'events.slug': event_id };
+    const partner_filter = this.checkObjectIdValidity(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+    const event_filter = this.checkObjectIdValidity(event_id) ? { 'events._id': new ObjectId(event_id) } : { 'events.slug': event_id };
     /** ***** * ***** */
 
     let error: Error, events: Event[];

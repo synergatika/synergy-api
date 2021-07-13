@@ -183,14 +183,20 @@ class OffersController implements Controller {
     });
   }
 
+  checkObjectIdValidity(id: string) {
+    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
+      return true;
+
+    return false;
+  }
+
   private readOffer = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const partner_id: OfferID["partner_id"] = request.params.partner_id;
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
 
-
     /** Params & Filters */
-    const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
-    const offer_filter = ObjectId.isValid(offer_id) ? { 'offers._id': new ObjectId(offer_id) } : { 'offers.slug': offer_id };
+    const partner_filter = this.checkObjectIdValidity(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+    const offer_filter = this.checkObjectIdValidity(offer_id) ? { 'offers._id': new ObjectId(offer_id) } : { 'offers.slug': offer_id };
     /** ***** * ***** */
 
     let error: Error, offers: LoyaltyOffer[];

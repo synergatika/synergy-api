@@ -17,11 +17,39 @@ import { User } from '../../_interfaces/index';
  */
 import userModel from '../../models/user.model';
 
+
 class SlugHelper {
+
+  static string_to_slug = (str: string) => {
+
+    str = str.replace(/^\s+|\s+$/g, '') // TRIM WHITESPACE AT BOTH ENDS.
+      .toLowerCase();            // CONVERT TO LOWERCASE
+
+    const from = ["ου", "ΟΥ", "Ού", "ού", "αυ", "ΑΥ", "Αύ", "αύ", "ευ", "ΕΥ", "Εύ", "εύ", "α", "Α", "ά", "Ά", "β", "Β", "γ", "Γ", "δ", "Δ", "ε", "Ε", "έ", "Έ", "ζ", "Ζ", "η", "Η", "ή", "Ή", "θ", "Θ", "ι", "Ι", "ί", "Ί", "ϊ", "ΐ", "Ϊ", "κ", "Κ", "λ", "Λ", "μ", "Μ", "ν", "Ν", "ξ", "Ξ", "ο", "Ο", "ό", "Ό", "π", "Π", "ρ", "Ρ", "σ", "Σ", "ς", "τ", "Τ", "υ", "Υ", "ύ", "Ύ", "ϋ", "ΰ", "Ϋ", "φ", "Φ", "χ", "Χ", "ψ", "Ψ", "ω", "Ω", "ώ", "Ώ"];
+    const to = ["ou", "ou", "ou", "ou", "au", "au", "au", "au", "eu", "eu", "eu", "eu", "a", "a", "a", "a", "b", "b", "g", "g", "d", "d", "e", "e", "e", "e", "z", "z", "i", "i", "i", "i", "th", "th", "i", "i", "i", "i", "i", "i", "i", "k", "k", "l", "l", "m", "m", "n", "n", "ks", "ks", "o", "o", "o", "o", "p", "p", "r", "r", "s", "s", "s", "t", "t", "y", "y", "y", "y", "y", "y", "y", "f", "f", "x", "x", "ps", "ps", "o", "o", "o", "o"];
+
+    for (var i = 0; i < from.length; i++) {
+
+      while (str.indexOf(from[i]) !== -1) {
+
+        str = str.replace(from[i], to[i]);    // CONVERT GREEK CHARACTERS TO LATIN LETTERS
+
+      }
+
+    }
+
+    str = str.replace(/[^a-z0-9 -]/g, '') // REMOVE INVALID CHARS
+      .replace(/\s+/g, '_')        // COLLAPSE WHITESPACE AND REPLACE BY DASH - 
+      .replace(/-+/g, '_');        // COLLAPSE DASHES
+
+    return str;
+
+  }
+
   static partnerSlug = async (request: express.Request) => {
     const data: any = request.body;
 
-    let _slug = latinize((data.name).toLowerCase()).split(' ').join('_');
+    let _slug = latinize((SlugHelper.string_to_slug(data.name)).toLowerCase()).split(' ').join('_');
     const slugs = await userModel.find({ $or: [{ 'slug': _slug }, { 'slug': { $regex: _slug + "-.*" } }] }).select({ "_id": 1, "name": 1, "slug": 1 });
 
     if (!slugs.length) return _slug;
@@ -37,7 +65,7 @@ class SlugHelper {
     const data: OfferDto = request.body;
     const user: User = request.user;
 
-    let _slug = latinize((data.title).toLowerCase()).split(' ').join('_');
+    let _slug = latinize((SlugHelper.string_to_slug(data.title)).toLowerCase()).split(' ').join('_');
     const slugs = await userModel.aggregate([
       { $unwind: '$offers' },
       {
@@ -59,7 +87,7 @@ class SlugHelper {
     const data: PostDto = request.body;
     const user: User = request.user;
 
-    let _slug = latinize((data.title).toLowerCase()).split(' ').join('_');
+    let _slug = latinize((SlugHelper.string_to_slug(data.title)).toLowerCase()).split(' ').join('_');
     const slugs = await userModel.aggregate([
       { $unwind: '$posts' },
       { $match: { $and: [{ _id: (user._id) }, { $or: [{ 'posts.slug': _slug }, { 'posts.slug': { $regex: _slug + "-.*" } }] }] } },
@@ -79,7 +107,7 @@ class SlugHelper {
     const data: EventDto = request.body;
     const user: User = request.user;
 
-    let _slug = latinize((data.title).toLowerCase()).split(' ').join('_');
+    let _slug = latinize((SlugHelper.string_to_slug(data.title)).toLowerCase()).split(' ').join('_');
     const slugs = await userModel.aggregate([
       { $unwind: '$events' },
       { $match: { $and: [{ _id: (user._id) }, { $or: [{ 'events.slug': _slug }, { 'events.slug': { $regex: _slug + "-.*" } }] }] } },
@@ -99,7 +127,7 @@ class SlugHelper {
     const data: CampaignDto = request.body;
     const user: User = request.user;
 
-    let _slug = latinize((data.title).toLowerCase()).split(' ').join('_');
+    let _slug = latinize((SlugHelper.string_to_slug(data.title)).toLowerCase()).split(' ').join('_');
     const slugs = await userModel.aggregate([
       { $unwind: '$microcredit' },
       { $match: { $and: [{ _id: (user._id) }, { $or: [{ 'microcredit.slug': _slug }, { 'microcredit.slug': { $regex: _slug + "-.*" } }] }] } },
@@ -116,3 +144,4 @@ class SlugHelper {
   }
 }
 export default SlugHelper;
+

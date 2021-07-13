@@ -120,13 +120,16 @@ class CommunityController implements Controller {
 
     /** Params & Filters */
     const params: string = request.params.offset;
+    const accessParam: string = (request.params.offset).split("-")[3]
     const offset: {
       index: number, count: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    const access_filter: string[] = ['public'];
+    let access_filter: string[] = ['public'];
     if (request.user) access_filter.push('private');
     if (request.user && request.user.access == 'partner') access_filter.push('partners');
+    if (accessParam && accessParam == '1') access_filter = ['partners'];
+    if (accessParam && accessParam == '0') access_filter = ['public', 'private'];
     /** ***** * ***** */
 
     let error: Error, posts: PostEvent[], events: PostEvent[];

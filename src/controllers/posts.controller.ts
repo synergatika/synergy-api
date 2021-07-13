@@ -207,13 +207,20 @@ class PostsController implements Controller {
     });
   }
 
+  checkObjectIdValidity(id: string) {
+    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
+      return true;
+
+    return false;
+  }
+
   private readPost = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const partner_id: PostID["partner_id"] = request.params.partner_id;
     const post_id: PostID["post_id"] = request.params.post_id;
 
     /** Params & Filters */
-    const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
-    const post_filter = ObjectId.isValid(post_id) ? { 'posts._id': new ObjectId(post_id) } : { 'posts.slug': post_id };
+    const partner_filter = this.checkObjectIdValidity(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+    const post_filter = this.checkObjectIdValidity(post_id) ? { 'posts._id': new ObjectId(post_id) } : { 'posts.slug': post_id };
     /** ***** * ***** */
 
     let error: Error, posts: Post[];
