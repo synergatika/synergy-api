@@ -254,7 +254,7 @@ class EmailService {
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
-      to: `${process.env.EMAIL_FROM}`,
+      to: `synergatika@gmail.com`, //`${process.env.EMAIL_FROM}`,
       cc: ``,
       bcc: ``,
       subject: this.translation(lang).internal_activation.subject,//'Account Deactivation',
@@ -282,7 +282,7 @@ class EmailService {
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
-      to: `${process.env.EMAIL_FROM}`,
+      to: `synergatika@gmail.com`,//`${process.env.EMAIL_FROM}`,
       cc: ``,
       bcc: ``,
       subject: this.translation(lang).internal_deactivation.subject,//'Account Deactivation',
@@ -312,7 +312,7 @@ class EmailService {
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
-      to: `${process.env.EMAIL_FROM}`,
+      to: `synergatika@gmail.com`,//`${process.env.EMAIL_FROM}`,
       cc: ``,
       bcc: ``,
       subject: this.translation(lang).internal_deletion.subject,//'Account Deactivation',
@@ -344,7 +344,7 @@ class EmailService {
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
-      to: `${process.env.EMAIL_FROM}`,
+      to: `synergatika@gmail.com`,//`${process.env.EMAIL_FROM}`,
       cc: ``,
       bcc: ``,
       subject: this.translation(lang).internal_communication.subject,//'User Communication',
