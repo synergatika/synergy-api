@@ -16,6 +16,11 @@ import { User } from '../../_interfaces/index';
  * Models
  */
 import userModel from '../../models/user.model';
+import postModel from '../../models/post.model';
+import eventModel from '../../models/event.model';
+import microcredit from '../../models/microcredit.model';
+import offerModel from '../../models/offer.model';
+import microcreditModel from '../../models/microcredit.model';
 
 
 class SlugHelper {
@@ -66,18 +71,22 @@ class SlugHelper {
     const user: User = request.user;
 
     let _slug = latinize((SlugHelper.string_to_slug(data.title)).toLowerCase()).split(' ').join('_');
-    const slugs = await userModel.aggregate([
-      { $unwind: '$offers' },
-      {
-        $match: { $and: [{ _id: (user._id) }, { $or: [{ 'offers.slug': _slug }, { 'offers.slug': { $regex: _slug + "-.*" } }] }] }
-      },
-      { $project: { _id: '$_id', offer_id: '$offers._id', title: '$offers.title', slug: '$offers.slug' } }
-    ]);
+    const slugs = await offerModel.find(
+      { $and: [{ partner: (user._id) }, { $or: [{ 'slug': _slug }, { 'slug': { $regex: _slug + "-.*" } }] }] }
+    )
+
+    // const slugs = await userModel.aggregate([
+    //   { $unwind: '$offers' },
+    //   {
+    //     $match: { $and: [{ _id: (user._id) }, { $or: [{ 'offers.slug': _slug }, { 'offers.slug': { $regex: _slug + "-.*" } }] }] }
+    //   },
+    //   { $project: { _id: '$_id', offer_id: '$offers._id', title: '$offers.title', slug: '$offers.slug' } }
+    // ]);
 
     if (!slugs.length) return _slug;
     else {
       var offer = slugs.filter(function (el) {
-        return el.offer_id == request.params.offer_id
+        return el._id == request.params.offer_id
       });
       return (offer.length) ? offer[0]["slug"] : _slug + "-" + (slugs.length + 1);
     }
@@ -88,16 +97,19 @@ class SlugHelper {
     const user: User = request.user;
 
     let _slug = latinize((SlugHelper.string_to_slug(data.title)).toLowerCase()).split(' ').join('_');
-    const slugs = await userModel.aggregate([
-      { $unwind: '$posts' },
-      { $match: { $and: [{ _id: (user._id) }, { $or: [{ 'posts.slug': _slug }, { 'posts.slug': { $regex: _slug + "-.*" } }] }] } },
-      { $project: { _id: '$_id', post_id: '$posts._id', title: '$posts.title', slug: '$posts.slug' } }
-    ]);
+    const slugs = await postModel.find(
+      { $and: [{ partner: (user._id) }, { $or: [{ 'slug': _slug }, { 'slug': { $regex: _slug + "-.*" } }] }] }
+    )
+    // const slugs = await userModel.aggregate([
+    //   { $unwind: '$posts' },
+    //   { $match: { $and: [{ _id: (user._id) }, { $or: [{ 'posts.slug': _slug }, { 'posts.slug': { $regex: _slug + "-.*" } }] }] } },
+    //   { $project: { _id: '$_id', post_id: '$posts._id', title: '$posts.title', slug: '$posts.slug' } }
+    // ]);
 
     if (!slugs.length) return _slug;
     else {
       var post = slugs.filter(function (el) {
-        return el.post_id == request.params.post_id
+        return el._id == request.params.post_id
       });
       return (post.length) ? post[0]["slug"] : _slug + "-" + (slugs.length + 1);
     }
@@ -108,16 +120,19 @@ class SlugHelper {
     const user: User = request.user;
 
     let _slug = latinize((SlugHelper.string_to_slug(data.title)).toLowerCase()).split(' ').join('_');
-    const slugs = await userModel.aggregate([
-      { $unwind: '$events' },
-      { $match: { $and: [{ _id: (user._id) }, { $or: [{ 'events.slug': _slug }, { 'events.slug': { $regex: _slug + "-.*" } }] }] } },
-      { $project: { _id: '$_id', event_id: '$events._id', title: '$events.title', slug: '$events.slug' } }
-    ]);
+    const slugs = await eventModel.find(
+      { $and: [{ partner: (user._id) }, { $or: [{ 'slug': _slug }, { 'slug': { $regex: _slug + "-.*" } }] }] }
+    )
+    // const slugs = await userModel.aggregate([
+    //   { $unwind: '$events' },
+    //   { $match: { $and: [{ _id: (user._id) }, { $or: [{ 'events.slug': _slug }, { 'events.slug': { $regex: _slug + "-.*" } }] }] } },
+    //   { $project: { _id: '$_id', event_id: '$events._id', title: '$events.title', slug: '$events.slug' } }
+    // ]);
 
     if (!slugs.length) return _slug;
     else {
       var event = slugs.filter(function (el) {
-        return el.event_id == request.params.event_id
+        return el._id == request.params.event_id
       });
       return (event.length) ? event[0]["slug"] : _slug + "-" + (slugs.length + 1);
     }
@@ -128,16 +143,19 @@ class SlugHelper {
     const user: User = request.user;
 
     let _slug = latinize((SlugHelper.string_to_slug(data.title)).toLowerCase()).split(' ').join('_');
-    const slugs = await userModel.aggregate([
-      { $unwind: '$microcredit' },
-      { $match: { $and: [{ _id: (user._id) }, { $or: [{ 'microcredit.slug': _slug }, { 'microcredit.slug': { $regex: _slug + "-.*" } }] }] } },
-      { $project: { _id: '$_id', campaign_id: '$microcredit._id', title: '$microcredit.title', slug: '$microcredit.slug' } }
-    ]);
+    const slugs = await microcreditModel.find(
+      { $and: [{ partner: (user._id) }, { $or: [{ 'slug': _slug }, { 'slug': { $regex: _slug + "-.*" } }] }] }
+    )
+    // const slugs = await userModel.aggregate([
+    //   { $unwind: '$microcredit' },
+    //   { $match: { $and: [{ _id: (user._id) }, { $or: [{ 'microcredit.slug': _slug }, { 'microcredit.slug': { $regex: _slug + "-.*" } }] }] } },
+    //   { $project: { _id: '$_id', campaign_id: '$microcredit._id', title: '$microcredit.title', slug: '$microcredit.slug' } }
+    // ]);
 
     if (!slugs.length) return _slug;
     else {
       var campaign = slugs.filter(function (el) {
-        return el.campaign_id == request.params.campaign_id
+        return el._id == request.params.campaign_id
       });
       return (campaign.length) ? campaign[0]["slug"] : _slug + "-" + (slugs.length + 1);
     }

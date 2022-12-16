@@ -18,7 +18,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, LoyaltyOffer, LoyaltyStatistics } from '../_interfaces/index';
+import { User, LoyaltyOffer, LoyaltyStatistics, Partner } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -47,6 +47,7 @@ const offsetParams = OffsetHelper.offsetLimit;
  * Models
  */
 import userModel from '../models/user.model';
+import offerModel from '../models/offer.model';
 import transactionModel from '../models/loyalty.transaction.model';
 
 class OffersController implements Controller {
@@ -54,6 +55,7 @@ class OffersController implements Controller {
   public router = express.Router();
   private user = userModel;
   private transaction = transactionModel;
+  private offerModel = offerModel;
 
   constructor() {
     this.initializeRoutes();
@@ -84,29 +86,45 @@ class OffersController implements Controller {
     /** ***** * ***** */
 
     let error: Error, offers: LoyaltyOffer[];
-    [error, offers] = await to(this.user.aggregate([{
-      $unwind: '$offers'
-    }, {
-      $match: {
+    [error, offers] = await to(this.offerModel.find(
+      {
         $and: [
           { 'activated': true },
-          { 'offers.expiresAt': { $gt: offset.greater } } // (offset[2] === 1) ? seconds : 0
+          { 'expiresAt': { $gt: offset.greater } }
         ]
       }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectOffer()
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
+      .catch());
+    // [error, offers] = await to(this.user.aggregate([{
+    //   $unwind: '$offers'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       { 'activated': true },
+    // { 'offers.expiresAt': { $gt: offset.greater } } // (offset[2] === 1) ? seconds : 0
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectOffer()
+    //   }
+    // }, {
+    //   $sort: {
+    //     updatedAt: -1
+    //   }
+    // },
+    // { $limit: offset.limit },
+    // { $skip: offset.skip }
+    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
     response.status(200).send({
       data: offers,
       code: 200
@@ -118,22 +136,29 @@ class OffersController implements Controller {
     const user: User = request.user;
 
     let error: Error, results: Object; // {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne({
-      _id: user._id
-    }, {
-      $push: {
-        offers: {
-          "imageURL": `${process.env.API_URL}assets/static/${request.file.filename}`,
-          "title": data.title,
-          "subtitle": data.subtitle,
-          "slug": await createSlug(request),
-          "description": data.description,
-          "instructions": data.instructions,
-          "cost": data.cost,
-          "expiresAt": convertHelper.roundDate(data.expiresAt, 23)
-        }
-      }
+    [error, results] = await to(this.offerModel.create({
+      ...data,
+      partner: user._id,
+      "slug": await createSlug(request),
+      "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
+      "expiresAt": convertHelper.roundDate(data.expiresAt, 23)
     }).catch());
+    // [error, results] = await to(this.user.updateOne({
+    //   _id: user._id
+    // }, {
+    //   $push: {
+    //     offers: {
+    //       "imageURL": `${process.env.API_URL}assets/static/${request.file.filename}`,
+    //       "title": data.title,
+    //       "subtitle": data.subtitle,
+    //       "slug": await createSlug(request),
+    //       "description": data.description,
+    //       "instructions": data.instructions,
+    //       "cost": data.cost,
+    //       "expiresAt": convertHelper.roundDate(data.expiresAt, 23)
+    //     }
+    //   }
+    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new offer has been created!",
@@ -151,32 +176,52 @@ class OffersController implements Controller {
     } = offsetParams(params);
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+
+    /** ***** * ***** */
+    let _error: Error, _user: Partner;
+    [_error, _user] = await to(this.user.find(partner_filter).catch());
     /** ***** * ***** */
 
     let error: Error, offers: LoyaltyOffer[];
-    [error, offers] = await to(this.user.aggregate([{
-      $unwind: '$offers'
-    }, {
-      $match: {
+    [error, offers] = await to(this.offerModel.find(
+      {
         $and: [
-          partner_filter,
-          { 'offers.expiresAt': { $gt: offset.greater } }
+          { 'partner': _user },
+          { 'expiresAt': { $gt: offset.greater } }
         ]
       }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectOffer()
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
+      .catch());
+    // [error, offers] = await to(this.user.aggregate([{
+    //   $unwind: '$offers'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       partner_filter,
+    //       { 'offers.expiresAt': { $gt: offset.greater } }
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectOffer()
+    //   }
+    // }, {
+    //   $sort: {
+    //     updatedAt: -1
+    //   }
+    // },
+    // { $limit: offset.limit },
+    // { $skip: offset.skip }
+    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
     response.status(200).send({
       data: offers,
       code: 200
@@ -196,26 +241,36 @@ class OffersController implements Controller {
 
     /** Params & Filters */
     const partner_filter = this.checkObjectIdValidity(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
-    const offer_filter = this.checkObjectIdValidity(offer_id) ? { 'offers._id': new ObjectId(offer_id) } : { 'offers.slug': offer_id };
-    /** ***** * ***** */
+    // const offer_filter = this.checkObjectIdValidity(offer_id) ? { '_id': (offer_id) } : { 'slug': offer_id };
+    // const offer_filter = this.checkObjectIdValidity(offer_id) ? { '_id': new ObjectId(offer_id) } : { 'slug': offer_id };
+    const offer_filter = ObjectId.isValid(offer_id) ? { _id: new ObjectId(offer_id) } : { slug: offer_id };
 
+    /** ***** * ***** */
     let error: Error, offers: LoyaltyOffer[];
-    [error, offers] = await to(this.user.aggregate([{
-      $unwind: '$offers'
-    }, {
-      $match: {
-        $and: [
-          partner_filter,
-          offer_filter
-        ]
-      }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectOffer()
-      }
-    }
-    ]).exec().catch());
+    [error, offers] = await to(this.offerModel.find(
+      offer_filter
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .catch());
+    // [error, offers] = await to(this.user.aggregate([{
+    //   $unwind: '$offers'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       partner_filter,
+    //       offer_filter
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectOffer()
+    //   }
+    // }
+    // ]).exec().catch());
+
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     else if (!offers.length) {
       return next(new NotFoundException('OFFER_NOT_EXISTS'));
@@ -230,6 +285,8 @@ class OffersController implements Controller {
       )
     );
 
+    console.log(offerStatistics);
+
     response.status(200).send({
       data: offerStatistics[0],
       code: 200
@@ -240,7 +297,6 @@ class OffersController implements Controller {
     const partner_id: OfferID["partner_id"] = request.params.partner_id;
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
     const data: OfferDto = request.body;
-
 
     const currentOffer: LoyaltyOffer = response.locals.offer;
     if ((currentOffer['imageURL'] && (currentOffer['imageURL']).includes('assets/static/')) && request.file) {
@@ -254,24 +310,36 @@ class OffersController implements Controller {
     //   await deleteFile(path.join(__dirname, '../assets/items/' + imageFile[1]));
     // }
 
-    let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne(
-      {
-        _id: partner_id,
-        'offers._id': offer_id
-      }, {
-      '$set': {
-        'offers.$._id': offer_id,
-        'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentOffer['imageURL'],
-        'offers.$.title': data.title,
-        'offers.$.slug': await createSlug(request),
-        'offers.$.subtitle': data.subtitle,
-        'offers.$.description': data.description,
-        'offers.$.instructions': data.instructions,
-        'offers.$.cost': data.cost,
-        'offers.$.expiresAt': convertHelper.roundDate(data.expiresAt, 23)
+    let error: Error, offer: LoyaltyOffer; // results = {"n": 1, "nModified": 1, "ok": 1}
+    [error, offer] = await to(this.offerModel.findOneAndUpdate({
+      _id: offer_id
+    }, {
+      $set: {
+        ...data,
+        imageURL: (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentOffer['imageURL'],
+        'slug': await createSlug(request),
+        'expiresAt': convertHelper.roundDate(data.expiresAt, 23)
       }
+    }, {
+      "new": true
     }).catch());
+    // [error, results] = await to(this.user.updateOne(
+    //   {
+    //     _id: partner_id,
+    //     'offers._id': offer_id
+    //   }, {
+    //   '$set': {
+    //     'offers.$._id': offer_id,
+    //     'offers.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentOffer['imageURL'],
+    //     'offers.$.title': data.title,
+    //     'offers.$.slug': await createSlug(request),
+    //     'offers.$.subtitle': data.subtitle,
+    //     'offers.$.description': data.description,
+    //     'offers.$.instructions': data.instructions,
+    //     'offers.$.cost': data.cost,
+    //     'offers.$.expiresAt': convertHelper.roundDate(data.expiresAt, 23)
+    //   }
+    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -295,16 +363,19 @@ class OffersController implements Controller {
     // }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne({
-      _id: partner_id
-    }, {
-      $pull: {
-        offers: {
-          _id: offer_id
-        }
-      }
-    }).catch());
+    [error, results] = await to(this.offerModel.findOneAndDelete({ _id: new ObjectId(offer_id) }).catch());
+
+    // [error, results] = await to(this.user.updateOne({
+    //   _id: partner_id
+    // }, {
+    //   $pull: {
+    //     offers: {
+    //       _id: offer_id
+    //     }
+    //   }
+    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
     response.status(200).send({
       message: "Success! Offer " + offer_id + " has been deleted!",
       code: 200
@@ -355,7 +426,7 @@ class OffersController implements Controller {
   }
 
   private readStatistics = async (offers: LoyaltyOffer[], status: string) => {
-
+    console.log(offers)
     let error: Error, statistics: LoyaltyStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
@@ -388,6 +459,7 @@ class OffersController implements Controller {
     if (error) return [];
 
     const byDate: LoyaltyStatistics[] = await this.readDailyStatistics(offers, status);
+    console.log(byDate);
     const fullStatistics = statistics.map((a: LoyaltyStatistics) =>
       Object.assign({}, a,
         {
@@ -395,7 +467,7 @@ class OffersController implements Controller {
         }
       )
     );
-
+    console.log(fullStatistics)
     return fullStatistics;
   }
 

@@ -60,12 +60,14 @@ const offsetParams = OffsetHelper.offsetLimit;
  */
 import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
+import failedTransactionModel from '../models/failed.transaction.model';
 
 class MicrocreditController implements Controller {
   public path = '/microcredit';
   public router = express.Router();
   private user = userModel;
   private transaction = transactionModel;
+  private failedTransaction = failedTransactionModel;
 
   constructor() {
     this.initializeRoutes();
@@ -171,6 +173,13 @@ class MicrocreditController implements Controller {
     });
   }
 
+  private escapeBlockchainError = async (_error: any, _type: string) => {
+    await this.failedTransaction.create({
+      error: _error,
+      type: _type
+    })
+  }
+
   private registerPromisedFund = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
@@ -188,83 +197,150 @@ class MicrocreditController implements Controller {
     //   })
     //   ).length);
 
-    await serviceInstance.getMicrocredit(campaign.address)
+    let error: Error, result: any;
+    [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
         return instance.promiseToFund('0x' + member.account.address, data._amount, serviceInstance.address)
-          .then(async (result: any) => {
-
-            response.locals['support'] = {
-              support_id: new ObjectId(),
-              partner_id: partner_id,
-              partner_name: partner.name,
-
-              member_id: member._id,
-
-              campaign_id: campaign_id,
-              campaign_title: campaign.title,
-              address: campaign.address,
-              method: data.method,
-              payment_id: convertHelper.indexToPayment(
-                ((await this.transaction.find({ type: 'PromiseFund' })).filter((o: MicrocreditTransaction) => {
-                  return this.formatDate(o.createdAt) == this.formatDate(new Date())
-                })).length),
-              tokens: data._amount,
-              contractRef: result.logs[0].args.ref,
-              contractIndex: result.logs[0].args.index,
-              type: 'PromiseFund',
-            }
-
-            await this.transaction.create({
-              ...result,
-              ...response.locals.support,
-              type: 'PromiseFund'
-            });
-
-            if (data.method != 'store') {
-              response.locals['extras'] = {
-                method: ((partner.payments).filter(function (el: PartnerPayment) { return el.bic == data.method })[0]),
-                tokens: data._amount,
-                paid: data.paid
-              }
-            } else {
-              response.locals['extras'] = {
-                method: {
-                  bic: 'store',
-                  name: 'Store',
-                  value: partner.address.street + ", " + partner.address.city + " " + partner.address.postCode
-                },
-                tokens: data._amount,
-                paid: data.paid
-              }
-            }
-
-            response.locals.support = {
-              ...response.locals['support'],
-              status: 'unpaid'
-            }
-
-            next();
-            // if (data.paid) {
-            //   next();
-            // } else {
-            //   response.status(200).send({
-            //     data: {
-            //       support_id: response.locals['support'].support_id,
-            //       payment_id: response.locals['support'].payment_id,
-            //       status: 'unpaid',
-            //       method: data.method
-            //     },
-            //     code: 200
-            //   });
-            // }
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-          })
       })
-      .catch((error: Error) => {
-        next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+      .catch((error) => {
+        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
       })
+    );
+    if (error) {
+      this.escapeBlockchainError(error, "PromiseFund")
+      return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    }
+
+    response.locals['support'] = {
+      support_id: new ObjectId(),
+      partner_id: partner_id,
+      partner_name: partner.name,
+
+      member_id: member._id,
+
+      campaign_id: campaign_id,
+      campaign_title: campaign.title,
+      address: campaign.address,
+      method: data.method,
+      payment_id: convertHelper.indexToPayment(
+        ((await this.transaction.find({ type: 'PromiseFund' })).filter((o: MicrocreditTransaction) => {
+          return this.formatDate(o.createdAt) == this.formatDate(new Date())
+        })).length),
+      tokens: data._amount,
+      contractRef: result.logs[0].args.ref,
+      contractIndex: result.logs[0].args.index,
+      type: 'PromiseFund',
+    }
+
+    await this.transaction.create({
+      ...result,
+      ...response.locals.support,
+      type: 'PromiseFund'
+    });
+
+    if (data.method != 'store') {
+      response.locals['extras'] = {
+        method: ((partner.payments).filter(function (el: PartnerPayment) { return el.bic == data.method })[0]),
+        tokens: data._amount,
+        paid: data.paid
+      }
+    } else {
+      response.locals['extras'] = {
+        method: {
+          bic: 'store',
+          name: 'Store',
+          value: partner.address.street + ", " + partner.address.city + " " + partner.address.postCode
+        },
+        tokens: data._amount,
+        paid: data.paid
+      }
+    }
+
+    response.locals.support = {
+      ...response.locals['support'],
+      status: 'unpaid'
+    }
+
+    next();
+
+
+    // await serviceInstance.getMicrocredit(campaign.address)
+    //   .then((instance) => {
+    //     return instance.promiseToFund('0x' + member.account.address, data._amount, serviceInstance.address)
+    //       .then(async (result: any) => {
+
+    //         response.locals['support'] = {
+    //           support_id: new ObjectId(),
+    //           partner_id: partner_id,
+    //           partner_name: partner.name,
+
+    //           member_id: member._id,
+
+    //           campaign_id: campaign_id,
+    //           campaign_title: campaign.title,
+    //           address: campaign.address,
+    //           method: data.method,
+    //           payment_id: convertHelper.indexToPayment(
+    //             ((await this.transaction.find({ type: 'PromiseFund' })).filter((o: MicrocreditTransaction) => {
+    //               return this.formatDate(o.createdAt) == this.formatDate(new Date())
+    //             })).length),
+    //           tokens: data._amount,
+    //           contractRef: result.logs[0].args.ref,
+    //           contractIndex: result.logs[0].args.index,
+    //           type: 'PromiseFund',
+    //         }
+
+    //         await this.transaction.create({
+    //           ...result,
+    //           ...response.locals.support,
+    //           type: 'PromiseFund'
+    //         });
+
+    //         if (data.method != 'store') {
+    //           response.locals['extras'] = {
+    //             method: ((partner.payments).filter(function (el: PartnerPayment) { return el.bic == data.method })[0]),
+    //             tokens: data._amount,
+    //             paid: data.paid
+    //           }
+    //         } else {
+    //           response.locals['extras'] = {
+    //             method: {
+    //               bic: 'store',
+    //               name: 'Store',
+    //               value: partner.address.street + ", " + partner.address.city + " " + partner.address.postCode
+    //             },
+    //             tokens: data._amount,
+    //             paid: data.paid
+    //           }
+    //         }
+
+    //         response.locals.support = {
+    //           ...response.locals['support'],
+    //           status: 'unpaid'
+    //         }
+
+    //         next();
+    //         // if (data.paid) {
+    //         //   next();
+    //         // } else {
+    //         //   response.status(200).send({
+    //         //     data: {
+    //         //       support_id: response.locals['support'].support_id,
+    //         //       payment_id: response.locals['support'].payment_id,
+    //         //       status: 'unpaid',
+    //         //       method: data.method
+    //         //     },
+    //         //     code: 200
+    //         //   });
+    //         // }
+    //       })
+    //       .catch((error: Error) => {
+    //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+    //       })
+    //   })
+    //   .catch((error: Error) => {
+    //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+    //   })
   }
 
   private registerReceivedFund = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -280,41 +356,79 @@ class MicrocreditController implements Controller {
       return next();
     }
 
-    await serviceInstance.getMicrocredit(campaign.address)
+    let error: Error, result: any;
+    [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
         return instance.fundReceived(support.contractIndex, serviceInstance.address)
-          .then(async (result: any) => {
-            await this.transaction.create({
-              ...result,
-              ...support,
-              type: 'ReceiveFund',
-              tokens: 0,
-              payoff: support.initialTokens
-            });
-
-            response.locals.support = {
-              ...support,
-              status: 'paid'
-            }
-            // response.status(200).send({
-            //   data: {
-            //     support_id: support.support_id,
-            //     payment_id: support.payment_id,
-            //     status: 'paid',
-            //     method: support.method,
-            //   },
-            //   code: 200
-            // });
-
-            next();
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-          })
       })
-      .catch((error: Error) => {
-        next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-      });
+      .catch((error) => {
+        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      })
+    );
+    if (error) {
+      this.escapeBlockchainError(error, "ReceiveFund")
+      return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    }
+
+    await this.transaction.create({
+      ...result,
+      ...support,
+      type: 'ReceiveFund',
+      tokens: 0,
+      payoff: support.initialTokens
+    });
+
+    response.locals.support = {
+      ...support,
+      status: 'paid'
+    }
+    // response.status(200).send({
+    //   data: {
+    //     support_id: support.support_id,
+    //     payment_id: support.payment_id,
+    //     status: 'paid',
+    //     method: support.method,
+    //   },
+    //   code: 200
+    // });
+
+    next();
+
+    // await serviceInstance.getMicrocredit(campaign.address)
+    //   .then((instance) => {
+    //     return instance.fundReceived(support.contractIndex, serviceInstance.address)
+    //       .then(async (result: any) => {
+    //         await this.transaction.create({
+    //           ...result,
+    //           ...support,
+    //           type: 'ReceiveFund',
+    //           tokens: 0,
+    //           payoff: support.initialTokens
+    //         });
+
+    //         response.locals.support = {
+    //           ...support,
+    //           status: 'paid'
+    //         }
+    //         // response.status(200).send({
+    //         //   data: {
+    //         //     support_id: support.support_id,
+    //         //     payment_id: support.payment_id,
+    //         //     status: 'paid',
+    //         //     method: support.method,
+    //         //   },
+    //         //   code: 200
+    //         // });
+
+    //         next();
+    //       })
+    //       .catch((error: Error) => {
+    //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+    //       })
+    //   })
+    //   .catch((error: Error) => {
+    //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+    //   });
   }
 
 
@@ -329,41 +443,70 @@ class MicrocreditController implements Controller {
       return next();
     };
 
-    await serviceInstance.getMicrocredit(campaign.address)
+    let error: Error, result: any;
+    [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
         return instance.revertFund(support.contractIndex, serviceInstance.address)
-          .then(async (result: any) => {
-            await this.transaction.create({
-              ...result,
-              ...support,
-              type: 'RevertFund',
-              tokens: 0,
-              payoff: support.initialTokens * (-1)
-            });
+      })
+      .catch((error) => {
+        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      })
+    );
+    if (error) {
+      this.escapeBlockchainError(error, "RevertFund")
+      return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    }
 
-            response.locals.support = {
-              ...support,
-              type: 'RevertFund',
-              status: 'unpaid'
-            }
-            next();
-            // response.status(200).send({
-            //   data: {
-            //     support_id: support.support_id,
-            //     payment_id: support.payment_id,
-            //     status: 'unpaid',
-            //     method: support.method
-            //   },
-            //   code: 200
-            // });
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-          })
-      })
-      .catch((error: Error) => {
-        next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-      })
+    await this.transaction.create({
+      ...result,
+      ...support,
+      type: 'RevertFund',
+      tokens: 0,
+      payoff: support.initialTokens * (-1)
+    });
+
+    response.locals.support = {
+      ...support,
+      type: 'RevertFund',
+      status: 'unpaid'
+    }
+    next();
+
+    // await serviceInstance.getMicrocredit(campaign.address)
+    //   .then((instance) => {
+    //     return instance.revertFund(support.contractIndex, serviceInstance.address)
+    //       .then(async (result: any) => {
+    //         await this.transaction.create({
+    //           ...result,
+    //           ...support,
+    //           type: 'RevertFund',
+    //           tokens: 0,
+    //           payoff: support.initialTokens * (-1)
+    //         });
+
+    //         response.locals.support = {
+    //           ...support,
+    //           type: 'RevertFund',
+    //           status: 'unpaid'
+    //         }
+    //         next();
+    //         // response.status(200).send({
+    //         //   data: {
+    //         //     support_id: support.support_id,
+    //         //     payment_id: support.payment_id,
+    //         //     status: 'unpaid',
+    //         //     method: support.method
+    //         //   },
+    //         //   code: 200
+    //         // });
+    //       })
+    //       .catch((error: Error) => {
+    //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+    //       })
+    //   })
+    //   .catch((error: Error) => {
+    //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+    //   })
   }
 
   private registerSpendFund = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -379,63 +522,125 @@ class MicrocreditController implements Controller {
     const support: MicrocreditSupport = response.locals.support;
 
     if (campaign.quantitative) {
-      await serviceInstance.getMicrocredit(campaign.address)
+      let error: Error, result: any;
+      [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
         .then((instance) => {
           return instance.spend('0x' + member.account.address, _tokens, serviceInstance.address)
-            .then(async (result: any) => {
-              await this.transaction.create({
-                ...result,
-                ...support,
-                type: 'SpendFund',
-                tokens: _tokens * (-1)
-              });
+        })
+        .catch((error) => {
+          return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+        })
+      );
+      if (error) {
+        this.escapeBlockchainError(error, "SpendFund")
+        return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      }
 
-              response.locals['extras'] = {
-                tokens: _tokens,
-              };
-              // response.status(200).send({
-              //   message: "Tokens spend",
-              //   code: 200
-              // });
-              next();
-            })
-            .catch((error: Error) => {
-              next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-            })
-        })
-        .catch((error: Error) => {
-          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-        })
+      await this.transaction.create({
+        ...result,
+        ...support,
+        type: 'SpendFund',
+        tokens: _tokens * (-1)
+      });
+
+      response.locals['extras'] = {
+        tokens: _tokens,
+      };
+      // response.status(200).send({
+      //   message: "Tokens spend",
+      //   code: 200
+      // });
+      next();
+
+
+      // await serviceInstance.getMicrocredit(campaign.address)
+      //   .then((instance) => {
+      //     return instance.spend('0x' + member.account.address, _tokens, serviceInstance.address)
+      //       .then(async (result: any) => {
+      //         await this.transaction.create({
+      //           ...result,
+      //           ...support,
+      //           type: 'SpendFund',
+      //           tokens: _tokens * (-1)
+      //         });
+
+      //         response.locals['extras'] = {
+      //           tokens: _tokens,
+      //         };
+      //         // response.status(200).send({
+      //         //   message: "Tokens spend",
+      //         //   code: 200
+      //         // });
+      //         next();
+      //       })
+      //       .catch((error: Error) => {
+      //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+      //       })
+      //   })
+      //   .catch((error: Error) => {
+      //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+      //   })
     } else {
-      await serviceInstance.getMicrocredit(campaign.address)
+      let error: Error, result: any;
+      [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
         .then((instance) => {
           return instance.methods['spend(address)'].sendTransaction('0x' + member.account.address, serviceInstance.address)
-            .then(async (result: any) => {
-
-              await this.transaction.create({
-                ...result,
-                ...support,
-                type: 'SpendFund',
-                tokens: _tokens * (-1)
-              });
-
-              response.locals['extras'] = {
-                tokens: _tokens,
-              };
-              next();
-
-              // response.status(200).send({
-              //   message: "Tokens spend",
-              //   code: 200
-              // });
-            })
-            .catch((error: Error) => {
-              next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-            })
         })
-        .catch((error: Error) => {
-          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+        .catch((error) => {
+          return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
         })
+      );
+      if (error) {
+        this.escapeBlockchainError(error, "SpendFund")
+        return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      }
+
+      await this.transaction.create({
+        ...result,
+        ...support,
+        type: 'SpendFund',
+        tokens: _tokens * (-1)
+      });
+
+      response.locals['extras'] = {
+        tokens: _tokens,
+      };
+      next();
+
+      // response.status(200).send({
+      //   message: "Tokens spend",
+      //   code: 200
+      // });
+
+      // await serviceInstance.getMicrocredit(campaign.address)
+      //   .then((instance) => {
+      //     return instance.methods['spend(address)'].sendTransaction('0x' + member.account.address, serviceInstance.address)
+      //       .then(async (result: any) => {
+
+      //         await this.transaction.create({
+      //           ...result,
+      //           ...support,
+      //           type: 'SpendFund',
+      //           tokens: _tokens * (-1)
+      //         });
+
+      //         response.locals['extras'] = {
+      //           tokens: _tokens,
+      //         };
+      //         next();
+
+      //         // response.status(200).send({
+      //         //   message: "Tokens spend",
+      //         //   code: 200
+      //         // });
+      //       })
+      //       .catch((error: Error) => {
+      //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+      //       })
+      //   })
+      //   .catch((error: Error) => {
+      //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+      //   })
     }
   }
 
@@ -467,7 +672,8 @@ class MicrocreditController implements Controller {
       "tx": 1,
       "createdAt": 1
     }).sort({ 'createdAt': -1, '_id': -1 })
-      .limit(offset.limit).skip(offset.skip)
+      .limit(offset.limit)
+      .skip(offset.skip)
       .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 

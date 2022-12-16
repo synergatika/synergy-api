@@ -34,23 +34,39 @@ import microcreditTransactionModel from '../../models/microcredit.transaction.mo
 async function loyalty_balance(request: RequestWithUser, response: Response, next: NextFunction) {
   const member: User = (response.locals.member) ? response.locals.member : request.user;
 
-  await serviceInstance.getLoyaltyAppContract()
+  let error: Error, result: any;
+  [error, result] = await to(serviceInstance.getLoyaltyAppContract()
     .then((instance) => {
       return instance.members(member.account.address)
-        .then((results: any) => {
-          response.locals["balance"] = {
-            address: results.memberAddress,
-            points: results.points,
-          };
-          next();
-        })
-        .catch((error: Error) => {
-          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-        })
     })
     .catch((error) => {
-      next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+      return error; //next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
     })
+  );
+  if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+
+  response.locals["balance"] = {
+    address: result.memberAddress,
+    points: result.points,
+  };
+  next();
+  // await serviceInstance.getLoyaltyAppContract()
+  //   .then((instance) => {
+  //     return instance.members(member.account.address)
+  //       .then((results: any) => {
+  //         response.locals["balance"] = {
+  //           address: results.memberAddress,
+  //           points: results.points,
+  //         };
+  //         next();
+  //       })
+  //       .catch((error: Error) => {
+  //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  //       })
+  //   })
+  //   .catch((error) => {
+  //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  //   })
 }
 
 async function loyalty_activity(request: RequestWithUser, response: Response, next: NextFunction) {

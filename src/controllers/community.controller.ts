@@ -24,7 +24,7 @@ import { UnprocessableEntityException } from '../_exceptions/index';
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, PostEvent } from '../_interfaces/index';
+import { User, PostEvent, Partner } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -45,12 +45,16 @@ const offsetParams = OffsetHelper.offsetIndex;
  */
 import userModel from '../models/user.model';
 // import invitationModel from '../models/invitation.model';
+import postModel from '../models/post.model';
+import eventModel from '../models/event.model';
 
 class CommunityController implements Controller {
   public path = '/community';
   public router = express.Router();
   private user = userModel;
   // private invitation = invitationModel;
+  private postModel = postModel;
+  private eventModel = eventModel;
 
   constructor() {
     this.initializeRoutes();
@@ -133,51 +137,81 @@ class CommunityController implements Controller {
     /** ***** * ***** */
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
-    [error, posts] = await to(this.user.aggregate([{
-      $unwind: '$posts'
-    }, {
-      $match: {
+    [error, posts] = await to(this.postModel.find(
+      {
         $and: [
           { 'activated': true },
-          { 'posts.access': { $in: access_filter } }
+          { 'access': { $in: access_filter } }
         ]
       }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectPost()
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .catch());
+    // [error, posts] = await to(this.user.aggregate([{
+    //   $unwind: '$posts'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       { 'activated': true },
+    //       { 'posts.access': { $in: access_filter } }
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectPost()
+    //   }
+    // }, {
+    //   $sort: {
+    //     createdAt: -1
+    //   }
+    // }
+    // ]).exec().catch());
 
-    [error, events] = await to(this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match: {
+    [error, events] = await to(this.eventModel.find(
+      {
         $and: [
           { 'activated': true },
-          { 'events.access': { $in: access_filter } },
-          { 'events.dateTime': { $gt: offset.greater } }
+          { 'access': { $in: access_filter } },
+          { 'dateTime': { $gt: offset.greater } }
         ]
       }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectEvent()
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .catch());
+    // [error, events] = await to(this.user.aggregate([{
+    //   $unwind: '$events'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       { 'activated': true },
+    //       { 'events.access': { $in: access_filter } },
+    //       { 'events.dateTime': { $gt: offset.greater } }
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectEvent()
+    //   }
+    // }, {
+    //   $sort: {
+    //     createdAt: -1
+    //   }
+    // }
+    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
-      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
+      data: (([
+        ...(posts.map((o => { return { ...o, type: 'post' } }))),
+        ...(events.map((o => { return { ...o, type: 'event' } })))
+      ]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
     });
   }
@@ -196,54 +230,89 @@ class CommunityController implements Controller {
     if (request.user && request.user.access == 'partner') access_filter.push('partners');
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+
+    /** ***** * ***** */
+    let _error: Error, _user: Partner;
+    [_error, _user] = await to(this.user.find(partner_filter).catch());
     /** ***** * ***** */
 
-    let error: Error, posts: PostEvent[], events: PostEvent[];
-    [error, posts] = await to(this.user.aggregate([{
-      $unwind: '$posts'
-    }, {
-      $match: {
-        $and: [
-          partner_filter,
-          { 'posts.access': { $in: access_filter } }
-        ]
-      },
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectPost()
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
 
-    [error, events] = await to(this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match: {
+    let error: Error, posts: PostEvent[], events: PostEvent[];
+    [error, posts] = await to(this.postModel.find(
+      {
         $and: [
-          partner_filter,
-          { 'events.access': { $in: access_filter } },
+          { 'partner': _user },
+          { 'access': { $in: access_filter } }
+        ]
+      }
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .catch());
+    // [error, posts] = await to(this.user.aggregate([{
+    //   $unwind: '$posts'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       partner_filter,
+    //       { 'posts.access': { $in: access_filter } }
+    //     ]
+    //   },
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectPost()
+    //   }
+    // }, {
+    //   $sort: {
+    //     createdAt: -1
+    //   }
+    // }
+    // ]).exec().catch());
+
+    [error, events] = await to(this.eventModel.find(
+      {
+        $and: [
+          { 'partner': _user },
+          { 'access': { $in: access_filter } },
           { 'events.dateTime': { $gt: offset.greater } }
         ]
       }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectEvent()
-      }
-    }, {
-      $sort: {
-        createdAt: -1
-      }
-    }
-    ]).exec().catch());
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .catch());
+    // [error, events] = await to(this.user.aggregate([{
+    //   $unwind: '$events'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       partner_filter,
+    //       { 'events.access': { $in: access_filter } },
+    //       { 'events.dateTime': { $gt: offset.greater } }
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectEvent()
+    //   }
+    // }, {
+    //   $sort: {
+    //     createdAt: -1
+    //   }
+    // }
+    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
-      data: (([...posts, ...events]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
+      data: (([
+        ...(posts.map((o => { return { ...o, type: 'post' } }))),
+        ...(events.map((o => { return { ...o, type: 'event' } })))
+      ]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
     });
   }

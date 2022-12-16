@@ -50,12 +50,14 @@ const offsetParams = OffsetHelper.offsetLimit;
  */
 import userModel from '../models/user.model';
 import transactionModel from '../models/loyalty.transaction.model';
+import failedTransactionModel from '../models/failed.transaction.model';
 
 class LoyaltyController implements Controller {
   public path = '/loyalty';
   public router = express.Router();
   private user = userModel;
   private transaction = transactionModel;
+  private failedTransactionModel = failedTransactionModel;
 
   constructor() {
     this.initializeRoutes();
@@ -132,40 +134,79 @@ class LoyaltyController implements Controller {
     });
   }
 
+  private escapeBlockchainError = async (_error: any, _type: string) => {
+    await this.failedTransactionModel.create({
+      error: _error,
+      type: _type
+    })
+  }
+
   private earnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: EarnPointsDto = request.body;
     const _points: number = Math.round(data._amount) * response.locals.activity.rate;
     const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
     const member = response.locals.member;
 
-    await serviceInstance.getLoyaltyAppContract()
+    let error: Error, result: any;
+    [error, result] = await to(serviceInstance.getLoyaltyAppContract()
       .then((instance) => {
         return instance.earnPoints(_points, member.account.address, _partner, serviceInstance.address)
-          .then(async (result: any) => {
-            await this.transaction.create({
-              ...result,
-              partner_id: request.user._id,
-              partner_name: request.user.name,
-
-              member_id: member._id,
-
-              points: _points,
-              amount: data._amount,
-
-              type: "EarnPoints",
-            });
-            response.status(201).send({
-              data: result,
-              code: 201
-            });
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + member + "/n" + request.user))
-          })
       })
       .catch((error) => {
-        next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + member + "/n" + request.user))
+        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
       })
+    );
+    if (error) {
+      this.escapeBlockchainError(error, "EarnPoints")
+      return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    }
+
+    await this.transaction.create({
+      ...result,
+      partner_id: request.user._id,
+      partner_name: request.user.name,
+
+      member_id: member._id,
+
+      points: _points,
+      amount: data._amount,
+
+      type: "EarnPoints",
+    });
+
+    response.status(201).send({
+      data: result,
+      code: 201
+    });
+
+    // await serviceInstance.getLoyaltyAppContract()
+    //   .then((instance) => {
+    //     return instance.earnPoints(_points, member.account.address, _partner, serviceInstance.address)
+    //       .then(async (result: any) => {
+    //         await this.transaction.create({
+    //           ...result,
+    //           partner_id: request.user._id,
+    //           partner_name: request.user.name,
+
+    //           member_id: member._id,
+
+    //           points: _points,
+    //           amount: data._amount,
+
+    //           type: "EarnPoints",
+    //         });
+    //         response.status(201).send({
+    //           data: result,
+    //           code: 201
+    //         });
+    //       })
+    //       .catch((error: Error) => {
+    //         next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + member + "/n" + request.user))
+    //       })
+    //   })
+    //   .catch((error) => {
+    //     next(new UnprocessableEntityException("Error: " + error.toString() + "/n" + member + "/n" + request.user))
+    //   })
   }
 
   private redeemTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -176,39 +217,75 @@ class LoyaltyController implements Controller {
     const offer_id: OfferID['offer_id'] = request.params.offer_id || '-1';
     const offer_title = (response.locals.offer) ? response.locals.offer.title : null;
 
-    await serviceInstance.getLoyaltyAppContract()
+    let error: Error, result: any;
+    [error, result] = await to(serviceInstance.getLoyaltyAppContract()
       .then((instance) => {
         return instance.usePoints(_points, member.account.address, _partner, serviceInstance.address)
-          .then(async (result: any) => {
-
-            await this.transaction.create({
-              ...result,
-              partner_id: request.user._id,
-              partner_name: request.user.name,
-
-              member_id: member._id,
-
-              offer_id: offer_id,
-              offer_title: offer_title,
-              quantity: data.quantity,
-
-              points: _points,
-              amount: (data._amount) ? (data._amount) * (-1) : 0,
-
-              type: (offer_id === '-1') ? "RedeemPoints" : "RedeemPointsOffer",
-            });
-            response.status(201).send({
-              data: result,
-              code: 201
-            });
-          })
-          .catch((error: Error) => {
-            next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-          })
       })
       .catch((error) => {
-        next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-      });
+        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      })
+    );
+    if (error) {
+      this.escapeBlockchainError(error, (offer_id === '-1') ? "RedeemPoints" : "RedeemPointsOffer",)
+      return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    }
+
+    await this.transaction.create({
+      ...result,
+      partner_id: request.user._id,
+      partner_name: request.user.name,
+
+      member_id: member._id,
+
+      offer_id: offer_id,
+      offer_title: offer_title,
+      quantity: data.quantity,
+
+      points: _points,
+      amount: (data._amount) ? (data._amount) * (-1) : 0,
+
+      type: (offer_id === '-1') ? "RedeemPoints" : "RedeemPointsOffer",
+    });
+
+    response.status(201).send({
+      data: result,
+      code: 201
+    });
+
+    // await serviceInstance.getLoyaltyAppContract()
+    //   .then((instance) => {
+    //     return instance.usePoints(_points, member.account.address, _partner, serviceInstance.address)
+    //       .then(async (result: any) => {
+
+    //         await this.transaction.create({
+    //           ...result,
+    //           partner_id: request.user._id,
+    //           partner_name: request.user.name,
+
+    //           member_id: member._id,
+
+    //           offer_id: offer_id,
+    //           offer_title: offer_title,
+    //           quantity: data.quantity,
+
+    //           points: _points,
+    //           amount: (data._amount) ? (data._amount) * (-1) : 0,
+
+    //           type: (offer_id === '-1') ? "RedeemPoints" : "RedeemPointsOffer",
+    //         });
+    //         response.status(201).send({
+    //           data: result,
+    //           code: 201
+    //         });
+    //       })
+    //       .catch((error: Error) => {
+    //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+    //       })
+    //   })
+    //   .catch((error) => {
+    //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+    //   });
   }
 
   private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

@@ -18,7 +18,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import Controller from '../interfaces/controller.interface';
-import { User, Event } from '../_interfaces/index';
+import { User, Event, Partner } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -47,11 +47,13 @@ const offsetParams = OffsetHelper.offsetLimit;
  * Models
  */
 import userModel from '../models/user.model';
+import eventModel from '../models/event.model';
 
 class EventsController implements Controller {
   public path = '/events';
   public router = express.Router();
   private user = userModel;
+  private eventModel = eventModel;
 
   constructor() {
     this.initializeRoutes();
@@ -106,28 +108,38 @@ class EventsController implements Controller {
     /** ***** * ***** */
 
     let error: Error, events: Event[];
-    [error, events] = await to(this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match: {
-        $and: [
-          { 'events.access': { $in: access_filter } },
-          { 'events.dateTime': { $gt: offset.greater } }
-        ]
-      }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectEvent()
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
+    [error, events] = await to(this.eventModel.find(
+      { 'access': { $in: access_filter } }
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
+      .catch());
+    // [error, events] = await to(this.user.aggregate([{
+    //   $unwind: '$events'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       { 'events.access': { $in: access_filter } },
+    //       { 'events.dateTime': { $gt: offset.greater } }
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectEvent()
+    //   }
+    // }, {
+    //   $sort: {
+    //     updatedAt: -1
+    //   }
+    // },
+    // { $limit: offset.limit },
+    // { $skip: offset.skip }
+    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: events,
@@ -179,23 +191,30 @@ class EventsController implements Controller {
     const user: User = request.user;
 
     let error: Error, results: Object; // {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne({
-      _id: user._id
-    }, {
-      $push: {
-        events: {
-          "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
-          "title": data.title,
-          "subtitle": data.subtitle,
-          "slug": await createSlug(request),
-          "description": data.description,
-          "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
-          "access": data.access,
-          "location": data.location,
-          "dateTime": data.dateTime
-        }
-      }
+    [error, results] = await to(this.eventModel.create({
+      ...data,
+      partner: user._id,
+      "slug": await createSlug(request),
+      "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
+      "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : [],
     }).catch());
+    // [error, results] = await to(this.user.updateOne({
+    //   _id: user._id
+    // }, {
+    //   $push: {
+    //     events: {
+    //       "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
+    //       "title": data.title,
+    //       "subtitle": data.subtitle,
+    //       "slug": await createSlug(request),
+    //       "description": data.description,
+    //       "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
+    //       "access": data.access,
+    //       "location": data.location,
+    //       "dateTime": data.dateTime
+    //     }
+    //   }
+    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(201).send({
       message: "Success! A new Event has been created!",
@@ -218,30 +237,50 @@ class EventsController implements Controller {
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
     /** ***** * ***** */
+    let _error: Error, _user: Partner;
+    [_error, _user] = await to(this.user.find(partner_filter).catch());
+    /** ***** * ***** */
 
     let error: Error, events: Event[];
-    [error, events] = await to(this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match: {
+    [error, events] = await to(this.eventModel.find(
+      {
         $and: [
-          partner_filter,
-          { 'events.access': { $in: access_filter } }
+          { 'partner': _user },
+          { 'access': { $in: access_filter } }
         ]
       }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectEvent()
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
+      .catch());
+    // [error, events] = await to(this.user.aggregate([{
+    //   $unwind: '$events'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       partner_filter,
+    //       { 'events.access': { $in: access_filter } }
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectEvent()
+    //   }
+    // }, {
+    //   $sort: {
+    //     updatedAt: -1
+    //   }
+    // },
+    // { $limit: offset.limit },
+    // { $skip: offset.skip }
+    // ]).exec().catch());
+    console.log(events);
+    console.log(error)
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: events,
@@ -305,27 +344,34 @@ class EventsController implements Controller {
 
     /** Params & Filters */
     const partner_filter = this.checkObjectIdValidity(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
-    const event_filter = this.checkObjectIdValidity(event_id) ? { 'events._id': new ObjectId(event_id) } : { 'events.slug': event_id };
+    const event_filter = this.checkObjectIdValidity(event_id) ? { '_id': new ObjectId(event_id) } : { 'slug': event_id };
     /** ***** * ***** */
 
     let error: Error, events: Event[];
-    [error, events] = await to(this.user.aggregate([{
-      $unwind: '$events'
-    }, {
-      $match: {
-        $and: [
-          partner_filter,
-          event_filter
-        ]
+    [error, events] = await to(this.eventModel.find(
+      event_filter
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .catch());
+    // [error, events] = await to(this.user.aggregate([{
+    //   $unwind: '$events'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       partner_filter,
+    //       event_filter
+    //     ]
 
-      }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectEvent()
-      }
-    }
-    ]).exec().catch());
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectEvent()
+    //   }
+    // }
+    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     else if (!events.length) {
       return next(new NotFoundException('EVENT_NOT_EXISTS'));
@@ -351,25 +397,37 @@ class EventsController implements Controller {
       this.removeRichEditorFiles(currentEvent, data, true);
     }
 
-    let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne(
-      {
-        _id: partner_id,
-        'events._id': event_id
-      }, {
-      '$set': {
-        'events.$._id': event_id,
-        'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentEvent.imageURL,
-        'events.$.title': data.title,
-        'events.$.slug': await createSlug(request),
-        'events.$.subtitle': data.subtitle,
-        'events.$.description': data.description,
-        "events.$.contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
-        'events.$.access': data.access,
-        'events.$.location': data.location,
-        'events.$.dateTime': data.dateTime,
+    let error: Error, event: Event; // results = {"n": 1, "nModified": 1, "ok": 1}
+    [error, event] = await to(this.eventModel.findOneAndUpdate({
+      _id: event_id
+    }, {
+      $set: {
+        ...data,
+        imageURL: (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentEvent['imageURL'],
+        'slug': await createSlug(request),
+        'contentFiles': (data.contentFiles) ? data.contentFiles.split(',') : [],
       }
+    }, {
+      "new": true
     }).catch());
+    // [error, results] = await to(this.user.updateOne(
+    //   {
+    //     _id: partner_id,
+    //     'events._id': event_id
+    //   }, {
+    //   '$set': {
+    //     'events.$._id': event_id,
+    //     'events.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentEvent.imageURL,
+    //     'events.$.title': data.title,
+    //     'events.$.slug': await createSlug(request),
+    //     'events.$.subtitle': data.subtitle,
+    //     'events.$.description': data.description,
+    //     "events.$.contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
+    //     'events.$.access': data.access,
+    //     'events.$.location': data.location,
+    //     'events.$.dateTime': data.dateTime,
+    //   }
+    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been updated!",
@@ -391,15 +449,16 @@ class EventsController implements Controller {
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne({
-      _id: partner_id
-    }, {
-      $pull: {
-        events: {
-          _id: event_id
-        }
-      }
-    }).catch());
+    [error, results] = await to(this.eventModel.findOneAndDelete({ _id: new ObjectId(event_id) }).catch());
+    // [error, results] = await to(this.user.updateOne({
+    //   _id: partner_id
+    // }, {
+    //   $pull: {
+    //     events: {
+    //       _id: event_id
+    //     }
+    //   }
+    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       message: "Success! Event " + event_id + " has been deleted!",

@@ -37,6 +37,7 @@ import registrationTransactionModel from '../models/registration.transaction.mod
 import loyaltyTransactionModel from '../models/loyalty.transaction.model';
 import microcreditTransactionModel from '../models/microcredit.transaction.model';
 import { RegisterUserWithoutPasswordDto } from '_dtos';
+import microcreditModel from '../models/microcredit.model';
 
 class ReEstablishController implements Controller {
     public path = '/establish';
@@ -168,32 +169,40 @@ class ReEstablishController implements Controller {
             }
 
             let error: Error, campaigns: MicrocreditCampaign[];
-            [error, campaigns] = await to(this.user.aggregate([{
-                $unwind: '$microcredit'
-            }, {
-                $match: {
-                    'microcredit.status': 'published'
-                }
-            }, {
-                $project: {
-                    _id: false,
-                    partner_id: '$_id',
-                    partner_account: '$account',
-                    campaign_id: '$microcredit._id',
+            [error, campaigns] = await to(microcreditModel.find(
+                { status: 'published' }
+            )
+                .populate([{
+                    path: 'partner'
+                }])
+                .catch());
 
-                    quantitative: '$microcredit.quantitative',
-                    stepAmount: '$microcredit.stepAmount',
-                    minAllowed: '$microcredit.minAllowed',
-                    maxAllowed: '$microcredit.maxAllowed',
-                    maxAmount: '$microcredit.maxAmount',
+            // [error, campaigns] = await to(this.user.aggregate([{
+            //     $unwind: '$microcredit'
+            // }, {
+            //     $match: {
+            //         'microcredit.status': 'published'
+            //     }
+            // }, {
+            //     $project: {
+            //         _id: false,
+            //         partner_id: '$_id',
+            //         partner_account: '$account',
+            //         campaign_id: '$microcredit._id',
 
-                    redeemStarts: '$microcredit.redeemStarts',
-                    redeemEnds: '$microcredit.redeemEnds',
-                    startsAt: '$microcredit.startsAt',
-                    expiresAt: '$microcredit.expiresAt',
-                }
-            }
-            ]).exec().catch());
+            //         quantitative: '$microcredit.quantitative',
+            //         stepAmount: '$microcredit.stepAmount',
+            //         minAllowed: '$microcredit.minAllowed',
+            //         maxAllowed: '$microcredit.maxAllowed',
+            //         maxAmount: '$microcredit.maxAmount',
+
+            //         redeemStarts: '$microcredit.redeemStarts',
+            //         redeemEnds: '$microcredit.redeemEnds',
+            //         startsAt: '$microcredit.startsAt',
+            //         expiresAt: '$microcredit.expiresAt',
+            //     }
+            // }
+            // ]).exec().catch());
             if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
             await Promise.all(campaigns.map(async (campaign: any) => {
@@ -212,26 +221,39 @@ class ReEstablishController implements Controller {
                         (dates as any)[key] = ((dates as any)[key]).substring(0, ((dates as any)[key]).length - 3);
                 });
 
-                await serviceInstance.startNewMicrocredit(campaign.partner_account.address,
+                await serviceInstance.startNewMicrocredit(campaign.partner.account.address,
                     1, campaign.maxAmount, campaign.maxAmount, campaign.minAllowed,
                     parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
                     campaign.quantitative)
                     .then(async (result: any) => {
 
-                        await this.user.updateOne({
-                            _id: campaign.partner_id,
-                            'microcredit._id': campaign.campaign_id
+                        await microcreditModel.updateOne({
+                            '_id': campaign._id
                         }, {
                             '$set': {
-                                'microcredit.$.status': 'published', // published
-                                'microcredit.$.address': result.address,
-                                'microcredit.$.transactionHash': result.transactionHash,
-                                'microcredit.$.startsAt': _newDate1,
-                                'microcredit.$.expiresAt': _newDate2,
-                                'microcredit.$.redeemStarts': _newDate3,
-                                'microcredit.$.redeemEnds': _newDate4,
+                                'status': 'published', // published
+                                'address': result.address,
+                                'transactionHash': result.transactionHash,
+                                'startsAt': _newDate1,
+                                'expiresAt': _newDate2,
+                                'redeemStarts': _newDate3,
+                                'redeemEnds': _newDate4,
                             }
                         });
+                        // await this.user.updateOne({
+                        //     _id: campaign.partner._id,
+                        //     'microcredit._id': campaign._id
+                        // }, {
+                        //     '$set': {
+                        //         'microcredit.$.status': 'published', // published
+                        //         'microcredit.$.address': result.address,
+                        //         'microcredit.$.transactionHash': result.transactionHash,
+                        //         'microcredit.$.startsAt': _newDate1,
+                        //         'microcredit.$.expiresAt': _newDate2,
+                        //         'microcredit.$.redeemStarts': _newDate3,
+                        //         'microcredit.$.redeemEnds': _newDate4,
+                        //     }
+                        // });
                     })
                     .catch((error: Error) => {
                         next(new UnprocessableEntityException(error.message))
@@ -267,45 +289,61 @@ class ReEstablishController implements Controller {
             await this.microcreditTransaction.deleteMany({});
 
             let error: Error, campaigns: MicrocreditCampaign[];
-            [error, campaigns] = await to(this.user.aggregate([{
-                $unwind: '$microcredit'
-            }, {
-                $match: {
-                    'microcredit.status': 'published'
-                }
-            }, {
-                $project: {
-                    _id: false,
-                    partner_id: '$_id',
-                    campaign_id: '$microcredit._id',
+            [error, campaigns] = await to(microcreditModel.find(
+                { status: 'published' }
+            )
+                .populate([{
+                    path: 'partner'
+                }])
+                .catch());
+            // [error, campaigns] = await to(this.user.aggregate([{
+            //     $unwind: '$microcredit'
+            // }, {
+            //     $match: {
+            //         'microcredit.status': 'published'
+            //     }
+            // }, {
+            //     $project: {
+            //         _id: false,
+            //         partner_id: '$_id',
+            //         campaign_id: '$microcredit._id',
 
-                    quantitative: '$microcredit.quantitative',
-                    stepAmount: '$microcredit.stepAmount',
-                    minAllowed: '$microcredit.minAllowed',
-                    maxAllowed: '$microcredit.maxAllowed',
-                    maxAmount: '$microcredit.maxAmount',
+            //         quantitative: '$microcredit.quantitative',
+            //         stepAmount: '$microcredit.stepAmount',
+            //         minAllowed: '$microcredit.minAllowed',
+            //         maxAllowed: '$microcredit.maxAllowed',
+            //         maxAmount: '$microcredit.maxAmount',
 
-                    redeemStarts: '$microcredit.redeemStarts',
-                    redeemEnds: '$microcredit.redeemEnds',
-                    startsAt: '$microcredit.startsAt',
-                    expiresAt: '$microcredit.expiresAt',
-                }
-            }
-            ]).exec().catch());
+            //         redeemStarts: '$microcredit.redeemStarts',
+            //         redeemEnds: '$microcredit.redeemEnds',
+            //         startsAt: '$microcredit.startsAt',
+            //         expiresAt: '$microcredit.expiresAt',
+            //     }
+            // }
+            // ]).exec().catch());
             if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
             campaigns.forEach(async (campaign: MicrocreditCampaign) => {
                 let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-                [error, results] = await to(this.user.updateOne(
+                [error, results] = await to(microcreditModel.updateOne(
                     {
-                        _id: campaign.partner._id,
-                        'microcredit._id': campaign._id
+                        '_id': campaign._id
                     }, {
                     '$set': {
-                        'microcredit.$._id': campaign._id,
-                        'microcredit.$.supports': []
+                        '_id': campaign._id,
+                        'supports': []
                     }
                 }).catch());
+                // [error, results] = await to(this.user.updateOne(
+                //     {
+                //         _id: (campaign.partner as Partner)._id,
+                //         'microcredit._id': campaign._id
+                //     }, {
+                //     '$set': {
+                //         'microcredit.$._id': campaign._id,
+                //         'microcredit.$.supports': []
+                //     }
+                // }).catch());
                 if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
             })
 

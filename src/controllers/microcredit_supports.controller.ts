@@ -44,13 +44,14 @@ const offsetParams = OffsetHelper.offsetLimit;
  */
 import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
-
+import microcreditModel from '../models/microcredit.model';
 
 class MicrocreditSupportsController implements Controller {
   public path = '/microcredit/supports';
   public router = express.Router();
   private user = userModel;
   private transaction = transactionModel;
+  private microcreditModel = microcreditModel;
 
   constructor() {
     this.initializeRoutes();
@@ -73,11 +74,9 @@ class MicrocreditSupportsController implements Controller {
       this.readBackerSupportsByCampaign);
   }
 
-  private defineSupportStatus(a: any) {
-    if (a.currentTokens == 0) return SupportStatus.COMPLETED;
-    else if (a.type == 'PromiseFund' || a.type == 'RevertFund') return SupportStatus.UNPAID;
-    else if (a.type == 'ReceiveFund' || a.type == 'SpendFund') return SupportStatus.PAID;
-  }
+  /**
+   * Primary Functions
+   */
 
   private readAllBackerSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
@@ -125,59 +124,6 @@ class MicrocreditSupportsController implements Controller {
       data: supportsWithCampaign,
       code: 200
     });
-  }
-
-  private readCampaigns = async (supports: MicrocreditSupport[]) => {
-    let error: Error, campaigns: MicrocreditCampaign[];
-    [error, campaigns] = await to(this.user.aggregate([{
-      $unwind: '$microcredit'
-    }, {
-      $match: {
-        'microcredit._id': { $in: supports.map(a => new ObjectId(a.campaign_id)) }
-      }
-    }, {
-      $project: {
-        partner: {
-          _id: '$_id',
-          slug: '$slug',
-          name: '$name',
-          email: '$email',
-          imageURL: '$imageURL',
-
-          payments: '$payments',
-          address: '$address',
-          contacts: '$contacts',
-          phone: '$phone',
-        },
-        _id: '$microcredit._id',
-        slug: '$microcredit.slug',
-        imageURL: '$microcredit.imageURL',
-        title: '$microcredit.title',
-        subtitle: '$microcredit.subtitle',
-        terms: '$microcredit.terms',
-        description: '$microcredit.description',
-        category: '$microcredit.category',
-        access: '$microcredit.access',
-
-        quantitative: '$microcredit.quantitative',
-        redeemable: '$microcredit.redeemable',
-        stepAmount: '$microcredit.stepAmount',
-        minAllowed: '$microcredit.minAllowed',
-        maxAllowed: '$microcredit.maxAllowed',
-        maxAmount: '$microcredit.maxAmount',
-
-        redeemStarts: '$microcredit.redeemStarts',
-        redeemEnds: '$microcredit.redeemEnds',
-        startsAt: '$microcredit.startsAt',
-        expiresAt: '$microcredit.expiresAt',
-
-        createdAt: '$microcredit.createdAt',
-        updatedAt: '$microcredit.updatedAt'
-      }
-    }]).exec().catch());
-    if (error) return [];
-
-    return campaigns;
   }
 
   private readAllSupportsByCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -277,6 +223,77 @@ class MicrocreditSupportsController implements Controller {
       data: supportWithTransactions,
       code: 200
     });
+  }
+
+
+  /**
+   * Secondary Functions
+   */
+
+  private defineSupportStatus(a: any) {
+    if (a.currentTokens == 0) return SupportStatus.COMPLETED;
+    else if (a.type == 'PromiseFund' || a.type == 'RevertFund') return SupportStatus.UNPAID;
+    else if (a.type == 'ReceiveFund' || a.type == 'SpendFund') return SupportStatus.PAID;
+  }
+
+  private readCampaigns = async (supports: MicrocreditSupport[]) => {
+    let error: Error, campaigns: MicrocreditCampaign[];
+    [error, campaigns] = await to(this.microcreditModel.find(
+      { _id: { $in: supports.map(a => new ObjectId(a.campaign_id)) } }
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .catch());
+    // [error, campaigns] = await to(this.user.aggregate([{
+    //   $unwind: '$microcredit'
+    // }, {
+    //   $match: {
+    //     'microcredit._id': { $in: supports.map(a => new ObjectId(a.campaign_id)) }
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: {
+    //       _id: '$_id',
+    //       slug: '$slug',
+    //       name: '$name',
+    //       email: '$email',
+    //       imageURL: '$imageURL',
+
+    //       payments: '$payments',
+    //       address: '$address',
+    //       contacts: '$contacts',
+    //       phone: '$phone',
+    //     },
+    //     _id: '$microcredit._id',
+    //     slug: '$microcredit.slug',
+    //     imageURL: '$microcredit.imageURL',
+    //     title: '$microcredit.title',
+    //     subtitle: '$microcredit.subtitle',
+    //     terms: '$microcredit.terms',
+    //     description: '$microcredit.description',
+    //     category: '$microcredit.category',
+    //     access: '$microcredit.access',
+
+    //     quantitative: '$microcredit.quantitative',
+    //     redeemable: '$microcredit.redeemable',
+    //     stepAmount: '$microcredit.stepAmount',
+    //     minAllowed: '$microcredit.minAllowed',
+    //     maxAllowed: '$microcredit.maxAllowed',
+    //     maxAmount: '$microcredit.maxAmount',
+
+    //     redeemStarts: '$microcredit.redeemStarts',
+    //     redeemEnds: '$microcredit.redeemEnds',
+    //     startsAt: '$microcredit.startsAt',
+    //     expiresAt: '$microcredit.expiresAt',
+
+    //     createdAt: '$microcredit.createdAt',
+    //     updatedAt: '$microcredit.updatedAt'
+    //   }
+    // }]).exec().catch());
+    if (error) return [];
+
+    return campaigns;
   }
 
   private readTransactions = async (partner_id: string, member_id: string, campaign_id: string) => {

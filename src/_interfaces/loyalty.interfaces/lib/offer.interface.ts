@@ -10,8 +10,8 @@ export interface LoyaltyOffer {
   cost: number;
   expiresAt: number;
 
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 
-  partner: Partner;
+  partner: Partner | string;
 }

@@ -12,8 +12,8 @@ export interface Event {
   location: string;
   dateTime: number;
 
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 
-  partner: Partner;
+  partner: Partner | string;
 }

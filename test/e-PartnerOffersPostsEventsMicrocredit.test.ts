@@ -44,6 +44,7 @@ describe("Partner - Offers, Posts, Events", () => {
           for (i = 0; i < (res.body.data).length; i++) {
             offers.push((res.body.data)[i]);
           }
+          console.log(offers);
           done();
         });
     });
@@ -70,6 +71,8 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .end((err, res) => {
           res.should.have.status(200);
+          console.log(res)
+          console.log(err)
           res.body.should.be.a('object');
           res.body.should.have.property('data');
           done();

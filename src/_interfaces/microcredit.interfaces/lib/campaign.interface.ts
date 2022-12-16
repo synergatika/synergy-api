@@ -27,9 +27,9 @@ export interface MicrocreditCampaign {
   startsAt: number;
   expiresAt: number;
 
-  tokens: MicrocreditTokens;
+  tokens?: MicrocreditTokens;
 
-  statistics: {
+  statistics?: {
     earned: MicrocreditStatistics,
     redeemed: MicrocreditStatistics
   }
@@ -37,8 +37,8 @@ export interface MicrocreditCampaign {
   address: string;
   transactionHash: string;
 
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 
-  partner: Partner;
+  partner: Partner | string;
 }

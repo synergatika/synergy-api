@@ -18,7 +18,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, Post } from '../_interfaces/index';
+import { User, Post, Partner } from '../_interfaces/index';
 
 /**
  * Middlewares
@@ -46,11 +46,13 @@ const offsetParams = OffsetHelper.offsetLimit;
  * Models
  */
 import userModel from '../models/user.model';
+import postModel from '../models/post.model';
 
 class PostsController implements Controller {
   public path = '/posts';
   public router = express.Router();
   private user = userModel;
+  private postModel = postModel;
 
   constructor() {
     this.initializeRoutes();
@@ -105,25 +107,37 @@ class PostsController implements Controller {
     /** ***** * ***** */
 
     let error: Error, posts: Post[];
-    [error, posts] = await to(this.user.aggregate([{
-      $unwind: '$posts'
-    }, {
-      $match: {
-        'posts.access': { $in: access_filter }
-      }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectPost()
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
+    [error, posts] = await to(this.postModel.find(
+      { 'access': { $in: access_filter } }
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
+      .catch());
+
+    // let error: Error, posts: Post[];
+    // [error, posts] = await to(this.user.aggregate([{
+    //   $unwind: '$posts'
+    // }, {
+    //   $match: {
+    //     'posts.access': { $in: access_filter }
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectPost()
+    //   }
+    // }, {
+    //   $sort: {
+    //     updatedAt: -1
+    //   }
+    // },
+    // { $limit: offset.limit },
+    // { $skip: offset.skip }
+    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -136,22 +150,30 @@ class PostsController implements Controller {
     const data: PostDto = request.body;
     const user: User = request.user;
 
-    let error: Error, results: Object; // {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne({
-      _id: user._id
-    }, {
-      $push: {
-        posts: {
-          "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
-          "title": data.title,
-          "subtitle": data.subtitle,
-          "slug": await createSlug(request),
-          "description": data.description,
-          "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
-          "access": data.access
-        }
-      }
+    let error: Error, results: Object;
+    [error, results] = await to(this.postModel.create({
+      ...data,
+      partner: user._id,
+      "slug": await createSlug(request),
+      "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
+      "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : [],
     }).catch());
+    // let error: Error, results: Object; // {"n": 1, "nModified": 1, "ok": 1}
+    // [error, results] = await to(this.user.updateOne({
+    //   _id: user._id
+    // }, {
+    //   $push: {
+    //     posts: {
+    //       "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
+    //       "title": data.title,
+    //       "subtitle": data.subtitle,
+    //       "slug": await createSlug(request),
+    //       "description": data.description,
+    //       "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
+    //       "access": data.access
+    //     }
+    //   }
+    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(201).send({
@@ -174,31 +196,51 @@ class PostsController implements Controller {
     if (request.user && request.user.access === 'partner') access_filter.push('partners');
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
+
+    /** ***** * ***** */
+    let _error: Error, _user: Partner;
+    [_error, _user] = await to(this.user.find(partner_filter).catch());
     /** ***** * ***** */
 
     let error: Error, posts: Post[];
-    [error, posts] = await to(this.user.aggregate([{
-      $unwind: '$posts'
-    }, {
-      $match: {
+    [error, posts] = await to(this.postModel.find(
+      {
         $and: [
-          partner_filter,
-          { 'posts.access': { $in: access_filter } }
+          { 'partner': _user },
+          { 'access': { $in: access_filter } }
         ]
       }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectPost()
-      }
-    }, {
-      $sort: {
-        updatedAt: -1
-      }
-    },
-    { $limit: offset.limit },
-    { $skip: offset.skip }
-    ]).exec().catch());
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .sort({ updatedAt: -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
+      .catch());
+    // let error: Error, posts: Post[];
+    // [error, posts] = await to(this.user.aggregate([{
+    //   $unwind: '$posts'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       partner_filter,
+    //       { 'posts.access': { $in: access_filter } }
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectPost()
+    //   }
+    // }, {
+    //   $sort: {
+    //     updatedAt: -1
+    //   }
+    // },
+    // { $limit: offset.limit },
+    // { $skip: offset.skip }
+    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -220,26 +262,34 @@ class PostsController implements Controller {
 
     /** Params & Filters */
     const partner_filter = this.checkObjectIdValidity(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
-    const post_filter = this.checkObjectIdValidity(post_id) ? { 'posts._id': new ObjectId(post_id) } : { 'posts.slug': post_id };
+    const post_filter = this.checkObjectIdValidity(post_id) ? { '_id': new ObjectId(post_id) } : { 'slug': post_id };
     /** ***** * ***** */
 
     let error: Error, posts: Post[];
-    [error, posts] = await to(this.user.aggregate([{
-      $unwind: '$posts'
-    }, {
-      $match: {
-        $and: [
-          partner_filter,
-          post_filter
-        ]
-      }
-    }, {
-      $project: {
-        partner: this.projectPartner(),
-        ...this.projectPost()
-      }
-    }
-    ]).exec().catch());
+    [error, posts] = await to(this.postModel.find(
+      { post_filter }
+    )
+      .populate([{
+        path: 'partner'
+      }])
+      .catch());
+    // let error: Error, posts: Post[];
+    // [error, posts] = await to(this.user.aggregate([{
+    //   $unwind: '$posts'
+    // }, {
+    //   $match: {
+    //     $and: [
+    //       partner_filter,
+    //       post_filter
+    //     ]
+    //   }
+    // }, {
+    //   $project: {
+    //     partner: this.projectPartner(),
+    //     ...this.projectPost()
+    //   }
+    // }
+    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     else if (!posts.length) {
       return next(new NotFoundException('POST_NOT_EXISTS'));
@@ -265,23 +315,36 @@ class PostsController implements Controller {
       this.removeRichEditorFiles(currentPost, data, true);
     }
 
-    let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne(
-      {
-        _id: partner_id,
-        'posts._id': post_id
-      }, {
-      '$set': {
-        'posts.$._id': post_id,
-        'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentPost['imageURL'],
-        'posts.$.title': data.title,
-        'posts.$.slug': await createSlug(request),
-        'posts.$.subtitle': data.subtitle,
-        'posts.$.description': data.description,
-        'posts.$.contentFiles': (data.contentFiles) ? data.contentFiles.split(',') : 0,
-        'posts.$.access': data.access,
+    let error: Error, post: Post;
+    [error, post] = await to(this.postModel.findOneAndUpdate({
+      _id: post_id
+    }, {
+      $set: {
+        ...data,
+        imageURL: (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentPost['imageURL'],
+        'slug': await createSlug(request),
+        'contentFiles': (data.contentFiles) ? data.contentFiles.split(',') : [],
       }
+    }, {
+      "new": true
     }).catch());
+    // let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
+    // [error, results] = await to(this.user.updateOne(
+    //   {
+    //     _id: partner_id,
+    //     'posts._id': post_id
+    //   }, {
+    //   '$set': {
+    //     'posts.$._id': post_id,
+    //     'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentPost['imageURL'],
+    //     'posts.$.title': data.title,
+    //     'posts.$.slug': await createSlug(request),
+    //     'posts.$.subtitle': data.subtitle,
+    //     'posts.$.description': data.description,
+    //     'posts.$.contentFiles': (data.contentFiles) ? data.contentFiles.split(',') : 0,
+    //     'posts.$.access': data.access,
+    //   }
+    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -303,16 +366,19 @@ class PostsController implements Controller {
       this.removeRichEditorFiles(currentPost, null, false);
     }
 
-    let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, results] = await to(this.user.updateOne({
-      _id: partner_id
-    }, {
-      $pull: {
-        posts: {
-          _id: post_id
-        }
-      }
-    }).catch());
+    let error: Error, results: Object;
+    [error, results] = await to(this.postModel.findOneAndDelete({ _id: new ObjectId(post_id) }).catch());
+
+    // let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
+    // [error, results] = await to(this.user.updateOne({
+    //   _id: partner_id
+    // }, {
+    //   $pull: {
+    //     posts: {
+    //       _id: post_id
+    //     }
+    //   }
+    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({

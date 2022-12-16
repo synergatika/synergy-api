@@ -23,31 +23,40 @@ import { LoyaltyOffer, Post, Event, MicrocreditCampaign, MicrocreditSupport } fr
  */
 import userModel from '../../models/user.model';
 import transactionModel from '../../models/microcredit.transaction.model';
+import postModel from '../../models/post.model';
+import eventModel from '../../models/event.model';
+import offerModel from '../../models/offer.model';
+import microcreditModel from '../../models/microcredit.model';
 
 async function offer(request: RequestWithUser, response: Response, next: NextFunction) {
   const partner_id: OfferID["partner_id"] = request.params.partner_id;
   const offer_id: OfferID["offer_id"] = request.params.offer_id;
 
   let error: Error, offers: LoyaltyOffer[];
-  [error, offers] = await to(userModel.aggregate([{
-    $unwind: '$offers'
-  }, {
-    $match:
-    {
-      $and: [{
-        _id: new ObjectId(partner_id)
-      }, {
-        'offers._id': new ObjectId(offer_id)
-      }]
-    }
-  }, {
-    $project: {
-      _id: '$offers._id',
-      imageURL: '$offers.imageURL',
-      title: '$offers.title',
-      cost: '$offers.cost'
-    }
-  }]).exec().catch());
+  [error, offers] = await to(offerModel.find(
+    { '_id': new ObjectId(offer_id) }
+  )
+    .catch());
+
+  // [error, offers] = await to(userModel.aggregate([{
+  //   $unwind: '$offers'
+  // }, {
+  //   $match:
+  //   {
+  //     $and: [{
+  //       _id: new ObjectId(partner_id)
+  //     }, {
+  //       'offers._id': new ObjectId(offer_id)
+  //     }]
+  //   }
+  // }, {
+  //   $project: {
+  //     _id: '$offers._id',
+  //     imageURL: '$offers.imageURL',
+  //     title: '$offers.title',
+  //     cost: '$offers.cost'
+  //   }
+  // }]).exec().catch());
 
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!offers.length) {
@@ -63,24 +72,28 @@ async function post(request: RequestWithUser, response: Response, next: NextFunc
   const post_id: PostID["post_id"] = request.params.post_id;
 
   let error: Error, posts: Post[];
-  [error, posts] = await to(userModel.aggregate([{
-    $unwind: '$posts'
-  }, {
-    $match:
-    {
-      $and: [{
-        _id: new ObjectId(partner_id)
-      }, {
-        'posts._id': new ObjectId(post_id)
-      }]
-    }
-  }, {
-    $project: {
-      _id: '$posts._id',
-      imageURL: '$posts.imageURL',
-      title: '$posts.title',
-    }
-  }]).exec().catch());
+  [error, posts] = await to(postModel.find(
+    { '_id': new ObjectId(post_id) }
+  )
+    .catch());
+  // [error, posts] = await to(userModel.aggregate([{
+  //   $unwind: '$posts'
+  // }, {
+  //   $match:
+  //   {
+  //     $and: [{
+  //       _id: new ObjectId(partner_id)
+  //     }, {
+  //       'posts._id': new ObjectId(post_id)
+  //     }]
+  //   }
+  // }, {
+  //   $project: {
+  //     _id: '$posts._id',
+  //     imageURL: '$posts.imageURL',
+  //     title: '$posts.title',
+  //   }
+  // }]).exec().catch());
 
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!posts.length) {
@@ -96,24 +109,28 @@ async function event(request: RequestWithUser, response: Response, next: NextFun
   const event_id: EventID["event_id"] = request.params.event_id;
 
   let error: Error, events: Event[];
-  [error, events] = await to(userModel.aggregate([{
-    $unwind: '$events'
-  }, {
-    $match:
-    {
-      $and: [{
-        _id: new ObjectId(partner_id)
-      }, {
-        'events._id': new ObjectId(event_id)
-      }]
-    }
-  }, {
-    $project: {
-      _id: '$events._id',
-      imageURL: '$events.imageURL',
-      title: '$events.title',
-    }
-  }]).exec().catch());
+  [error, events] = await to(eventModel.find(
+    { '_id': new ObjectId(event_id) }
+  )
+    .catch());
+  // [error, events] = await to(userModel.aggregate([{
+  //   $unwind: '$events'
+  // }, {
+  //   $match:
+  //   {
+  //     $and: [{
+  //       _id: new ObjectId(partner_id)
+  //     }, {
+  //       'events._id': new ObjectId(event_id)
+  //     }]
+  //   }
+  // }, {
+  //   $project: {
+  //     _id: '$events._id',
+  //     imageURL: '$events.imageURL',
+  //     title: '$events.title',
+  //   }
+  // }]).exec().catch());
 
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!events.length) {
@@ -129,38 +146,42 @@ async function microcreditCampaign(request: RequestWithUser, response: Response,
   const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
 
   let error: Error, campaigns: MicrocreditCampaign[];
-  [error, campaigns] = await to(userModel.aggregate([{
-    $unwind: '$microcredit'
-  }, {
-    $match:
-    {
-      $and: [{
-        _id: new ObjectId(partner_id)
-      }, {
-        'microcredit._id': new ObjectId(campaign_id)
-      }]
-    }
-  }, {
-    $project: {
-      _id: '$microcredit._id',
-      imageURL: '$microcredit.imageURL',
-      title: '$microcredit.title',
-      address: '$microcredit.address',
-      status: '$microcredit.status',
+  [error, campaigns] = await to(microcreditModel.find(
+    { '_id': new ObjectId(campaign_id) }
+  )
+    .catch());
+  // [error, campaigns] = await to(userModel.aggregate([{
+  //   $unwind: '$microcredit'
+  // }, {
+  //   $match:
+  //   {
+  //     $and: [{
+  //       _id: new ObjectId(partner_id)
+  //     }, {
+  //       'microcredit._id': new ObjectId(campaign_id)
+  //     }]
+  //   }
+  // }, {
+  //   $project: {
+  //     _id: '$microcredit._id',
+  //     imageURL: '$microcredit.imageURL',
+  //     title: '$microcredit.title',
+  //     address: '$microcredit.address',
+  //     status: '$microcredit.status',
 
-      quantitative: '$microcredit.quantitative',
-      redeemable: '$microcredit.redeemable',
-      stepAmount: '$microcredit.stepAmount',
-      maxAmount: '$microcredit.maxAmount',
-      maxAllowed: '$microcredit.maxAllowed',
-      minAllowed: '$microcredit.minAllowed',
+  //     quantitative: '$microcredit.quantitative',
+  //     redeemable: '$microcredit.redeemable',
+  //     stepAmount: '$microcredit.stepAmount',
+  //     maxAmount: '$microcredit.maxAmount',
+  //     maxAllowed: '$microcredit.maxAllowed',
+  //     minAllowed: '$microcredit.minAllowed',
 
-      redeemStarts: '$microcredit.redeemStarts',
-      redeemEnds: '$microcredit.redeemEnds',
-      startsAt: '$microcredit.startsAt',
-      expiresAt: '$microcredit.expiresAt'
-    }
-  }]).exec().catch());
+  //     redeemStarts: '$microcredit.redeemStarts',
+  //     redeemEnds: '$microcredit.redeemEnds',
+  //     startsAt: '$microcredit.startsAt',
+  //     expiresAt: '$microcredit.expiresAt'
+  //   }
+  // }]).exec().catch());
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!campaigns.length) {
     return next(new NotFoundException('CAMPAIGN_NOT_EXISTS'));

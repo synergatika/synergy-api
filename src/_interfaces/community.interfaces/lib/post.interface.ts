@@ -10,8 +10,8 @@ export interface Post {
   contentFiles: string[];
   access: string;
 
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 
-  partner: Partner;
+  partner: Partner | string;
 }

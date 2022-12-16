@@ -691,45 +691,88 @@ class AuthenticationController implements Controller {
     const newAccount = serviceInstance.unlockWallet(data.user.account, data.extras.encryptBy);
 
     if (data.user.access === 'member') {
-      await serviceInstance.getLoyaltyAppContract()
+
+      let error: Error, result: any;
+      [error, result] = await to(serviceInstance.getLoyaltyAppContract()
         .then((instance) => {
           return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
-            .then(async (result: any) => {
-              await this.transaction.create({
-                ...result,
-                user_id: data.user._id, type: "RegisterMember"
-              });
-              if (data.user.email) {
-                next();
-              } else {
-                response.status(response.locals.res.code).send(response.locals.res.body);
-              }
-            })
-            .catch((error: Error) => {
-              next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-            })
         })
         .catch((error: Error) => {
-          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+          return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
         })
+      );
+      if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+      await this.transaction.create({
+        ...result,
+        user_id: data.user._id,
+        type: "RegisterMember"
+      });
+
+      if (data.user.email) {
+        next();
+      } else {
+        response.status(response.locals.res.code).send(response.locals.res.body);
+      }
+
+      // await serviceInstance.getLoyaltyAppContract()
+      //   .then((instance) => {
+      //     return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
+      //       .then(async (result: any) => {
+      //         await this.transaction.create({
+      //           ...result,
+      //           user_id: data.user._id, type: "RegisterMember"
+      //         });
+      //         if (data.user.email) {
+      //           next();
+      //         } else {
+      //           response.status(response.locals.res.code).send(response.locals.res.body);
+      //         }
+      //       })
+      //       .catch((error: Error) => {
+      //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      //       })
+      //   })
+      //   .catch((error: Error) => {
+      //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      //   })
     } else if (data.user.access === 'partner') {
-      await serviceInstance.getLoyaltyAppContract()
+
+      let error: Error, result: any;
+      [error, result] = await to(serviceInstance.getLoyaltyAppContract()
         .then((instance) => {
           return instance.registerPartner(newAccount.address, serviceInstance.address)
-            .then(async (result: any) => {
-              await this.transaction.create({
-                ...result,
-                user_id: data.user._id, type: "RegisterPartner"
-              });
-              next();
-            })
-            .catch((error: Error) => {
-              next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-            })
         })
         .catch((error: Error) => {
-          next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+          return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
         })
+      );
+      if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+      await this.transaction.create({
+        ...result,
+        user_id: data.user._id,
+        type: "RegisterPartner"
+      });
+      next();
+
+      // await serviceInstance.getLoyaltyAppContract()
+      //   .then((instance) => {
+      //     return instance.registerPartner(newAccount.address, serviceInstance.address)
+      //       .then(async (result: any) => {
+      //         await this.transaction.create({
+      //           ...result,
+      //           user_id: data.user._id, type: "RegisterPartner"
+      //         });
+      //         next();
+      //       })
+      //       .catch((error: Error) => {
+      //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      //       })
+      //   })
+      //   .catch((error: Error) => {
+      //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      //   })
     }
   }
 

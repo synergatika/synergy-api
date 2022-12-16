@@ -20,85 +20,85 @@ import { User } from '../_interfaces/index';
 //   contractRef: String
 // }, { timestamps: true });
 
-const microcreditCampaignSchema = new mongoose.Schema({
-  title: String,
-  subtitle: String,
-  slug: String,
-  terms: String,
-  description: String,
-  contentFiles: [String],
+// const microcreditCampaignSchema = new mongoose.Schema({
+//   title: String,
+//   subtitle: String,
+//   slug: String,
+//   terms: String,
+//   description: String,
+//   contentFiles: [String],
 
-  category: String,
-  imageURL: String,
-  access: String,
+//   category: String,
+//   imageURL: String,
+//   access: String,
 
-  quantitative: Boolean,
-  redeemable: {
-    type: Boolean,
-    default: true
-  },
-  stepAmount: Number,
-  minAllowed: Number,
-  maxAllowed: Number,
-  maxAmount: Number,
+//   quantitative: Boolean,
+//   redeemable: {
+//     type: Boolean,
+//     default: true
+//   },
+//   stepAmount: Number,
+//   minAllowed: Number,
+//   maxAllowed: Number,
+//   maxAmount: Number,
 
-  redeemStarts: Number,
-  redeemEnds: Number,
-  startsAt: Number,
-  expiresAt: Number,
+//   redeemStarts: Number,
+//   redeemEnds: Number,
+//   startsAt: Number,
+//   expiresAt: Number,
 
-  status: {
-    type: String,
-    enum: ['draft', 'published'],
-    default: 'draft'
-  },
+//   status: {
+//     type: String,
+//     enum: ['draft', 'published'],
+//     default: 'draft'
+//   },
 
-  address: String,
-  transactionHash: String,
+//   address: String,
+//   transactionHash: String,
 
-  //  supports: [microcreditSupportSchema]
-}, { timestamps: true });
+//   //  supports: [microcreditSupportSchema]
+// }, { timestamps: true });
 
-const offerSchema = new mongoose.Schema({
-  title: String,
-  subtitle: String,
-  slug: String,
-  description: String,
-  imageURL: String,
-  cost: Number,
-  instructions: String,
-  expiresAt: Number
-}, { timestamps: true });
+// const offerSchema = new mongoose.Schema({
+//   title: String,
+//   subtitle: String,
+//   slug: String,
+//   description: String,
+//   imageURL: String,
+//   cost: Number,
+//   instructions: String,
+//   expiresAt: Number
+// }, { timestamps: true });
 
-const postSchema = new mongoose.Schema({
-  title: String,
-  slug: String,
-  subtitle: String,
-  description: String,
-  contentFiles: [String],
-  imageURL: String,
-  access: {
-    type: String,
-    enum: ['public', 'private', 'partners'],
-    default: 'public'
-  },
-}, { timestamps: true });
+// const postSchema = new mongoose.Schema({
+//   title: String,
+//   slug: String,
+//   subtitle: String,
+//   description: String,
+//   contentFiles: [String],
+//   imageURL: String,
+//   access: {
+//     type: String,
+//     enum: ['public', 'private', 'partners'],
+//     default: 'public'
+//   },
+// }, { timestamps: true });
 
-const eventSchema = new mongoose.Schema({
-  title: String,
-  slug: String,
-  subtitle: String,
-  description: String,
-  contentFiles: [String],
-  imageURL: String,
-  access: {
-    type: String,
-    enum: ['public', 'private', 'partners'],
-    default: 'public'
-  },
-  location: String,
-  dateTime: Number
-}, { timestamps: true });
+// const eventSchema = new mongoose.Schema({
+//   title: String,
+//   slug: String,
+//   subtitle: String,
+//   description: String,
+//   contentFiles: [String],
+//   imageURL: String,
+//   access: {
+//     type: String,
+//     enum: ['public', 'private', 'partners'],
+//     default: 'public'
+//   },
+//   location: String,
+//   dateTime: Number
+// }, { timestamps: true });
 
 const addressSchema = new mongoose.Schema({
   street: String,
@@ -189,10 +189,10 @@ const userSchema = new mongoose.Schema({
   oneClickToken: String,
   oneClickExpiration: Number,
   // auth: authSchema,
-  offers: [offerSchema],
-  posts: [postSchema],
-  events: [eventSchema],
-  microcredit: [microcreditCampaignSchema],
+  // offers: [offerSchema],
+  // posts: [postSchema],
+  // events: [eventSchema],
+  // microcredit: [microcreditCampaignSchema],
   previousAccounts: [Object],
   createdBy: {
     type: String,
