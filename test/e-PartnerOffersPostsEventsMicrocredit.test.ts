@@ -9,7 +9,6 @@ chai.use(require('chai-http'));
 import * as fs from 'fs';
 
 import { imagesLocation, partner_a, partner_c, user_a, offer_a, offer_b, offer_d, post_a, post_b, post_c, event_a, event_b, microcredit_a, microcredit_b, microcredit_c, microcredit_d, microcredit_f, offers, events } from './_structs.test';
-import { Console } from '@sentry/node/dist/integrations';
 
 describe("Partner - Offers, Posts, Events", () => {
   describe("Partner - Offers (/loyalty/offers)", () => {
@@ -44,7 +43,6 @@ describe("Partner - Offers, Posts, Events", () => {
           for (i = 0; i < (res.body.data).length; i++) {
             offers.push((res.body.data)[i]);
           }
-          console.log(offers);
           done();
         });
     });
@@ -71,8 +69,6 @@ describe("Partner - Offers, Posts, Events", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .end((err, res) => {
           res.should.have.status(200);
-          console.log(res)
-          console.log(err)
           res.body.should.be.a('object');
           res.body.should.have.property('data');
           done();

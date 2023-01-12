@@ -18,9 +18,9 @@ import { User } from '../../_interfaces/index';
 import userModel from '../../models/user.model';
 import postModel from '../../models/post.model';
 import eventModel from '../../models/event.model';
-import microcredit from '../../models/microcredit.model';
+import microcredit from '../../models/campaign.model';
 import offerModel from '../../models/offer.model';
-import microcreditModel from '../../models/microcredit.model';
+import microcreditModel from '../../models/campaign.model';
 
 
 class SlugHelper {

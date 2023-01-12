@@ -285,8 +285,6 @@ class OffersController implements Controller {
       )
     );
 
-    console.log(offerStatistics);
-
     response.status(200).send({
       data: offerStatistics[0],
       code: 200
@@ -426,7 +424,6 @@ class OffersController implements Controller {
   }
 
   private readStatistics = async (offers: LoyaltyOffer[], status: string) => {
-    console.log(offers)
     let error: Error, statistics: LoyaltyStatistics[];
     [error, statistics] = await to(this.transaction.aggregate([{
       $match: {
@@ -459,7 +456,7 @@ class OffersController implements Controller {
     if (error) return [];
 
     const byDate: LoyaltyStatistics[] = await this.readDailyStatistics(offers, status);
-    console.log(byDate);
+
     const fullStatistics = statistics.map((a: LoyaltyStatistics) =>
       Object.assign({}, a,
         {
@@ -467,7 +464,6 @@ class OffersController implements Controller {
         }
       )
     );
-    console.log(fullStatistics)
     return fullStatistics;
   }
 

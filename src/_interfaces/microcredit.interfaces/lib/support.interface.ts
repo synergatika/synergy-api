@@ -1,4 +1,9 @@
+import { User } from '@sentry/node';
+import { Schema } from 'mongoose';
+import { Member } from '_interfaces/users.interfaces';
+import { MicrocreditCampaign } from './campaign.interface';
 import { MicrocreditTransaction } from './transaction.interface';
+import { ObjectId } from 'mongodb';
 
 export enum SupportStatus {
   COMPLETED = 'completed',
@@ -6,28 +11,47 @@ export enum SupportStatus {
   UNPAID = 'unpaid'
 }
 
+export interface SupportPayment {
+  _id: string;
+  method: {
+    bic: string,
+    name: string,
+    value: string
+  };
+}
+
 export interface MicrocreditSupport {
-  _id?: string;
-  support_id: string;
+  _id?: ObjectId;
 
-  partner_id: string;
-  member_id: string;
+  member: Member | string;
+  campaign: MicrocreditCampaign | string;
+  // support_id: string;
 
-  campaign_id: string;
-  address: string;
-  contractIndex: number;
-  contractRef: string;
+  // partner_id: string;
+  // member_id: string;
 
-  payment_id: string;
-  method: string;
-  status: SupportStatus;
+  // campaign_id: string;
+  // address: string;
+  // contractIndex: number;
+  // contractRef: string;
+
+  // payment_id: string;
+  // method: string;
+  // status: SupportStatus;
 
   initialTokens: number;
   currentTokens: number;
 
-  type: string;
-  transactions: MicrocreditTransaction[];
+  payment: SupportPayment;
+  status: SupportStatus;
+  // type: string;
+  // transactions: MicrocreditTransaction[];
 
-  createdAt: Date;
-  updatedAt: Date;
+  /** Blockchain Variables */
+  contractRef?: string;
+  contractIndex?: string;
+  /** ----- */
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }

@@ -14,7 +14,7 @@ import { NotFoundException } from '../../_exceptions/index';
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import { Partner, LoyaltyOffer, MicrocreditCampaign, MicrocreditSupport, MicrocreditTokens } from '../../_interfaces/index';
+import { Partner, LoyaltyOffer, MicrocreditCampaign, MicrocreditSupport, MicrocreditTokens, SupportStatus } from '../../_interfaces/index';
 
 class CheckMiddleware {
 
@@ -79,6 +79,11 @@ class CheckMiddleware {
     if (campaign.status === 'draft') {
       return next(new NotFoundException('CAMPAIGN_NOT_PUBLISHED')); //"Campaign's has not been published yet",
     }
+    console.log("-----")
+    console.log(parseInt(balance.earnedTokens))
+    console.log((data._amount))
+    console.log((campaign.maxAmount))
+    console.log("-----")
     if (((parseInt(balance.earnedTokens) + data._amount) > campaign.maxAmount) && (campaign.maxAmount > 0)) {
       return next(new NotFoundException('OVER_TOTAL_MAX'));
     }
@@ -119,10 +124,13 @@ class CheckMiddleware {
     if (campaign.startsAt > seconds) {
       return next(new NotFoundException('CAMPAIGN_NOT_STARTED')); //"Campaign's supporting period has not yet started",
     }
-    if (((support.type === 'ReceiveFund') || (support.type === 'SpendFund')) && (support.initialTokens - support.currentTokens > 0)) {
+    if ((support.status == SupportStatus.PAID) && (support.initialTokens - support.currentTokens > 0)) {
       return next(new NotFoundException('TOKENS_REDEEMED')); //"User has already redeem some tokens",
     }
-    if (((support.type === 'ReceiveFund') || (support.type === 'SpendFund')) && (campaign.redeemStarts < seconds)) {
+    console.log(campaign.redeemStarts)
+    console.log(seconds);
+    console.log(campaign.redeemStarts < seconds)
+    if ((support.status == SupportStatus.PAID) && (campaign.redeemStarts < seconds)) {
       return next(new NotFoundException('CAMPAIGN_REDEEM_STARTED')); //"Campaign's redeeming has started",
     }
     if (campaign.redeemEnds < seconds) {
@@ -148,9 +156,14 @@ class CheckMiddleware {
     if (campaign.redeemEnds < seconds) {
       return next(new NotFoundException('CAMPAIGN_REDEEM_ENDED')); //"Campaign's redeeming period has expired",
     }
-    if ((support.type === 'PromiseFund') || (support.type === 'RevertFund')) {
+    if (support.status === SupportStatus.UNPAID) {
       return next(new NotFoundException('SUPPORT_NOT_PAID'));  // "User has not paid for the support",
     }
+    // if ((support.type === 'PromiseFund') || (support.type === 'RevertFund')) {
+    //   return next(new NotFoundException('SUPPORT_NOT_PAID'));  // "User has not paid for the support",
+    // }
+    console.log(support)
+    console.log(_tokens)
     if ((support.currentTokens) < _tokens) {
       return next(new NotFoundException('NOT_ENOUGH_TOKENS'));  //"User has not enough tokens to redeem",
     }

@@ -18,7 +18,7 @@ import { User, MicrocreditCampaign, MicrocreditSupport } from '../_interfaces/in
  */
 import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
-import microcreditModel from '../models/microcredit.model';
+import microcreditModel from '../models/campaign.model';
 
 class Schedule {
   private user = userModel;
@@ -120,7 +120,7 @@ class Schedule {
       const campaignWithSupports = campaigns.map((a: MicrocreditCampaign) =>
         Object.assign({}, a,
           {
-            supports: (supports).filter((b: MicrocreditSupport) => (b.campaign_id).toString() === (a._id).toString()),
+            supports: (supports).filter((b: MicrocreditSupport) => ((b.campaign as MicrocreditCampaign)._id).toString() === (a._id).toString()),
           }
         )
       );

@@ -44,7 +44,7 @@ const offsetParams = OffsetHelper.offsetLimit;
  */
 import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
-import microcreditModel from '../models/microcredit.model';
+import microcreditModel from '../models/campaign.model';
 
 class MicrocreditSupportsController implements Controller {
   public path = '/microcredit/supports';
@@ -115,7 +115,7 @@ class MicrocreditSupportsController implements Controller {
       Object.assign({}, a,
         {
           status: this.defineSupportStatus(a),
-          campaign: (campaigns).find((b: MicrocreditCampaign) => (b._id).toString() === (a.campaign_id).toString()),
+          campaign: (campaigns).find((b: MicrocreditCampaign) => (b._id).toString() === ((a.campaign as MicrocreditCampaign)._id).toString()),
         }
       )
     );
@@ -214,7 +214,7 @@ class MicrocreditSupportsController implements Controller {
       Object.assign({}, a,
         {
           status: this.defineSupportStatus(a),
-          transactions: (transactions.find((e: { _id: string, transactions: MicrocreditTransaction[] }) => e._id === a.support_id)).transactions
+          transactions: (transactions.find((e: { _id: string, transactions: MicrocreditTransaction[] }) => e._id === a._id.toString())).transactions
         }
       )
     );
@@ -239,7 +239,7 @@ class MicrocreditSupportsController implements Controller {
   private readCampaigns = async (supports: MicrocreditSupport[]) => {
     let error: Error, campaigns: MicrocreditCampaign[];
     [error, campaigns] = await to(this.microcreditModel.find(
-      { _id: { $in: supports.map(a => new ObjectId(a.campaign_id)) } }
+      { _id: { $in: supports.map(a => new ObjectId((a.campaign as MicrocreditCampaign)._id)) } }
     )
       .populate([{
         path: 'partner'

@@ -23,7 +23,10 @@ async function member(request: RequestWithUser, response: Response, next: NextFu
 
   let error: Error, member: Member;
   [error, member] = await to(userModel.findOne({
-    $or: [{ email: _to }, { card: _to }, { _id: ObjectId.isValid(_to) ? new ObjectId(_to) : new ObjectId() }]
+    $and: [
+      { $or: [{ email: _to }, { card: _to }, { _id: ObjectId.isValid(_to) ? new ObjectId(_to) : new ObjectId() }] },
+      { access: UserAccess.MEMBER }
+    ]
   }).select({
     "_id": 1, "account": 1,
     "email": 1, "card": 1,

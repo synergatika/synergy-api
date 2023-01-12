@@ -137,6 +137,8 @@ describe("Microcredit", () => {
           _tokens: 10
         })
         .end((err, res) => {
+          console.log(err);
+          console.log(res.body);
           res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('message');
@@ -228,6 +230,8 @@ describe("Microcredit", () => {
           _amount: 15,
         })
         .end((err, res) => {
+          console.log(res.body);
+          console.log(err);
           res.should.have.status(404);
           res.body.should.be.a('object');
           res.body.should.have.property('message');

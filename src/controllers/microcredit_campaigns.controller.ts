@@ -66,7 +66,7 @@ const offsetParams = OffsetHelper.offsetLimit;
  */
 import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
-import microcreditModel from '../models/microcredit.model';
+import microcreditModel from '../models/campaign.model';
 import failedTransactionModel from '../models/failed.transaction.model';
 
 class MicrocreditCampaignsController implements Controller {
@@ -91,7 +91,7 @@ class MicrocreditCampaignsController implements Controller {
       this.createCampaign,
       usersMiddleware.partner,
       checkMiddleware.canPublishMicrocredit,
-      this.registerMicrocredit);
+      this.publishCampaign);
 
     this.router.get(`${this.path}/public/:offset`,
       this.readCampaigns);
@@ -136,7 +136,7 @@ class MicrocreditCampaignsController implements Controller {
       usersMiddleware.partner,
       itemsMiddleware.microcreditCampaign,
       checkMiddleware.canPublishMicrocredit,
-      this.registerMicrocredit);
+      this.publishCampaign);
 
     this.router.delete(`${this.path}/:partner_id/:campaign_id`,
       authMiddleware, accessMiddleware.onlyAsPartner,
@@ -315,15 +315,41 @@ class MicrocreditCampaignsController implements Controller {
     }
   }
 
-  private registerMicrocredit = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private publishCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
-    const currentCampaign: MicrocreditCampaign = response.locals.campaign;
+    const campaign: MicrocreditCampaign = response.locals.campaign;
 
+    let _error: Error, _result: any;
+    [_error, _result] = await to(this.registerMicrocredit(user, campaign));
+    if (_error) {
+      this.escapeBlockchainError(_error, "CreateMicrocredit");
+      return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${_error}`));
+    }
+
+    let error: Error, updated_campaign: MicrocreditCampaign;
+    [error, updated_campaign] = await to(this.microcreditModel.findOneAndUpdate({
+      _id: campaign._id
+    }, {
+      '$set': {
+        'status': 'published', // published
+        'address': _result.address,
+        'transactionHash': _result.transactionHash,
+      }
+    }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    response.status(200).send({
+      message: "Success! Microcredit Campaign with ID: " + campaign._id + " has been published!",
+      code: 200
+    });
+  }
+
+  private registerMicrocredit = async (user: User, campaign: MicrocreditCampaign) => {
     const dates = {
-      startsAt: (convertHelper.roundDate(currentCampaign.startsAt, this.campaignHours[0])).toString(),
-      expiresAt: (convertHelper.roundDate(currentCampaign.expiresAt, this.campaignHours[1])).toString(),
-      redeemStarts: (convertHelper.roundDate(currentCampaign.redeemStarts, this.campaignHours[0])).toString(),
-      redeemEnds: (convertHelper.roundDate(currentCampaign.redeemEnds, this.campaignHours[1])).toString()
+      startsAt: (convertHelper.roundDate(campaign.startsAt, this.campaignHours[0])).toString(),
+      expiresAt: (convertHelper.roundDate(campaign.expiresAt, this.campaignHours[1])).toString(),
+      redeemStarts: (convertHelper.roundDate(campaign.redeemStarts, this.campaignHours[0])).toString(),
+      redeemEnds: (convertHelper.roundDate(campaign.redeemEnds, this.campaignHours[1])).toString()
     };
 
     Object.keys(dates).forEach((key: string) => {
@@ -333,68 +359,94 @@ class MicrocreditCampaignsController implements Controller {
         (dates as any)[key] = ((dates as any)[key]).slice(0, ((dates as any)[key]).length - 3);
     });
 
-    let error: Error, result: any;
-    [error, result] = await to(serviceInstance.startNewMicrocredit(
+    return (serviceInstance.startNewMicrocredit(
       user.account.address,
-      1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
+      1, campaign.maxAmount, campaign.maxAmount, campaign.minAllowed,
       parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
-      currentCampaign.quantitative)
+      campaign.quantitative)
     );
-    if (error) {
-      this.escapeBlockchainError(error, "CreateMicrocredit");
-      return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-    }
-
-    await this.microcreditModel.findOneAndUpdate({
-      _id: currentCampaign._id
-    }, {
-      '$set': {
-        'status': 'published', // published
-        'address': result.address,
-        'transactionHash': result.transactionHash,
-      }
-    });
-
-    response.status(200).send({
-      message: "Success! Microcredit Campaign with ID: " + currentCampaign._id + " has been published!",
-      code: 200
-    });
-    // await serviceInstance.startNewMicrocredit(user.account.address,
-    //   1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
-    //   parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
-    //   currentCampaign.quantitative)
-    //   .then(async (result: any) => {
-
-    //     await this.microcreditModel.findOneAndUpdate({
-    //       _id: currentCampaign._id
-    //     }, {
-    //       '$set': {
-    //         'status': 'published', // published
-    //         'address': result.address,
-    //         'transactionHash': result.transactionHash,
-    //       }
-    //     });
-
-    //     // await this.user.updateOne({
-    //     //   _id: user._id,
-    //     //   'microcredit._id': currentCampaign._id
-    //     // }, {
-    //     //   '$set': {
-    //     //     'microcredit.$.status': 'published', // published
-    //     //     'microcredit.$.address': result.address,
-    //     //     'microcredit.$.transactionHash': result.transactionHash,
-    //     //   }
-    //     // });
-
-    //     response.status(200).send({
-    //       message: "Success! Microcredit Campaign with ID: " + currentCampaign._id + " has been published!",
-    //       code: 200
-    //     });
-    //   })
-    //   .catch((error: Error) => {
-    //     next(new UnprocessableEntityException(error.message))
-    //   })
   }
+
+  // private registerMicrocredit = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   const user: User = request.user;
+  //   const currentCampaign: MicrocreditCampaign = response.locals.campaign;
+
+  //   const dates = {
+  //     startsAt: (convertHelper.roundDate(currentCampaign.startsAt, this.campaignHours[0])).toString(),
+  //     expiresAt: (convertHelper.roundDate(currentCampaign.expiresAt, this.campaignHours[1])).toString(),
+  //     redeemStarts: (convertHelper.roundDate(currentCampaign.redeemStarts, this.campaignHours[0])).toString(),
+  //     redeemEnds: (convertHelper.roundDate(currentCampaign.redeemEnds, this.campaignHours[1])).toString()
+  //   };
+
+  //   Object.keys(dates).forEach((key: string) => {
+  //     if (`${process.env.PRODUCTION}` == 'true')
+  //       (dates as any)[key] = (dates as any)[key] + "000000";
+  //     else
+  //       (dates as any)[key] = ((dates as any)[key]).slice(0, ((dates as any)[key]).length - 3);
+  //   });
+
+  //   let error: Error, result: any;
+  //   [error, result] = await to(serviceInstance.startNewMicrocredit(
+  //     user.account.address,
+  //     1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
+  //     parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
+  //     currentCampaign.quantitative)
+  //   );
+  //   if (error) {
+  //     this.escapeBlockchainError(error, "CreateMicrocredit");
+  //     return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //   }
+
+  //   await this.microcreditModel.findOneAndUpdate({
+  //     _id: currentCampaign._id
+  //   }, {
+  //     '$set': {
+  //       'status': 'published', // published
+  //       'address': result.address,
+  //       'transactionHash': result.transactionHash,
+  //     }
+  //   });
+
+  //   response.status(200).send({
+  //     message: "Success! Microcredit Campaign with ID: " + currentCampaign._id + " has been published!",
+  //     code: 200
+  //   });
+  //   // await serviceInstance.startNewMicrocredit(user.account.address,
+  //   //   1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
+  //   //   parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
+  //   //   currentCampaign.quantitative)
+  //   //   .then(async (result: any) => {
+
+  //   //     await this.microcreditModel.findOneAndUpdate({
+  //   //       _id: currentCampaign._id
+  //   //     }, {
+  //   //       '$set': {
+  //   //         'status': 'published', // published
+  //   //         'address': result.address,
+  //   //         'transactionHash': result.transactionHash,
+  //   //       }
+  //   //     });
+
+  //   //     // await this.user.updateOne({
+  //   //     //   _id: user._id,
+  //   //     //   'microcredit._id': currentCampaign._id
+  //   //     // }, {
+  //   //     //   '$set': {
+  //   //     //     'microcredit.$.status': 'published', // published
+  //   //     //     'microcredit.$.address': result.address,
+  //   //     //     'microcredit.$.transactionHash': result.transactionHash,
+  //   //     //   }
+  //   //     // });
+
+  //   //     response.status(200).send({
+  //   //       message: "Success! Microcredit Campaign with ID: " + currentCampaign._id + " has been published!",
+  //   //       code: 200
+  //   //     });
+  //   //   })
+  //   //   .catch((error: Error) => {
+  //   //     next(new UnprocessableEntityException(error.message))
+  //   //   })
+  // }
 
   private readCampaignsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: PartnerID["partner_id"] = request.params.partner_id;
@@ -772,7 +824,6 @@ class MicrocreditCampaignsController implements Controller {
     });
     return tokens;
   }
-
 
   private readRevertSupports = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
     let error: Error, supports: any[];

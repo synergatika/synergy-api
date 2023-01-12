@@ -86,26 +86,34 @@ class AuthenticationController implements Controller {
      */
     this.router.get(`${this.path}/check_identifier/:identifier`,
       authMiddleware, accessMiddleware.onlyAsPartner,
-      validationParamsMiddleware(IdentifierDto), this.checkIdentifier);
+      validationParamsMiddleware(IdentifierDto),
+      this.checkIdentifier);
 
     this.router.put(`${this.path}/link_card/:email`,
       authMiddleware, accessMiddleware.onlyAsPartner,
-      validationParamsMiddleware(EmailDto), validationBodyMiddleware(CardDto), this.link_card);
+      validationParamsMiddleware(EmailDto), validationBodyMiddleware(CardDto),
+      this.link_card);
 
     this.router.put(`${this.path}/link_email/:card`,
       authMiddleware, accessMiddleware.onlyAsPartner,
-      validationParamsMiddleware(CardDto), validationBodyMiddleware(EmailDto), this.link_email,
-      emailService.userRegistration);
+      validationParamsMiddleware(CardDto), validationBodyMiddleware(EmailDto),
+      this.link_email,
+      // emailService.userRegistration
+    );
 
     /**
      * Authentication
      */
     this.router.post(`${this.path}/authenticate`,
-      validationBodyMiddleware(AuthenticationDto), this.authAuthenticate,
-      this.askVerification, emailService.emailVerification);
+      validationBodyMiddleware(AuthenticationDto),
+      this.authAuthenticate,
+      // this.askVerification,
+      // emailService.emailVerification
+    );
 
     this.router.post(`${this.path}/logout`,
-      authMiddleware, this.loggingOut);
+      authMiddleware,
+      this.loggingOut);
 
     /**
      * Register & Invite
@@ -113,41 +121,53 @@ class AuthenticationController implements Controller {
     this.router.post(`${this.path}/register/one-click`,
       blockchainStatus,
       validationBodyMiddleware(EmailDto),
-      this.oneClickRegister, this.registerAccount,
-      emailService.userRegistration);
+      this.oneClickRegister,
+      // this.registerAccount,
+      // emailService.userRegistration
+    );
 
     this.router.post(`${this.path}/register/auto-member`,
       blockchainStatus,
       validationBodyMiddleware(RegisterUserWithPasswordDto),
-      this.autoRegisterMember, this.registerAccount, /*this.askVerification,*/
-      emailService.emailVerification);
+      this.autoRegisterMember,
+      // this.registerAccount, /*this.askVerification,*/
+      // emailService.emailVerification
+    );
 
     this.router.post(`${this.path}/register/auto-partner`,
       blockchainStatus,
       validationBodyMiddleware(RegisterPartnerWithPasswordDto),
-      this.autoRegisterPartner, this.registerAccount, /*this.askVerification,*/
-      emailService.internalActivation,
-      emailService.emailVerification);
+      this.autoRegisterPartner,
+      // this.registerAccount, /*this.askVerification,*/
+      // emailService.internalActivation,
+      // emailService.emailVerification
+    );
 
     this.router.post(`${this.path}/register/invite-member`,
       blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsAdminOrPartner, validationBodyMiddleware(RegisterUserWithoutPasswordDto),
-      this.inviteMember, this.registerAccount,
-      emailService.userRegistration);
+      this.inviteMember,
+      // this.registerAccount,
+      // emailService.userRegistration
+    );
 
     this.router.post(`${this.path}/register/invite-partner`,
       blockchainStatus,
-      authMiddleware, accessMiddleware.onlyAsAdmin, validationBodyMiddleware(RegisterPartnerWithoutPasswordDto),
-      this.invitePartner, this.registerAccount,
-      emailService.userRegistration);
+      authMiddleware, accessMiddleware.onlyAsAdmin,
+      validationBodyMiddleware(RegisterPartnerWithoutPasswordDto),
+      this.invitePartner,
+      // this.registerAccount,
+      // emailService.userRegistration
+    );
 
     /**
      * Verify Email Address
      */
     this.router.get(`${this.path}/verify_email/:email`,
       validationParamsMiddleware(EmailDto),
-      this.askVerification,
-      emailService.emailVerification);
+      this.askVerification);
+    // this.askVerification,
+    // emailService.emailVerification);
     this.router.post(`${this.path}/verify_email`,
       validationBodyMiddleware(CheckTokenDto),
       this.checkVerification);
@@ -162,11 +182,16 @@ class AuthenticationController implements Controller {
       authMiddleware, validationBodyMiddleware(ChangePassInDto),
       this.changePassInside);
     this.router.get(`${this.path}/forgot_pass/:email`,
-      validationParamsMiddleware(EmailDto), this.askRestoration, emailService.passwordRestoration);
+      validationParamsMiddleware(EmailDto),
+      this.askRestoration,
+      //emailService.passwordRestoration
+    );
     this.router.post(`${this.path}/forgot_pass`,
-      validationBodyMiddleware(CheckTokenDto), this.checkRestoration);
+      validationBodyMiddleware(CheckTokenDto),
+      this.checkRestoration);
     this.router.put(`${this.path}/forgot_pass`,
-      validationBodyMiddleware(ChangePassOutDto), this.changePassOutside);
+      validationBodyMiddleware(ChangePassOutDto),
+      this.changePassOutside);
 
     /**
      * Activate - Deactivate Account
@@ -174,24 +199,28 @@ class AuthenticationController implements Controller {
     this.router.put(`${this.path}/deactivate`,
       authMiddleware, validationBodyMiddleware(DeactivationDto),
       this.autoDeactivation,
-      emailService.internalDeactivation,
-      emailService.accountDeactivation);
+      // emailService.internalDeactivation,
+      // emailService.accountDeactivation
+    );
 
     this.router.put(`${this.path}/activate/:user_id`,
       authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID),
       this.activateUser,
-      emailService.accountActivation);
+      // emailService.accountActivation
+    );
 
     this.router.put(`${this.path}/deactivate/:user_id`,
       authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID),
       this.deactivateUser,
-      emailService.accountDeactivation);
+      // emailService.accountDeactivation
+    );
 
     this.router.put(`${this.path}/delete`,
       authMiddleware,
       this.autoDeletion,
-      emailService.internalDeletion,
-      emailService.accountDeletion);
+      //emailService.internalDeletion,
+      //emailService.accountDeletion
+    );
   }
 
   /**
@@ -335,17 +364,30 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    response.locals = {
-      res: this.prefixedResponse(200, "User has been Invited to enjoy our Community!", {}, { "password": tempPassword }),
-      registeredBy: request.user,
-      registrationType: 'invite',
-      extras: extras,
-      user: {
-        email: data.email,
-        password: tempPassword
-      }, token: null
-    };
-    next();
+    let email_result: string | Error;
+    email_result = await emailService.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'invite', request.user)
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    // response.locals = {
+    //   res: this.prefixedResponse(200, "User has been Invited to enjoy our Community!", {}, { "password": tempPassword }),
+    //   registeredBy: request.user,
+    //   registrationType: 'invite',
+    //   extras: extras,
+    //   user: {
+    //     email: data.email,
+    //     password: tempPassword
+    //   }, token: null
+    // };
+    // next();
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: {},
+        tempData: { "password": tempPassword }
+        // }
+      }
+    );
   }
 
   private oneClickRegister = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -397,13 +439,30 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    response.locals = {
-      user: user,
-      registrationType: 'one-click',
-      extras: extras,
-      res: this.prefixedResponse(200, "", { "registration": true, "oneClickToken": token.token }, { "password": tempPassword })
-    }
-    next();
+    let blockchain_result: string | Error;
+    blockchain_result = await this.createBlockchainAccount(user, encryptBy);
+    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+    let email_result: string | Error;
+    email_result = await emailService.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'one-click', null)
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: { "registration": true, "oneClickToken": token.token },
+        tempData: { "password": tempPassword }
+        // }
+      }
+    );
+    // response.locals = {
+    //   user: user,
+    //   registrationType: 'one-click',
+    //   extras: extras,
+    //   res: this.prefixedResponse(200, "", { "registration": true, "oneClickToken": token.token }, { "password": tempPassword })
+    // }
+    // next();
   }
 
   private autoRegisterMember
@@ -427,12 +486,31 @@ class AuthenticationController implements Controller {
       ).catch());
       if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-      response.locals = {
-        user: user,
-        extras: potensialUser.extras,
-        res: this.prefixedResponse(200, "Registration has been completed!", {}, { "token": potensialUser.extras.token })
-      }
-      next();
+
+      let blockchain_result: string | Error;
+      blockchain_result = await this.createBlockchainAccount(user, potensialUser.extras.encryptBy);
+      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+      let email_result: string | Error;
+      email_result = await emailService.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token)
+      if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+
+      response.status(200).send(
+        {
+          // body: {
+          message: "",
+          data: {},
+          tempData: { "token": potensialUser.extras.token }
+          // }
+        }
+      );
+      // response.locals = {
+      //   user: user,
+      //   extras: potensialUser.extras,
+      //   res: this.prefixedResponse(200, "Registration has been completed!", {}, { "token": potensialUser.extras.token })
+      // }
+      // next();
     }
 
   private autoRegisterPartner
@@ -456,16 +534,40 @@ class AuthenticationController implements Controller {
       ).catch());
       if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-      response.locals = {
-        user: user,
-        extras: potensialUser.extras,
-        res: this.prefixedResponse(200,
-          "Registration has been completed!",
-          {},
-          { "token": potensialUser.extras.token }
-        )
-      }
-      next();
+
+      let blockchain_result: string | Error;
+      blockchain_result = await this.createBlockchainAccount(user, potensialUser.extras.encryptBy);
+      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+      let email_result: string | Error;
+      email_result = await emailService.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token)
+      if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+      let internal_email_result: string | Error;
+      internal_email_result = await emailService.internalActivation2(request.headers['content-language'], user)
+      if (this.isError(internal_email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+
+      response.status(200).send(
+        {
+          // body: {
+          message: "",
+          data: {},
+          tempData: { "token": potensialUser.extras.token }
+          // }
+        }
+      );
+
+      // response.locals = {
+      //   user: user,
+      //   extras: potensialUser.extras,
+      //   res: this.prefixedResponse(200,
+      //     "Registration has been completed!",
+      //     {},
+      //     { "token": potensialUser.extras.token }
+      //   )
+      // }
+      // next();
     }
 
   private inviteMember = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -490,18 +592,36 @@ class AuthenticationController implements Controller {
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
 
-    response.locals = {
-      user: user,
-      registeredBy: request.user,
-      registrationType: 'invite',
-      extras: potensialUser.extras,
-      res: this.prefixedResponse(200,
-        "User has been Invited to enjoy our Community!",
-        {},
-        { "password": potensialUser.extras.tempPassword }
-      )
-    }
-    next();
+    let blockchain_result: string | Error;
+    blockchain_result = await this.createBlockchainAccount(user, potensialUser.extras.encryptBy);
+    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+    let email_result: string | Error;
+    email_result = await emailService.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user)
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: {},
+        tempData: { "password": potensialUser.extras.tempPassword }
+        // }
+      }
+    );
+
+    // response.locals = {
+    //   user: user,
+    //   registeredBy: request.user,
+    //   registrationType: 'invite',
+    //   extras: potensialUser.extras,
+    //   res: this.prefixedResponse(200,
+    //     "User has been Invited to enjoy our Community!",
+    //     {},
+    //     { "password": potensialUser.extras.tempPassword }
+    //   )
+    // }
+    // next();
   }
 
   private invitePartner = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -524,18 +644,36 @@ class AuthenticationController implements Controller {
     ).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    response.locals = {
-      user: user,
-      extras: potensialUser.extras,
-      registeredBy: request.user,
-      registrationType: 'invite',
-      res: this.prefixedResponse(200,
-        "User has been Invited to enjoy our Community!",
-        {},
-        { "password": potensialUser.extras.tempPassword }
-      )
-    }
-    next();
+    let blockchain_result: string | Error;
+    blockchain_result = await this.createBlockchainAccount(user, potensialUser.extras.encryptBy);
+    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+    let email_result: string | Error;
+    email_result = await emailService.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user)
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: {},
+        tempData: { "password": potensialUser.extras.tempPassword }
+        // }
+      }
+    );
+
+    // response.locals = {
+    //   user: user,
+    //   extras: potensialUser.extras,
+    //   registeredBy: request.user,
+    //   registrationType: 'invite',
+    //   res: this.prefixedResponse(200,
+    //     "User has been Invited to enjoy our Community!",
+    //     {},
+    //     { "password": potensialUser.extras.tempPassword }
+    //   )
+    // }
+    // next();
   }
 
   private initializeMember = async (auto: boolean, blockchain: boolean, data: any) => {
@@ -686,11 +824,22 @@ class AuthenticationController implements Controller {
     };
   }
 
-  private registerAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-    const data = response.locals;
-    const newAccount = serviceInstance.unlockWallet(data.user.account, data.extras.encryptBy);
+  private failedBlockchain = async (user_id: string, address: string, type: string) => {
 
-    if (data.user.access === 'member') {
+    // 
+    // let error: Error, result: any;
+    // [error, result] = await to(this.transaction.create({
+    //   user_id: user_id,
+    //   address: address,
+    //   type: type
+    // }).catch());
+
+  }
+
+  private createBlockchainAccount = async (user: User, encryptBy: string) => {
+    const newAccount = serviceInstance.unlockWallet(user.account, encryptBy);
+
+    if (user.access === 'member') {
 
       let error: Error, result: any;
       [error, result] = await to(serviceInstance.getLoyaltyAppContract()
@@ -698,45 +847,24 @@ class AuthenticationController implements Controller {
           return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
         })
         .catch((error: Error) => {
-          return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+          return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
         })
       );
-      if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      if (error) return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
 
       await this.transaction.create({
         ...result,
-        user_id: data.user._id,
+        user_id: user._id,
         type: "RegisterMember"
       });
 
-      if (data.user.email) {
-        next();
-      } else {
-        response.status(response.locals.res.code).send(response.locals.res.body);
-      }
-
-      // await serviceInstance.getLoyaltyAppContract()
-      //   .then((instance) => {
-      //     return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
-      //       .then(async (result: any) => {
-      //         await this.transaction.create({
-      //           ...result,
-      //           user_id: data.user._id, type: "RegisterMember"
-      //         });
-      //         if (data.user.email) {
-      //           next();
-      //         } else {
-      //           response.status(response.locals.res.code).send(response.locals.res.body);
-      //         }
-      //       })
-      //       .catch((error: Error) => {
-      //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-      //       })
-      //   })
-      //   .catch((error: Error) => {
-      //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-      //   })
-    } else if (data.user.access === 'partner') {
+      // if (user.email) {
+      //   next();
+      // } else {
+      //   response.status(response.locals.res.code).send(response.locals.res.body);
+      // }
+      return 'BLOCKCHAIN_REGISTERED';
+    } else if (user.access === 'partner') {
 
       let error: Error, result: any;
       [error, result] = await to(serviceInstance.getLoyaltyAppContract()
@@ -744,37 +872,112 @@ class AuthenticationController implements Controller {
           return instance.registerPartner(newAccount.address, serviceInstance.address)
         })
         .catch((error: Error) => {
-          return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+          return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
         })
       );
-      if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      if (error) return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
 
       await this.transaction.create({
         ...result,
-        user_id: data.user._id,
+        user_id: user._id,
         type: "RegisterPartner"
       });
-      next();
+      // next();
 
-      // await serviceInstance.getLoyaltyAppContract()
-      //   .then((instance) => {
-      //     return instance.registerPartner(newAccount.address, serviceInstance.address)
-      //       .then(async (result: any) => {
-      //         await this.transaction.create({
-      //           ...result,
-      //           user_id: data.user._id, type: "RegisterPartner"
-      //         });
-      //         next();
-      //       })
-      //       .catch((error: Error) => {
-      //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-      //       })
-      //   })
-      //   .catch((error: Error) => {
-      //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-      //   })
+      return 'BLOCKCHAIN_REGISTERED';
     }
+
   }
+
+  // private registerAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  //   const data = response.locals;
+  //   const newAccount = serviceInstance.unlockWallet(data.user.account, data.extras.encryptBy);
+
+  //   if (data.user.access === 'member') {
+
+  //     let error: Error, result: any;
+  //     [error, result] = await to(serviceInstance.getLoyaltyAppContract()
+  //       .then((instance) => {
+  //         return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
+  //       })
+  //       .catch((error: Error) => {
+  //         return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //       })
+  //     );
+  //     if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+  //     await this.transaction.create({
+  //       ...result,
+  //       user_id: data.user._id,
+  //       type: "RegisterMember"
+  //     });
+
+  //     if (data.user.email) {
+  //       next();
+  //     } else {
+  //       response.status(response.locals.res.code).send(response.locals.res.body);
+  //     }
+
+  //     // await serviceInstance.getLoyaltyAppContract()
+  //     //   .then((instance) => {
+  //     //     return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
+  //     //       .then(async (result: any) => {
+  //     //         await this.transaction.create({
+  //     //           ...result,
+  //     //           user_id: data.user._id, type: "RegisterMember"
+  //     //         });
+  //     //         if (data.user.email) {
+  //     //           next();
+  //     //         } else {
+  //     //           response.status(response.locals.res.code).send(response.locals.res.body);
+  //     //         }
+  //     //       })
+  //     //       .catch((error: Error) => {
+  //     //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //     //       })
+  //     //   })
+  //     //   .catch((error: Error) => {
+  //     //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //     //   })
+  //   } else if (data.user.access === 'partner') {
+
+  //     let error: Error, result: any;
+  //     [error, result] = await to(serviceInstance.getLoyaltyAppContract()
+  //       .then((instance) => {
+  //         return instance.registerPartner(newAccount.address, serviceInstance.address)
+  //       })
+  //       .catch((error: Error) => {
+  //         return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //       })
+  //     );
+  //     if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+
+  //     await this.transaction.create({
+  //       ...result,
+  //       user_id: data.user._id,
+  //       type: "RegisterPartner"
+  //     });
+  //     next();
+
+  //     // await serviceInstance.getLoyaltyAppContract()
+  //     //   .then((instance) => {
+  //     //     return instance.registerPartner(newAccount.address, serviceInstance.address)
+  //     //       .then(async (result: any) => {
+  //     //         await this.transaction.create({
+  //     //           ...result,
+  //     //           user_id: data.user._id, type: "RegisterPartner"
+  //     //         });
+  //     //         next();
+  //     //       })
+  //     //       .catch((error: Error) => {
+  //     //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //     //       })
+  //     //   })
+  //     //   .catch((error: Error) => {
+  //     //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //     //   })
+  //   }
+  // }
 
   private authAuthenticate = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: AuthenticationDto = request.body;
@@ -804,11 +1007,36 @@ class AuthenticationController implements Controller {
         code: 202
       });
     } else if (!user.email_verified) {
-      request.params.email = data.email;
-      response.locals = {
-        res: this.prefixedResponse(202, "", { action: 'need_email_verification' }, {})
-      }
-      next();
+      const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
+
+      let error: Error, result: User;
+      [error, result] = await to(this.user.findOneAndUpdate({
+        email: data.email
+      }, {
+        $set: {
+          verificationToken: token.token,
+          verificationExpiration: token.expiresAt
+        }
+      }).catch());
+      if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+      // let result: AuthTokenData | Error;
+      // result = await (this.createVerificationToken(email));
+      // if (this.isError(result)) return next(new UnprocessableEntityException(`DB ERROR || ${result}`));
+
+      let email_result = await emailService.emailVerification2(request.headers['content-language'], data.email, token.token)
+      if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result}`));
+
+      // request.params.email = data.email;
+      // response.locals = {
+      //   res: this.prefixedResponse(202, "", { action: 'need_email_verification' }, {})
+      // }
+      // next();
+      response.status(202).send({
+        data: { action: 'need_email_verification' },
+        tempData: { token: token.token },
+        code: 202
+      });
     } else if (!user.activated && user.access == 'member') {
       response.status(202).send({
         data: { action: 'need_account_activation' },
@@ -852,6 +1080,7 @@ class AuthenticationController implements Controller {
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
     response.status(200).send({
       message: "Success! Your password has been Updated",
       code: 200
@@ -886,6 +1115,10 @@ class AuthenticationController implements Controller {
     });
   }
 
+
+  /** NEW */
+  private isError = (err: unknown): err is Error => err instanceof Error;
+
   private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const email: EmailDto["email"] = request.params.email;
 
@@ -896,8 +1129,8 @@ class AuthenticationController implements Controller {
 
     const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
 
-    let error, results: Object;
-    [error, results] = await to(this.user.updateOne({
+    let error: Error, result: User;
+    [error, result] = await to(this.user.findOneAndUpdate({
       email: email
     }, {
       $set: {
@@ -907,16 +1140,55 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    response.locals["res"] = (response.locals.res) ?
-      this.prefixedResponse(response.locals.res.code, "", response.locals.res.body.data, { "token": token.token }) :
-      this.prefixedResponse(200, "Please, follow your link to Validate your Email.", {}, { "user_id": response.locals.user._id, "token": token.token })
-    response.locals["user"] = {
-      email: email
-    };
-    response.locals["extras"] = { token: token.token };
+    // let result: AuthTokenData | Error;
+    // result = await (this.createVerificationToken(email));
+    // if (this.isError(result)) return next(new UnprocessableEntityException(`DB ERROR || ${result}`));
 
-    next();
+    let email_result = await emailService.emailVerification2(request.headers['content-language'], email, token.token)
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result}`));
+
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: {},
+        tempData: { "token": token.token }
+        // }
+      }
+    );
   }
+
+  // private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+  //   const email: EmailDto["email"] = request.params.email;
+
+  //   let user: User = await this.user.findOne({ email: email });
+  //   if ((!user) || (user && user.email_verified)) {
+  //     return next(new NotFoundException('WRONG_CREDENTIALS'));
+  //   }
+
+  //   const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
+
+  //   let error, results: Object;
+  //   [error, results] = await to(this.user.updateOne({
+  //     email: email
+  //   }, {
+  //     $set: {
+  //       verificationToken: token.token,
+  //       verificationExpiration: token.expiresAt
+  //     }
+  //   }).catch());
+  //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+  //   response.locals["res"] = (response.locals.res) ?
+  //     this.prefixedResponse(response.locals.res.code, "", response.locals.res.body.data, { "token": token.token }) :
+  //     this.prefixedResponse(200, "Please, follow your link to Validate your Email.", {}, { "user_id": response.locals.user._id, "token": token.token })
+  //   response.locals["user"] = {
+  //     email: email
+  //   };
+  //   response.locals["extras"] = { token: token.token };
+
+  //   next();
+  // }
 
   private checkVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: CheckTokenDto = request.body;
@@ -974,14 +1246,26 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    response.locals = {
-      res: this.prefixedResponse(200, "Please, follow your link to Update your Password.", {}, { "token": token.token }),
-      user: {
-        email: email
-      },
-      extras: { token: token.token }
-    };
-    next();
+    let email_result = await emailService.passwordRestoration2(request.headers['content-language'], email, token.token)
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result}`));
+
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: {},
+        tempData: { "token": token.token }
+        // }
+      }
+    );
+    // response.locals = {
+    //   res: this.prefixedResponse(200, "Please, follow your link to Update your Password.", {}, { "token": token.token }),
+    //   user: {
+    //     email: email
+    //   },
+    //   extras: { token: token.token }
+    // };
+    // next();
   }
 
   private checkRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
@@ -1038,7 +1322,7 @@ class AuthenticationController implements Controller {
     const user_id: UserID["user_id"] = request.params.user_id;
 
     if (await this.user.findOne({ _id: user_id, activated: true })) {
-      next(new NotFoundException("USER_ACTIVATED"));
+      return next(new NotFoundException("USER_ACTIVATED"));
     }
 
     let error: Error, user: User; // results = {"n": 1, "nModified": 1, "ok": 1}
@@ -1054,21 +1338,32 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
+    let email_result = await emailService.accountActivation2(request.headers['content-language'], user.email);
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result}`));
 
-    response.locals = {
-      res: this.prefixedResponse(200, "Account has been successfully activated.", {}, {}),
-      user: {
-        email: user.email
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: {},
+        // }
       }
-    };
-    next();
+    );
+
+    // response.locals = {
+    //   res: this.prefixedResponse(200, "Account has been successfully activated.", {}, {}),
+    //   user: {
+    //     email: user.email
+    //   }
+    // };
+    // next();
   }
 
   private deactivateUser = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user_id: UserID["user_id"] = request.params.user_id;
 
     if (await this.user.findOne({ _id: user_id, activated: false })) {
-      next(new NotFoundException("USER_DECTIVATED"));
+      return next(new NotFoundException("USER_DECTIVATED"));
     }
 
     let error: Error, user: User; // results = {"n": 1, "nModified": 1, "ok": 1}
@@ -1084,15 +1379,26 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
+    let email_result = await emailService.accountDeactivation2(request.headers['content-language'], user.email, request.user);
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result}`));
 
-    response.locals = {
-      res: this.prefixedResponse(200, "Account has been successfully deactivated.", {}, {}),
-      user: {
-        email: user.email
-      },
-      decision: 'admin'
-    };
-    next();
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: {},
+        // }
+      }
+    );
+
+    // response.locals = {
+    //   res: this.prefixedResponse(200, "Account has been successfully deactivated.", {}, {}),
+    //   user: {
+    //     email: user.email
+    //   },
+    //   decision: 'admin'
+    // };
+    // next();
   }
 
   private autoDeactivation = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -1114,15 +1420,29 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    response.locals = {
-      res: this.prefixedResponse(200, "Your account has been successfully deactivated.", {}, {}),
-      user: {
-        email: request.user.email
-      },
-      reason: data.reason,
-      decision: 'user'
-    };
-    next();
+    let email_result = await emailService.accountDeactivation2(request.headers['content-language'], request.user.email, request.user)
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result}`));
+
+    let internal_email_result = await emailService.internalDeactivation2(request.headers['content-language'], request.user, data.reason);
+    if (this.isError(internal_email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${internal_email_result}`));
+
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: {},
+        // }
+      }
+    );
+    // response.locals = {
+    //   res: this.prefixedResponse(200, "Your account has been successfully deactivated.", {}, {}),
+    //   user: {
+    //     email: request.user.email
+    //   },
+    //   reason: data.reason,
+    //   decision: 'user'
+    // };
+    // next();
   }
 
   private autoDeletion = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -1141,13 +1461,27 @@ class AuthenticationController implements Controller {
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    response.locals = {
-      res: this.prefixedResponse(200, "Your account has been successfully deactivated.", {}, {}),
-      user: {
-        email: request.user.email
-      },
-    };
-    next();
+    let email_result = await emailService.accountDeletion2(request.headers['content-language'], request.user.email)
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result}`));
+
+    let internal_email_result = await emailService.internalDeletion2(request.headers['content-language'], request.user);
+    if (this.isError(internal_email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${internal_email_result}`));
+
+    response.status(200).send(
+      {
+        // body: {
+        message: "",
+        data: {},
+        // }
+      }
+    );
+    // response.locals = {
+    //   res: this.prefixedResponse(200, "Your account has been successfully deactivated.", {}, {}),
+    //   user: {
+    //     email: request.user.email
+    //   },
+    // };
+    // next();
   }
 
   private generateToken(length: number, hours: number): AuthTokenData {
@@ -1185,33 +1519,33 @@ class AuthenticationController implements Controller {
     return parseInt(now.getTime().toString());
   }
 
-  private prefixedResponse = (code: number, message: string, data: any, tempData: any) => {
-    let response: any;
+  // private prefixedResponse = (code: number, message: string, data: any, tempData: any) => {
+  //   let response: any;
 
-    if (message) {
-      response = {
-        code: code,
-        body: {
-          message: message,
-          code: code
-        }
-      }
-    } else {
-      response = {
-        code: code,
-        body: {
-          data: data,
-          code: code
-        }
-      }
-    }
+  //   if (message) {
+  //     response = {
+  //       code: code,
+  //       body: {
+  //         message: message,
+  //         code: code
+  //       }
+  //     }
+  //   } else {
+  //     response = {
+  //       code: code,
+  //       body: {
+  //         data: data,
+  //         code: code
+  //       }
+  //     }
+  //   }
 
-    if (`${process.env.PRODUCTION}` == 'false' && tempData) {
-      response.body['tempData'] = tempData;
-    }
+  //   if (`${process.env.PRODUCTION}` == 'false' && tempData) {
+  //     response.body['tempData'] = tempData;
+  //   }
 
-    return response;
-  }
+  //   return response;
+  // }
 
   //  private recoverAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
   //   const data = response.locals;

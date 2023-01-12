@@ -1,5 +1,6 @@
 import * as mongoose from 'mongoose';
 import { LoyaltyTransaction } from '../_interfaces/index';
+import { Schema } from 'mongoose';
 
 // const dataSchema = new mongoose.Schema({
 //   partner_name: String,
@@ -52,6 +53,19 @@ const receiptSchema = new mongoose.Schema({
 }, { _id: false });
 
 const loyaltyTransactionSchema = new mongoose.Schema({
+
+  partner: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  offer: {
+    type: Schema.Types.ObjectId,
+    ref: 'Offer'
+  },
+  member: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
 
   partner_id: String,
   partner_name: String,

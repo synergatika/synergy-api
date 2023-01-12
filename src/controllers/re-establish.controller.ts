@@ -37,7 +37,7 @@ import registrationTransactionModel from '../models/registration.transaction.mod
 import loyaltyTransactionModel from '../models/loyalty.transaction.model';
 import microcreditTransactionModel from '../models/microcredit.transaction.model';
 import { RegisterUserWithoutPasswordDto } from '_dtos';
-import microcreditModel from '../models/microcredit.model';
+import microcreditModel from '../models/campaign.model';
 
 class ReEstablishController implements Controller {
     public path = '/establish';

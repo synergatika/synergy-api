@@ -16,7 +16,7 @@ import { NotFoundException, UnprocessableEntityException } from '../../_exceptio
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import { LoyaltyOffer, Post, Event, MicrocreditCampaign, MicrocreditSupport } from '../../_interfaces/index';
+import { LoyaltyOffer, Post, Event, MicrocreditCampaign, MicrocreditSupport, Member } from '../../_interfaces/index';
 
 /**
  * Models
@@ -26,7 +26,8 @@ import transactionModel from '../../models/microcredit.transaction.model';
 import postModel from '../../models/post.model';
 import eventModel from '../../models/event.model';
 import offerModel from '../../models/offer.model';
-import microcreditModel from '../../models/microcredit.model';
+import microcreditModel from '../../models/campaign.model';
+import supportModel from '../../models/support.model';
 
 async function offer(request: RequestWithUser, response: Response, next: NextFunction) {
   const partner_id: OfferID["partner_id"] = request.params.partner_id;
@@ -196,98 +197,118 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
   const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
   const support_id: SupportID["support_id"] = request.params.support_id;
 
-  let error: Error, supports: MicrocreditSupport[];
-  [error, supports] = await to(transactionModel.aggregate(
-    [
-      {
-        $match: {
-          $and: [
-            { 'partner_id': partner_id },
-            { 'campaign_id': campaign_id },
-            { 'support_id': support_id }
-          ]
-        }
-      },
-      { $sort: { date: 1 } },
-      {
-        $group:
-        {
-          _id: "$support_id",
-
-          partner_id: { '$first': "$partner_id" },
-          member_id: { '$first': "$member_id" },
-
-          campaign_id: { '$first': "$campaign_id" },
-          campaign_title: { '$first': "$campaign_title" },
-          payment_id: { '$first': "$payment_id" },
-          method: { '$first': "$method" },
-          type: { '$last': "$type" },
-
-          address: { '$first': "$address" },
-          contractRef: { '$first': "$contractRef" },
-          contractIndex: { '$first': "$contractIndex" },
-
-          initialTokens: { '$first': "$tokens" },
-          currentTokens: { '$sum': '$tokens' },
-
-          createdAt: { '$first': "$createdAt" },
-          updatedAt: { '$last': "$createdAt" },
-        }
-      }
-    ]
-  ).exec());
+  let error: Error, support: MicrocreditSupport;
+  [error, support] = await to(supportModel.findOne(
+    { '_id': new ObjectId(support_id) }
+  ).populate([{
+    path: 'member'
+  }])
+    .catch());
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-  response.locals["support"] = { ...supports[0], support_id: supports[0]._id, _id: undefined };
-  request.params["_to"] = supports[0].member_id;
+  response.locals["support"] = support//{ ...supports[0], support_id: supports[0]._id, _id: undefined };
+  request.params["_to"] = (support.member as Member)._id;
 
   next();
-  // const partner_id: SupportID["partner_id"] = request.params.partner_id;
-  // const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
-  // const support_id: SupportID["support_id"] = request.params.support_id;
-
-  // let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
-  // [error, supports] = await to(userModel.aggregate([{
-  //   $unwind: '$microcredit'
-  // }, {
-  //   $unwind: '$microcredit.supports'
-  // }, {
-  //   $match: {
-  //     $and: [{
-  //       _id: new ObjectId(partner_id)
-  //     }, {
-  //       'microcredit._id': new ObjectId(campaign_id)
-  //     }, {
-  //       'microcredit.supports._id': new ObjectId(support_id)
-  //     }]
-  //   }
-  // }, {
-  //   $project: {
-  //     _id: false,
-  //     campaign_id: '$microcredit._id',
-  //     support_id: '$microcredit.supports._id',
-  //     backer_id: '$microcredit.supports.backer_id',
-  //     initialTokens: '$microcredit.supports.initialTokens',
-  //     redeemedTokens: '$microcredit.supports.redeemedTokens',
-  //     method: '$microcredit.supports.method',
-  //     status: '$microcredit.supports.status',
-  //     contractIndex: '$microcredit.supports.contractIndex',
-  //   }
-  // }, {
-  //   $sort: {
-  //     support_id: -1
-  //   }
-  // }
-  // ]).exec().catch());
-  // if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-  // else if (!supports.length) {
-  //   return next(new NotFoundException('SUPPORT_NOT_EXISTS'));
-  // }
-
-  // request.params["_to"] = supports[0].backer_id;
-  // response.locals["support"] = supports[0];
-  // next();
 }
+
+// async function microcreditSupport2(request: RequestWithUser, response: Response, next: NextFunction) {
+//   const partner_id: SupportID["partner_id"] = request.params.partner_id;
+//   const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
+//   const support_id: SupportID["support_id"] = request.params.support_id;
+
+//   let error: Error, supports: MicrocreditSupport[];
+//   [error, supports] = await to(transactionModel.aggregate(
+//     [
+//       {
+//         $match: {
+//           $and: [
+//             { 'partner_id': partner_id },
+//             { 'campaign_id': campaign_id },
+//             { 'support_id': support_id }
+//           ]
+//         }
+//       },
+//       { $sort: { date: 1 } },
+//       {
+//         $group:
+//         {
+//           _id: "$support_id",
+
+//           partner_id: { '$first': "$partner_id" },
+//           member_id: { '$first': "$member_id" },
+
+//           campaign_id: { '$first': "$campaign_id" },
+//           campaign_title: { '$first': "$campaign_title" },
+//           payment_id: { '$first': "$payment_id" },
+//           method: { '$first': "$method" },
+//           type: { '$last': "$type" },
+
+//           address: { '$first': "$address" },
+//           contractRef: { '$first': "$contractRef" },
+//           contractIndex: { '$first': "$contractIndex" },
+
+//           initialTokens: { '$first': "$tokens" },
+//           currentTokens: { '$sum': '$tokens' },
+
+//           createdAt: { '$first': "$createdAt" },
+//           updatedAt: { '$last': "$createdAt" },
+//         }
+//       }
+//     ]
+//   ).exec());
+//   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+//   response.locals["support"] = { ...supports[0], support_id: supports[0]._id, _id: undefined };
+//   request.params["_to"] = supports[0].member_id;
+
+//   next();
+//   // const partner_id: SupportID["partner_id"] = request.params.partner_id;
+//   // const campaign_id: SupportID["campaign_id"] = request.params.campaign_id;
+//   // const support_id: SupportID["support_id"] = request.params.support_id;
+
+//   // let error: Error, supports: Support[]; // results = {"n": 1, "nModified": 1, "ok": 1}
+//   // [error, supports] = await to(userModel.aggregate([{
+//   //   $unwind: '$microcredit'
+//   // }, {
+//   //   $unwind: '$microcredit.supports'
+//   // }, {
+//   //   $match: {
+//   //     $and: [{
+//   //       _id: new ObjectId(partner_id)
+//   //     }, {
+//   //       'microcredit._id': new ObjectId(campaign_id)
+//   //     }, {
+//   //       'microcredit.supports._id': new ObjectId(support_id)
+//   //     }]
+//   //   }
+//   // }, {
+//   //   $project: {
+//   //     _id: false,
+//   //     campaign_id: '$microcredit._id',
+//   //     support_id: '$microcredit.supports._id',
+//   //     backer_id: '$microcredit.supports.backer_id',
+//   //     initialTokens: '$microcredit.supports.initialTokens',
+//   //     redeemedTokens: '$microcredit.supports.redeemedTokens',
+//   //     method: '$microcredit.supports.method',
+//   //     status: '$microcredit.supports.status',
+//   //     contractIndex: '$microcredit.supports.contractIndex',
+//   //   }
+//   // }, {
+//   //   $sort: {
+//   //     support_id: -1
+//   //   }
+//   // }
+//   // ]).exec().catch());
+//   // if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+//   // else if (!supports.length) {
+//   //   return next(new NotFoundException('SUPPORT_NOT_EXISTS'));
+//   // }
+
+//   // request.params["_to"] = supports[0].backer_id;
+//   // response.locals["support"] = supports[0];
+//   // next();
+// }
 
 export default {
   offerMiddleware: offer,

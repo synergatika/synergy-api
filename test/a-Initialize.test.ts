@@ -22,7 +22,8 @@ import userModel from '../src/models/user.model';
 import postModel from '../src/models/post.model';
 import eventModel from '../src/models/event.model';
 import offerModel from '../src/models/offer.model';
-import microcreditModel from '../src/models/microcredit.model';
+import microcreditCampaignModel from '../src/models/campaign.model';
+import microcreditSupportModel from '../src/models/support.model';
 import registrationTransactionModel from '../src/models/registration.transaction.model';
 import loyaltyTransactionModel from '../src/models/loyalty.transaction.model';
 import microcreditTransactionModel from '../src/models/microcredit.transaction.model';
@@ -73,12 +74,14 @@ describe("Initialize DB & Drop past Collections", () => {
     return eventModel.deleteMany({});
   });
   before(() => {
-    return microcreditModel.deleteMany({});
+    return microcreditCampaignModel.deleteMany({});
   });
   before(() => {
     return offerModel.deleteMany({});
   });
-
+  before(() => {
+    return microcreditSupportModel.deleteMany({});
+  });
   before(() => {
     return contentModel.deleteOne({ name: content_a.name });
   });

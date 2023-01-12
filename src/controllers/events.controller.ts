@@ -279,8 +279,6 @@ class EventsController implements Controller {
     // { $limit: offset.limit },
     // { $skip: offset.skip }
     // ]).exec().catch());
-    console.log(events);
-    console.log(error)
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
     response.status(200).send({
       data: events,

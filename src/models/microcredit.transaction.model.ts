@@ -1,5 +1,8 @@
+import MicrocreditSupportsController from 'controllers/microcredit_supports.controller';
 import * as mongoose from 'mongoose';
-import { MicrocreditTransaction } from '../_interfaces/index';
+import { Schema } from 'mongoose';
+import { EarnTokensDto, RedeemTokensDto } from '_dtos';
+import { MicrocreditTransaction, TransactionStatus } from '../_interfaces/index';
 
 // const dataSchema = new mongoose.Schema({
 //   campaign_id: String,
@@ -49,29 +52,46 @@ const receiptSchema = new mongoose.Schema({
 }, { _id: false });
 
 const microcreditTransactionSchema = new mongoose.Schema({
-  support_id: String,
-
-  partner_id: String,
-  partner_name: String,
-
-  member_id: String,
-
-  campaign_id: String,
-  campaign_title: String,
-  address: String,
-
-  method: String,
-  payment_id: String,
-
+  campaign: {
+    type: Schema.Types.ObjectId,
+    ref: 'MicrocreditCampaign'
+  },
+  support: {
+    type: Schema.Types.ObjectId,
+    ref: 'MicrocreditSupport'
+  },
+  member: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
   tokens: {
     type: Number,
     default: 0
   },
 
-  payoff: {
-    type: Number,
-    default: 0
-  },
+  // support_id: String,
+
+  // partner_id: String,
+  // partner_name: String,
+
+  // member_id: String,
+
+  // campaign_id: String,
+  // campaign_title: String,
+  // address: String,
+
+  // method: String,
+  // payment_id: String,
+
+  // tokens: {
+  //   type: Number,
+  //   default: 0
+  // },
+
+  // payoff: {
+  //   type: Number,
+  //   default: 0
+  // },
 
   contractRef: String,
   contractIndex: {
@@ -87,6 +107,12 @@ const microcreditTransactionSchema = new mongoose.Schema({
     type: String,
     enum: ['PromiseFund', 'ReceiveFund', 'RevertFund', 'SpendFund'],
   },
+
+  status: {
+    type: String,
+    enum: ['pending', 'completed'],
+    default: 'pending'
+  }
 }, {
   timestamps: true
 });

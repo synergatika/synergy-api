@@ -3,7 +3,7 @@ import { MicrocreditCampaign } from '../_interfaces/index';
 
 const Schema = mongoose.Schema;
 
-const microcreditSchema = new mongoose.Schema({
+const microcreditCampaignSchema = new mongoose.Schema({
   partner: {
     type: Schema.Types.ObjectId,
     ref: 'User'
@@ -47,6 +47,6 @@ const microcreditSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-const microcreditModel = mongoose.model<MicrocreditCampaign & mongoose.Document>('Microcredit', microcreditSchema);
+const microcreditCampaignModel = mongoose.model<MicrocreditCampaign & mongoose.Document>('Microcredit', microcreditCampaignSchema);
 
-export default microcreditModel;
+export default microcreditCampaignModel;
