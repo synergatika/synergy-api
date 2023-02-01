@@ -1,4 +1,5 @@
 import * as mongoose from 'mongoose';
+import { Schema } from 'mongoose';
 import { RegistrationTransaction } from '../_interfaces/index';
 
 const receiptSchema = new mongoose.Schema({
@@ -21,6 +22,10 @@ const receiptSchema = new mongoose.Schema({
 }, { _id: false });
 
 const registrationTransactionSchema = new mongoose.Schema({
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
 
   user_id: String,
 
@@ -31,6 +36,11 @@ const registrationTransactionSchema = new mongoose.Schema({
     type: String,
     enum: ['RegisterMember', 'RegisterPartner', 'RecoverPoints'],
   },
+  status: {
+    type: String,
+    enum: ['pending', 'completed'],
+    default: 'pending'
+  }
 }, {
   timestamps: true
 });

@@ -1,6 +1,7 @@
 import * as mongoose from 'mongoose';
 import { LoyaltyTransaction } from '../_interfaces/index';
 import { Schema } from 'mongoose';
+import { any } from 'bluebird';
 
 // const dataSchema = new mongoose.Schema({
 //   partner_name: String,
@@ -67,21 +68,12 @@ const loyaltyTransactionSchema = new mongoose.Schema({
     ref: 'User'
   },
 
-  partner_id: String,
-  partner_name: String,
+  data: Object,
 
-  member_id: String,
-
-  offer_id: {
-    type: String,
-    default: '-1'
+  points: {
+    type: Number,
+    default: 0,
   },
-  offer_title: {
-    type: String,
-    default: null
-  },
-
-  points: Number,
   amount: {
     type: Number,
     default: 0,
@@ -90,19 +82,34 @@ const loyaltyTransactionSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
-  // from_id: String,
-  // to_id: String,
 
-  // info: infoSchema,
-  // data: dataSchema,
+  /** begin: To be Removed in Next Version */
+  partner_id: String,
+  partner_name: String,
+  member_id: String,
+  offer_id: {
+    type: String,
+    default: '-1'
+  },
+  offer_title: {
+    type: String,
+    default: null
+  },
+  /** end: To be Removed in Next Version */
 
-  tx: String,
-  receipt: receiptSchema,
-  logs: Array,
   type: {
     type: String,
     enum: ['EarnPoints', 'RedeemPoints', 'RedeemPointsOffer'],
   },
+  status: {
+    type: String,
+    enum: ['pending', 'completed'],
+    default: 'pending'
+  },
+
+  tx: String,
+  receipt: receiptSchema,
+  logs: Array
 }, {
   timestamps: true
 });

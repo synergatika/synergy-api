@@ -44,7 +44,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, Member, Account, TokenData, DataStoredInToken, AuthTokenData, UserAccess } from '../_interfaces/index';
+import { User, Member, Account, TokenData, DataStoredInToken, AuthTokenData, UserAccess, RegistrationTransaction, RegistrationTransactionType, TransactionStatus } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -841,22 +841,28 @@ class AuthenticationController implements Controller {
 
     if (user.access === 'member') {
 
-      let error: Error, result: any;
-      [error, result] = await to(serviceInstance.getLoyaltyAppContract()
-        .then((instance) => {
-          return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
-        })
-        .catch((error: Error) => {
-          return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-        })
-      );
-      if (error) return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      // let error: Error, result: any;
+      // [error, result] = await to(serviceInstance.getLoyaltyAppContract()
+      //   .then((instance) => {
+      //     return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
+      //   })
+      //   .catch((error: Error) => {
+      //     return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      //   })
+      // );
+      // if (error) return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
 
-      await this.transaction.create({
-        ...result,
+      let blockchain_error: Error, blockchain_result: any;
+      [blockchain_error, blockchain_result] = await to(this.registerMemberAccount(user.account).catch());
+
+      let error: Error, transaction: RegistrationTransaction;
+      [error, transaction] = await to(this.transaction.create({
+        ...blockchain_result,
+        user: user,
         user_id: user._id,
-        type: "RegisterMember"
-      });
+        type: RegistrationTransactionType.RegisterMember,
+        status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+      }).catch());
 
       // if (user.email) {
       //   next();
@@ -866,22 +872,28 @@ class AuthenticationController implements Controller {
       return 'BLOCKCHAIN_REGISTERED';
     } else if (user.access === 'partner') {
 
-      let error: Error, result: any;
-      [error, result] = await to(serviceInstance.getLoyaltyAppContract()
-        .then((instance) => {
-          return instance.registerPartner(newAccount.address, serviceInstance.address)
-        })
-        .catch((error: Error) => {
-          return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-        })
-      );
-      if (error) return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      // let error: Error, result: any;
+      // [error, result] = await to(serviceInstance.getLoyaltyAppContract()
+      //   .then((instance) => {
+      //     return instance.registerPartner(newAccount.address, serviceInstance.address)
+      //   })
+      //   .catch((error: Error) => {
+      //     return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      //   })
+      // );
+      // if (error) return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
 
-      await this.transaction.create({
-        ...result,
+      let blockchain_error: Error, blockchain_result: any;
+      [blockchain_error, blockchain_result] = await to(this.registerPartnerAccount(user.account).catch());
+
+      let error: Error, transaction: RegistrationTransaction;
+      [error, transaction] = await to(this.transaction.create({
+        ...blockchain_result,
+        user: user,
         user_id: user._id,
-        type: "RegisterPartner"
-      });
+        type: RegistrationTransactionType.RegisterPartner,
+        status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+      }).catch());
       // next();
 
       return 'BLOCKCHAIN_REGISTERED';
@@ -1575,5 +1587,31 @@ class AuthenticationController implements Controller {
   //     code: 200
   //   });
   //   }
+
+  /**
+   * 
+   * Blockchain Register Functions (registerPartnerAccount, registerMemberAccount)
+   * 
+   */
+  private registerPartnerAccount = async (account: Account) => {
+    return serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.methods['registerMember(address)'].sendTransaction(account.address, serviceInstance.address)
+      })
+      .catch((error: Error) => {
+        return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      });
+  }
+
+  private registerMemberAccount = async (account: Account) => {
+    return serviceInstance.getLoyaltyAppContract()
+      .then((instance) => {
+        return instance.methods['registerMember(address)'].sendTransaction(account.address, serviceInstance.address)
+      })
+      .catch((error: Error) => {
+        return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      });
+  }
+
 }
 export default AuthenticationController;

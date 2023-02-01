@@ -32,7 +32,7 @@ import { UnprocessableEntityException } from '../_exceptions/index';
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, Partner, PartnerPayment, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, SupportStatus, TransactionStatus, Member, SupportPayment } from '../_interfaces/index';
+import { User, Partner, PartnerPayment, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, SupportStatus, TransactionStatus, Member, SupportPayment, MicrocreditTransactionType } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -62,17 +62,14 @@ import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
 import microcreditSupport from '../models/support.model';
 import failedTransactionModel from '../models/failed.transaction.model';
-import { assign } from 'nodemailer/lib/shared';
 import supportModel from '../models/support.model';
-import { email } from 'envalid';
 
 class MicrocreditController implements Controller {
   public path = '/microcredit';
   public router = express.Router();
-  private user = userModel;
-  private transaction = transactionModel;
+  private userModel = userModel;
+  private transactionModel = transactionModel;
   private microcreditSupport = microcreditSupport;
-  private failedTransaction = failedTransactionModel;
 
   constructor() {
     this.initializeRoutes();
@@ -173,7 +170,6 @@ class MicrocreditController implements Controller {
   /** NEW */
   private isError = (err: unknown): err is Error => err instanceof Error;
 
-
   private readBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     response.status(200).send({
       data: response.locals.balance,
@@ -188,11 +184,19 @@ class MicrocreditController implements Controller {
     });
   }
 
-  private escapeBlockchainError = async (_error: any, _type: string) => {
-    await this.failedTransaction.create({
-      error: _error,
-      type: _type
-    })
+  private createPayment = async (partner: Partner, data: EarnTokensDto): Promise<SupportPayment> => {
+    return {
+      _id: convertHelper.indexToPayment(
+        ((await this.transactionModel.find({ type: MicrocreditTransactionType.PromiseFund })).filter((o: MicrocreditTransaction) => {
+          return this.formatDate(o.createdAt) == this.formatDate(new Date())
+        })).length),
+      method: (data.method == 'store') ?
+        {
+          bic: 'store',
+          name: 'Store',
+          value: partner.address.street + ", " + partner.address.city + " " + partner.address.postCode
+        } : ((partner.payments).filter(function (el: PartnerPayment) { return el.bic == data.method })[0])
+    };
   }
 
   private oneClickEarnTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -205,23 +209,11 @@ class MicrocreditController implements Controller {
     const campaign: MicrocreditCampaign = response.locals.campaign;
 
     const _support_id = new ObjectId();
-    const _payment: SupportPayment = {
-      _id: convertHelper.indexToPayment(
-        ((await this.transaction.find({ type: 'PromiseFund' })).filter((o: MicrocreditTransaction) => {
-          return this.formatDate(o.createdAt) == this.formatDate(new Date())
-        })).length),
-      method: (data.method == 'store') ?
-        {
-          bic: 'store',
-          name: 'Store',
-          value: partner.address.street + ", " + partner.address.city + " " + partner.address.postCode
-        } : ((partner.payments).filter(function (el: PartnerPayment) { return el.bic == data.method })[0])
-    };
+    const _payment: SupportPayment = await this.createPayment(partner, data)
 
-
-    let blockchain_result: any | Error;
-    blockchain_result = await this.registerPromisedFund(campaign, member, data, _support_id);
-    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${blockchain_result}`));
+    let transaction_result: any | Error;
+    transaction_result = await this.createPromiseTransaction(campaign, member, data, _support_id);
+    if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
 
     let error: Error, created_support: MicrocreditSupport;
     [error, created_support] = await to(this.microcreditSupport.create({
@@ -232,14 +224,14 @@ class MicrocreditController implements Controller {
       currentTokens: (data.paid) ? data._amount : 0,
       payment: _payment,
       status: (data.paid) ? SupportStatus.PAID : SupportStatus.UNPAID,
-      contractRef: blockchain_result.logs[0].args.ref,
-      contractIndex: blockchain_result.logs[0].args.index,
+      contractRef: transaction_result.logs[0].args.ref,
+      contractIndex: transaction_result.logs[0].args.index,
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     if (data.paid) {
-      blockchain_result = await this.registerReceivedFund(campaign, created_support);
-      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${blockchain_result}`));
+      transaction_result = await this.registerReceivedFund(campaign, created_support);
+      if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
     }
 
     let email_result_partner = await emailService.newSupportPartner(request.headers['content-language'], partner.email, campaign, _payment, data)
@@ -247,7 +239,6 @@ class MicrocreditController implements Controller {
 
     let email_result_member = await emailService.newSupportMember(request.headers['content-language'], member.email, campaign, _payment, data)
     if (this.isError(email_result_member)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result_member}`));
-
 
     response.status(200).send({
       data: {
@@ -270,22 +261,11 @@ class MicrocreditController implements Controller {
     const campaign: MicrocreditCampaign = response.locals.campaign;
 
     const _support_id = new ObjectId();
-    const _payment: SupportPayment = {
-      _id: convertHelper.indexToPayment(
-        ((await this.transaction.find({ type: 'PromiseFund' })).filter((o: MicrocreditTransaction) => {
-          return this.formatDate(o.createdAt) == this.formatDate(new Date())
-        })).length),
-      method: (data.method == 'store') ?
-        {
-          bic: 'store',
-          name: 'Store',
-          value: partner.address.street + ", " + partner.address.city + " " + partner.address.postCode
-        } : ((partner.payments).filter(function (el: PartnerPayment) { return el.bic == data.method })[0])
-    };
+    const _payment: SupportPayment = await this.createPayment(partner, data);
 
-    let blockchain_result: any | Error;
-    blockchain_result = await this.registerPromisedFund(campaign, member, data, _support_id);
-    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${blockchain_result}`));
+    let transaction_result: any | Error;
+    transaction_result = await this.createPromiseTransaction(campaign, member, data, _support_id);
+    if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
 
     let error: Error, created_support: MicrocreditSupport;
     [error, created_support] = await to(this.microcreditSupport.create({
@@ -296,14 +276,14 @@ class MicrocreditController implements Controller {
       currentTokens: (data.paid) ? data._amount : 0,
       payment: _payment,
       status: (data.paid) ? SupportStatus.PAID : SupportStatus.UNPAID,
-      contractRef: blockchain_result.logs[0].args.ref,
-      contractIndex: blockchain_result.logs[0].args.index,
+      contractRef: transaction_result.logs[0].args.ref,
+      contractIndex: transaction_result.logs[0].args.index,
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     if (data.paid) {
-      blockchain_result = await this.registerReceivedFund(campaign, created_support);
-      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${blockchain_result}`));
+      transaction_result = await this.registerReceivedFund(campaign, created_support);
+      if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
     }
 
     let email_result_partner = await emailService.newSupportPartner(request.headers['content-language'], partner.email, campaign, _payment, data)
@@ -334,22 +314,11 @@ class MicrocreditController implements Controller {
     const campaign: MicrocreditCampaign = response.locals.campaign;
 
     const _support_id = new ObjectId();
-    const _payment: SupportPayment = {
-      _id: convertHelper.indexToPayment(
-        ((await this.transaction.find({ type: 'PromiseFund' })).filter((o: MicrocreditTransaction) => {
-          return this.formatDate(o.createdAt) == this.formatDate(new Date())
-        })).length),
-      method: (data.method == 'store') ?
-        {
-          bic: 'store',
-          name: 'Store',
-          value: partner.address.street + ", " + partner.address.city + " " + partner.address.postCode
-        } : ((partner.payments).filter(function (el: PartnerPayment) { return el.bic == data.method })[0])
-    };
+    const _payment: SupportPayment = await this.createPayment(partner, data);
 
-    let blockchain_result: any | Error;
-    blockchain_result = await this.registerPromisedFund(campaign, member, data, _support_id);
-    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${blockchain_result}`));
+    let transaction_result: any | Error;
+    transaction_result = await this.createPromiseTransaction(campaign, member, data, _support_id);
+    if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
 
     let error: Error, created_support: MicrocreditSupport;
     [error, created_support] = await to(this.microcreditSupport.create({
@@ -360,14 +329,14 @@ class MicrocreditController implements Controller {
       currentTokens: (data.paid) ? data._amount : 0,
       payment: _payment,
       status: (data.paid) ? SupportStatus.PAID : SupportStatus.UNPAID,
-      contractRef: blockchain_result.logs[0].args.ref,
-      contractIndex: blockchain_result.logs[0].args.index,
+      contractRef: transaction_result.logs[0].args.ref,
+      contractIndex: transaction_result.logs[0].args.index,
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     if (data.paid) {
-      blockchain_result = await this.registerReceivedFund(campaign, created_support);
-      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${blockchain_result}`));
+      transaction_result = await this.createReceiveTransaction(campaign, created_support);
+      if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
     }
 
     let email_result_partner = await emailService.newSupportPartner(request.headers['content-language'], partner.email, campaign, _payment, data)
@@ -391,8 +360,7 @@ class MicrocreditController implements Controller {
   private confirmTokens = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const campaign: MicrocreditCampaign = response.locals.campaign;
     const support: MicrocreditSupport = response.locals.support;
-    console.log("previous_support");
-    console.log(support);
+
     let error: Error, updated_support: MicrocreditSupport;
     [error, updated_support] = await to(this.microcreditSupport.findOneAndUpdate(
       {
@@ -406,16 +374,14 @@ class MicrocreditController implements Controller {
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     if (support.status != SupportStatus.PAID) {
-      let blockchain_result: any | Error;
-      blockchain_result = await this.registerRevertFund(campaign, support);
-      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${blockchain_result}`));
+      let transaction_result: any | Error;
+      transaction_result = await this.createReceiveTransaction(campaign, support);
+      if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
     } else {
-      let blockchain_result: any | Error;
-      blockchain_result = await this.registerReceivedFund(campaign, support);
-      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${blockchain_result}`));
+      let transaction_result: any | Error;
+      transaction_result = await this.createRevertTransaction(campaign, support);
+      if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
     }
-    console.log("updated_support");
-    console.log(updated_support);
 
     let email_result_member = await emailService.changeSupportStatus(request.headers['content-language'], (support.member as Member).email, support)
     if (this.isError(email_result_member)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result_member}`));
@@ -438,9 +404,9 @@ class MicrocreditController implements Controller {
     const campaign: MicrocreditCampaign = response.locals.campaign;
     const support: MicrocreditSupport = response.locals.support;
 
-    let blockchain_result: any | Error;
-    blockchain_result = await this.registerSpentFund(campaign, member, data, support);
-    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${blockchain_result}`));
+    let transaction_result: any | Error;
+    transaction_result = await this.createSpendTransaction(campaign, member, data, support);
+    if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
 
     let error: Error, updated_support: MicrocreditSupport;
     [error, updated_support] = await to(this.microcreditSupport.findOneAndUpdate({
@@ -451,6 +417,7 @@ class MicrocreditController implements Controller {
         status: ((support.status == SupportStatus.PAID) && (support.initialTokens - data._tokens <= 0)) ? SupportStatus.COMPLETED : SupportStatus.PAID
       }
     }).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     let email_result_member = await emailService.redeemSupport(request.headers['content-language'], member.email, campaign, support, data)
     if (this.isError(email_result_member)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_result_member}`));
@@ -461,9 +428,185 @@ class MicrocreditController implements Controller {
     });
   }
 
-  private registerPromisedFund = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto, support_id: MicrocreditSupport['_id']) => {
-    let error: Error, result: any;
-    [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
+  /**
+   * 
+   * Microcredit Transactions Functions (readTransactions, createPromiseTransaction, createReceiveTransaction, createRevertTransaction, createSpendTransaction)
+   * 
+   */
+
+  private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const params: string = request.params.offset;
+    const user: User = request.user;
+    const offset: {
+      limit: number, skip: number, greater: number, type: boolean
+    } = offsetParams(params);
+
+    let error: Error, transactions: MicrocreditTransaction[];
+    [error, transactions] = await to(this.transactionModel.find({
+      $and: [
+        { $or: [{ member_id: user._id }, { partner_id: user._id }] },
+        { $or: [{ type: MicrocreditTransactionType.PromiseFund }, { type: MicrocreditTransactionType.SpendFund }, { type: MicrocreditTransactionType.ReceiveFund }, { type: MicrocreditTransactionType.RevertFund }] }
+      ]
+    }).select({
+      "_id": 1,
+      "support_id": 1,
+      "partner_id": 1,
+      "partner_name": 1,
+      "member_id": 1,
+      "campaign_id": 1,
+      "campaign_title": 1,
+      "method": 1,
+      "payment_id": 1,
+      "tokens": 1,
+      "type": 1,
+      "tx": 1,
+      "createdAt": 1
+    }).sort({ 'createdAt': -1, '_id': -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
+      .catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    response.status(200).send({
+      data: transactions,
+      code: 200
+    });
+  }
+
+  private createPromiseTransaction = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto, support_id: MicrocreditSupport['_id']) => {
+    let blockchain_error: Error, blockchain_result: any;
+    [blockchain_error, blockchain_result] = await this.registerPromisedFund(campaign, member, data);
+
+    let error: Error, transaction: MicrocreditTransaction;
+    [error, transaction] = await to(this.transactionModel.create({
+      support: support_id,
+
+      ...blockchain_result,
+
+      data: data,
+
+      type: MicrocreditTransactionType.PromiseFund,
+      status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+
+      /** begin: To be Removed in Next Version */
+      member_id: (member as Member)._id,
+      campaign_id: campaign._id,
+      campaign_title: campaign.title,
+      support_id: support_id,
+      partner_id: (campaign.partner as Partner)._id,
+      partner_name: (campaign.partner as Partner).name,
+      /** end: To be Removed in Next Version */
+
+      tokens: data._amount,
+    }).catch());
+    if (error) {
+      return error;
+    };
+
+    return blockchain_result;
+  }
+
+  private createReceiveTransaction = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
+    let blockchain_error: Error, blockchain_result: any;
+    [blockchain_error, blockchain_result] = await this.registerReceivedFund(campaign, support);
+
+    let error: Error, transaction: MicrocreditTransaction;
+    [error, transaction] = await to(this.transactionModel.create({
+      support: support._id,
+
+      ...blockchain_result,
+
+      type: MicrocreditTransactionType.ReceiveFund,
+      status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+
+      /** begin: To be Removed in Next Version */
+      member_id: (support.member as Member)._id,
+      campaign_id: campaign._id,
+      campaign_title: campaign.title,
+      support_id: support._id,
+      partner_id: (campaign.partner as Partner)._id,
+      partner_name: (campaign.partner as Partner).name,
+      /** end: To be Removed in Next Version */
+
+      tokens: 0,
+      payoff: support.initialTokens
+    }).catch());
+    if (error) {
+      return error;
+    };
+
+    return blockchain_result;
+  }
+
+  private createRevertTransaction = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
+    let blockchain_error: Error, blockchain_result: any;
+    [blockchain_error, blockchain_result] = await this.registerRevertFund(campaign, support);
+
+    let error: Error, transaction: MicrocreditTransaction;
+    [error, transaction] = await to(this.transactionModel.create({
+      support: support._id,
+
+      ...blockchain_result,
+
+      type: MicrocreditTransactionType.RevertFund,
+      status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+
+      /** begin: To be Removed in Next Version */
+      member_id: (support.member as Member)._id,
+      campaign_id: campaign._id,
+      campaign_title: campaign.title,
+      support_id: support._id,
+      partner_id: (campaign.partner as Partner)._id,
+      partner_name: (campaign.partner as Partner).name,
+      /** end: To be Removed in Next Version */
+
+      tokens: 0,
+      payoff: support.initialTokens * (-1)
+    }).catch());
+    if (error) return error;
+
+    return blockchain_result;
+  }
+
+  private createSpendTransaction = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto, support: MicrocreditSupport) => {
+    let blockchain_error: Error, blockchain_result: any;
+    [blockchain_error, blockchain_result] = await this.registerSpentFund(campaign, member, data);
+
+    let error: Error, transaction: MicrocreditTransaction;
+    [error, transaction] = await to(this.transactionModel.create({
+      support: support._id,
+
+      ...blockchain_result,
+
+      data: data,
+
+      type: MicrocreditTransactionType.SpendFund,
+      status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+
+      /** begin: To be Removed in Next Version */
+      member_id: (support.member as Member)._id,
+      campaign_id: campaign._id,
+      campaign_title: campaign.title,
+      support_id: support._id,
+      partner_id: (campaign.partner as Partner)._id,
+      partner_name: (campaign.partner as Partner).name,
+      /** end: To be Removed in Next Version */
+
+      tokens: data._tokens * (-1)
+    }).catch());
+    if (error) return error;
+
+    return blockchain_result;
+  }
+
+  /**
+   * 
+   * Blockchain Register Functions (registerPromisedFund, registerReceivedFund, registerRevertFund, registerSpentFund)
+   * 
+   */
+
+  private registerPromisedFund = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto) => {
+    return await to(serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
         return instance.promiseToFund('0x' + member.account.address, data._amount, serviceInstance.address)
       })
@@ -471,24 +614,63 @@ class MicrocreditController implements Controller {
         return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
       })
     );
-    if (error) {
-      this.escapeBlockchainError(error, "PromiseFund")
-      return error;
-    }
-
-    await this.transaction.create({
-      support: support_id,
-      ...result,
-      tokens: data._amount,
-      type: 'PromiseFund',
-      status: (error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED
-      // ...response.locals.support,
-    });
-
-    return result;
   }
 
-  // private registerPromisedFund2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private registerReceivedFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
+    return await to(serviceInstance.getMicrocredit(campaign.address)
+      .then((instance) => {
+        return instance.fundReceived(support.contractIndex, serviceInstance.address)
+      })
+      .catch((error) => {
+        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      })
+    );
+  }
+
+  private registerRevertFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
+    return await to(serviceInstance.getMicrocredit(campaign.address)
+      .then((instance) => {
+        return instance.revertFund(support.contractIndex, serviceInstance.address)
+      })
+      .catch((error) => {
+        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      })
+    );
+  }
+
+  private registerSpentFund = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto) => {
+    if (campaign.quantitative) {
+      return await to(serviceInstance.getMicrocredit(campaign.address)
+        .then((instance) => {
+          return instance.spend('0x' + member.account.address, data._tokens, serviceInstance.address)
+        })
+        .catch((error) => {
+          return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+        })
+      );
+    } else {
+      return await to(serviceInstance.getMicrocredit(campaign.address)
+        .then((instance) => {
+          return instance.methods['spend(address)'].sendTransaction('0x' + member.account.address, serviceInstance.address)
+        })
+        .catch((error) => {
+          return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+        })
+      );
+    }
+  }
+}
+
+export default MicrocreditController;
+
+
+
+
+
+
+
+
+ // private registerPromisedFund2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
   //   const partner_id: CampaignID["partner_id"] = request.params.partner_id;
   //   const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
   //   const data: EarnTokensDto = request.body;
@@ -652,28 +834,6 @@ class MicrocreditController implements Controller {
   //   //   })
   // }
 
-  private registerReceivedFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
-    let error: Error, result: any;
-    [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
-      .then((instance) => {
-        return instance.fundReceived(support.contractIndex, serviceInstance.address)
-      })
-      .catch((error) => {
-        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-      })
-    );
-    if (error) {
-      this.escapeBlockchainError(error, "ReceiveFund")
-      return error;
-    }
-
-    await this.transaction.create({
-      support: support._id,
-      ...result,
-      type: 'ReceiveFund',
-      status: (error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED
-    });
-  }
 
   // private registerReceivedFund2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
   //   //const partner_id: CampaignID["partner_id"] = request.params.partner_id;
@@ -763,28 +923,6 @@ class MicrocreditController implements Controller {
   //   //   });
   // }
 
-  private registerRevertFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
-    let error: Error, result: any;
-    [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
-      .then((instance) => {
-        return instance.revertFund(support.contractIndex, serviceInstance.address)
-      })
-      .catch((error) => {
-        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-      })
-    );
-    if (error) {
-      this.escapeBlockchainError(error, "RevertFund")
-      return error;
-    }
-
-    await this.transaction.create({
-      support: support._id,
-      ...result,
-      type: 'RevertFund',
-      status: (error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED
-    });
-  }
 
   // private registerRevertFund2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
   //   // const partner_id: SupportID["partner_id"] = request.params.partner_id;
@@ -863,53 +1001,7 @@ class MicrocreditController implements Controller {
   //   //   })
   // }
 
-  private registerSpentFund = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto, support: MicrocreditSupport) => {
-    if (campaign.quantitative) {
-      let error: Error, result: any;
-      [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
-        .then((instance) => {
-          return instance.spend('0x' + member.account.address, data._tokens, serviceInstance.address)
-        })
-        .catch((error) => {
-          return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-        })
-      );
-      if (error) {
-        this.escapeBlockchainError(error, "SpendFund")
-        return error;
-      }
 
-      await this.transaction.create({
-        support: support._id,
-        ...result,
-        tokens: data._tokens,
-        type: 'SpendFund',
-        status: (error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED
-      });
-    } else {
-      let error: Error, result: any;
-      [error, result] = await to(serviceInstance.getMicrocredit(campaign.address)
-        .then((instance) => {
-          return instance.methods['spend(address)'].sendTransaction('0x' + member.account.address, serviceInstance.address)
-        })
-        .catch((error) => {
-          return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-        })
-      );
-      if (error) {
-        this.escapeBlockchainError(error, "SpendFund")
-        return error;
-      }
-
-      await this.transaction.create({
-        support: support._id,
-        ...result,
-        tokens: data._tokens,
-        type: 'SpendFund',
-        status: (error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED
-      });
-    }
-  }
 
   // private registerSpendFund2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
   //   // const partner_id: SupportID["partner_id"] = request.params.partner_id;
@@ -1045,45 +1137,3 @@ class MicrocreditController implements Controller {
   //     //   })
   //   }
   // }
-
-  private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const params: string = request.params.offset;
-    const user: User = request.user;
-    const offset: {
-      limit: number, skip: number, greater: number, type: boolean
-    } = offsetParams(params);
-
-    let error: Error, transactions: MicrocreditTransaction[];
-    [error, transactions] = await to(this.transaction.find({
-      $and: [
-        { $or: [{ member_id: user._id }, { partner_id: user._id }] },
-        { $or: [{ type: "PromiseFund" }, { type: "SpendFund" }, { type: "ReceiveFund" }, { type: "RevertFund" }] }
-      ]
-    }).select({
-      "_id": 1,
-      "support_id": 1,
-      "partner_id": 1,
-      "partner_name": 1,
-      "member_id": 1,
-      "campaign_id": 1,
-      "campaign_title": 1,
-      "method": 1,
-      "payment_id": 1,
-      "tokens": 1,
-      "type": 1,
-      "tx": 1,
-      "createdAt": 1
-    }).sort({ 'createdAt': -1, '_id': -1 })
-      .limit(offset.limit)
-      .skip(offset.skip)
-      .catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-    response.status(200).send({
-      data: transactions,
-      code: 200
-    });
-  }
-}
-
-export default MicrocreditController;

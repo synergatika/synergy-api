@@ -1,8 +1,6 @@
-import MicrocreditSupportsController from 'controllers/microcredit_supports.controller';
 import * as mongoose from 'mongoose';
 import { Schema } from 'mongoose';
-import { EarnTokensDto, RedeemTokensDto } from '_dtos';
-import { MicrocreditTransaction, TransactionStatus } from '../_interfaces/index';
+import { MicrocreditTransaction } from '../_interfaces/index';
 
 // const dataSchema = new mongoose.Schema({
 //   campaign_id: String,
@@ -52,6 +50,7 @@ const receiptSchema = new mongoose.Schema({
 }, { _id: false });
 
 const microcreditTransactionSchema = new mongoose.Schema({
+
   campaign: {
     type: Schema.Types.ObjectId,
     ref: 'MicrocreditCampaign'
@@ -64,55 +63,45 @@ const microcreditTransactionSchema = new mongoose.Schema({
     type: Schema.Types.ObjectId,
     ref: 'User'
   },
+
+  data: Object,
+
   tokens: {
     type: Number,
     default: 0
   },
+  payoff: {
+    type: Number,
+    default: 0
+  },
 
-  // support_id: String,
+  /** begin: To be Removed in Next Version */
+  support_id: String,
+  partner_id: String,
+  partner_name: String,
+  member_id: String,
+  campaign_id: String,
+  campaign_title: String,
+  /** end: To be Removed in Next Version */
 
-  // partner_id: String,
-  // partner_name: String,
-
-  // member_id: String,
-
-  // campaign_id: String,
-  // campaign_title: String,
-  // address: String,
-
-  // method: String,
-  // payment_id: String,
-
-  // tokens: {
-  //   type: Number,
-  //   default: 0
-  // },
-
-  // payoff: {
-  //   type: Number,
-  //   default: 0
-  // },
+  type: {
+    type: String,
+    enum: ['PromiseFund', 'ReceiveFund', 'RevertFund', 'SpendFund'],
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'completed'],
+    default: 'pending'
+  },
 
   contractRef: String,
   contractIndex: {
     type: Number,
     default: -1
   },
-  // data: dataSchema,
-
   tx: String,
   receipt: receiptSchema,
-  logs: [logsSchema],
-  type: {
-    type: String,
-    enum: ['PromiseFund', 'ReceiveFund', 'RevertFund', 'SpendFund'],
-  },
-
-  status: {
-    type: String,
-    enum: ['pending', 'completed'],
-    default: 'pending'
-  }
+  logs: [logsSchema]
 }, {
   timestamps: true
 });

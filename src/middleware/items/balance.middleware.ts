@@ -34,22 +34,49 @@ import microcreditTransactionModel from '../../models/microcredit.transaction.mo
 async function loyalty_balance(request: RequestWithUser, response: Response, next: NextFunction) {
   const member: User = (response.locals.member) ? response.locals.member : request.user;
 
-  let error: Error, result: any;
-  [error, result] = await to(serviceInstance.getLoyaltyAppContract()
-    .then((instance) => {
-      return instance.members(member.account.address)
-    })
-    .catch((error) => {
-      return error; //next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-    })
-  );
-  if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  let error: Error, points: any[];
+  [error, points] = await to(loyaltyTransactionModel.aggregate([{
+    $match: {
+      $and: [{
+        'member_id': (member._id).toString()
+      }]
+    }
+  },
+  {
+    $group: {
+      _id: "$member_id",
+      member_id: { '$first': '$member_id' },
+      currentPoints: { $sum: '$points' }
+    }
+  }]
+  ).exec().catch());
+  if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
   response.locals["balance"] = {
-    address: result.memberAddress,
-    points: result.points,
+    address: points[0].member_id,
+    points: points[0].currentPoints,
   };
   next();
+
+
+  // const member: User = (response.locals.member) ? response.locals.member : request.user;
+
+  // let error: Error, result: any;
+  // [error, result] = await to(serviceInstance.getLoyaltyAppContract()
+  //   .then((instance) => {
+  //     return instance.members(member.account.address)
+  //   })
+  //   .catch((error) => {
+  //     return error; //next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  //   })
+  // );
+  // if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+
+  // response.locals["balance"] = {
+  //   address: result.memberAddress,
+  //   points: result.points,
+  // };
+  // next();
   // await serviceInstance.getLoyaltyAppContract()
   //   .then((instance) => {
   //     return instance.members(member.account.address)

@@ -195,7 +195,6 @@ describe("Open Calls", () => {
         .send({
           email: user_f.email
         }).end((err, res) => {
-          console.log(res.body);
           res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('data');

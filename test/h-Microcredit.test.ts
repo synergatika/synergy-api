@@ -7,6 +7,7 @@ chai.use(require('chai-as-promised'));
 chai.use(require('chai-http'));
 
 import { partner_a, user_a, microcredit_a, microcredit_b, user_b } from './_structs.test';
+import { Console } from '@sentry/node/dist/integrations';
 var a1_support_id: string = '';
 var a2_support_id: string = '';
 var a3_support_id: string = '';
@@ -137,8 +138,6 @@ describe("Microcredit", () => {
           _tokens: 10
         })
         .end((err, res) => {
-          console.log(err);
-          console.log(res.body);
           res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('message');
@@ -230,8 +229,6 @@ describe("Microcredit", () => {
           _amount: 15,
         })
         .end((err, res) => {
-          console.log(res.body);
-          console.log(err);
           res.should.have.status(404);
           res.body.should.be.a('object');
           res.body.should.have.property('message');

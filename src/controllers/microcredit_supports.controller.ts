@@ -111,11 +111,12 @@ class MicrocreditSupportsController implements Controller {
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     const campaigns: MicrocreditCampaign[] = await this.readCampaigns(supports);
-    const supportsWithCampaign = supports.map((a: MicrocreditSupport) =>
+    const supportsWithCampaign = supports.map((a: any) =>
       Object.assign({}, a,
         {
           status: this.defineSupportStatus(a),
-          campaign: (campaigns).find((b: MicrocreditCampaign) => (b._id).toString() === ((a.campaign as MicrocreditCampaign)._id).toString()),
+          // campaign: (campaigns).find((b: MicrocreditCampaign) => (b._id).toString() === ((a.campaign as MicrocreditCampaign)._id).toString()),
+          campaign: (campaigns).find((b: MicrocreditCampaign) => (b._id).toString() === (a.campaign_id).toString()),
         }
       )
     );
@@ -236,10 +237,11 @@ class MicrocreditSupportsController implements Controller {
     else if (a.type == 'ReceiveFund' || a.type == 'SpendFund') return SupportStatus.PAID;
   }
 
-  private readCampaigns = async (supports: MicrocreditSupport[]) => {
+  private readCampaigns = async (supports: any[]) => {
     let error: Error, campaigns: MicrocreditCampaign[];
     [error, campaigns] = await to(this.microcreditModel.find(
-      { _id: { $in: supports.map(a => new ObjectId((a.campaign as MicrocreditCampaign)._id)) } }
+      // { _id: { $in: supports.map(a => new ObjectId((a.campaign as MicrocreditCampaign)._id)) } }
+      { _id: { $in: supports.map(a => new ObjectId(a.campaign_id)) } }
     )
       .populate([{
         path: 'partner'

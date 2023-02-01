@@ -1,3 +1,6 @@
+import { EarnTokensDto, RedeemTokensDto } from "_dtos";
+import { Member } from "_interfaces/users.interfaces";
+import { MicrocreditCampaign } from "./campaign.interface";
 import { MicrocreditSupport } from "./support.interface";
 
 export enum TransactionStatus {
@@ -5,31 +8,37 @@ export enum TransactionStatus {
   PENDING = 'pending'
 }
 
+export enum MicrocreditTransactionType {
+  PromiseFund = 'PromiseFund',
+  ReceiveFund = 'ReceiveFund',
+  RevertFund = 'RevertFund',
+  SpendFund = 'SpendFund'
+}
+
 export interface MicrocreditTransaction {
   _id?: string;
-  // support_id?: string,
 
-  // partner_id: string;
-  // partner_name: string;
+  campaign: MicrocreditCampaign,
+  support: MicrocreditSupport,
+  member: Member,
 
-  // member_id: string;
+  data: EarnTokensDto | RedeemTokensDto;
 
-  // campaign_id: string;
-  // campaign_title: string;
-  // address: string;
+  /** begin: To be Removed in Next Version */
+  partner_id: string;
+  partner_name: string;
+  member_id: string;
+  campaign_id: string;
+  campaign_title: string;
+  support_id?: string,
+  /** end: To be Removed in Next Version */
 
-  // method: number;
-  // payment_id?: string;
-  // tokens: number;
-
-  support: MicrocreditSupport;
+  type: MicrocreditTransactionType;
   status: TransactionStatus;
 
   contractIndex?: number;
   contractRef: string;
-
-  type: string;
-
   tx: string;
+
   createdAt: Date;
 }
