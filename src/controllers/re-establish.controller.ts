@@ -58,7 +58,6 @@ class ReEstablishController implements Controller {
         this.router.get(`${this.path}/microcredit`, this.removeMicrocreditHistory);
     }
 
-
     private establishUsers = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         if (`${process.env.RE_ESTABLISH_OPTION}` == 'true') {
             await this.registrationTransaction.deleteMany({});

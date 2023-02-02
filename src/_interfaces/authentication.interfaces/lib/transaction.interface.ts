@@ -10,9 +10,11 @@ export enum RegistrationTransactionType {
 export interface RegistrationTransaction {
   _id: string;
 
-  User: User;
+  user: User;
 
   user_id: string;
+  encryptBy: string;
+
   type: RegistrationTransactionType;
   status: TransactionStatus;
 

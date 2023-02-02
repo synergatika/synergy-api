@@ -441,11 +441,11 @@ class AuthenticationController implements Controller {
 
     let blockchain_result: string | Error;
     blockchain_result = await this.createBlockchainAccount(user, encryptBy);
-    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     let email_result: string | Error;
     email_result = await emailService.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'one-click', null)
-    if (this.isError(email_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     response.status(200).send(
       {
@@ -489,7 +489,7 @@ class AuthenticationController implements Controller {
 
       let blockchain_result: string | Error;
       blockchain_result = await this.createBlockchainAccount(user, potensialUser.extras.encryptBy);
-      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
       let email_result: string | Error;
       email_result = await emailService.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token)
@@ -537,7 +537,7 @@ class AuthenticationController implements Controller {
 
       let blockchain_result: string | Error;
       blockchain_result = await this.createBlockchainAccount(user, potensialUser.extras.encryptBy);
-      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+      if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
       let email_result: string | Error;
       email_result = await emailService.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token)
@@ -594,11 +594,11 @@ class AuthenticationController implements Controller {
 
     let blockchain_result: string | Error;
     blockchain_result = await this.createBlockchainAccount(user, potensialUser.extras.encryptBy);
-    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     let email_result: string | Error;
     email_result = await emailService.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user)
-    if (this.isError(email_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     response.status(200).send(
       {
@@ -646,11 +646,11 @@ class AuthenticationController implements Controller {
 
     let blockchain_result: string | Error;
     blockchain_result = await this.createBlockchainAccount(user, potensialUser.extras.encryptBy);
-    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    if (this.isError(blockchain_result)) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     let email_result: string | Error;
     email_result = await emailService.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user)
-    if (this.isError(email_result)) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+    if (this.isError(email_result)) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     response.status(200).send(
       {
@@ -860,8 +860,9 @@ class AuthenticationController implements Controller {
         ...blockchain_result,
         user: user,
         user_id: user._id,
+        encryptBy: encryptBy,
         type: RegistrationTransactionType.RegisterMember,
-        status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+        status: (blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
       }).catch());
 
       // if (user.email) {
@@ -891,8 +892,9 @@ class AuthenticationController implements Controller {
         ...blockchain_result,
         user: user,
         user_id: user._id,
+        encryptBy: encryptBy,
         type: RegistrationTransactionType.RegisterPartner,
-        status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+        status: (blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
       }).catch());
       // next();
 

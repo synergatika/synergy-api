@@ -31,7 +31,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, MicrocreditCampaign, MicrocreditTokens, MicrocreditStatistics, SupportStatus, Partner } from '../_interfaces/index';
+import { User, MicrocreditCampaign, MicrocreditTokens, MicrocreditStatistics, SupportStatus, Partner, TransactionStatus } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -67,7 +67,6 @@ const offsetParams = OffsetHelper.offsetLimit;
 import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
 import microcreditModel from '../models/campaign.model';
-import failedTransactionModel from '../models/failed.transaction.model';
 
 class MicrocreditCampaignsController implements Controller {
   public path = '/microcredit/campaigns';
@@ -75,7 +74,6 @@ class MicrocreditCampaignsController implements Controller {
   private user = userModel;
   private transaction = transactionModel;
   private microcreditModel = microcreditModel;
-  private failedTransactionModel = failedTransactionModel;
 
   private campaignHours: number[] = [5, 20];
 
@@ -171,12 +169,12 @@ class MicrocreditCampaignsController implements Controller {
     });
   }
 
-  private escapeBlockchainError = async (_error: any, _type: string) => {
-    await this.failedTransactionModel.create({
-      error: _error,
-      type: _type
-    })
-  }
+  // private escapeBlockchainError = async (_error: any, _type: string) => {
+  //   await this.failedTransactionModel.create({
+  //     error: _error,
+  //     type: _type
+  //   })
+  // }
 
   private readCampaigns = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
 
@@ -319,12 +317,12 @@ class MicrocreditCampaignsController implements Controller {
     const user: User = request.user;
     const campaign: MicrocreditCampaign = response.locals.campaign;
 
-    let _error: Error, _result: any;
-    [_error, _result] = await to(this.registerMicrocredit(user, campaign));
-    if (_error) {
-      this.escapeBlockchainError(_error, "CreateMicrocredit");
-      return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${_error}`));
-    }
+    let blockchain_error: Error, blockchain_result: any;
+    [blockchain_error, blockchain_result] = await to(this.registerMicrocredit(user, campaign));
+    // if (_error) {
+    // this.escapeBlockchainError(_error, "CreateMicrocredit");
+    // return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${_error}`));
+    // }
 
     let error: Error, updated_campaign: MicrocreditCampaign;
     [error, updated_campaign] = await to(this.microcreditModel.findOneAndUpdate({
@@ -332,8 +330,9 @@ class MicrocreditCampaignsController implements Controller {
     }, {
       '$set': {
         'status': 'published', // published
-        'address': _result.address,
-        'transactionHash': _result.transactionHash,
+        'address': blockchain_result?.address,
+        'transactionHash': blockchain_result?.transactionHash,
+        "registered": (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));

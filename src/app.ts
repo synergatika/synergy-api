@@ -41,6 +41,7 @@ class App {
 
   public startSchedule() {
     Schedule.campaingStarts();
+    Schedule.registerFailedTransactions();
   }
 
   private initializeMiddlewares() {

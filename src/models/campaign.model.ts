@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { MicrocreditCampaign } from '../_interfaces/index';
+import { MicrocreditCampaign, TransactionStatus } from '../_interfaces/index';
 
 const Schema = mongoose.Schema;
 
@@ -34,6 +34,11 @@ const microcreditCampaignSchema = new mongoose.Schema({
   startsAt: Number,
   expiresAt: Number,
 
+  registered: {
+    type: String,
+    enum: ['pending', 'completed'],
+    default: 'pending'
+  },
   status: {
     type: String,
     enum: ['draft', 'published'],
@@ -41,7 +46,7 @@ const microcreditCampaignSchema = new mongoose.Schema({
   },
 
   address: String,
-  transactionHash: String,
+  transactionHash: String
 
   //  supports: [microcreditSupportSchema]
 }, { timestamps: true });

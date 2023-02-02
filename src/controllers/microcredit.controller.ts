@@ -58,16 +58,12 @@ const offsetParams = OffsetHelper.offsetLimit;
 /**
  * Models
  */
-import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
 import microcreditSupport from '../models/support.model';
-import failedTransactionModel from '../models/failed.transaction.model';
-import supportModel from '../models/support.model';
 
 class MicrocreditController implements Controller {
   public path = '/microcredit';
   public router = express.Router();
-  private userModel = userModel;
   private transactionModel = transactionModel;
   private microcreditSupport = microcreditSupport;
 
@@ -158,6 +154,9 @@ class MicrocreditController implements Controller {
       this.readTransactions);
   }
 
+  /** NEW */
+  private isError = (err: unknown): err is Error => err instanceof Error;
+
   private formatDate(date: Date): string {
     var d: Date = new Date(date),
       month: string = ('0' + (d.getMonth() + 1)).slice(-2),
@@ -166,9 +165,6 @@ class MicrocreditController implements Controller {
 
     return [year, month, day].join('-');
   }
-
-  /** NEW */
-  private isError = (err: unknown): err is Error => err instanceof Error;
 
   private readBalance = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     response.status(200).send({
@@ -224,13 +220,13 @@ class MicrocreditController implements Controller {
       currentTokens: (data.paid) ? data._amount : 0,
       payment: _payment,
       status: (data.paid) ? SupportStatus.PAID : SupportStatus.UNPAID,
-      contractRef: transaction_result.logs[0].args.ref,
-      contractIndex: transaction_result.logs[0].args.index,
+      contractRef: transaction_result?.logs[0].args.ref,
+      contractIndex: transaction_result?.logs[0].args.index,
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     if (data.paid) {
-      transaction_result = await this.registerReceivedFund(campaign, created_support);
+      transaction_result = await this.createReceiveTransaction(campaign, created_support);
       if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
     }
 
@@ -276,13 +272,13 @@ class MicrocreditController implements Controller {
       currentTokens: (data.paid) ? data._amount : 0,
       payment: _payment,
       status: (data.paid) ? SupportStatus.PAID : SupportStatus.UNPAID,
-      contractRef: transaction_result.logs[0].args.ref,
-      contractIndex: transaction_result.logs[0].args.index,
+      contractRef: transaction_result?.logs[0].args.ref,
+      contractIndex: transaction_result?.logs[0].args.index,
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     if (data.paid) {
-      transaction_result = await this.registerReceivedFund(campaign, created_support);
+      transaction_result = await this.createReceiveTransaction(campaign, created_support);
       if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
     }
 
@@ -329,8 +325,8 @@ class MicrocreditController implements Controller {
       currentTokens: (data.paid) ? data._amount : 0,
       payment: _payment,
       status: (data.paid) ? SupportStatus.PAID : SupportStatus.UNPAID,
-      contractRef: transaction_result.logs[0].args.ref,
-      contractIndex: transaction_result.logs[0].args.index,
+      contractRef: transaction_result?.logs[0].args.ref,
+      contractIndex: transaction_result?.logs[0].args.index,
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
@@ -476,6 +472,7 @@ class MicrocreditController implements Controller {
   private createPromiseTransaction = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto, support_id: MicrocreditSupport['_id']) => {
     let blockchain_error: Error, blockchain_result: any;
     [blockchain_error, blockchain_result] = await this.registerPromisedFund(campaign, member, data);
+    if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: MicrocreditTransaction;
     [error, transaction] = await to(this.transactionModel.create({
@@ -486,7 +483,7 @@ class MicrocreditController implements Controller {
       data: data,
 
       type: MicrocreditTransactionType.PromiseFund,
-      status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+      status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
 
       /** begin: To be Removed in Next Version */
       member_id: (member as Member)._id,
@@ -499,9 +496,7 @@ class MicrocreditController implements Controller {
 
       tokens: data._amount,
     }).catch());
-    if (error) {
-      return error;
-    };
+    if (error) return error;
 
     return blockchain_result;
   }
@@ -509,6 +504,7 @@ class MicrocreditController implements Controller {
   private createReceiveTransaction = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
     let blockchain_error: Error, blockchain_result: any;
     [blockchain_error, blockchain_result] = await this.registerReceivedFund(campaign, support);
+    if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: MicrocreditTransaction;
     [error, transaction] = await to(this.transactionModel.create({
@@ -517,7 +513,7 @@ class MicrocreditController implements Controller {
       ...blockchain_result,
 
       type: MicrocreditTransactionType.ReceiveFund,
-      status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+      status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
 
       /** begin: To be Removed in Next Version */
       member_id: (support.member as Member)._id,
@@ -531,9 +527,7 @@ class MicrocreditController implements Controller {
       tokens: 0,
       payoff: support.initialTokens
     }).catch());
-    if (error) {
-      return error;
-    };
+    if (error) return error;
 
     return blockchain_result;
   }
@@ -541,6 +535,7 @@ class MicrocreditController implements Controller {
   private createRevertTransaction = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
     let blockchain_error: Error, blockchain_result: any;
     [blockchain_error, blockchain_result] = await this.registerRevertFund(campaign, support);
+    if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: MicrocreditTransaction;
     [error, transaction] = await to(this.transactionModel.create({
@@ -549,7 +544,7 @@ class MicrocreditController implements Controller {
       ...blockchain_result,
 
       type: MicrocreditTransactionType.RevertFund,
-      status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+      status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
 
       /** begin: To be Removed in Next Version */
       member_id: (support.member as Member)._id,
@@ -571,6 +566,7 @@ class MicrocreditController implements Controller {
   private createSpendTransaction = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto, support: MicrocreditSupport) => {
     let blockchain_error: Error, blockchain_result: any;
     [blockchain_error, blockchain_result] = await this.registerSpentFund(campaign, member, data);
+    if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: MicrocreditTransaction;
     [error, transaction] = await to(this.transactionModel.create({
@@ -581,7 +577,7 @@ class MicrocreditController implements Controller {
       data: data,
 
       type: MicrocreditTransactionType.SpendFund,
-      status: (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+      status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
 
       /** begin: To be Removed in Next Version */
       member_id: (support.member as Member)._id,

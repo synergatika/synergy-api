@@ -28,6 +28,7 @@ const registrationTransactionSchema = new mongoose.Schema({
   },
 
   user_id: String,
+  encryptBy: String,
 
   tx: String,
   receipt: receiptSchema,

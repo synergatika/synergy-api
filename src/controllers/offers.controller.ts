@@ -381,10 +381,10 @@ class OffersController implements Controller {
   }
 
   /**
- *  
- * Local Function Section 
- *
- * */
+   *  
+   * Local Function Section 
+   *
+   * */
 
   /** Project Partner (Local Function) */
   private projectPartner() {
