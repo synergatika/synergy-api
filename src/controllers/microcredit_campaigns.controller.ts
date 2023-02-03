@@ -9,6 +9,9 @@ import path from 'path';
 import { BlockchainService } from '../utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
+import BlockchainRegistrationService from '../utils/blockchain.registrations';
+const registrationService = new BlockchainRegistrationService();
+
 /**
  * Environment Variables
  */
@@ -312,13 +315,15 @@ class MicrocreditCampaignsController implements Controller {
       });
     }
   }
+  private isError = (err: unknown): err is Error => err instanceof Error;
 
   private publishCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
     const campaign: MicrocreditCampaign = response.locals.campaign;
 
     let blockchain_error: Error, blockchain_result: any;
-    [blockchain_error, blockchain_result] = await to(this.registerMicrocredit(user, campaign));
+    [blockchain_error, blockchain_result] = await to(registrationService.registerMicrocreditCampaign(user, campaign));
+    if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
     // if (_error) {
     // this.escapeBlockchainError(_error, "CreateMicrocredit");
     // return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${_error}`));
@@ -332,7 +337,7 @@ class MicrocreditCampaignsController implements Controller {
         'status': 'published', // published
         'address': blockchain_result?.address,
         'transactionHash': blockchain_result?.transactionHash,
-        "registered": (blockchain_error) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+        "registered": (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -343,28 +348,6 @@ class MicrocreditCampaignsController implements Controller {
     });
   }
 
-  private registerMicrocredit = async (user: User, campaign: MicrocreditCampaign) => {
-    const dates = {
-      startsAt: (convertHelper.roundDate(campaign.startsAt, this.campaignHours[0])).toString(),
-      expiresAt: (convertHelper.roundDate(campaign.expiresAt, this.campaignHours[1])).toString(),
-      redeemStarts: (convertHelper.roundDate(campaign.redeemStarts, this.campaignHours[0])).toString(),
-      redeemEnds: (convertHelper.roundDate(campaign.redeemEnds, this.campaignHours[1])).toString()
-    };
-
-    Object.keys(dates).forEach((key: string) => {
-      if (`${process.env.PRODUCTION}` == 'true')
-        (dates as any)[key] = (dates as any)[key] + "000000";
-      else
-        (dates as any)[key] = ((dates as any)[key]).slice(0, ((dates as any)[key]).length - 3);
-    });
-
-    return (serviceInstance.startNewMicrocredit(
-      user.account.address,
-      1, campaign.maxAmount, campaign.maxAmount, campaign.minAllowed,
-      parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
-      campaign.quantitative)
-    );
-  }
 
   // private registerMicrocredit = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
   //   const user: User = request.user;

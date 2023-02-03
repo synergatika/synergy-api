@@ -107,9 +107,11 @@ const loyaltyTransactionSchema = new mongoose.Schema({
     default: 'pending'
   },
 
+  /** Blockchain Variables (Optional) */
   tx: String,
   receipt: receiptSchema,
   logs: Array
+
 }, {
   timestamps: true
 });

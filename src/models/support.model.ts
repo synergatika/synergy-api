@@ -23,17 +23,20 @@ const supportSchema = new mongoose.Schema({
 
   initialTokens: Number,
   currentTokens: Number,
+  payment: paymentSchema,
   status: {
     type: String,
     enum: ['completed', 'paid', 'unpaid'],
     default: 'unpaid'
   },
-  payment: paymentSchema,
 
   /** Blockchain Variables */
   contractRef: String,
-  contractIndex: String
-  /** ----- */
+  contractIndex: {
+    type: Number,
+    default: -1
+  }
+
 }, { timestamps: true });
 
 const supportModel = mongoose.model<MicrocreditSupport & mongoose.Document>('MicrocreditSupport', supportSchema);

@@ -8,6 +8,10 @@ var path = require('path');
 import { BlockchainService } from '../utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
+import BlockchainRegistrationService from '../utils/blockchain.registrations';
+const registrationService = new BlockchainRegistrationService();
+
+
 /**
  * DTOs
  */
@@ -256,7 +260,7 @@ class LoyaltyController implements Controller {
 
   private createEarnTransaction = async (partner: User, member: User, data: EarnPointsDto, _points: number) => {
     let blockchain_error: Error, blockchain_result: any;
-    [blockchain_error, blockchain_result] = await this.registerEarnLoyalty(partner, member, _points);
+    [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(partner, member, _points).catch());
     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: any;
@@ -285,7 +289,7 @@ class LoyaltyController implements Controller {
 
   private createRedeemTransaction = async (partner: User, member: User, offer: LoyaltyOffer, data: RedeemPointsDto, _points: number) => {
     let blockchain_error: Error, blockchain_result: any;
-    [blockchain_error, blockchain_result] = await this.registerRedeemLoyalty(partner, member, _points);
+    [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(partner, member, _points).catch());
     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: LoyaltyTransaction;
@@ -323,27 +327,27 @@ class LoyaltyController implements Controller {
    * 
    */
 
-  private registerEarnLoyalty = async (partner: User, member: User, _points: number) => {
-    return await to(serviceInstance.getLoyaltyAppContract()
-      .then((instance) => {
-        return instance.earnPoints(_points, member.account.address, '0x' + partner.account.address, serviceInstance.address)
-      })
-      .catch((error) => {
-        return error;
-      })
-    );
-  }
+  // private registerEarnLoyalty = async (partner: User, member: User, _points: number) => {
+  //   return await to(serviceInstance.getLoyaltyAppContract()
+  //     .then((instance) => {
+  //       return instance.earnPoints(_points, member.account.address, '0x' + partner.account.address, serviceInstance.address)
+  //     })
+  //     .catch((error) => {
+  //       return error;
+  //     })
+  //   );
+  // }
 
-  private registerRedeemLoyalty = async (partner: User, member: User, _points: number) => {
-    return await to(serviceInstance.getLoyaltyAppContract()
-      .then((instance) => {
-        return instance.usePoints(_points, member.account.address, '0x' + partner.account.address, serviceInstance.address)
-      })
-      .catch((error) => {
-        return error;
-      })
-    );
-  }
+  // private registerRedeemLoyalty = async (partner: User, member: User, _points: number) => {
+  //   return await to(serviceInstance.getLoyaltyAppContract()
+  //     .then((instance) => {
+  //       return instance.usePoints(_points, member.account.address, '0x' + partner.account.address, serviceInstance.address)
+  //     })
+  //     .catch((error) => {
+  //       return error;
+  //     })
+  //   );
+  // }
 
   /**
    * 

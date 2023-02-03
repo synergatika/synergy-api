@@ -49,7 +49,7 @@ export interface MicrocreditSupport {
 
   /** Blockchain Variables */
   contractRef?: string;
-  contractIndex?: string;
+  contractIndex?: number;
   /** ----- */
 
   createdAt?: Date;

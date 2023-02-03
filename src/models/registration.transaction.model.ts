@@ -27,12 +27,11 @@ const registrationTransactionSchema = new mongoose.Schema({
     ref: 'User'
   },
 
+  /** begin: To be Removed in Next Version */
   user_id: String,
   encryptBy: String,
+  /** end: To be Removed in Next Version */
 
-  tx: String,
-  receipt: receiptSchema,
-  logs: Array,
   type: {
     type: String,
     enum: ['RegisterMember', 'RegisterPartner', 'RecoverPoints'],
@@ -41,7 +40,13 @@ const registrationTransactionSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'completed'],
     default: 'pending'
-  }
+  },
+
+  /** Blockchain Variables (Optional) */
+  tx: String,
+  receipt: receiptSchema,
+  logs: Array,
+
 }, {
   timestamps: true
 });

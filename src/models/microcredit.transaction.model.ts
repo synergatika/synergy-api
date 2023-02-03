@@ -2,21 +2,6 @@ import * as mongoose from 'mongoose';
 import { Schema } from 'mongoose';
 import { MicrocreditTransaction } from '../_interfaces/index';
 
-// const dataSchema = new mongoose.Schema({
-//   campaign_id: String,
-//   campaign_title: String,
-//   address: String,
-//   support_id: String,
-//   contractIndex: {
-//     type: Number,
-//     default: -1
-//   },
-//   tokens: {
-//     type: Number,
-//     default: -1
-//   },
-// }, { _id: false });
-
 const logsSchema = new mongoose.Schema({
   logIndex: Number,
   transactionIndex: Number,
@@ -51,17 +36,9 @@ const receiptSchema = new mongoose.Schema({
 
 const microcreditTransactionSchema = new mongoose.Schema({
 
-  campaign: {
-    type: Schema.Types.ObjectId,
-    ref: 'MicrocreditCampaign'
-  },
   support: {
     type: Schema.Types.ObjectId,
     ref: 'MicrocreditSupport'
-  },
-  member: {
-    type: Schema.Types.ObjectId,
-    ref: 'User'
   },
 
   data: Object,
@@ -94,14 +71,11 @@ const microcreditTransactionSchema = new mongoose.Schema({
     default: 'pending'
   },
 
-  contractRef: String,
-  contractIndex: {
-    type: Number,
-    default: -1
-  },
+  /** Blockchain Variables (Optional) */
   tx: String,
   receipt: receiptSchema,
   logs: [logsSchema]
+
 }, {
   timestamps: true
 });

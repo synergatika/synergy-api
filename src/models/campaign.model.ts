@@ -8,6 +8,7 @@ const microcreditCampaignSchema = new mongoose.Schema({
     type: Schema.Types.ObjectId,
     ref: 'User'
   },
+
   title: String,
   subtitle: String,
   slug: String,
@@ -45,10 +46,10 @@ const microcreditCampaignSchema = new mongoose.Schema({
     default: 'draft'
   },
 
+  /** Blckchain Variables */
   address: String,
   transactionHash: String
 
-  //  supports: [microcreditSupportSchema]
 }, { timestamps: true });
 
 

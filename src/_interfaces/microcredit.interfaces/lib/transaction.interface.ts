@@ -18,9 +18,9 @@ export enum MicrocreditTransactionType {
 export interface MicrocreditTransaction {
   _id?: string;
 
-  campaign: MicrocreditCampaign,
+  // campaign: MicrocreditCampaign,
   support: MicrocreditSupport,
-  member: Member,
+  // member: Member,
 
   data: EarnTokensDto | RedeemTokensDto;
 

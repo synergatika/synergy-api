@@ -924,7 +924,7 @@ class EmailService {
     });
   }
 
-  public campaignStarts = async (campaign: any) => {
+  public campaignStarts = async (emails_to: string[], campaign: MicrocreditCampaign) => {
     const lang: string = this.defaultLang();
 
     let options = {
@@ -932,7 +932,7 @@ class EmailService {
       to: ``,
       subject: `${this.translation(lang).campaign_starts.subject} (${campaign.title})`,
       cc: ``,
-      bcc: (campaign.supports.map((a: any) => { if (a.member_email) return (a.member_email) })).join(),
+      bcc: emails_to,
       html: '',
       type: 'campaign_starts',
       locals: {

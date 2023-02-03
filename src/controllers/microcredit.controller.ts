@@ -11,6 +11,9 @@ var path = require('path');
 import { BlockchainService } from '../utils/blockchainService';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
+import BlockchainRegistrationService from '../utils/blockchain.registrations';
+const registrationService = new BlockchainRegistrationService();
+
 /**
  * Email Service
  */
@@ -471,7 +474,7 @@ class MicrocreditController implements Controller {
 
   private createPromiseTransaction = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto, support_id: MicrocreditSupport['_id']) => {
     let blockchain_error: Error, blockchain_result: any;
-    [blockchain_error, blockchain_result] = await this.registerPromisedFund(campaign, member, data);
+    [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund(campaign, member, data).catch());
     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: MicrocreditTransaction;
@@ -503,7 +506,7 @@ class MicrocreditController implements Controller {
 
   private createReceiveTransaction = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
     let blockchain_error: Error, blockchain_result: any;
-    [blockchain_error, blockchain_result] = await this.registerReceivedFund(campaign, support);
+    [blockchain_error, blockchain_result] = await to(registrationService.registerReceivedFund(campaign, support).catch());
     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: MicrocreditTransaction;
@@ -534,7 +537,7 @@ class MicrocreditController implements Controller {
 
   private createRevertTransaction = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
     let blockchain_error: Error, blockchain_result: any;
-    [blockchain_error, blockchain_result] = await this.registerRevertFund(campaign, support);
+    [blockchain_error, blockchain_result] = await to(registrationService.registerRevertFund(campaign, support).catch());
     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: MicrocreditTransaction;
@@ -565,7 +568,7 @@ class MicrocreditController implements Controller {
 
   private createSpendTransaction = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto, support: MicrocreditSupport) => {
     let blockchain_error: Error, blockchain_result: any;
-    [blockchain_error, blockchain_result] = await this.registerSpentFund(campaign, member, data);
+    [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund(campaign, member, data).catch());
     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
     let error: Error, transaction: MicrocreditTransaction;
@@ -601,60 +604,60 @@ class MicrocreditController implements Controller {
    * 
    */
 
-  private registerPromisedFund = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto) => {
-    return await to(serviceInstance.getMicrocredit(campaign.address)
-      .then((instance) => {
-        return instance.promiseToFund('0x' + member.account.address, data._amount, serviceInstance.address)
-      })
-      .catch((error) => {
-        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-      })
-    );
-  }
+  // private registerPromisedFund = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto) => {
+  //   return await to(serviceInstance.getMicrocredit(campaign.address)
+  //     .then((instance) => {
+  //       return instance.promiseToFund('0x' + member.account.address, data._amount, serviceInstance.address)
+  //     })
+  //     .catch((error) => {
+  //       return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //     })
+  //   );
+  // }
 
-  private registerReceivedFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
-    return await to(serviceInstance.getMicrocredit(campaign.address)
-      .then((instance) => {
-        return instance.fundReceived(support.contractIndex, serviceInstance.address)
-      })
-      .catch((error) => {
-        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-      })
-    );
-  }
+  // private registerReceivedFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
+  //   return await to(serviceInstance.getMicrocredit(campaign.address)
+  //     .then((instance) => {
+  //       return instance.fundReceived(support.contractIndex, serviceInstance.address)
+  //     })
+  //     .catch((error) => {
+  //       return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //     })
+  //   );
+  // }
 
-  private registerRevertFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
-    return await to(serviceInstance.getMicrocredit(campaign.address)
-      .then((instance) => {
-        return instance.revertFund(support.contractIndex, serviceInstance.address)
-      })
-      .catch((error) => {
-        return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-      })
-    );
-  }
+  // private registerRevertFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
+  //   return await to(serviceInstance.getMicrocredit(campaign.address)
+  //     .then((instance) => {
+  //       return instance.revertFund(support.contractIndex, serviceInstance.address)
+  //     })
+  //     .catch((error) => {
+  //       return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //     })
+  //   );
+  // }
 
-  private registerSpentFund = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto) => {
-    if (campaign.quantitative) {
-      return await to(serviceInstance.getMicrocredit(campaign.address)
-        .then((instance) => {
-          return instance.spend('0x' + member.account.address, data._tokens, serviceInstance.address)
-        })
-        .catch((error) => {
-          return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-        })
-      );
-    } else {
-      return await to(serviceInstance.getMicrocredit(campaign.address)
-        .then((instance) => {
-          return instance.methods['spend(address)'].sendTransaction('0x' + member.account.address, serviceInstance.address)
-        })
-        .catch((error) => {
-          return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-        })
-      );
-    }
-  }
+  // private registerSpentFund = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto) => {
+  //   if (campaign.quantitative) {
+  //     return await to(serviceInstance.getMicrocredit(campaign.address)
+  //       .then((instance) => {
+  //         return instance.spend('0x' + member.account.address, data._tokens, serviceInstance.address)
+  //       })
+  //       .catch((error) => {
+  //         return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //       })
+  //     );
+  //   } else {
+  //     return await to(serviceInstance.getMicrocredit(campaign.address)
+  //       .then((instance) => {
+  //         return instance.methods['spend(address)'].sendTransaction('0x' + member.account.address, serviceInstance.address)
+  //       })
+  //       .catch((error) => {
+  //         return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //       })
+  //     );
+  //   }
+  // }
 }
 
 export default MicrocreditController;
