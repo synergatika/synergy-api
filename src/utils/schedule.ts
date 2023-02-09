@@ -17,6 +17,7 @@ const registrationService = new BlockchainRegistrationService()
  */
 import EmailService from '../utils/emailService';
 const emailService = new EmailService();
+const http = require('http');
 
 /**
  * Interfaces

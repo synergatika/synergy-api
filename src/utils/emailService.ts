@@ -128,6 +128,13 @@ class EmailService {
       },
     }
 
+    console.log("# userRegistration")
+    console.log("email_to", email_to)
+    console.log("password", tempPassword)
+    console.log("registeredBy", (registrationType == 'one-click') ? '' : (registeredBy && registeredBy.access == 'admin') ?
+      `${this.translation(lang).registration.registeredBy[1]}` : `${this.translation(lang).registration.registeredBy[0]} ${registeredBy.name}`)
+    console.log("---------------");
+
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
     if (error) return error;
@@ -154,6 +161,11 @@ class EmailService {
         link: `${process.env.APP_URL}auth/verify-email/${token}`
       },
     }
+
+    console.log("# emailVerification")
+    console.log("email_to", email_to)
+    console.log("token", token)
+    console.log("---------------");
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
@@ -209,6 +221,11 @@ class EmailService {
         link: `${process.env.APP_URL}auth/reset-password/${token}`
       },
     }
+
+    console.log("# passwordRestoration")
+    console.log("email_to", email_to)
+    console.log("token", token)
+    console.log("---------------");
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
@@ -269,6 +286,10 @@ class EmailService {
       },
     }
 
+    console.log("# accountActivation")
+    console.log("email_to", email_to)
+    console.log("---------------");
+
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
     if (error) return error;
@@ -325,6 +346,12 @@ class EmailService {
           `${this.translation(lang).deactivation.title[0]}` : `${this.translation(lang).deactivation.title[1]}`
       },
     }
+
+    console.log("# accountDeactivation")
+    console.log("email_to", email_to)
+    console.log("title", (deletedBy.access == 'admin') ?
+      `${this.translation(lang).deactivation.title[0]}` : `${this.translation(lang).deactivation.title[1]}`)
+    console.log("---------------");
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
@@ -383,6 +410,10 @@ class EmailService {
       },
     }
 
+    console.log("# accountDeletion")
+    console.log("email_to", email_to)
+    console.log("---------------");
+
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
     if (error) return error;//return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
@@ -440,6 +471,11 @@ class EmailService {
       },
     }
 
+    console.log("# internalActivation")
+    console.log("to", `synergatika@gmail.com`)
+    console.log("user.email", user.email)
+    console.log("---------------");
+
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
     if (error) return error;
@@ -495,6 +531,12 @@ class EmailService {
         reason: `${reason}`
       },
     }
+
+    console.log("# internalActivation")
+    console.log("to", `synergatika@gmail.com`)
+    console.log("user.email", user.email)
+    console.log("reason", reason)
+    console.log("---------------");
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
@@ -552,6 +594,11 @@ class EmailService {
         email: user.email
       },
     }
+
+    console.log("# internalDeletion")
+    console.log("to", `synergatika@gmail.com`)
+    console.log("user.email", user.email)
+    console.log("---------------");
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
@@ -614,6 +661,12 @@ class EmailService {
       },
     }
 
+    console.log("# internalCommunication")
+    console.log("to", `synergatika@gmail.com`)
+    console.log("sender", data.sender)
+    console.log("content", data.content)
+    console.log("---------------");
+
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
     if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
@@ -644,6 +697,11 @@ class EmailService {
         email: data.user.email
       },
     }
+
+    console.log("# userInvitation")
+    console.log("email_to", data.receiver)
+    console.log("email", data.user.email)
+    console.log("---------------");
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
@@ -678,11 +736,15 @@ class EmailService {
       },
     }
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;
+    console.log("# newSupportPartner")
+    console.log("email_to", email_to)
+    console.log("campaign", `${campaign.title}`)
+    console.log("method", `${this.translation(lang).payments.filter((o) => { return o.bic == payment.method.bic })[0].title}`)
+    console.log("tokens", `${data._amount}`)
+    console.log("payment", `${payment._id}`)
+    console.log("---------------");
 
-    return 'EMAIL_SENT';
+    return this.emailSender(options);
   }
 
   public newSupportPartner2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -713,6 +775,9 @@ class EmailService {
         payment: `${data.support.payment_id}`
       },
     }
+
+    console.log("# newSupportPartner2")
+    console.log("---------------");
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
@@ -747,11 +812,16 @@ class EmailService {
       },
     }
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;
+    console.log("# newSupportMember")
+    console.log("email_to", email_to)
+    console.log("campaign", `${campaign.title}`)
+    console.log("method", `${payment.method.value},
+    ${this.translation(lang).payments.filter((o) => { return o.bic == payment.method.bic })[0].title}`)
+    console.log("tokens", `${data._amount}`)
+    console.log("payment", `${payment._id}`)
+    console.log("---------------");
 
-    return 'EMAIL_SENT';
+    return this.emailSender(options);
   }
 
   public newSupportMember2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -779,6 +849,9 @@ class EmailService {
         payment: `${data.support.payment_id}`
       },
     }
+
+    console.log("# newSupportMember2")
+    console.log("---------------");
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));
@@ -818,11 +891,13 @@ class EmailService {
       },
     }
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;
+    console.log("# changeSupportStatus")
+    console.log("email_to", email_to)
+    console.log("title", (support.status == SupportStatus.PAID) ?
+      `'${this.translation(lang).change_support_status.title[0]}'` : `'${this.translation(lang).change_support_status.title[1]}'`)
+    console.log("---------------");
 
-    return 'EMAIL_SENT';
+    return this.emailSender(options);
   }
 
   public changeSupportStatus2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -847,21 +922,10 @@ class EmailService {
       },
     }
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error} `));
+    console.log("# changeSupportStatus")
+    console.log("---------------");
 
-    response.status(200).send({
-      data: {
-        support_id: data.support.support_id,
-        payment_id: data.support.payment_id,
-        status: data.support.status,
-        method: data.support.method,
-      },
-      code: 200
-    });
-    // response.status(data.res.code).send(data.res.body);
-    //  response.status(200).send({ data: response.locals.support, code: 200 })
+    return this.emailSender(options);
   }
 
   public redeemSupport = async (_lang: string, email_to: string, campaign: MicrocreditCampaign, support: MicrocreditSupport, data: RedeemTokensDto) => {
@@ -885,11 +949,13 @@ class EmailService {
       },
     }
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;
+    console.log("# redeemSupport")
+    console.log("email_to", email_to)
+    console.log("campaign", campaign)
+    console.log("tokens", `${data._tokens}/${support.initialTokens}`)
+    console.log("---------------");
 
-    return 'EMAIL_SENT';
+    return this.emailSender(options);
   }
 
   public redeemSupport2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -913,6 +979,9 @@ class EmailService {
         tokens: `${data.extras.tokens}/${data.support.initialTokens}`,
       },
     }
+
+    console.log("# redeemSupport2")
+    console.log("---------------");
 
     let error, results: object = {};
     [error, results] = await to(this.emailSender(options));

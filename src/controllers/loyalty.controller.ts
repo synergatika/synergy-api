@@ -163,9 +163,9 @@ class LoyaltyController implements Controller {
     ).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    let transaction_result: any | Error;
-    transaction_result = await this.createEarnTransaction(partner, member, data, _points);
-    if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
+    let transaction_error: Error, transaction_result: any;
+    [transaction_error, transaction_result] = await to(this.createEarnTransaction(partner, member, data, _points).catch());
+    if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
 
     response.status(201).send({
       data: 'OK',
@@ -200,9 +200,9 @@ class LoyaltyController implements Controller {
     ).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    let transaction_result: any | Error;
-    transaction_result = await this.createRedeemTransaction(partner, member, offer, data, _points);
-    if (this.isError(transaction_result)) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_result}`));
+    let transaction_error: Error, transaction_result: any;
+    [transaction_error, transaction_result] = await to(this.createRedeemTransaction(partner, member, offer, data, _points).catch());
+    if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
 
     response.status(201).send({
       data: 'OK',
@@ -263,28 +263,32 @@ class LoyaltyController implements Controller {
     [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(partner, member, _points).catch());
     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-    let error: Error, transaction: any;
-    [error, transaction] = await to(this.transactionModel.create({
-      ...blockchain_result,
-      partner: partner,
-      member: member,
-      data: data,
+    // let error: Error, transaction: any;
+    // [error, transaction] = 
+    return await
+      //await to(
+      this.transactionModel.create({
+        ...blockchain_result,
+        partner: partner,
+        member: member,
+        data: data,
 
-      /** begin: To be Removed in Next Version */
-      partner_id: partner._id,
-      partner_name: partner.name,
-      member_id: member._id,
-      /** end: To be Removed in Next Version */
+        /** begin: To be Removed in Next Version */
+        partner_id: partner._id,
+        partner_name: partner.name,
+        member_id: member._id,
+        /** end: To be Removed in Next Version */
 
-      points: _points,
-      amount: data._amount,
+        points: _points,
+        amount: data._amount,
 
-      status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
-      type: LoyaltyTransactionType.EarnPoints,
-    }).catch());
-    if (error) return error;
+        status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+        type: LoyaltyTransactionType.EarnPoints,
+      })
+    // .catch());
+    // if (error) return error;
 
-    return blockchain_result;
+    // return blockchain_result;
   }
 
   private createRedeemTransaction = async (partner: User, member: User, offer: LoyaltyOffer, data: RedeemPointsDto, _points: number) => {
@@ -292,8 +296,9 @@ class LoyaltyController implements Controller {
     [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(partner, member, _points).catch());
     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-    let error: Error, transaction: LoyaltyTransaction;
-    [error, transaction] = await to(this.transactionModel.create({
+    // let error: Error, transaction: LoyaltyTransaction;
+    // [error, transaction] = await to(
+    return await this.transactionModel.create({
       partner: partner,
       member: member,
       offer: offer,
@@ -315,10 +320,11 @@ class LoyaltyController implements Controller {
 
       status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
       type: (offer) ? LoyaltyTransactionType.RedeemPointsOffer : LoyaltyTransactionType.RedeemPoints,
-    }).catch());
-    if (error) return error;
+    })
+    // .catch());
+    // if (error) return error;
 
-    return blockchain_result;
+    // return blockchain_result;
   }
 
   /**

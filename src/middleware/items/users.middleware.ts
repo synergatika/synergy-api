@@ -51,7 +51,9 @@ async function partner(request: RequestWithUser, response: Response, next: NextF
   [error, partner] = await to(userModel.findOne({
     _id: new ObjectId(partner_id), access: UserAccess.PARTNER
   }).select({
-    "_id": 1, "payments": 1,
+    "_id": 1,
+    "email": 1,
+    "payments": 1,
     "address": 1,
     "activated": 1
   }).catch());
