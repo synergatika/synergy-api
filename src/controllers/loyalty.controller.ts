@@ -1,6 +1,7 @@
 import * as express from 'express';
 import to from 'await-to-ts'
 var path = require('path');
+import { ObjectId } from 'mongodb';
 
 /**
  * Blockchain Service
@@ -120,6 +121,10 @@ class LoyaltyController implements Controller {
     this.router.get(`${this.path}/statistics`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       this.readLoyaltyStatistics);
+
+    this.router.get(`${this.path}/statistics2/test/:id`,
+      // authMiddleware, accessMiddleware.onlyAsPartner,
+      this.readLoyaltyStatistics2);
   }
 
   /** NEW */
@@ -360,6 +365,134 @@ class LoyaltyController implements Controller {
    * Loyalty Statistics
    * 
    */
+  dateConvert = (x: string | number | Date) => {
+    var today = new Date(x);
+    var year = today.getFullYear();
+    var month = `0${today.getMonth() + 1}`.slice(0, 2);
+    var day = `0${today.getDate()}`.slice(0, 2);
+    return `${year}-${month}-${day}`;
+  }
+
+  private readLoyaltyStatistics2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+
+    const _id = request.params.id;
+
+    let error: Error, statistics: any[];
+    [error, statistics] = await to(this.transactionModel.find(
+      {
+        "$and": [
+          { partner: new ObjectId(_id) },
+          { type: { "$in": [LoyaltyTransactionType.EarnPoints, LoyaltyTransactionType.RedeemPoints] } }
+        ]
+      }
+    ).populate({
+      "path": "member"
+    }).sort('createdAt').catch());
+
+    var _total: { earn: { points: number, amount: number }, redeem: { points: number, amount: number }, uniqueUsers: string[], uniqueTransactions: string[] }
+      = { earn: { points: 0, amount: 0 }, redeem: { points: 0, amount: 0 }, uniqueUsers: [], uniqueTransactions: [] };
+    var _daily: { earn: { points: 0, amount: 0 }, redeem: { points: number, amount: number }, uniqueUsers: string[], uniqueTransactions: string[], createdAt: string }[]
+      = [];
+
+
+
+    statistics.map(o => { return { ...o, member: o.member._id, transaction: o._id, type: o.type, points: o.points, amount: o.amount, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
+      /** Total */
+      if (_total.uniqueUsers.findIndex(i => i === element.member) < 0) {
+        _total.uniqueUsers.push(element.member);
+      }
+
+      if (_total.uniqueTransactions.findIndex(i => i === element.transaction) < 0) {
+        _total.uniqueTransactions.push(element.transaction);
+      }
+      console.log(element.type)
+
+      switch (element.type) {
+        case (LoyaltyTransactionType.EarnPoints):
+          _total.earn.points += element.points;
+          _total.earn.amount += element.amount;
+          break;
+        case (LoyaltyTransactionType.RedeemPoints):
+          _total.redeem.points += element.points;
+          _total.redeem.amount += element.amount;
+          break;
+      }
+
+      /** Daily */
+      console.log("element.createdAt")
+      console.log(element.createdAt)
+      console.log(_daily.findIndex(i => i.createdAt === element.createdAt))
+      if (_daily.findIndex(i => i.createdAt === element.createdAt) < 0)
+        _daily.push({ createdAt: element.createdAt, earn: { points: 0, amount: 0 }, redeem: { points: 0, amount: 0 }, uniqueUsers: [], uniqueTransactions: [] })
+
+      if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.findIndex(i => i === element.member) < 0) {
+        _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.push(element.member);
+      }
+
+      if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueTransactions.findIndex(i => i === element.transaction) < 0) {
+        _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueTransactions.push(element.transaction);
+      }
+
+      switch (element.type) {
+        case (LoyaltyTransactionType.EarnPoints):
+          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].earn.points += element.points;
+          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].earn.amount += element.amount;
+          return;
+        case (LoyaltyTransactionType.RedeemPoints):
+          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].redeem.points += element.points;
+          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].redeem.amount += element.amount;
+          return;
+      }
+    });
+    console.log(_total)
+    console.log(_daily)
+    // /** Total */
+    // var result_: { earn: number, redeem: number, uniqueUsers: string[], uniqueTransactions: string[] } = { earn: 0, redeem: 0, uniqueUsers: [], uniqueTransactions: [] };
+    // statistics.map(o => { return { ...o, type: o.type, points: o.points, amount: o.amount, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
+    //   switch (element.type) {
+    //     case (LoyaltyTransactionType.EarnPoints):
+    //       result_.earn += element.points;
+    //       return;
+    //     case (LoyaltyTransactionType.RedeemPoints):
+    //       result_.redeem += element.points;
+    //       return;
+    //   }
+    // });
+    // result_.uniqueUsers = [...new Set(statistics.map(item => item.member._id))];
+    // result_.uniqueTransactions = [...new Set(statistics.map(item => item._id))];
+
+    // console.log(result_)
+
+    // var result: { createdAt: string, earn: number, redeem: number, uniqueUsers: string[], uniqueTransactions: string[] }[] = [];
+    // statistics.map(o => { return { ...o, member: o.member._id, transaction: o._id, type: o.type, amount: o.ammount, points: o.points, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
+    //   if (result.findIndex(i => i.createdAt === element.createdAt) < 0)
+    //     result.push({ createdAt: element.createdAt, earn: 0, redeem: 0, uniqueUsers: [], uniqueTransactions: [] })
+
+    //   if (result[result.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.findIndex(i => i === element.member) < 0) {
+    //     result[result.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.push(element.member);
+    //   }
+
+    //   if (result[result.findIndex(i => i.createdAt === element.createdAt)].uniqueTransactions.findIndex(i => i === element.transaction) < 0) {
+    //     result[result.findIndex(i => i.createdAt === element.createdAt)].uniqueTransactions.push(element.transaction);
+    //   }
+
+    //   switch (element.type) {
+    //     case (LoyaltyTransactionType.EarnPoints):
+    //       result[result.findIndex(i => i.createdAt === element.createdAt)].earn += element.points;
+    //       return;
+    //     case (LoyaltyTransactionType.RedeemPoints):
+    //       result[result.findIndex(i => i.createdAt === element.createdAt)].redeem += element.points;
+    //       return;
+    //   }
+    // });
+    // console.log(result)
+    response.status(200).send({
+      data: {
+        _total, _daily
+      },
+      code: 200
+    });
+  }
 
   private readLoyaltyStatistics = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;

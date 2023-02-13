@@ -30,7 +30,7 @@ class App {
     this.initializeMiddlewares();
     this.initializeControllers(controllers);
     this.initializeErrorHandling();
-    this.startSchedule();
+    // this.startSchedule();
   }
 
   public listen() {

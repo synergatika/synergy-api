@@ -413,10 +413,10 @@ class Schedule {
     let blockchain_error: Error, blockchain_result: any;
 
     if (_transaction.type === LoyaltyTransactionType.EarnPoints) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(_transaction.partner, _transaction.member, _transaction.points).catch());
+      [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(_transaction.partner as Partner, _transaction.member, _transaction.points).catch());
       if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
     } else if ((_transaction.type === LoyaltyTransactionType.RedeemPoints) || (_transaction.type === LoyaltyTransactionType.RedeemPointsOffer)) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(_transaction.partner, _transaction.member, _transaction.points * (-1)).catch());
+      [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(_transaction.partner as Partner, _transaction.member, _transaction.points * (-1)).catch());
       if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
     }
 

@@ -1,5 +1,6 @@
 import { EarnPointsDto, RedeemPointsDto } from "_dtos";
 import { Member, Partner, TransactionStatus, LoyaltyOffer } from "_interfaces";
+import { ObjectId } from 'mongodb';
 
 export enum LoyaltyTransactionType {
   EarnPoints = 'EarnPoints',
@@ -10,9 +11,9 @@ export enum LoyaltyTransactionType {
 export interface LoyaltyTransaction {
   _id?: string;
 
-  partner: Partner,
+  partner: ObjectId | Partner,
   member: Member,
-  offer: LoyaltyOffer,
+  offer: ObjectId | LoyaltyOffer,
 
   data: EarnPointsDto | RedeemPointsDto;
 

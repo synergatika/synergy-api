@@ -1,4 +1,5 @@
 import { Partner } from '../../index';
+import { ObjectId } from 'mongodb';
 
 export interface LoyaltyOffer {
   _id: string;

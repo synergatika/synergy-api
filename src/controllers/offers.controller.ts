@@ -18,7 +18,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, LoyaltyOffer, LoyaltyStatistics, Partner } from '../_interfaces/index';
+import { User, LoyaltyOffer, LoyaltyStatistics, Partner, LoyaltyTransactionType } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -276,6 +276,7 @@ class OffersController implements Controller {
       return next(new NotFoundException('OFFER_NOT_EXISTS'));
     }
 
+    await this.readStatistics2(offers, 'RedeemPointsOffer');
     const statisticsRedeem: LoyaltyStatistics[] = await this.readStatistics(offers, 'RedeemPointsOffer');
     const offerStatistics = offers.map((a: LoyaltyOffer) =>
       Object.assign({}, a,
@@ -421,6 +422,90 @@ class OffersController implements Controller {
     var imageFile = (currentOffer['imageURL']).split('assets/static/');
     const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
     if (existFile(file)) await deleteFile(file);
+  }
+
+
+
+
+  dateConvert = (x: string | number | Date) => {
+    var today = new Date(x);
+    var year = today.getFullYear();
+    var month = `0${today.getMonth() + 1}`.slice(0, 2);
+    var day = `0${today.getDate()}`.slice(0, 2);
+    return `${year}-${month}-${day}`;
+  }
+
+  private readStatistics2 = async (offers: LoyaltyOffer[], status: string) => {
+    // let error: Error, statistics: any[];
+    // [error, statistics] = await to(this.transaction.find({
+    //   'offer': { $in: offers.map(a => a._id) }
+    // }).populate([
+    //   { path: 'member' },
+    //   { path: 'offer' }
+    // ]).catch());
+
+
+    let error: Error, statistics: any[];
+    [error, statistics] = await to(this.transaction.find({
+      "$and": [
+        { 'offer': { "$in": offers.map(a => new ObjectId(a._id)) } },
+        { 'type': { "$in": [LoyaltyTransactionType.RedeemPointsOffer] } }
+      ]
+    }).populate([
+      { path: 'member' },
+      { path: 'offer' }
+    ]).catch());
+
+
+
+    var _total: { redeem: { points: number, quantity: number }, uniqueUsers: string[], uniqueTransactions: string[] }
+      = { redeem: { points: 0, quantity: 0 }, uniqueUsers: [], uniqueTransactions: [] };
+    var _daily: { redeem: { points: number, quantity: number }, uniqueUsers: string[], uniqueTransactions: string[], createdAt: string }[]
+      = [];
+    // var result_: { points: number, quantity: number, uniqueUsers: string[], uniqueTransactions: string[] } = { points: 0, quantity: 0, uniqueUsers: [], uniqueTransactions: [] };
+    // statistics.map(o => { return { ...o, points: o.points, quantity: o.quantity, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
+    //   result_.points += element.points;
+    //   result_.quantity += element.quantity;
+    // });
+    // result_.uniqueUsers = [...new Set(statistics.map(item => item.member._id))];
+    // result_.uniqueTransactions = [...new Set(statistics.map(item => item._id))];
+
+    // console.log(result_)
+
+    // var result: { createdAt: string, points: number, quantity: number, uniqueUsers: string[], uniqueTransactions: string[] }[] = [];
+    statistics.map(o => { return { ...o, points: o.points, quantity: o.quantity, member: o.member._id, transaction: o._id, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
+      /** Total */
+
+      if (_total.uniqueUsers.findIndex(i => i === element.member) < 0) {
+        _total.uniqueUsers.push(element.member);
+      }
+
+      if (_total.uniqueTransactions.findIndex(i => i === element.transaction) < 0) {
+        _total.uniqueTransactions.push(element.transaction);
+      }
+
+      _total.redeem.points += element.points;
+      _total.redeem.quantity += element.quantity;
+
+      /** Daily */
+      if (_daily.findIndex(i => i.createdAt === element.createdAt) < 0)
+        _daily.push({ createdAt: element.createdAt, redeem: { points: 0, quantity: 0 }, uniqueUsers: [], uniqueTransactions: [] })
+
+      if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.findIndex(i => i === element.member) < 0) {
+        _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.push(element.member);
+      }
+
+      if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueTransactions.findIndex(i => i === element.transaction) < 0) {
+        _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueTransactions.push(element.transaction);
+      }
+
+      _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].redeem.points += element.points;
+      _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].redeem.quantity += element.quantity;
+    });
+
+    console.log(_total)
+    console.log(_daily)
+
   }
 
   private readStatistics = async (offers: LoyaltyOffer[], status: string) => {
