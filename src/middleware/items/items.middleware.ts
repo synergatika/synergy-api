@@ -207,7 +207,7 @@ async function microcreditSupport(request: RequestWithUser, response: Response, 
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
   response.locals["support"] = support//{ ...supports[0], support_id: supports[0]._id, _id: undefined };
-  request.params["_to"] = (support.member as Member)._id;
+  request.params["_to"] = (support.member as Member)._id.toString();
 
   next();
 }

@@ -37,9 +37,9 @@ async function loyalty_balance(request: RequestWithUser, response: Response, nex
   let error: Error, points: any[];
   [error, points] = await to(loyaltyTransactionModel.aggregate([{
     $match: {
-      $and: [{
-        'member_id': (member._id).toString()
-      }]
+      // $and: [{
+      'member_id': (member._id).toString()
+      // }]
     }
   },
   {
@@ -53,8 +53,8 @@ async function loyalty_balance(request: RequestWithUser, response: Response, nex
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
   response.locals["balance"] = {
-    address: points[0].member_id,
-    points: points[0].currentPoints,
+    address: points[0]?.member_id || (member._id).toString(),
+    points: points[0]?.currentPoints | 0,
   };
   next();
 

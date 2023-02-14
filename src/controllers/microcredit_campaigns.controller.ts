@@ -210,6 +210,7 @@ class MicrocreditCampaignsController implements Controller {
       .populate([{
         path: 'partner'
       }])
+      .lean()
       // .sort({ updatedAt: -1 })
       // .limit(offset.limit)
       // .skip(offset.skip)
@@ -448,7 +449,7 @@ class MicrocreditCampaignsController implements Controller {
     if (request.user && request.user.access == 'partner') access_filter.push('partners');
 
     const status_filter: string[] = ['published'];
-    if ((request.user && request.user._id == partner_id) && offset.type) status_filter.push('draft');
+    if ((request.user && request.user._id == new ObjectId(partner_id)) && offset.type) status_filter.push('draft');
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
 
@@ -475,6 +476,7 @@ class MicrocreditCampaignsController implements Controller {
       .sort({ updatedAt: -1 })
       .limit(offset.limit)
       .skip(offset.skip)
+      .lean()
       .catch());
     // [error, campaigns] = await to(this.user.aggregate([{
     //   $unwind: '$microcredit'
@@ -540,6 +542,7 @@ class MicrocreditCampaignsController implements Controller {
       .populate([{
         path: 'partner'
       }])
+      .lean()
       .catch());
     // [error, campaigns] = await to(this.user.aggregate([{
     //   $unwind: '$microcredit'
@@ -567,7 +570,10 @@ class MicrocreditCampaignsController implements Controller {
     const statisticsPromise: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'ReceiveFund', 'confirmed');
     const statisticsRedeem: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'SpendFund', 'redeemed');
 
-    await this.readStatistics2(campaigns)
+    var x = await this.readStatistics2(campaigns)
+    console.log("Read Campaign - New Statistics");
+    console.log(x);
+
     const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
       Object.assign({}, a,
         {
@@ -900,58 +906,74 @@ class MicrocreditCampaignsController implements Controller {
     // console.log("end statistics");
     /** */
 
+    var _total: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] }
+      = { promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] };
+    var _daily: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[], createdAt: string }[]
+      = [];
+
     /** Total */
-    var result_: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] } = { promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] };
-    statistics.map(o => { return { ...o, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
-      switch (element.type) {
-        case (MicrocreditTransactionType.PromiseFund):
-          result_.promise += element.tokens;
-          break;
-        case (MicrocreditTransactionType.ReceiveFund):
-          result_.receive += element.payoff;
-          break;
-        case (MicrocreditTransactionType.RevertFund):
-          result_.revert += element.payoff;
-          break;
-        case (MicrocreditTransactionType.SpendFund):
-          result_.spend += element.tokens;
-          break;
-      }
-    });
-    result_.uniqueUsers = [...new Set(statistics.map(item => item.support.member._id))];
-    result_.uniqueSupports = [...new Set(statistics.map(item => item.support._id))];
+    // var result_: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] } = { promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] };
+    statistics.map(o => {
+      return { ...o, support: o.support._id, member: o.support.member._id, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) }
+    }).forEach(element => {
 
-    console.log(result_)
-
-    var result: { createdAt: string, promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] }[] = [];
-    statistics.map(o => { return { ...o, support: o.support._id, member: o.support.member._id, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
-      if (result.findIndex(i => i.createdAt === element.createdAt) < 0)
-        result.push({ createdAt: element.createdAt, promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] })
-
-      if (result[result.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.findIndex(i => i === element.member) < 0) {
-        result[result.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.push(element.member);
+      /** Total */
+      if (_total.uniqueUsers.findIndex(i => i === element.member) < 0) {
+        _total.uniqueUsers.push(element.member);
       }
 
-      if (result[result.findIndex(i => i.createdAt === element.createdAt)].uniqueSupports.findIndex(i => i === element.support) < 0) {
-        result[result.findIndex(i => i.createdAt === element.createdAt)].uniqueSupports.push(element.support);
+      if (_total.uniqueSupports.findIndex(i => i === element.support) < 0) {
+        _total.uniqueSupports.push(element.support);
       }
 
       switch (element.type) {
         case (MicrocreditTransactionType.PromiseFund):
-          result[result.findIndex(i => i.createdAt === element.createdAt)].promise += element.tokens;
+          _total.promise += element.tokens;
+          break;
+        case (MicrocreditTransactionType.ReceiveFund):
+          _total.receive += element.payoff;
+          break;
+        case (MicrocreditTransactionType.RevertFund):
+          _total.revert += element.payoff;
+          break;
+        case (MicrocreditTransactionType.SpendFund):
+          _total.spend += element.tokens;
+          break;
+      }
+      // });
+      // result_.uniqueUsers = [...new Set(statistics.map(item => item.support.member._id))];
+      // result_.uniqueSupports = [...new Set(statistics.map(item => item.support._id))];
+
+      // var result: { createdAt: string, promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] }[] = [];
+      // statistics.map(o => { return { ...o, support: o.support._id, member: o.support.member._id, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
+      if (_daily.findIndex(i => i.createdAt === element.createdAt) < 0)
+        _daily.push({ createdAt: element.createdAt, promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] })
+
+      if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.findIndex(i => i === element.member) < 0) {
+        _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.push(element.member);
+      }
+
+      if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueSupports.findIndex(i => i === element.support) < 0) {
+        _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueSupports.push(element.support);
+      }
+
+      switch (element.type) {
+        case (MicrocreditTransactionType.PromiseFund):
+          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].promise += element.tokens;
           return;
         case (MicrocreditTransactionType.ReceiveFund):
-          result[result.findIndex(i => i.createdAt === element.createdAt)].receive += element.payoff;
+          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].receive += element.payoff;
           return;
         case (MicrocreditTransactionType.RevertFund):
-          result[result.findIndex(i => i.createdAt === element.createdAt)].revert += element.payoff;
+          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].revert += element.payoff;
           return;
         case (MicrocreditTransactionType.SpendFund):
-          result[result.findIndex(i => i.createdAt === element.createdAt)].spend += element.tokens;
+          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].spend += element.tokens;
           return;
       }
     });
-    console.log(result)
+
+    return { _total, _daily };
     // statistics.map(o => { return { ...o, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) } }).reduce(function (res, value) {
     //   console.log(value.type + " - " + value.tokens + " - " + value.payoff + " - " + value.createdAt)
     //   if (!res[value.createdAt]) {

@@ -463,24 +463,27 @@ class MicrocreditController implements Controller {
     let error: Error, transactions: MicrocreditTransaction[];
     [error, transactions] = await to(this.transactionModel.find({
       $and: [
-        { $or: [{ member_id: user._id }, { partner_id: user._id }] },
+        { $or: [{ member_id: user._id.toString() }, { partner_id: user._id.toString() }] },
         { $or: [{ type: MicrocreditTransactionType.PromiseFund }, { type: MicrocreditTransactionType.SpendFund }, { type: MicrocreditTransactionType.ReceiveFund }, { type: MicrocreditTransactionType.RevertFund }] }
       ]
-    }).select({
-      "_id": 1,
-      "support_id": 1,
-      "partner_id": 1,
-      "partner_name": 1,
-      "member_id": 1,
-      "campaign_id": 1,
-      "campaign_title": 1,
-      "method": 1,
-      "payment_id": 1,
-      "tokens": 1,
-      "type": 1,
-      "tx": 1,
-      "createdAt": 1
-    }).sort({ 'createdAt': -1, '_id': -1 })
+    }).populate({
+      path: 'support'
+    })
+      .select({
+        "_id": 1,
+        "support_id": 1,
+        "partner_id": 1,
+        "partner_name": 1,
+        "member_id": 1,
+        "campaign_id": 1,
+        "campaign_title": 1,
+        "method": 1,
+        "payment_id": 1,
+        "tokens": 1,
+        "type": 1,
+        "tx": 1,
+        "createdAt": 1
+      }).sort({ 'createdAt': -1, '_id': -1 })
       .limit(offset.limit)
       .skip(offset.skip)
       .catch());

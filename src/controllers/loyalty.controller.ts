@@ -122,9 +122,9 @@ class LoyaltyController implements Controller {
       authMiddleware, accessMiddleware.onlyAsPartner,
       this.readLoyaltyStatistics);
 
-    this.router.get(`${this.path}/statistics2/test/:id`,
-      // authMiddleware, accessMiddleware.onlyAsPartner,
-      this.readLoyaltyStatistics2);
+    // this.router.get(`${this.path}/statistics2/test/:id`,
+    //   // authMiddleware, accessMiddleware.onlyAsPartner,
+    //   this.readLoyaltyStatistics2);
   }
 
   /** NEW */
@@ -231,32 +231,38 @@ class LoyaltyController implements Controller {
     let error: Error, transactions: any[];
     [error, transactions] = await to(this.transactionModel.find({
       $and: [
-        { $or: [{ member_id: request.user._id }, { partner_id: request.user._id }] },
+        { $or: [{ member_id: request.user._id.toString() }, { partner_id: request.user._id.toString() }] },
         { $or: [{ type: LoyaltyTransactionType.EarnPoints }, { type: LoyaltyTransactionType.RedeemPoints }, { type: LoyaltyTransactionType.RedeemPointsOffer }] }
       ]
-    }).select({
-      "_id": 1,
+    })
+      .populate({
+        path: 'partner'
+      })
+      //.select({
+      //   "_id": 1,
 
-      "partner_id": 1,
-      "partner_name": 1,
+      //   "partner_id": 1,
+      //   "partner_name": 1,
 
-      "member_id": 1,
+      //   "member_id": 1,
 
-      "points": 1,
-      "amount": 1,
+      //   "points": 1,
+      //   "amount": 1,
 
-      "offer_id": 1,
-      "offer_title": 1,
-      "quantity": 1,
+      //   "offer_id": 1,
+      //   "offer_title": 1,
+      //   "quantity": 1,
 
-      "type": 1,
+      //   "type": 1,
 
-      "tx": 1,
-      "createdAt": 1
-    }).sort('-createdAt')
+      //   "tx": 1,
+      //   "createdAt": 1
+      // })
+      .sort('-createdAt')
       .limit(offset.limit).skip(offset.skip)
       .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
     response.status(200).send({
       data: transactions,
       code: 200
@@ -373,15 +379,13 @@ class LoyaltyController implements Controller {
     return `${year}-${month}-${day}`;
   }
 
-  private readLoyaltyStatistics2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-
-    const _id = request.params.id;
+  private readLoyaltyStatistics2 = async (partner_id: string) => {
 
     let error: Error, statistics: any[];
     [error, statistics] = await to(this.transactionModel.find(
       {
         "$and": [
-          { partner: new ObjectId(_id) },
+          { partner: new ObjectId(partner_id) },
           { type: { "$in": [LoyaltyTransactionType.EarnPoints, LoyaltyTransactionType.RedeemPoints] } }
         ]
       }
@@ -394,9 +398,9 @@ class LoyaltyController implements Controller {
     var _daily: { earn: { points: 0, amount: 0 }, redeem: { points: number, amount: number }, uniqueUsers: string[], uniqueTransactions: string[], createdAt: string }[]
       = [];
 
-
-
-    statistics.map(o => { return { ...o, member: o.member._id, transaction: o._id, type: o.type, points: o.points, amount: o.amount, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
+    statistics.map(o => {
+      return { ...o, member: o.member._id, transaction: o._id, type: o.type, points: o.points, amount: o.amount, createdAt: this.dateConvert(o.createdAt) }
+    }).forEach(element => {
       /** Total */
       if (_total.uniqueUsers.findIndex(i => i === element.member) < 0) {
         _total.uniqueUsers.push(element.member);
@@ -405,7 +409,6 @@ class LoyaltyController implements Controller {
       if (_total.uniqueTransactions.findIndex(i => i === element.transaction) < 0) {
         _total.uniqueTransactions.push(element.transaction);
       }
-      console.log(element.type)
 
       switch (element.type) {
         case (LoyaltyTransactionType.EarnPoints):
@@ -419,9 +422,6 @@ class LoyaltyController implements Controller {
       }
 
       /** Daily */
-      console.log("element.createdAt")
-      console.log(element.createdAt)
-      console.log(_daily.findIndex(i => i.createdAt === element.createdAt))
       if (_daily.findIndex(i => i.createdAt === element.createdAt) < 0)
         _daily.push({ createdAt: element.createdAt, earn: { points: 0, amount: 0 }, redeem: { points: 0, amount: 0 }, uniqueUsers: [], uniqueTransactions: [] })
 
@@ -444,8 +444,6 @@ class LoyaltyController implements Controller {
           return;
       }
     });
-    console.log(_total)
-    console.log(_daily)
     // /** Total */
     // var result_: { earn: number, redeem: number, uniqueUsers: string[], uniqueTransactions: string[] } = { earn: 0, redeem: 0, uniqueUsers: [], uniqueTransactions: [] };
     // statistics.map(o => { return { ...o, type: o.type, points: o.points, amount: o.amount, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
@@ -486,16 +484,21 @@ class LoyaltyController implements Controller {
     //   }
     // });
     // console.log(result)
-    response.status(200).send({
-      data: {
-        _total, _daily
-      },
-      code: 200
-    });
+    return { _total, _daily };
+    // response.status(200).send({
+    //   data: {
+    //     _total, _daily
+    //   },
+    //   code: 200
+    // });
   }
 
   private readLoyaltyStatistics = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
+
+    var x = await this.readLoyaltyStatistics2((user._id).toString())
+    console.log("Read Loyalty - New Statistics");
+    console.log(x);
 
     const statisticsEarn: LoyaltyStatistics[] = await this.readStatistics((user._id).toString(), 'EarnPoints');
     const statisticsRedeem: LoyaltyStatistics[] = await this.readStatistics((user._id).toString(), 'RedeemPoints');

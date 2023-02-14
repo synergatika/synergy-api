@@ -23,8 +23,8 @@ export interface SupportPayment {
 export interface MicrocreditSupport {
   _id?: ObjectId;
 
-  member: Member | string;
-  campaign: MicrocreditCampaign | string;
+  member: Member | ObjectId;
+  campaign: MicrocreditCampaign | ObjectId;
   // support_id: string;
 
   // partner_id: string;

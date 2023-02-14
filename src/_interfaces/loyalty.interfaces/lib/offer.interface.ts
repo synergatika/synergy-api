@@ -2,7 +2,7 @@ import { Partner } from '../../index';
 import { ObjectId } from 'mongodb';
 
 export interface LoyaltyOffer {
-  _id: string;
+  _id: ObjectId;
   slug: string;
   imageURL: string;
   title: string;
@@ -14,5 +14,5 @@ export interface LoyaltyOffer {
   createdAt?: Date;
   updatedAt?: Date;
 
-  partner: Partner | string;
+  partner: Partner | ObjectId;
 }

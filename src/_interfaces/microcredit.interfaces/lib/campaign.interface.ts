@@ -1,9 +1,10 @@
 import { Partner } from '../../index';
 import { MicrocreditTokens } from './tokens.interface';
 import { MicrocreditStatistics } from './statistics.interface';
+import { ObjectId } from 'mongodb';
 
 export interface MicrocreditCampaign {
-  _id: string;
+  _id: ObjectId;
   slug: string;
   imageURL: string;
   title: string;
@@ -40,5 +41,5 @@ export interface MicrocreditCampaign {
   createdAt?: Date;
   updatedAt?: Date;
 
-  partner: Partner | string;
+  partner: Partner | ObjectId;
 }

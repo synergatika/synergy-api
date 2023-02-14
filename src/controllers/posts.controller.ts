@@ -116,6 +116,7 @@ class PostsController implements Controller {
       .sort({ updatedAt: -1 })
       .limit(offset.limit)
       .skip(offset.skip)
+      .lean()
       .catch());
 
     // let error: Error, posts: Post[];
@@ -217,6 +218,7 @@ class PostsController implements Controller {
       .sort({ updatedAt: -1 })
       .limit(offset.limit)
       .skip(offset.skip)
+      .lean()
       .catch());
     // let error: Error, posts: Post[];
     // [error, posts] = await to(this.user.aggregate([{
@@ -267,11 +269,12 @@ class PostsController implements Controller {
 
     let error: Error, posts: Post[];
     [error, posts] = await to(this.postModel.find(
-      { post_filter }
+      post_filter
     )
       .populate([{
         path: 'partner'
       }])
+      .lean()
       .catch());
     // let error: Error, posts: Post[];
     // [error, posts] = await to(this.user.aggregate([{

@@ -413,10 +413,10 @@ class Schedule {
     let blockchain_error: Error, blockchain_result: any;
 
     if (_transaction.type === LoyaltyTransactionType.EarnPoints) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(_transaction.partner as Partner, _transaction.member, _transaction.points).catch());
+      [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points).catch());
       if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
     } else if ((_transaction.type === LoyaltyTransactionType.RedeemPoints) || (_transaction.type === LoyaltyTransactionType.RedeemPointsOffer)) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(_transaction.partner as Partner, _transaction.member, _transaction.points * (-1)).catch());
+      [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points * (-1)).catch());
       if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
     }
 
@@ -465,13 +465,13 @@ class Schedule {
     let blockchain_error: Error, blockchain_result: any;
 
     if (_transaction.type === MicrocreditTransactionType.PromiseFund) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund(_transaction.support.campaign as MicrocreditCampaign, _transaction.support.member as Member, _transaction.data as EarnTokensDto).catch());
+      [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as EarnTokensDto).catch());
       if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
       if (blockchain_result) {
         let error: Error, support: MicrocreditSupport;
         [error, support] = await to(this.microcreditSupportModel.updateOne({
-          _id: _transaction.support._id
+          _id: (_transaction.support as MicrocreditSupport)._id
         }, {
           "$set": {
             "contractRef": blockchain_result?.logs[0].args.ref,
@@ -482,15 +482,15 @@ class Schedule {
       }
     }
     else if (_transaction.type === MicrocreditTransactionType.ReceiveFund) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerReceivedFund(_transaction.support.campaign as MicrocreditCampaign, _transaction.support).catch());
+      [blockchain_error, blockchain_result] = await to(registrationService.registerReceivedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
       if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
     }
     else if (_transaction.type === MicrocreditTransactionType.RevertFund) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerRevertFund(_transaction.support.campaign as MicrocreditCampaign, _transaction.support).catch());
+      [blockchain_error, blockchain_result] = await to(registrationService.registerRevertFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
       if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
     }
     else if (_transaction.type === MicrocreditTransactionType.SpendFund) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund(_transaction.support.campaign as MicrocreditCampaign, _transaction.support.member as Member, _transaction.data as RedeemTokensDto).catch());
+      [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as RedeemTokensDto).catch());
       if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
     }
 

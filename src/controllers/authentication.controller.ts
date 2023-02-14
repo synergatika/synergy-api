@@ -254,7 +254,7 @@ private createToken(user: User): TokenData {
   const expiresIn = parseInt(`${process.env.JWT_EXPIRATION}`); // an hour
   const secret = `${process.env.JWT_SECRET}`;
   const dataStoredInToken: DataStoredInToken = {
-    _id: user._id,
+    _id: user._id.toString(),
   };
   return {
     expiresIn,

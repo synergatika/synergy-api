@@ -62,12 +62,38 @@ class OffersController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/public/:offset`, this.readOffers);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), this.createOffer);
-    this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readOffersByStore);
-    this.router.get(`${this.path}/:partner_id/:offer_id`, validationParamsMiddleware(OfferID), this.readOffer);
-    this.router.put(`${this.path}/:partner_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(OfferDto), itemsMiddleware.offerMiddleware, this.updateOffer);
-    this.router.delete(`${this.path}/:partner_id/:offer_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(OfferID), accessMiddleware.belongsTo, itemsMiddleware.offerMiddleware, this.deleteOffer);
+    this.router.get(`${this.path}/public/:offset`,
+      this.readOffers);
+
+    this.router.post(`${this.path}/`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      this.declareStaticPath, uploadFile.single('imageURL'),
+      validationBodyAndFileMiddleware(OfferDto),
+      this.createOffer);
+
+    this.router.get(`${this.path}/public/:partner_id/:offset`,
+      validationParamsMiddleware(PartnerID),
+      this.readOffersByStore);
+
+    this.router.get(`${this.path}/:partner_id/:offer_id`,
+      validationParamsMiddleware(OfferID),
+      this.readOffer);
+
+    this.router.put(`${this.path}/:partner_id/:offer_id`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(OfferID),
+      accessMiddleware.belongsTo,
+      this.declareStaticPath, uploadFile.single('imageURL'),
+      validationBodyAndFileMiddleware(OfferDto),
+      itemsMiddleware.offerMiddleware,
+      this.updateOffer);
+
+    this.router.delete(`${this.path}/:partner_id/:offer_id`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(OfferID),
+      accessMiddleware.belongsTo,
+      itemsMiddleware.offerMiddleware,
+      this.deleteOffer);
   }
 
   private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -87,12 +113,12 @@ class OffersController implements Controller {
 
     let error: Error, offers: LoyaltyOffer[];
     [error, offers] = await to(this.offerModel.find(
-      {
-        $and: [
-          { 'activated': true },
-          { 'expiresAt': { $gt: offset.greater } }
-        ]
-      }
+      // {
+      // $and: [
+      // { 'activated': true },
+      { 'expiresAt': { $gt: offset.greater } }
+      // ]
+      // }
     )
       .populate([{
         path: 'partner'
@@ -100,6 +126,7 @@ class OffersController implements Controller {
       .sort({ updatedAt: -1 })
       .limit(offset.limit)
       .skip(offset.skip)
+      .lean()
       .catch());
     // [error, offers] = await to(this.user.aggregate([{
     //   $unwind: '$offers'
@@ -160,6 +187,7 @@ class OffersController implements Controller {
     //   }
     // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
     response.status(201).send({
       message: "Success! A new offer has been created!",
       code: 201
@@ -194,6 +222,7 @@ class OffersController implements Controller {
       .populate([{
         path: 'partner'
       }])
+      .lean()
       .sort({ updatedAt: -1 })
       .limit(offset.limit)
       .skip(offset.skip)
@@ -253,6 +282,7 @@ class OffersController implements Controller {
       .populate([{
         path: 'partner'
       }])
+      .lean()
       .catch());
     // [error, offers] = await to(this.user.aggregate([{
     //   $unwind: '$offers'
@@ -276,8 +306,11 @@ class OffersController implements Controller {
       return next(new NotFoundException('OFFER_NOT_EXISTS'));
     }
 
-    await this.readStatistics2(offers, 'RedeemPointsOffer');
-    const statisticsRedeem: LoyaltyStatistics[] = await this.readStatistics(offers, 'RedeemPointsOffer');
+    var x = await this.readStatistics2(offers, LoyaltyTransactionType.RedeemPointsOffer);
+    console.log("Read Offer - New Statistics");
+    console.log(x);
+
+    const statisticsRedeem: LoyaltyStatistics[] = await this.readStatistics(offers, LoyaltyTransactionType.RedeemPointsOffer);
     const offerStatistics = offers.map((a: LoyaltyOffer) =>
       Object.assign({}, a,
         {
@@ -381,42 +414,6 @@ class OffersController implements Controller {
     });
   }
 
-  /**
-   *  
-   * Local Function Section 
-   *
-   * */
-
-  /** Project Partner (Local Function) */
-  private projectPartner() {
-    return {
-      _id: '$_id',
-      name: '$name',
-      email: '$email',
-      slug: '$slug',
-      imageURL: '$imageURL',
-      payments: '$payments',
-      address: '$address',
-      contacts: '$contacts',
-      phone: '$phone',
-    };
-  }
-
-  /** Project Offer (Local Function) */
-  private projectOffer() {
-    return {
-      _id: '$offers._id',
-      slug: '$offers.slug',
-      imageURL: '$offers.imageURL',
-      title: '$offers.title',
-      subtitle: '$offers.subtitle',
-      cost: '$offers.cost',
-      description: '$offers.description',
-      instructions: '$offers.instructions',
-      expiresAt: '$offers.expiresAt',
-    };
-  }
-
   /** Remove File (Local Function) */
   private async removeFile(currentOffer: LoyaltyOffer) {
     var imageFile = (currentOffer['imageURL']).split('assets/static/');
@@ -444,11 +441,11 @@ class OffersController implements Controller {
     //   { path: 'offer' }
     // ]).catch());
 
-
+    console.log(offers.map(a => a._id));
     let error: Error, statistics: any[];
     [error, statistics] = await to(this.transaction.find({
       "$and": [
-        { 'offer': { "$in": offers.map(a => new ObjectId(a._id)) } },
+        { 'offer': { "$in": offers.map(a => a._id) } },
         { 'type': { "$in": [LoyaltyTransactionType.RedeemPointsOffer] } }
       ]
     }).populate([
@@ -457,6 +454,7 @@ class OffersController implements Controller {
     ]).catch());
 
 
+    console.log(statistics);
 
     var _total: { redeem: { points: number, quantity: number }, uniqueUsers: string[], uniqueTransactions: string[] }
       = { redeem: { points: 0, quantity: 0 }, uniqueUsers: [], uniqueTransactions: [] };
@@ -503,9 +501,7 @@ class OffersController implements Controller {
       _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].redeem.quantity += element.quantity;
     });
 
-    console.log(_total)
-    console.log(_daily)
-
+    return { _total, _daily }
   }
 
   private readStatistics = async (offers: LoyaltyOffer[], status: string) => {
@@ -604,3 +600,40 @@ class OffersController implements Controller {
 }
 
 export default OffersController;
+
+
+/**
+ *
+ * Local Function Section
+ *
+ * */
+
+  // /** Project Partner (Local Function) */
+  // private projectPartner() {
+  //   return {
+  //     _id: '$_id',
+  //     name: '$name',
+  //     email: '$email',
+  //     slug: '$slug',
+  //     imageURL: '$imageURL',
+  //     payments: '$payments',
+  //     address: '$address',
+  //     contacts: '$contacts',
+  //     phone: '$phone',
+  //   };
+  // }
+
+  // /** Project Offer (Local Function) */
+  // private projectOffer() {
+  //   return {
+  //     _id: '$offers._id',
+  //     slug: '$offers.slug',
+  //     imageURL: '$offers.imageURL',
+  //     title: '$offers.title',
+  //     subtitle: '$offers.subtitle',
+  //     cost: '$offers.cost',
+  //     description: '$offers.description',
+  //     instructions: '$offers.instructions',
+  //     expiresAt: '$offers.expiresAt',
+  //   };
+  // }

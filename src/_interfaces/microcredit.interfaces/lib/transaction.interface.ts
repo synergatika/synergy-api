@@ -1,7 +1,6 @@
 import { EarnTokensDto, RedeemTokensDto } from "_dtos";
-import { Member } from "_interfaces/users.interfaces";
-import { MicrocreditCampaign } from "./campaign.interface";
 import { MicrocreditSupport } from "./support.interface";
+import { ObjectId } from 'mongodb';
 
 export enum TransactionStatus {
   COMPLETED = 'completed',
@@ -19,7 +18,7 @@ export interface MicrocreditTransaction {
   _id?: string;
 
   // campaign: MicrocreditCampaign,
-  support: MicrocreditSupport,
+  support: MicrocreditSupport | ObjectId,
   // member: Member,
 
   data: EarnTokensDto | RedeemTokensDto;

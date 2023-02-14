@@ -9,11 +9,11 @@ export enum LoyaltyTransactionType {
 }
 
 export interface LoyaltyTransaction {
-  _id?: string;
+  _id?: ObjectId;
 
-  partner: ObjectId | Partner,
-  member: Member,
-  offer: ObjectId | LoyaltyOffer,
+  partner: Partner | ObjectId,
+  member: Member | ObjectId,
+  offer: LoyaltyOffer | ObjectId,
 
   data: EarnPointsDto | RedeemPointsDto;
 

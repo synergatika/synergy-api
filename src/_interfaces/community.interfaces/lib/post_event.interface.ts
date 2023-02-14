@@ -1,7 +1,8 @@
 import { Partner } from '../../index';
+import { ObjectId } from 'mongodb';
 
 export interface PostEvent {
-  _id: string;
+  _id: ObjectId;
   slug: string;
   imageURL: string;
   title: string;
@@ -16,5 +17,5 @@ export interface PostEvent {
   createdAt: Date;
   updatedAt: Date;
 
-  partner: Partner;
+  partner: Partner | ObjectId;
 }

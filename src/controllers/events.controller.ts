@@ -117,6 +117,7 @@ class EventsController implements Controller {
       .sort({ updatedAt: -1 })
       .limit(offset.limit)
       .skip(offset.skip)
+      .lean()
       .catch());
     // [error, events] = await to(this.user.aggregate([{
     //   $unwind: '$events'
@@ -256,6 +257,7 @@ class EventsController implements Controller {
       .sort({ updatedAt: -1 })
       .limit(offset.limit)
       .skip(offset.skip)
+      .lean()
       .catch());
     // [error, events] = await to(this.user.aggregate([{
     //   $unwind: '$events'
@@ -352,6 +354,7 @@ class EventsController implements Controller {
       .populate([{
         path: 'partner'
       }])
+      .lean()
       .catch());
     // [error, events] = await to(this.user.aggregate([{
     //   $unwind: '$events'

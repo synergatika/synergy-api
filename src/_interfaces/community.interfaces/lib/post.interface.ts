@@ -1,4 +1,5 @@
 import { Partner } from '../../index';
+import { ObjectId } from 'mongodb';
 
 export interface Post {
   _id: string;
@@ -13,5 +14,5 @@ export interface Post {
   createdAt?: Date;
   updatedAt?: Date;
 
-  partner: Partner | string;
+  partner: Partner | ObjectId;
 }

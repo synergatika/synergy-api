@@ -135,12 +135,12 @@ class CommunityController implements Controller {
     if (accessParam && accessParam == '1') access_filter = ['partners'];
     if (accessParam && accessParam == '0') access_filter = ['public', 'private'];
     /** ***** * ***** */
-
+    console.log(access_filter)
     let error: Error, posts: PostEvent[], events: PostEvent[];
     [error, posts] = await to(this.postModel.find(
       {
         $and: [
-          { 'activated': true },
+          // { 'activated': true },
           { 'access': { $in: access_filter } }
         ]
       }
@@ -149,6 +149,7 @@ class CommunityController implements Controller {
         path: 'partner'
       }])
       .sort({ updatedAt: -1 })
+      .lean()
       .catch());
     // [error, posts] = await to(this.user.aggregate([{
     //   $unwind: '$posts'
@@ -174,7 +175,7 @@ class CommunityController implements Controller {
     [error, events] = await to(this.eventModel.find(
       {
         $and: [
-          { 'activated': true },
+          // { 'activated': true },
           { 'access': { $in: access_filter } },
           { 'dateTime': { $gt: offset.greater } }
         ]
@@ -184,6 +185,7 @@ class CommunityController implements Controller {
         path: 'partner'
       }])
       .sort({ updatedAt: -1 })
+      .lean()
       .catch());
     // [error, events] = await to(this.user.aggregate([{
     //   $unwind: '$events'
@@ -250,6 +252,7 @@ class CommunityController implements Controller {
         path: 'partner'
       }])
       .sort({ updatedAt: -1 })
+      .lean()
       .catch());
     // [error, posts] = await to(this.user.aggregate([{
     //   $unwind: '$posts'
@@ -285,6 +288,7 @@ class CommunityController implements Controller {
         path: 'partner'
       }])
       .sort({ updatedAt: -1 })
+      .lean()
       .catch());
     // [error, events] = await to(this.user.aggregate([{
     //   $unwind: '$events'

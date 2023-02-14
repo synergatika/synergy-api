@@ -19,7 +19,7 @@ import { Member, Partner, UserAccess } from '../../_interfaces/index';
 import userModel from '../../models/user.model';
 
 async function member(request: RequestWithUser, response: Response, next: NextFunction) {
-  const _to: string = request.params._to || request.user._id;
+  const _to: string = request.params._to || request.user._id.toString();
 
   let error: Error, member: Member;
   [error, member] = await to(userModel.findOne({
@@ -45,7 +45,7 @@ async function member(request: RequestWithUser, response: Response, next: NextFu
 }
 
 async function partner(request: RequestWithUser, response: Response, next: NextFunction) {
-  const partner_id: string = request.params.partner_id || request.user._id;
+  const partner_id: string = request.params.partner_id || request.user._id.toString();
 
   let error: Error, partner: Partner;
   [error, partner] = await to(userModel.findOne({

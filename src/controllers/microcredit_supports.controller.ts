@@ -45,6 +45,7 @@ const offsetParams = OffsetHelper.offsetLimit;
 import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
 import microcreditModel from '../models/campaign.model';
+import supportModel from '../models/support.model';
 
 class MicrocreditSupportsController implements Controller {
   public path = '/microcredit/supports';
@@ -52,6 +53,7 @@ class MicrocreditSupportsController implements Controller {
   private user = userModel;
   private transaction = transactionModel;
   private microcreditModel = microcreditModel;
+  private supportModel = supportModel;
 
   constructor() {
     this.initializeRoutes();
@@ -60,23 +62,45 @@ class MicrocreditSupportsController implements Controller {
   private initializeRoutes() {
     this.router.get(`${this.path}/:offset`,
       authMiddleware,
-      this.readAllBackerSupports);
+      this.readAllBackerSupports2);
 
     this.router.get(`${this.path}/:partner_id/:campaign_id`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo,
-      this.readAllSupportsByCampaign);
+      this.readAllSupportsByCampaign2);
 
     this.router.get(`${this.path}/:partner_id/:campaign_id/:_to`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo,
       validationParamsMiddleware(IdentifierToDto), usersMiddleware.member,
-      this.readBackerSupportsByCampaign);
+      this.readBackerSupportsByCampaign2);
   }
 
   /**
    * Primary Functions
    */
+
+  private readAllBackerSupports2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const user: User = request.user;
+    const params: string = request.params.offset;
+
+    const offset: {
+      limit: number, skip: number, greater: number, type: boolean
+    } = offsetParams(params);
+
+    let error: Error, supports: any[];
+    [error, supports] = await to(this.supportModel.find(
+      { member: user._id }
+    ).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    console.log(supports);
+
+    response.status(200).send({
+      data: supports,
+      code: 200
+    });
+  }
 
   private readAllBackerSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
@@ -127,6 +151,29 @@ class MicrocreditSupportsController implements Controller {
     });
   }
 
+  private readAllSupportsByCampaign2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const partner_id: CampaignID["partner_id"] = request.params.partner_id;
+    const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+
+    let error: Error, supports: any[];
+    [error, supports] = await to(this.supportModel.find(
+      // {
+      // "$and": [
+      // { partner: new ObjectId(partner_id) },
+      { campaign: new ObjectId(campaign_id) }
+      // ]
+      // }
+    ).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    console.log(supports);
+
+    response.status(200).send({
+      data: supports,
+      code: 200
+    });
+  }
+
   private readAllSupportsByCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
@@ -170,6 +217,32 @@ class MicrocreditSupportsController implements Controller {
       data: supports.map(o => { return { ...o, status: this.defineSupportStatus(o) } }),
       code: 200
     });
+  }
+
+  private readBackerSupportsByCampaign2 = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const partner_id: CampaignID["partner_id"] = request.params.partner_id;
+    const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
+    const member: User = response.locals.member;
+
+    let error: Error, supports: any[];
+    [error, supports] = await to(this.supportModel.find(
+      {
+        "$and": [
+          { partner: new ObjectId(partner_id) },
+          { campaign: new ObjectId(campaign_id) },
+          { member: member._id }
+        ]
+      }
+    ).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    console.log(supports);
+
+    response.status(200).send({
+      data: supports,
+      code: 200
+    });
+
   }
 
   private readBackerSupportsByCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

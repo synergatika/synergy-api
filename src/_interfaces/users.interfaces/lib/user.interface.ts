@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongodb';
+
 export interface Account {
   version: number;
   id: string;
@@ -12,7 +14,7 @@ export enum UserAccess {
 }
 
 export interface User {
-  _id?: string;
+  _id?: ObjectId;
   email?: string;
   card?: string;
   password?: string;
