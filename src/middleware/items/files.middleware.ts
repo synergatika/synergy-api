@@ -11,16 +11,27 @@ import { promisify } from 'util';
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
 
 class FilesMiddleware {
-  static uploadFile = multer({
+  static uploadFile = (_path: string, _type: string) => multer({
     storage: multer.diskStorage({
       destination: function (req: RequestWithUser, file, cb) {
-        cb(null, path.join(__dirname, `../assets/${req.params.path}`));
+        cb(null, path.join(__dirname, `../assets/${_path}`));
       },
       filename: function (req: RequestWithUser, file, cb) {
-        cb(null, req.params.type + '_' + new Date().getTime() + path.extname(file.originalname));
+        console.log(file.originalname)
+        cb(null, `${_type}_${new Date().getTime()}${path.extname(file.originalname)}`);
       }
     })
   });
+  // static uploadFile = multer({
+  //   storage: multer.diskStorage({
+  //     destination: function (req: RequestWithUser, file, cb) {
+  //       cb(null, path.join(__dirname, `../assets/${req.params.path}`));
+  //     },
+  //     filename: function (req: RequestWithUser, file, cb) {
+  //       cb(null, req.params.type + '_' + new Date().getTime() + path.extname(file.originalname));
+  //     }
+  //   })
+  // });
   static existsFile = fs.existsSync;
   static deleteSync = fs.unlinkSync;
   static deleteFile = promisify(fs.unlink);

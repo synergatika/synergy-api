@@ -35,10 +35,11 @@ import OffsetHelper from '../middleware/items/offset.helper';
 /**
  * Helper's Instance
  */
+// const uploadFile = FilesMiddleware.uploadFile;
 const uploadFile = FilesMiddleware.uploadFile;
-const existFile = FilesMiddleware.existsFile;
-const deleteFile = FilesMiddleware.deleteFile;
-const deleteSync = FilesMiddleware.deleteSync;
+// const existFile = FilesMiddleware.existsFile;
+// const deleteFile = FilesMiddleware.deleteFile;
+// const deleteSync = FilesMiddleware.deleteSync;
 const createSlug = SlugHelper.postSlug;
 const offsetParams = OffsetHelper.offsetLimit;
 
@@ -47,6 +48,12 @@ const offsetParams = OffsetHelper.offsetLimit;
  */
 import userModel from '../models/user.model';
 import postModel from '../models/post.model';
+
+/**
+ * Files Util
+ */
+import FilesUtil from '../utils/files.util';
+const filesUtil = new FilesUtil();
 
 class PostsController implements Controller {
   public path = '/posts';
@@ -61,29 +68,50 @@ class PostsController implements Controller {
   private initializeRoutes() {
     this.router.get(`${this.path}/public/:offset`, this.readPosts);
     this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readPosts);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(PostDto), this.createPost);
+
+    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner,
+      // this.declareStaticPath, 
+      uploadFile('static', 'post').single('imageURL'),
+      validationBodyAndFileMiddleware(PostDto), this.createPost);
+
     this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPostsByStore);
     this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPostsByStore);
     this.router.get(`${this.path}/:partner_id/:post_id`, validationParamsMiddleware(PostID), this.readPost);
-    this.router.put(`${this.path}/:partner_id/:post_id`, authMiddleware, accessMiddleware.onlyAsPartner, this.declareStaticPath, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(PostDto), itemsMiddleware.postMiddleware, this.updatePost);
+
+    this.router.put(`${this.path}/:partner_id/:post_id`, authMiddleware, accessMiddleware.onlyAsPartner,
+      // this.declareStaticPath, 
+      validationParamsMiddleware(PostID), accessMiddleware.belongsTo,
+      uploadFile('static', 'post').single('imageURL'), validationBodyAndFileMiddleware(PostDto), itemsMiddleware.postMiddleware, this.updatePost);
+
     this.router.delete(`${this.path}/:partner_id/:post_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, itemsMiddleware.postMiddleware, this.deletePost);
 
-    this.router.post(`${this.path}/image`, authMiddleware, this.declareContentPath, uploadFile.array('content_image', 8), this.uploadContentImage);
+    this.router.post(`${this.path}/image`,
+      authMiddleware,
+      // this.declareContentPath, 
+      uploadFile('content', 'post').array('content_image', 8), this.uploadContentImages);
   }
 
-  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    request.params['path'] = 'static';
-    request.params['type'] = 'post';
-    next();
+  /** Secondary Functions */
+  private checkObjectIdValidity(id: string) {
+    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
+      return true;
+
+    return false;
   }
 
-  private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    request.params['path'] = 'content';
-    request.params['type'] = 'post';
-    next();
-  }
+  // private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   request.params['path'] = 'static';
+  //   request.params['type'] = 'post';
+  //   next();
+  // }
 
-  private uploadContentImage = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  // private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   request.params['path'] = 'content';
+  //   request.params['type'] = 'post';
+  //   next();
+  // }
+
+  private uploadContentImages = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     response.status(200).send({
       data: {
         files: request.files,
@@ -251,13 +279,6 @@ class PostsController implements Controller {
     });
   }
 
-  checkObjectIdValidity(id: string) {
-    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
-      return true;
-
-    return false;
-  }
-
   private readPost = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const partner_id: PostID["partner_id"] = request.params.partner_id;
     const post_id: PostID["post_id"] = request.params.post_id;
@@ -311,11 +332,11 @@ class PostsController implements Controller {
 
     const currentPost: Post = response.locals.post;
     if (currentPost['imageURL'] && request.file) {
-      await this.removeFile(currentPost);
+      await filesUtil.removeFile(currentPost);
     }
 
     if (currentPost.contentFiles) {
-      this.removeRichEditorFiles(currentPost, data, true);
+      filesUtil.removeRichEditorFiles(currentPost, (data.contentFiles) ? data.contentFiles.split(',') : [], true);
     }
 
     let error: Error, post: Post;
@@ -362,11 +383,11 @@ class PostsController implements Controller {
 
     const currentPost: Post = response.locals.post;
     if (currentPost['imageURL']) {
-      await this.removeFile(currentPost);
+      await filesUtil.removeFile(currentPost);
     }
 
     if (currentPost.contentFiles) {
-      this.removeRichEditorFiles(currentPost, null, false);
+      filesUtil.removeRichEditorFiles(currentPost, currentPost.contentFiles, false);
     }
 
     let error: Error, results: Object;
@@ -396,65 +417,65 @@ class PostsController implements Controller {
    *
    * */
 
-  /** Project Partner (Local Function) */
-  private projectPartner() {
-    return {
-      _id: '$_id',
-      name: '$name',
-      email: '$email',
-      slug: '$slug',
-      imageURL: '$imageURL',
-      payments: '$payments',
-      address: '$address',
-      contacts: '$contacts',
-      phone: '$phone',
-    };
-  }
+  // /** Project Partner (Local Function) */
+  // private projectPartner() {
+  //   return {
+  //     _id: '$_id',
+  //     name: '$name',
+  //     email: '$email',
+  //     slug: '$slug',
+  //     imageURL: '$imageURL',
+  //     payments: '$payments',
+  //     address: '$address',
+  //     contacts: '$contacts',
+  //     phone: '$phone',
+  //   };
+  // }
 
-  /** Project Post (Local Function) */
-  private projectPost() {
-    return {
-      _id: '$posts._id',
-      slug: '$posts.slug',
-      imageURL: '$posts.imageURL',
-      title: '$posts.title',
-      subtitle: '$posts.subtitle',
-      description: '$posts.description',
+  // /** Project Post (Local Function) */
+  // private projectPost() {
+  //   return {
+  //     _id: '$posts._id',
+  //     slug: '$posts.slug',
+  //     imageURL: '$posts.imageURL',
+  //     title: '$posts.title',
+  //     subtitle: '$posts.subtitle',
+  //     description: '$posts.description',
 
-      createdAt: '$posts.createdAt',
-      updatedAt: '$posts.updatedAt'
-    };
-  }
+  //     createdAt: '$posts.createdAt',
+  //     updatedAt: '$posts.updatedAt'
+  //   };
+  // }
 
-  /** Remove File (Local Function) */
-  private async removeFile(currentPost: Post) {
-    var imageFile = (currentPost['imageURL']).split('assets/static/');
-    const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
-    if (existFile(file)) await deleteFile(file);
-  }
+  // /** Remove File (Local Function) */
+  // private async removeFile(currentPost: Post) {
+  //   var imageFile = (currentPost['imageURL']).split('assets/static/');
+  //   const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+  //   if (existFile(file)) await deleteFile(file);
+  // }
 
-  /** Remove Content Files (Local Function) */
-  private async removeRichEditorFiles(currentPost: Post, newPost: PostDto, isUpdated: boolean) {
-    var toDelete: string[] = [];
+  // /** Remove Content Files (Local Function) */
+  // private async removeRichEditorFiles(currentPost: Post, newPost: PostDto, isUpdated: boolean) {
+  //   var toDelete: string[] = [];
 
-    if (isUpdated) {
-      (currentPost.contentFiles).forEach((element: string) => {
-        if ((newPost.contentFiles).indexOf(element) < 0) {
-          var imageFile = (element).split('assets/content/');
-          const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
-          toDelete.push(file);
-        }
-      });
-      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
-    } else {
-      (currentPost.contentFiles).forEach((element: string) => {
-        var imageFile = (element).split('assets/content/');
-        const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
-        toDelete.push(file);
-      });
-      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
-    }
-  }
+  //   if (isUpdated) {
+  //     (currentPost.contentFiles).forEach((element: string) => {
+  //       if ((newPost.contentFiles).indexOf(element) < 0) {
+  //         var imageFile = (element).split('assets/content/');
+  //         const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+  //         toDelete.push(file);
+  //       }
+  //     });
+  //     toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+  //   } else {
+  //     (currentPost.contentFiles).forEach((element: string) => {
+  //       var imageFile = (element).split('assets/content/');
+  //       const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+  //       toDelete.push(file);
+  //     });
+  //     toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+  //   }
+  // }
 }
 
 export default PostsController;

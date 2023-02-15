@@ -7,20 +7,20 @@ import path from 'path';
 /**
  * Blockchain Service
  */
-import { BlockchainService } from '../utils/blockchainService';
+import { BlockchainService } from '../services/blockchain.service';
 const serviceInstance = new BlockchainService(
   `${process.env.ETH_REMOTE_API}`,
   path.join(__dirname, `${process.env.ETH_CONTRACTS_PATH}`),
   `${process.env.ETH_API_ACCOUNT_PRIVKEY}`
 );
-import BlockchainRegistrationService from '../utils/blockchain.registrations';
+import BlockchainRegistrationService from '../utils/blockchain.util';
 const registrationService = new BlockchainRegistrationService();
 
 /**
- * Email Service
+ * Emails Util
  */
-import EmailService from '../utils/emailService';
-const emailService = new EmailService();
+import EmailsUtil from '../utils/email.util';
+const emailsUtil = new EmailsUtil();
 
 /**
  * DTOs
@@ -69,6 +69,12 @@ const createSlug = SlugHelper.partnerSlug;
 import userModel from '../models/user.model';
 import transactionModel from '../models/registration.transaction.model';
 
+/**
+ * Transactions Util
+ */
+import RegistrationTransactionsUtil from '../utils/registration.transactions';
+const transactionsUtil = new RegistrationTransactionsUtil();
+
 class AuthenticationController implements Controller {
   public path = '/auth';
   public router = express.Router();
@@ -100,7 +106,7 @@ class AuthenticationController implements Controller {
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CardDto), validationBodyMiddleware(EmailDto),
       this.link_email,
-      // emailService.userRegistration
+      // emailsUtil.userRegistration
     );
 
     /**
@@ -110,7 +116,7 @@ class AuthenticationController implements Controller {
       validationBodyMiddleware(AuthenticationDto),
       this.authAuthenticate,
       // this.askVerification,
-      // emailService.emailVerification
+      // emailsUtil.emailVerification
     );
 
     this.router.post(`${this.path}/logout`,
@@ -125,7 +131,7 @@ class AuthenticationController implements Controller {
       validationBodyMiddleware(EmailDto),
       this.oneClickRegister,
       // this.registerAccount,
-      // emailService.userRegistration
+      // emailsUtil.userRegistration
     );
 
     this.router.post(`${this.path}/register/auto-member`,
@@ -133,7 +139,7 @@ class AuthenticationController implements Controller {
       validationBodyMiddleware(RegisterUserWithPasswordDto),
       this.autoRegisterMember,
       // this.registerAccount, /*this.askVerification,*/
-      // emailService.emailVerification
+      // emailsUtil.emailVerification
     );
 
     this.router.post(`${this.path}/register/auto-partner`,
@@ -141,8 +147,8 @@ class AuthenticationController implements Controller {
       validationBodyMiddleware(RegisterPartnerWithPasswordDto),
       this.autoRegisterPartner,
       // this.registerAccount, /*this.askVerification,*/
-      // emailService.internalActivation,
-      // emailService.emailVerification
+      // emailsUtil.internalActivation,
+      // emailsUtil.emailVerification
     );
 
     this.router.post(`${this.path}/register/invite-member`,
@@ -150,7 +156,7 @@ class AuthenticationController implements Controller {
       authMiddleware, accessMiddleware.onlyAsAdminOrPartner, validationBodyMiddleware(RegisterUserWithoutPasswordDto),
       this.inviteMember,
       // this.registerAccount,
-      // emailService.userRegistration
+      // emailsUtil.userRegistration
     );
 
     this.router.post(`${this.path}/register/invite-partner`,
@@ -159,7 +165,7 @@ class AuthenticationController implements Controller {
       validationBodyMiddleware(RegisterPartnerWithoutPasswordDto),
       this.invitePartner,
       // this.registerAccount,
-      // emailService.userRegistration
+      // emailsUtil.userRegistration
     );
 
     /**
@@ -169,7 +175,7 @@ class AuthenticationController implements Controller {
       validationParamsMiddleware(EmailDto),
       this.askVerification);
     // this.askVerification,
-    // emailService.emailVerification);
+    // emailsUtil.emailVerification);
     this.router.post(`${this.path}/verify_email`,
       validationBodyMiddleware(CheckTokenDto),
       this.checkVerification);
@@ -186,7 +192,7 @@ class AuthenticationController implements Controller {
     this.router.get(`${this.path}/forgot_pass/:email`,
       validationParamsMiddleware(EmailDto),
       this.askRestoration,
-      //emailService.passwordRestoration
+      //emailsUtil.passwordRestoration
     );
     this.router.post(`${this.path}/forgot_pass`,
       validationBodyMiddleware(CheckTokenDto),
@@ -201,27 +207,27 @@ class AuthenticationController implements Controller {
     this.router.put(`${this.path}/deactivate`,
       authMiddleware, validationBodyMiddleware(DeactivationDto),
       this.autoDeactivation,
-      // emailService.internalDeactivation,
-      // emailService.accountDeactivation
+      // emailsUtil.internalDeactivation,
+      // emailsUtil.accountDeactivation
     );
 
     this.router.put(`${this.path}/activate/:user_id`,
       authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID),
       this.activateUser,
-      // emailService.accountActivation
+      // emailsUtil.accountActivation
     );
 
     this.router.put(`${this.path}/deactivate/:user_id`,
       authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID),
       this.deactivateUser,
-      // emailService.accountDeactivation
+      // emailsUtil.accountDeactivation
     );
 
     this.router.put(`${this.path}/delete`,
       authMiddleware,
       this.autoDeletion,
-      //emailService.internalDeletion,
-      //emailService.accountDeletion
+      //emailsUtil.internalDeletion,
+      //emailsUtil.accountDeletion
     );
   }
 
@@ -421,41 +427,41 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
  * 
  */
 
-private createRegisterMemberTransaction = async (user: User, encryptBy: string) => {
-  let blockchain_error: Error, blockchain_result: any;
-  [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(user.account).catch());
-  if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+// private createRegisterMemberTransaction = async (user: User, encryptBy: string) => {
+//   let blockchain_error: Error, blockchain_result: any;
+//   [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(user.account).catch());
+//   if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-  // let error: Error, transaction: RegistrationTransaction;
-  // [error, transaction] = await to(
-    return this.transaction.create({
-    ...blockchain_result,
-    user: user,
-    user_id: user._id,
-    encryptBy: encryptBy,
-    type: RegistrationTransactionType.RegisterMember,
-    status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
-  })
-  // .catch());
-}
+//   // let error: Error, transaction: RegistrationTransaction;
+//   // [error, transaction] = await to(
+//     return this.transaction.create({
+//     ...blockchain_result,
+//     user: user,
+//     user_id: user._id,
+//     encryptBy: encryptBy,
+//     type: RegistrationTransactionType.RegisterMember,
+//     status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+//   })
+//   // .catch());
+// }
 
-private createRegisterPartnerTransaction = async (user: User, encryptBy: string) => {
-  let blockchain_error: Error, blockchain_result: any;
-  [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(user.account).catch());
-  if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+// private createRegisterPartnerTransaction = async (user: User, encryptBy: string) => {
+//   let blockchain_error: Error, blockchain_result: any;
+//   [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(user.account).catch());
+//   if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-  // let error: Error, transaction: RegistrationTransaction;
-  // [error, transaction] = await to(
-    return await this.transaction.create({
-    ...blockchain_result,
-    user: user,
-    user_id: user._id,
-    encryptBy: encryptBy,
-    type: RegistrationTransactionType.RegisterPartner,
-    status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
-  })
-  // .catch());
-}
+//   // let error: Error, transaction: RegistrationTransaction;
+//   // [error, transaction] = await to(
+//     return await this.transaction.create({
+//     ...blockchain_result,
+//     user: user,
+//     user_id: user._id,
+//     encryptBy: encryptBy,
+//     type: RegistrationTransactionType.RegisterPartner,
+//     status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+//   })
+//   // .catch());
+// }
 
   /**
    * Responses
@@ -599,7 +605,7 @@ private createRegisterPartnerTransaction = async (user: User, encryptBy: string)
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     let email_error: Error, email_result: any;
-    [email_error, email_result ]= await to (emailService.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'invite', request.user).catch());
+    [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'invite', request.user).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     // response.locals = {
@@ -675,12 +681,12 @@ private createRegisterPartnerTransaction = async (user: User, encryptBy: string)
 
        /** Transaction Block (Registration - Member) */
  let transaction_error: Error, transaction_result;
-    [transaction_error, transaction_result] = await to (this.createRegisterMemberTransaction(user, encryptBy).catch());
+    [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterMemberTransaction(user, encryptBy).catch());
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
     
           /** Email Block (Authentication - Registration) */
  let email_error: Error, email_result: any;
-    [email_error, email_result ]= await to (emailService.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'one-click', null).catch());
+    [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'one-click', null).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
@@ -723,12 +729,12 @@ private createRegisterPartnerTransaction = async (user: User, encryptBy: string)
 
             /** Transaction Block (Registration - Member) */
  let transaction_error: Error, transaction_result;
-      [transaction_error, transaction_result] = await to (this.createRegisterMemberTransaction(user, potensialUser.extras.encryptBy).catch());
+      [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterMemberTransaction(user, potensialUser.extras.encryptBy).catch());
       if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
       
                 /** Email Block (Authentication - Verification) */
 let email_error: Error, email_result: any;
-      [email_error, email_result ]= await to ( emailService.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
+      [email_error, email_result ]= await to ( emailsUtil.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
       if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
 
@@ -771,16 +777,16 @@ let email_error: Error, email_result: any;
 
                 /** Transaction Block (Registration - Partner) */
   let transaction_error: Error, transaction_result;
-      [transaction_error, transaction_result] = await to (this.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
+      [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
       if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
       
                    /** Email Block (Authentication - Verification) */
                    let email_error: Error, email_result: any;
-      [email_error, email_result ]= await to ( emailService.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
+      [email_error, email_result ]= await to ( emailsUtil.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
       if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
                   /** Email Block (Authentication - Activation Internal) */
-                  [email_error, email_result] = await to(emailService.internalActivation2(request.headers['content-language'], user).catch());
+                  [email_error, email_result] = await to(emailsUtil.internalActivation2(request.headers['content-language'], user).catch());
       if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
       response.status(200).send(
@@ -828,13 +834,13 @@ let email_error: Error, email_result: any;
 
                    /** Transaction Block (Registration - Member) */
  let transaction_error: Error, transaction_result;
-    [transaction_error, transaction_result] = await to (this.createRegisterMemberTransaction(user, potensialUser.extras.encryptBy).catch());
+    [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterMemberTransaction(user, potensialUser.extras.encryptBy).catch());
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
 
     if(user.email) {
                        /** Email Block (Authentication - Registration) */
  let email_error, email_result: any;
-  [email_error, email_result ]= await to ( emailService.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
+  [email_error, email_result ]= await to ( emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
       if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
     }
     
@@ -884,12 +890,12 @@ let email_error: Error, email_result: any;
 
                       /** Transaction Block (Registration - Partner) */
  let transaction_error: Error, transaction_result;
-    [transaction_error, transaction_result] = await to (this.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
+    [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
 
                           /** Email Block (Authentication - Registration) */
  let email_error: Error, email_result: any;
-    [email_error, email_result ]= await to ( emailService.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
+    [email_error, email_result ]= await to ( emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
@@ -959,7 +965,7 @@ let email_error: Error, email_result: any;
 
                          /** Email Block (Authentication - Verification) */
                          let email_error, email_result: any;
-      [email_error, email_result ]= await to (emailService.emailVerification2(request.headers['content-language'], data.email, token.token).catch())
+      [email_error, email_result ]= await to (emailsUtil.emailVerification2(request.headers['content-language'], data.email, token.token).catch())
       if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
       response.status(202).send({
@@ -1068,7 +1074,7 @@ let email_error: Error, email_result: any;
 
                           /** Email Block (Authentication - Verification) */
                           let email_error, email_result: any;
-    [email_error, email_result ]= await to (emailService.emailVerification2(request.headers['content-language'], email, token.token).catch());
+    [email_error, email_result ]= await to (emailsUtil.emailVerification2(request.headers['content-language'], email, token.token).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
@@ -1140,7 +1146,7 @@ let email_error: Error, email_result: any;
 
                             /** Email Block (Authentication - Restoration) */
  let email_error, email_result: any;
-[email_error, email_result] = await to (emailService.passwordRestoration2(request.headers['content-language'], email, token.token).catch());
+[email_error, email_result] = await to (emailsUtil.passwordRestoration2(request.headers['content-language'], email, token.token).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
@@ -1234,7 +1240,7 @@ let email_error: Error, email_result: any;
 
                               /** Email Block (Authentication - Activation) */
                               let email_error, email_result: any;
-[email_error, email_result] = await to (emailService.accountActivation2(request.headers['content-language'], user.email).catch());
+[email_error, email_result] = await to (emailsUtil.accountActivation2(request.headers['content-language'], user.email).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
@@ -1277,7 +1283,7 @@ let email_error: Error, email_result: any;
 
                                  /** Email Block (Authentication - Deactivation) */
  let email_error, email_result: any;
-    [email_error, email_result] = await to (emailService.accountDeactivation2(request.headers['content-language'], user.email, request.user).catch());
+    [email_error, email_result] = await to (emailsUtil.accountDeactivation2(request.headers['content-language'], user.email, request.user).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
@@ -1320,11 +1326,11 @@ let email_error: Error, email_result: any;
 
                                     /** Email Block (Authentication - Deactivation) */
  let email_error, email_result: any;
-    [email_error, email_result] = await to (emailService.accountDeactivation2(request.headers['content-language'], request.user.email, request.user).catch());
+    [email_error, email_result] = await to (emailsUtil.accountDeactivation2(request.headers['content-language'], request.user.email, request.user).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
                                     /** Email Block (Authentication - Deactivation Internal) */
- [email_error, email_result] = await to (emailService.internalDeactivation2(request.headers['content-language'], request.user, data.reason).catch());
+ [email_error, email_result] = await to (emailsUtil.internalDeactivation2(request.headers['content-language'], request.user, data.reason).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
@@ -1364,11 +1370,11 @@ let email_error: Error, email_result: any;
 
                                       /** Email Block (Authentication - Deletion) */
                                       let email_error, email_result: any;
-    [email_error, email_result] = await to ( emailService.accountDeletion2(request.headers['content-language'], request.user.email).catch());
+    [email_error, email_result] = await to ( emailsUtil.accountDeletion2(request.headers['content-language'], request.user.email).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
                                       /** Email Block (Authentication - Deletion Internal) */
-                                      [email_error, email_result] = await to (emailService.internalDeletion2(request.headers['content-language'], request.user).catch());
+                                      [email_error, email_result] = await to (emailsUtil.internalDeletion2(request.headers['content-language'], request.user).catch());
     if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(

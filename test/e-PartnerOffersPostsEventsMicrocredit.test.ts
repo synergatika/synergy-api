@@ -190,6 +190,33 @@ describe("Partner - Offers, Posts, Events", () => {
           done();
         });
     });
+    it("6. should upload Content Images  - 200 OK", (done) => {
+      let req = chai.request(`${process.env.API_URL}`)
+        .post("posts/image/")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+
+      post_c.contentFiles.forEach((item, index) => {
+        req = req.attach('content_image', fs.readFileSync(`${imagesLocation}/${item}`), `${item}`)
+      })
+      req.set('Content-Type', 'image/jpeg')
+      req.end((err, res) => {
+
+        const files = res.body.data.files;
+        const path = res.body.data.path;
+
+        var content = post_c.description;
+        files.forEach((item: { originalname: string, filename: string }, index: number) => {
+          content = content.split(item.originalname).join(`${path}${item.filename}`);
+          post_c.contentFiles[index] = `${path}${item.filename}`;
+        })
+        post_c.description = content;
+
+        res.should.have.status(200);
+        res.body.should.be.a('object');
+        res.body.should.have.property('data');
+        done();
+      });
+    });
     it("6. should create a post - 201 Created", (done) => {
       chai.request(`${process.env.API_URL}`)
         .post("posts/")
@@ -197,7 +224,7 @@ describe("Partner - Offers, Posts, Events", () => {
         .field('title', post_c.title)
         .field('subtitle', post_c.subtitle)
         .field('description', post_c.description)
-        .field('contentFiles', post_c.contentFiles.join(''))
+        .field('contentFiles', post_c.contentFiles.join(','))
         .field('access', post_c.access)
         .attach('imageURL', fs.readFileSync(`${imagesLocation}/${post_b.imageFile}`), `${post_b.imageFile}`)
         .end((err, res) => {

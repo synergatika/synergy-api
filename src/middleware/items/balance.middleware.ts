@@ -6,7 +6,7 @@ import { ObjectId } from 'mongodb';
 /**
  * Blockchain Service
  */
-import { BlockchainService } from '../../utils/blockchainService';
+import { BlockchainService } from '../../services/blockchain.service';
 const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
 /**

@@ -1,4 +1,5 @@
 import { TransactionStatus } from "_interfaces/microcredit.interfaces";
+import { ObjectId } from "mongodb";
 import { User } from "_interfaces/users.interfaces";
 
 export enum RegistrationTransactionType {
@@ -8,7 +9,7 @@ export enum RegistrationTransactionType {
 }
 
 export interface RegistrationTransaction {
-  _id: string;
+  _id: ObjectId;
 
   user: User;
 

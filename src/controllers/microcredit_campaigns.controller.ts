@@ -6,10 +6,10 @@ import path from 'path';
 /**
  * Blockchain Service
  */
-import { BlockchainService } from '../utils/blockchainService';
-const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
+// import { BlockchainService } from '../services/blockchain.service';
+// const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.join(__dirname, process.env.ETH_CONTRACTS_PATH), process.env.ETH_API_ACCOUNT_PRIVKEY);
 
-import BlockchainRegistrationService from '../utils/blockchain.registrations';
+import BlockchainRegistrationService from '../utils/blockchain.util';
 const registrationService = new BlockchainRegistrationService();
 
 /**
@@ -57,10 +57,11 @@ import blockchainStatus from '../middleware/items/status.middleware';
 /**
  * Helper's Instance
  */
+// const uploadFile = FilesMiddleware.uploadFile;
 const uploadFile = FilesMiddleware.uploadFile;
-const existFile = FilesMiddleware.existsFile;
-const deleteFile = FilesMiddleware.deleteFile;
-const deleteSync = FilesMiddleware.deleteSync;
+// const existFile = FilesMiddleware.existsFile;
+// const deleteFile = FilesMiddleware.deleteFile;
+// const deleteSync = FilesMiddleware.deleteSync;
 const createSlug = SlugHelper.microcreditSlug;
 const offsetParams = OffsetHelper.offsetLimit;
 
@@ -71,6 +72,12 @@ import userModel from '../models/user.model';
 import transactionModel from '../models/microcredit.transaction.model';
 import microcreditModel from '../models/campaign.model';
 import supportModel from '../models/support.model';
+
+/**
+ * Files Util
+ */
+import FilesUtil from '../utils/files.util';
+const filesUtil = new FilesUtil();
 
 class MicrocreditCampaignsController implements Controller {
   public path = '/microcredit/campaigns';
@@ -87,14 +94,15 @@ class MicrocreditCampaignsController implements Controller {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}/one-click/:token`, blockchainStatus,
-      oneClickMiddleware, accessMiddleware.onlyAsPartner,
-      uploadFile.single('imageURL'),
-      validationBodyAndFileMiddleware(CampaignDto),
-      this.createCampaign,
-      usersMiddleware.partner,
-      checkMiddleware.canPublishMicrocredit,
-      this.publishCampaign);
+    // this.router.post(`${this.path}/one-click/:token`, 
+    // blockchainStatus,
+    //   oneClickMiddleware, accessMiddleware.onlyAsPartner,
+    //   uploadFile().single('imageURL'),
+    //   validationBodyAndFileMiddleware(CampaignDto),
+    //   this.createCampaign,
+    //   usersMiddleware.partner,
+    //   checkMiddleware.canPublishMicrocredit,
+    //   this.publishCampaign);
 
     this.router.get(`${this.path}/public/:offset`,
       this.readCampaigns);
@@ -105,7 +113,8 @@ class MicrocreditCampaignsController implements Controller {
 
     this.router.post(`${this.path}/`,
       authMiddleware, accessMiddleware.onlyAsPartner,
-      this.declareStaticPath, uploadFile.single('imageURL'),
+      // this.declareStaticPath, 
+      uploadFile('static', 'microcredit').single('imageURL'),
       validationBodyAndFileMiddleware(CampaignDto),
       this.createCampaign);
 
@@ -126,7 +135,8 @@ class MicrocreditCampaignsController implements Controller {
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CampaignID),
       accessMiddleware.belongsTo,
-      this.declareStaticPath, uploadFile.single('imageURL'),
+      // this.declareStaticPath, 
+      uploadFile('static', 'microcredit').single('imageURL'),
       validationBodyAndFileMiddleware(CampaignDto),
       itemsMiddleware.microcreditCampaign,
       checkMiddleware.canEditMicrocredit,
@@ -149,24 +159,44 @@ class MicrocreditCampaignsController implements Controller {
       checkMiddleware.canEditMicrocredit,
       this.deleteCampaign);
 
-    this.router.post(`${this.path}/image`, authMiddleware, this.declareContentPath, uploadFile.array('content_image', 8), this.uploadContentImage);
+    this.router.post(`${this.path}/image`,
+      authMiddleware,
+      // this.declareContentPath, 
+      uploadFile('content', 'microcredit').array('content_image', 8),
+      this.uploadContentImages);
+  }
+
+  /** Secondary Functions */
+  private dateConvert = (x: string | number | Date) => {
+    var today = new Date(x);
+    var year = today.getFullYear();
+    var month = `0${today.getMonth() + 1}`.slice(0, 2);
+    var day = `0${today.getDate()}`.slice(0, 2);
+    return `${year}-${month}-${day}`;
+  }
+
+  private checkObjectIdValidity(id: string) {
+    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
+      return true;
+
+    return false;
   }
 
   private isError = (err: unknown): err is Error => err instanceof Error;
 
-  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    request.params['path'] = 'static';
-    request.params['type'] = 'microcredit';
-    next();
-  }
+  // private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   request.params['path'] = 'static';
+  //   request.params['type'] = 'microcredit';
+  //   next();
+  // }
 
-  private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    request.params['path'] = 'content';
-    request.params['type'] = 'microcredit';
-    next();
-  }
+  // private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   request.params['path'] = 'content';
+  //   request.params['type'] = 'microcredit';
+  //   next();
+  // }
 
-  private uploadContentImage = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private uploadContentImages = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     response.status(200).send({
       data: {
         files: request.files,
@@ -353,88 +383,6 @@ class MicrocreditCampaignsController implements Controller {
     });
   }
 
-
-  // private registerMicrocredit = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   const user: User = request.user;
-  //   const currentCampaign: MicrocreditCampaign = response.locals.campaign;
-
-  //   const dates = {
-  //     startsAt: (convertHelper.roundDate(currentCampaign.startsAt, this.campaignHours[0])).toString(),
-  //     expiresAt: (convertHelper.roundDate(currentCampaign.expiresAt, this.campaignHours[1])).toString(),
-  //     redeemStarts: (convertHelper.roundDate(currentCampaign.redeemStarts, this.campaignHours[0])).toString(),
-  //     redeemEnds: (convertHelper.roundDate(currentCampaign.redeemEnds, this.campaignHours[1])).toString()
-  //   };
-
-  //   Object.keys(dates).forEach((key: string) => {
-  //     if (`${process.env.PRODUCTION}` == 'true')
-  //       (dates as any)[key] = (dates as any)[key] + "000000";
-  //     else
-  //       (dates as any)[key] = ((dates as any)[key]).slice(0, ((dates as any)[key]).length - 3);
-  //   });
-
-  //   let error: Error, result: any;
-  //   [error, result] = await to(serviceInstance.startNewMicrocredit(
-  //     user.account.address,
-  //     1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
-  //     parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
-  //     currentCampaign.quantitative)
-  //   );
-  //   if (error) {
-  //     this.escapeBlockchainError(error, "CreateMicrocredit");
-  //     return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-  //   }
-
-  //   await this.microcreditModel.findOneAndUpdate({
-  //     _id: currentCampaign._id
-  //   }, {
-  //     '$set': {
-  //       'status': 'published', // published
-  //       'address': result.address,
-  //       'transactionHash': result.transactionHash,
-  //     }
-  //   });
-
-  //   response.status(200).send({
-  //     message: "Success! Microcredit Campaign with ID: " + currentCampaign._id + " has been published!",
-  //     code: 200
-  //   });
-  //   // await serviceInstance.startNewMicrocredit(user.account.address,
-  //   //   1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
-  //   //   parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
-  //   //   currentCampaign.quantitative)
-  //   //   .then(async (result: any) => {
-
-  //   //     await this.microcreditModel.findOneAndUpdate({
-  //   //       _id: currentCampaign._id
-  //   //     }, {
-  //   //       '$set': {
-  //   //         'status': 'published', // published
-  //   //         'address': result.address,
-  //   //         'transactionHash': result.transactionHash,
-  //   //       }
-  //   //     });
-
-  //   //     // await this.user.updateOne({
-  //   //     //   _id: user._id,
-  //   //     //   'microcredit._id': currentCampaign._id
-  //   //     // }, {
-  //   //     //   '$set': {
-  //   //     //     'microcredit.$.status': 'published', // published
-  //   //     //     'microcredit.$.address': result.address,
-  //   //     //     'microcredit.$.transactionHash': result.transactionHash,
-  //   //     //   }
-  //   //     // });
-
-  //   //     response.status(200).send({
-  //   //       message: "Success! Microcredit Campaign with ID: " + currentCampaign._id + " has been published!",
-  //   //       code: 200
-  //   //     });
-  //   //   })
-  //   //   .catch((error: Error) => {
-  //   //     next(new UnprocessableEntityException(error.message))
-  //   //   })
-  // }
-
   private readCampaignsByStore = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: PartnerID["partner_id"] = request.params.partner_id;
 
@@ -519,13 +467,6 @@ class MicrocreditCampaignsController implements Controller {
     });
   }
 
-  checkObjectIdValidity(id: string) {
-    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
-      return true;
-
-    return false;
-  }
-
   private readCampaign = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
@@ -602,11 +543,11 @@ class MicrocreditCampaignsController implements Controller {
 
     const currentCampaign: MicrocreditCampaign = response.locals.campaign;
     if ((currentCampaign['imageURL'] && (currentCampaign['imageURL']).includes('assets/static/')) && request.file) {
-      await this.removeFile(currentCampaign);
+      await filesUtil.removeFile(currentCampaign);
     }
 
     if (currentCampaign.contentFiles) {
-      this.removeRichEditorFiles(currentCampaign, data, true);
+      filesUtil.removeRichEditorFiles(currentCampaign, (data.contentFiles) ? data.contentFiles.split(',') : [], true);
     }
 
     let error: Error, campaign: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
@@ -668,11 +609,11 @@ class MicrocreditCampaignsController implements Controller {
 
     const currentCampaign: MicrocreditCampaign = response.locals.campaign;
     if ((currentCampaign['imageURL']) && (currentCampaign['imageURL']).includes('assets/static/')) {
-      await this.removeFile(currentCampaign);
+      await filesUtil.removeFile(currentCampaign);
     }
 
     if (currentCampaign.contentFiles) {
-      this.removeRichEditorFiles(currentCampaign, null, false);
+      filesUtil.removeRichEditorFiles(currentCampaign, currentCampaign.contentFiles, false);
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
@@ -694,94 +635,10 @@ class MicrocreditCampaignsController implements Controller {
   }
 
   /**
-   *  
-   * Local Function Section 
-   *
-   * */
-
-  // /** Project Partner (Local Function) */
-  // private projectPartner() {
-  //   return {
-  //     _id: '$_id',
-  //     name: '$name',
-  //     email: '$email',
-  //     slug: '$slug',
-  //     imageURL: '$imageURL',
-  //     payments: '$payments',
-  //     address: '$address',
-  //     contacts: '$contacts',
-  //     phone: '$phone',
-  //   };
-  // }
-
-  // /** Project Microcredit (Local Function) */
-  // private projectMicrocredit() {
-  //   return {
-  //     _id: '$microcredit._id',
-  //     slug: '$microcredit.slug',
-  //     imageURL: '$microcredit.imageURL',
-
-  //     title: '$microcredit.title',
-  //     subtitle: '$microcredit.subtitle',
-  //     terms: '$microcredit.terms',
-  //     description: '$microcredit.description',
-  //     category: '$microcredit.category',
-  //     status: '$microcredit.status',
-  //     access: '$microcredit.access',
-
-  //     quantitative: '$microcredit.quantitative',
-  //     redeemable: '$microcredit.redeemable',
-
-  //     stepAmount: '$microcredit.stepAmount',
-  //     minAllowed: '$microcredit.minAllowed',
-  //     maxAllowed: '$microcredit.maxAllowed',
-  //     maxAmount: '$microcredit.maxAmount',
-
-  //     redeemStarts: '$microcredit.redeemStarts',
-  //     redeemEnds: '$microcredit.redeemEnds',
-  //     startsAt: '$microcredit.startsAt',
-  //     expiresAt: '$microcredit.expiresAt',
-
-  //     createdAt: '$microcredit.createdAt',
-  //     updatedAt: '$microcredit.updatedAt'
-  //   };
-  // }
-
-  /** Remove File (Local Function) */
-  private async removeFile(currentMicrocredit: MicrocreditCampaign) {
-    var imageFile = (currentMicrocredit['imageURL']).split('assets/static/');
-    const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
-    if (existFile(file)) await deleteFile(file);
-  }
-
-  /** Remove Content Files (Local Function) */
-  private async removeRichEditorFiles(currentMicrocredit: MicrocreditCampaign, newMicrocredit: CampaignDto, isUpdated: boolean) {
-    var toDelete: string[] = [];
-
-    if (isUpdated) {
-      (currentMicrocredit.contentFiles).forEach((element: string) => {
-        if ((newMicrocredit.contentFiles).indexOf(element) < 0) {
-          var imageFile = (element).split('assets/content/');
-          const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
-          toDelete.push(file);
-        }
-      });
-      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
-    } else {
-      (currentMicrocredit.contentFiles).forEach((element: string) => {
-        var imageFile = (element).split('assets/content/');
-        const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
-        toDelete.push(file);
-      });
-      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
-    }
-  }
-
-  /**
-   *  
-   * Tokens & Statistics Section 
-   *
-   * */
+  *  
+  * Tokens & Statistics Section 
+  *
+  * */
   private readTokens2 = async (campaigns: MicrocreditCampaign[]) => {
     let error: Error, tokens: MicrocreditTokens[];
     [error, tokens] = await to(this.supportModel.aggregate(
@@ -876,14 +733,6 @@ class MicrocreditCampaignsController implements Controller {
     return supports.filter((o: any) => { return o.type == 'RevertFund' })
   }
 
-  dateConvert = (x: string | number | Date) => {
-    var today = new Date(x);
-    var year = today.getFullYear();
-    var month = `0${today.getMonth() + 1}`.slice(0, 2);
-    var day = `0${today.getDate()}`.slice(0, 2);
-    return `${year}-${month}-${day}`;
-  }
-
   private readStatistics2 = async (campaigns: MicrocreditCampaign[]) => {
 
     let error: Error, statistics: any[];
@@ -910,6 +759,7 @@ class MicrocreditCampaignsController implements Controller {
       = { promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] };
     var _daily: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[], createdAt: string }[]
       = [];
+    var _dates: string[] = [];
 
     /** Total */
     // var result_: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] } = { promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] };
@@ -924,6 +774,10 @@ class MicrocreditCampaignsController implements Controller {
 
       if (_total.uniqueSupports.findIndex(i => i === element.support) < 0) {
         _total.uniqueSupports.push(element.support);
+      }
+
+      if (_dates.findIndex(i => i === element.createdAt) < 0) {
+        _dates.push(element.createdAt);
       }
 
       switch (element.type) {
@@ -1102,3 +956,145 @@ class MicrocreditCampaignsController implements Controller {
 }
 
 export default MicrocreditCampaignsController;
+
+
+
+
+
+
+/**
+  *
+  * Local Function Section
+  *
+  * */
+
+  // /** Project Partner (Local Function) */
+  // private projectPartner() {
+  //   return {
+  //     _id: '$_id',
+  //     name: '$name',
+  //     email: '$email',
+  //     slug: '$slug',
+  //     imageURL: '$imageURL',
+  //     payments: '$payments',
+  //     address: '$address',
+  //     contacts: '$contacts',
+  //     phone: '$phone',
+  //   };
+  // }
+
+  // /** Project Microcredit (Local Function) */
+  // private projectMicrocredit() {
+  //   return {
+  //     _id: '$microcredit._id',
+  //     slug: '$microcredit.slug',
+  //     imageURL: '$microcredit.imageURL',
+
+  //     title: '$microcredit.title',
+  //     subtitle: '$microcredit.subtitle',
+  //     terms: '$microcredit.terms',
+  //     description: '$microcredit.description',
+  //     category: '$microcredit.category',
+  //     status: '$microcredit.status',
+  //     access: '$microcredit.access',
+
+  //     quantitative: '$microcredit.quantitative',
+  //     redeemable: '$microcredit.redeemable',
+
+  //     stepAmount: '$microcredit.stepAmount',
+  //     minAllowed: '$microcredit.minAllowed',
+  //     maxAllowed: '$microcredit.maxAllowed',
+  //     maxAmount: '$microcredit.maxAmount',
+
+  //     redeemStarts: '$microcredit.redeemStarts',
+  //     redeemEnds: '$microcredit.redeemEnds',
+  //     startsAt: '$microcredit.startsAt',
+  //     expiresAt: '$microcredit.expiresAt',
+
+  //     createdAt: '$microcredit.createdAt',
+  //     updatedAt: '$microcredit.updatedAt'
+  //   };
+  // }
+
+/** Remove File (Local Function) */
+
+  // private registerMicrocredit = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   const user: User = request.user;
+  //   const currentCampaign: MicrocreditCampaign = response.locals.campaign;
+
+  //   const dates = {
+  //     startsAt: (convertHelper.roundDate(currentCampaign.startsAt, this.campaignHours[0])).toString(),
+  //     expiresAt: (convertHelper.roundDate(currentCampaign.expiresAt, this.campaignHours[1])).toString(),
+  //     redeemStarts: (convertHelper.roundDate(currentCampaign.redeemStarts, this.campaignHours[0])).toString(),
+  //     redeemEnds: (convertHelper.roundDate(currentCampaign.redeemEnds, this.campaignHours[1])).toString()
+  //   };
+
+  //   Object.keys(dates).forEach((key: string) => {
+  //     if (`${process.env.PRODUCTION}` == 'true')
+  //       (dates as any)[key] = (dates as any)[key] + "000000";
+  //     else
+  //       (dates as any)[key] = ((dates as any)[key]).slice(0, ((dates as any)[key]).length - 3);
+  //   });
+
+  //   let error: Error, result: any;
+  //   [error, result] = await to(serviceInstance.startNewMicrocredit(
+  //     user.account.address,
+  //     1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
+  //     parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
+  //     currentCampaign.quantitative)
+  //   );
+  //   if (error) {
+  //     this.escapeBlockchainError(error, "CreateMicrocredit");
+  //     return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
+  //   }
+
+  //   await this.microcreditModel.findOneAndUpdate({
+  //     _id: currentCampaign._id
+  //   }, {
+  //     '$set': {
+  //       'status': 'published', // published
+  //       'address': result.address,
+  //       'transactionHash': result.transactionHash,
+  //     }
+  //   });
+
+  //   response.status(200).send({
+  //     message: "Success! Microcredit Campaign with ID: " + currentCampaign._id + " has been published!",
+  //     code: 200
+  //   });
+  //   // await serviceInstance.startNewMicrocredit(user.account.address,
+  //   //   1, currentCampaign.maxAmount, currentCampaign.maxAmount, currentCampaign.minAllowed,
+  //   //   parseInt(dates.redeemEnds), parseInt(dates.redeemStarts), parseInt(dates.startsAt), parseInt(dates.expiresAt),
+  //   //   currentCampaign.quantitative)
+  //   //   .then(async (result: any) => {
+
+  //   //     await this.microcreditModel.findOneAndUpdate({
+  //   //       _id: currentCampaign._id
+  //   //     }, {
+  //   //       '$set': {
+  //   //         'status': 'published', // published
+  //   //         'address': result.address,
+  //   //         'transactionHash': result.transactionHash,
+  //   //       }
+  //   //     });
+
+  //   //     // await this.user.updateOne({
+  //   //     //   _id: user._id,
+  //   //     //   'microcredit._id': currentCampaign._id
+  //   //     // }, {
+  //   //     //   '$set': {
+  //   //     //     'microcredit.$.status': 'published', // published
+  //   //     //     'microcredit.$.address': result.address,
+  //   //     //     'microcredit.$.transactionHash': result.transactionHash,
+  //   //     //   }
+  //   //     // });
+
+  //   //     response.status(200).send({
+  //   //       message: "Success! Microcredit Campaign with ID: " + currentCampaign._id + " has been published!",
+  //   //       code: 200
+  //   //     });
+  //   //   })
+  //   //   .catch((error: Error) => {
+  //   //     next(new UnprocessableEntityException(error.message))
+  //   //   })
+  // }

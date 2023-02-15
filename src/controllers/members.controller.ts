@@ -29,6 +29,7 @@ import FilesMiddleware from '../middleware/items/files.middleware';
 /**
  * Helper's Instance
  */
+// const uploadFile = FilesMiddleware.uploadFile;
 const uploadFile = FilesMiddleware.uploadFile;
 const existFile = FilesMiddleware.existsFile;
 const deleteFile = FilesMiddleware.deleteFile;
@@ -49,14 +50,18 @@ class MembersController implements Controller {
 
   private initializeRoutes() {
     this.router.get(`${this.path}`, authMiddleware, this.readUserProfile);
-    this.router.put(`${this.path}`, authMiddleware, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(MemberDto), this.updateUserProfile);
+
+    this.router.put(`${this.path}`, authMiddleware,
+      // this.declareStaticPath, 
+      uploadFile('static', 'member').single('imageURL'),
+      validationBodyAndFileMiddleware(MemberDto), this.updateUserProfile);
   }
 
-  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    request.params['path'] = 'static';
-    request.params['type'] = 'member';
-    next();
-  }
+  // private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   request.params['path'] = 'static';
+  //   request.params['type'] = 'member';
+  //   next();
+  // }
 
   private readUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;

@@ -37,9 +37,10 @@ import OffsetHelper from '../middleware/items/offset.helper';
 /**
  * Helper's Instance
  */
+// const uploadFile = FilesMiddleware.uploadFile;
 const uploadFile = FilesMiddleware.uploadFile;
-const existFile = FilesMiddleware.existsFile;
-const deleteFile = FilesMiddleware.deleteFile;
+// const existFile = FilesMiddleware.existsFile;
+// const deleteFile = FilesMiddleware.deleteFile;
 const createSlug = SlugHelper.offerSlug;
 const offsetParams = OffsetHelper.offsetLimit;
 
@@ -49,6 +50,12 @@ const offsetParams = OffsetHelper.offsetLimit;
 import userModel from '../models/user.model';
 import offerModel from '../models/offer.model';
 import transactionModel from '../models/loyalty.transaction.model';
+
+/**
+ * Files Util
+ */
+import FilesUtil from '../utils/files.util';
+const filesUtil = new FilesUtil();
 
 class OffersController implements Controller {
   public path = '/loyalty/offers';
@@ -67,7 +74,8 @@ class OffersController implements Controller {
 
     this.router.post(`${this.path}/`,
       authMiddleware, accessMiddleware.onlyAsPartner,
-      this.declareStaticPath, uploadFile.single('imageURL'),
+      // this.declareStaticPath,
+      uploadFile('static', 'loyalty').single('imageURL'),
       validationBodyAndFileMiddleware(OfferDto),
       this.createOffer);
 
@@ -83,7 +91,8 @@ class OffersController implements Controller {
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(OfferID),
       accessMiddleware.belongsTo,
-      this.declareStaticPath, uploadFile.single('imageURL'),
+      // this.declareStaticPath, 
+      uploadFile('static', 'loyalty').single('imageURL'),
       validationBodyAndFileMiddleware(OfferDto),
       itemsMiddleware.offerMiddleware,
       this.updateOffer);
@@ -96,11 +105,30 @@ class OffersController implements Controller {
       this.deleteOffer);
   }
 
-  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    request.params['path'] = 'static';
-    request.params['type'] = 'loyalty';
-    next();
+  /** Secondary Functions */
+
+  private dateConvert = (x: string | number | Date) => {
+    var today = new Date(x);
+    var year = today.getFullYear();
+    var month = `0${today.getMonth() + 1}`.slice(0, 2);
+    var day = `0${today.getDate()}`.slice(0, 2);
+    return `${year}-${month}-${day}`;
   }
+
+  private checkObjectIdValidity(id: string) {
+    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
+      return true;
+
+    return false;
+  }
+
+  /** Declaration Path Function */
+
+  // private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   request.params['path'] = 'static';
+  //   request.params['type'] = 'loyalty';
+  //   next();
+  // }
 
   private readOffers = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
 
@@ -257,13 +285,6 @@ class OffersController implements Controller {
     });
   }
 
-  checkObjectIdValidity(id: string) {
-    if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
-      return true;
-
-    return false;
-  }
-
   private readOffer = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const partner_id: OfferID["partner_id"] = request.params.partner_id;
     const offer_id: OfferID["offer_id"] = request.params.offer_id;
@@ -332,7 +353,7 @@ class OffersController implements Controller {
 
     const currentOffer: LoyaltyOffer = response.locals.offer;
     if ((currentOffer['imageURL'] && (currentOffer['imageURL']).includes('assets/static/')) && request.file) {
-      await this.removeFile(currentOffer);
+      await filesUtil.removeFile(currentOffer);
     }
 
     // const currentOffer: Offer = response.locals.offer;
@@ -386,7 +407,7 @@ class OffersController implements Controller {
 
     const currentOffer: LoyaltyOffer = response.locals.offer;
     if ((currentOffer['imageURL']) && (currentOffer['imageURL']).includes('assets/static/')) {
-      await this.removeFile(currentOffer);
+      await filesUtil.removeFile(currentOffer);
     }
     // const currentOffer: Offer = response.locals.offer;
     // if (currentOffer.offer_imageURL && (currentOffer.offer_imageURL).includes(partner_id)) {
@@ -412,24 +433,6 @@ class OffersController implements Controller {
       message: "Success! Offer " + offer_id + " has been deleted!",
       code: 200
     });
-  }
-
-  /** Remove File (Local Function) */
-  private async removeFile(currentOffer: LoyaltyOffer) {
-    var imageFile = (currentOffer['imageURL']).split('assets/static/');
-    const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
-    if (existFile(file)) await deleteFile(file);
-  }
-
-
-
-
-  dateConvert = (x: string | number | Date) => {
-    var today = new Date(x);
-    var year = today.getFullYear();
-    var month = `0${today.getMonth() + 1}`.slice(0, 2);
-    var day = `0${today.getDate()}`.slice(0, 2);
-    return `${year}-${month}-${day}`;
   }
 
   private readStatistics2 = async (offers: LoyaltyOffer[], status: string) => {
@@ -460,6 +463,7 @@ class OffersController implements Controller {
       = { redeem: { points: 0, quantity: 0 }, uniqueUsers: [], uniqueTransactions: [] };
     var _daily: { redeem: { points: number, quantity: number }, uniqueUsers: string[], uniqueTransactions: string[], createdAt: string }[]
       = [];
+    var _dates: string[] = [];
     // var result_: { points: number, quantity: number, uniqueUsers: string[], uniqueTransactions: string[] } = { points: 0, quantity: 0, uniqueUsers: [], uniqueTransactions: [] };
     // statistics.map(o => { return { ...o, points: o.points, quantity: o.quantity, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
     //   result_.points += element.points;
@@ -480,6 +484,10 @@ class OffersController implements Controller {
 
       if (_total.uniqueTransactions.findIndex(i => i === element.transaction) < 0) {
         _total.uniqueTransactions.push(element.transaction);
+      }
+
+      if (_dates.findIndex(i => i === element.createdAt) < 0) {
+        _dates.push(element.createdAt);
       }
 
       _total.redeem.points += element.points;

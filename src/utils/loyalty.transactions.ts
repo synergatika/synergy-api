@@ -1,0 +1,127 @@
+import * as express from 'express';
+import to from 'await-to-ts'
+var path = require('path');
+import { ObjectId } from 'mongodb';
+
+/**
+ * Blockchain Util
+ */
+import BlockchainRegistrationService from './blockchain.util';
+const registrationService = new BlockchainRegistrationService();
+
+/**
+ * DTOs
+ */
+import { EarnPointsDto, RedeemPointsDto } from '../_dtos/index';
+
+/**
+ * Interfaces
+ */
+import { User, Partner, Member, LoyaltyOffer, LoyaltyTransaction, LoyaltyTransactionType, TransactionStatus } from '../_interfaces/index';
+
+/**
+ * Models
+ */
+import transactionModel from '../models/loyalty.transaction.model';
+
+export default class LoyaltyTransactionsUtil {
+    private isError = (err: unknown): err is Error => err instanceof Error;
+
+    public createEarnTransaction = async (partner: User, member: User, data: EarnPointsDto, _points: number) => {
+        let blockchain_error: Error, blockchain_result: any;
+        [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(partner, member, _points).catch());
+        if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+
+        // let error: Error, transaction: any;
+        // [error, transaction] = 
+        return await
+            //await to(
+            transactionModel.create({
+                ...blockchain_result,
+                partner: partner,
+                member: member,
+                data: data,
+
+                /** begin: To be Removed in Next Version */
+                partner_id: partner._id,
+                partner_name: partner.name,
+                member_id: member._id,
+                /** end: To be Removed in Next Version */
+
+                points: _points,
+                amount: data._amount,
+
+                status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+                type: LoyaltyTransactionType.EarnPoints,
+            })
+        // .catch());
+        // if (error) return error;
+
+        // return blockchain_result;
+    }
+
+    public createRedeemTransaction = async (partner: User, member: User, offer: LoyaltyOffer, data: RedeemPointsDto, _points: number) => {
+        let blockchain_error: Error, blockchain_result: any;
+        [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(partner, member, _points).catch());
+        if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+
+        // let error: Error, transaction: LoyaltyTransaction;
+        // [error, transaction] = await to(
+        return await transactionModel.create({
+            partner: partner,
+            member: member,
+            offer: offer,
+            data: data,
+
+            ...blockchain_result,
+
+            /** begin: To be Removed in Next Version */
+            partner_id: partner._id,
+            partner_name: partner.name,
+            member_id: member._id,
+            offer_id: (offer) ? offer._id : null,
+            offer_title: (offer) ? offer.title : null,
+            quantity: data.quantity,
+            /** end: To be Removed in Next Version */
+
+            points: _points * (-1),
+            amount: (data._amount) ? (data._amount) * (-1) : 0,
+
+            status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+            type: (offer) ? LoyaltyTransactionType.RedeemPointsOffer : LoyaltyTransactionType.RedeemPoints,
+        })
+        // .catch());
+        // if (error) return error;
+
+        // return blockchain_result;
+    }
+
+    public updateLoyaltyTransaction = async (_transaction: LoyaltyTransaction) => {
+
+        let blockchain_error: Error, blockchain_result: any;
+
+        if (_transaction.type === LoyaltyTransactionType.EarnPoints) {
+            [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points).catch());
+            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+        } else if ((_transaction.type === LoyaltyTransactionType.RedeemPoints) || (_transaction.type === LoyaltyTransactionType.RedeemPointsOffer)) {
+            [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points * (-1)).catch());
+            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+        }
+
+        if (blockchain_result) {
+            let error: Error, transaction: LoyaltyTransaction;
+            [error, transaction] = await to(transactionModel.updateOne({
+                '_id': _transaction._id
+            }, {
+                '$set': {
+                    ...blockchain_result,
+                    status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+                }
+            }, { new: true }).catch());
+
+            return transaction;
+        }
+
+        return null;
+    }
+}

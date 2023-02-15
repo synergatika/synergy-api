@@ -8,13 +8,13 @@ const path = require("path");
 /**
  * Blockchain Service
  */
-import { BlockchainService } from "../utils/blockchainService";
+import { BlockchainService } from "../services/blockchain.service";
 
 /**
  * Email Service
  */
 import * as nodemailer from "nodemailer";
-import Transporter from "../utils/mailer";
+import Transporter from "../services/mailer.service";
 const Email = require("email-templates");
 const email = new Email();
 
@@ -232,12 +232,12 @@ class HelpController implements Controller {
     result = await this.checkMongoDB(result);
     result = await this.checkSMTP(result);
 
-     if (process.env.PRODUCTION == "false") {
-       result = {
-         ...result,
-         ...process.env
-       };
-     }
+    if (process.env.PRODUCTION == "false") {
+      result = {
+        ...result,
+        ...process.env
+      };
+    }
 
     response.status(200).send({ ...result, current_date: new Date() });
 

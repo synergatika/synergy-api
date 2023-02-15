@@ -4,10 +4,10 @@ import { ObjectId } from 'mongodb';
 import path from 'path';
 
 /**
- * Email Service
+ * Emails Util
  */
-import EmailService from '../utils/emailService';
-const emailService = new EmailService();
+import EmailsUtil from '../utils/email.util';
+const emailsUtil = new EmailsUtil();
 
 /**
  * DTOs
@@ -66,9 +66,9 @@ class CommunityController implements Controller {
     this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPostsEventsByStore);
     this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPostsEventsByStore);
 
-    this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.sendInvitation, emailService.userInvitation);
+    this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.sendInvitation, emailsUtil.userInvitation);
 
-    this.router.post(`${this.path}/communicate`, validationBodyMiddleware(CommunicationDto), this.sendCommunication, emailService.internalCommunication);
+    this.router.post(`${this.path}/communicate`, validationBodyMiddleware(CommunicationDto), this.sendCommunication, emailsUtil.internalCommunication);
   }
 
   private sendCommunication = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

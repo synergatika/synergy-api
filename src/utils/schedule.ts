@@ -6,18 +6,17 @@ import path from 'path';
 /**
  * Blockchain Serice
  */
-import { BlockchainService } from '../utils/blockchainService';
+import { BlockchainService } from '../services/blockchain.service';
 const serviceInstance = new BlockchainService(`${process.env.ETH_REMOTE_API}`, path.join(__dirname, `${process.env.ETH_CONTRACTS_PATH}`), `${process.env.ETH_API_ACCOUNT_PRIVKEY}`);
 
-import BlockchainRegistrationService from '../utils/blockchain.registrations';
+import BlockchainRegistrationService from './blockchain.util';
 const registrationService = new BlockchainRegistrationService()
 
 /**
- * Email Service
+ * Emails Util
  */
-import EmailService from '../utils/emailService';
-const emailService = new EmailService();
-const http = require('http');
+import EmailsUtil from './email.util';
+const emailsUtil = new EmailsUtil();
 
 /**
  * Interfaces
@@ -34,6 +33,18 @@ import microcreditCampaignModel from '../models/campaign.model';
 import microcreditSupportModel from '../models/support.model';
 import userModel from '../models/user.model';
 import { EarnTokensDto, RedeemTokensDto } from '_dtos';
+
+/**
+ * Transactions Util
+ */
+import RegistrationTransactionsUtil from './registration.transactions';
+const registrationTransactionsUtil = new RegistrationTransactionsUtil;
+
+import LoyaltyTransactionsUtil from './loyalty.transactions';
+const loyaltyTransactionsUtil = new LoyaltyTransactionsUtil;
+
+import MicrocreditTransactionsUtil from './microcredit.transactions';
+const microcreditTransactionsUtil = new MicrocreditTransactionsUtil;
 
 class Schedule {
   private userModel = userModel;
@@ -91,7 +102,7 @@ class Schedule {
       campaigns.forEach(async (item: MicrocreditCampaign) => {
         const emails_to: string[] = await this.readSupportsByCampaign(item);
         console.log(`${item.title} , ${emails_to}`)
-        if (emails_to.length) await emailService.campaignStarts(emails_to, item);
+        if (emails_to.length) await emailsUtil.campaignStarts(emails_to, item);
       });
 
       console.log(`<<Notify Members For Upcoming Redeems>> Scheduled Tasks Ended... `)
@@ -108,7 +119,7 @@ class Schedule {
       // campaignWithSupports.forEach(async (el) => {
       //   console.log("----- ----- ----- -----")
       //   console.log(el)
-      //   await emailService.campaignStarts(el);
+      //   await emailsUtil.campaignStarts(el);
       // });
 
     });
@@ -210,7 +221,7 @@ class Schedule {
     let completed = 0;
     transactions.forEach(async (item: RegistrationTransaction) => {
       let transaction: RegistrationTransaction;
-      [error, transaction] = await to(this.updateRegistrationTransaction(item).catch());
+      [error, transaction] = await to(registrationTransactionsUtil.updateRegistrationTransaction(item).catch());
 
       if (!error && transaction) completed++;
     });
@@ -242,7 +253,7 @@ class Schedule {
     let completed = 0;
     transactions.forEach(async (item: LoyaltyTransaction) => {
       let transaction: LoyaltyTransaction;
-      [error, transaction] = await to(this.updateLoyaltyTransaction(item).catch());
+      [error, transaction] = await to(loyaltyTransactionsUtil.updateLoyaltyTransaction(item).catch());
 
       if (!error && transaction) completed++;
     });
@@ -313,7 +324,7 @@ class Schedule {
     let completed = 0;
     transactions.forEach(async (item: MicrocreditTransaction) => {
       let transaction: MicrocreditTransaction;
-      [error, transaction] = await to(this.updateMicrocreditTransaction(item).catch());
+      [error, transaction] = await to(microcreditTransactionsUtil.updateMicrocreditTransaction(item).catch());
 
       if (!error && transaction) completed++;
     });
@@ -362,7 +373,7 @@ class Schedule {
     let completed = 0;
     transactions.forEach(async (item) => {
       let transaction: MicrocreditTransaction;
-      [error, transaction] = await to(this.updateMicrocreditTransaction(item).catch());
+      [error, transaction] = await to(microcreditTransactionsUtil.updateMicrocreditTransaction(item).catch());
 
       if (!error && transaction) completed++;
     });
@@ -377,65 +388,65 @@ class Schedule {
     console.log(`${completed} of ${transactions.length} <<Microcredit Transactions (Receive, Revert, Spend)>> registered in blockchain`);
   }
 
-  private updateRegistrationTransaction = async (_transaction: RegistrationTransaction) => {
-    const user: User = _transaction.user;
-    if (!user) return;
+  // private updateRegistrationTransaction = async (_transaction: RegistrationTransaction) => {
+  //   const user: User = _transaction.user;
+  //   if (!user) return;
 
-    const newAccount: Account = serviceInstance.unlockWallet(user.account, (user.email) ? user.email : user.card);
+  //   const newAccount: Account = serviceInstance.unlockWallet(user.account, (user.email) ? user.email : user.card);
 
-    let blockchain_error: Error, blockchain_result: any;
-    if (_transaction.type === RegistrationTransactionType.RegisterMember) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(newAccount).catch());
-      if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-    } else if (_transaction.type === RegistrationTransactionType.RegisterPartner) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(newAccount).catch());
-      if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-    }
-    if (blockchain_result) {
-      let error: Error, transaction: RegistrationTransaction;
-      [error, transaction] = await to(this.registrationTransactionModel.updateOne({
-        '_id': new ObjectId(_transaction._id)
-      }, {
-        '$set': {
-          ...blockchain_result,
-          status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
-        }
-      }, { new: true }).catch());
+  //   let blockchain_error: Error, blockchain_result: any;
+  //   if (_transaction.type === RegistrationTransactionType.RegisterMember) {
+  //     [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(newAccount).catch());
+  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+  //   } else if (_transaction.type === RegistrationTransactionType.RegisterPartner) {
+  //     [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(newAccount).catch());
+  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+  //   }
+  //   if (blockchain_result) {
+  //     let error: Error, transaction: RegistrationTransaction;
+  //     [error, transaction] = await to(this.registrationTransactionModel.updateOne({
+  //       '_id': new ObjectId(_transaction._id)
+  //     }, {
+  //       '$set': {
+  //         ...blockchain_result,
+  //         status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+  //       }
+  //     }, { new: true }).catch());
 
-      return transaction;
-    }
+  //     return transaction;
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
-  private updateLoyaltyTransaction = async (_transaction: LoyaltyTransaction) => {
+  // private updateLoyaltyTransaction = async (_transaction: LoyaltyTransaction) => {
 
-    let blockchain_error: Error, blockchain_result: any;
+  //   let blockchain_error: Error, blockchain_result: any;
 
-    if (_transaction.type === LoyaltyTransactionType.EarnPoints) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points).catch());
-      if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-    } else if ((_transaction.type === LoyaltyTransactionType.RedeemPoints) || (_transaction.type === LoyaltyTransactionType.RedeemPointsOffer)) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points * (-1)).catch());
-      if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-    }
+  //   if (_transaction.type === LoyaltyTransactionType.EarnPoints) {
+  //     [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points).catch());
+  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+  //   } else if ((_transaction.type === LoyaltyTransactionType.RedeemPoints) || (_transaction.type === LoyaltyTransactionType.RedeemPointsOffer)) {
+  //     [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points * (-1)).catch());
+  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+  //   }
 
-    if (blockchain_result) {
-      let error: Error, transaction: LoyaltyTransaction;
-      [error, transaction] = await to(this.loyaltyTransactionModel.updateOne({
-        '_id': _transaction._id
-      }, {
-        '$set': {
-          ...blockchain_result,
-          status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
-        }
-      }, { new: true }).catch());
+  //   if (blockchain_result) {
+  //     let error: Error, transaction: LoyaltyTransaction;
+  //     [error, transaction] = await to(this.loyaltyTransactionModel.updateOne({
+  //       '_id': _transaction._id
+  //     }, {
+  //       '$set': {
+  //         ...blockchain_result,
+  //         status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+  //       }
+  //     }, { new: true }).catch());
 
-      return transaction;
-    }
+  //     return transaction;
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
   private updateRegisterMicrocreditCampaigns = async (_campaign: MicrocreditCampaign) => {
 
@@ -461,54 +472,54 @@ class Schedule {
     return null;
   }
 
-  private updateMicrocreditTransaction = async (_transaction: MicrocreditTransaction) => {
-    let blockchain_error: Error, blockchain_result: any;
+  // private updateMicrocreditTransaction = async (_transaction: MicrocreditTransaction) => {
+  //   let blockchain_error: Error, blockchain_result: any;
 
-    if (_transaction.type === MicrocreditTransactionType.PromiseFund) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as EarnTokensDto).catch());
-      if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+  //   if (_transaction.type === MicrocreditTransactionType.PromiseFund) {
+  //     [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as EarnTokensDto).catch());
+  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-      if (blockchain_result) {
-        let error: Error, support: MicrocreditSupport;
-        [error, support] = await to(this.microcreditSupportModel.updateOne({
-          _id: (_transaction.support as MicrocreditSupport)._id
-        }, {
-          "$set": {
-            "contractRef": blockchain_result?.logs[0].args.ref,
-            "contractIndex": blockchain_result?.logs[0].args.index,
-          }
-        }).catch());
-        if (error) return null;
-      }
-    }
-    else if (_transaction.type === MicrocreditTransactionType.ReceiveFund) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerReceivedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
-      if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-    }
-    else if (_transaction.type === MicrocreditTransactionType.RevertFund) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerRevertFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
-      if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-    }
-    else if (_transaction.type === MicrocreditTransactionType.SpendFund) {
-      [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as RedeemTokensDto).catch());
-      if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-    }
+  //     if (blockchain_result) {
+  //       let error: Error, support: MicrocreditSupport;
+  //       [error, support] = await to(this.microcreditSupportModel.updateOne({
+  //         _id: (_transaction.support as MicrocreditSupport)._id
+  //       }, {
+  //         "$set": {
+  //           "contractRef": blockchain_result?.logs[0].args.ref,
+  //           "contractIndex": blockchain_result?.logs[0].args.index,
+  //         }
+  //       }).catch());
+  //       if (error) return null;
+  //     }
+  //   }
+  //   else if (_transaction.type === MicrocreditTransactionType.ReceiveFund) {
+  //     [blockchain_error, blockchain_result] = await to(registrationService.registerReceivedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
+  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+  //   }
+  //   else if (_transaction.type === MicrocreditTransactionType.RevertFund) {
+  //     [blockchain_error, blockchain_result] = await to(registrationService.registerRevertFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
+  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+  //   }
+  //   else if (_transaction.type === MicrocreditTransactionType.SpendFund) {
+  //     [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as RedeemTokensDto).catch());
+  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+  //   }
 
-    if (blockchain_result) {
-      let error: Error, transaction: MicrocreditTransaction;
-      [error, transaction] = await to(this.microcreditTransactionModel.updateOne({
-        '_id': _transaction._id
-      }, {
-        '$set': {
-          ...blockchain_result,
-          status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
-        }
-      }, { new: true }).catch());
+  //   if (blockchain_result) {
+  //     let error: Error, transaction: MicrocreditTransaction;
+  //     [error, transaction] = await to(this.microcreditTransactionModel.updateOne({
+  //       '_id': _transaction._id
+  //     }, {
+  //       '$set': {
+  //         ...blockchain_result,
+  //         status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+  //       }
+  //     }, { new: true }).catch());
 
-      return transaction;
-    }
+  //     return transaction;
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 }
 export default new Schedule();

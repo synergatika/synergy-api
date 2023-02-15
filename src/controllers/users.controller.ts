@@ -4,10 +4,10 @@ import path from 'path';
 import { ObjectId } from 'mongodb';
 
 /**
- * Email Service
+ * Emails Util
  */
-import EmailService from '../utils/emailService';
-const emailService = new EmailService();
+// import EmailsUtil from '../utils/email.util';
+// const emailsUtil = new EmailsUtil();
 
 /**
  * DTOs
@@ -58,7 +58,7 @@ class UserController implements Controller {
 
   private initializeRoutes() {
     this.router.get(`${this.path}/:access/:offset`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(AccessDto), this.readUsers);
-    // this.router.put(`${this.path}/reactivate/:user_id`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID), this.reactivateUser, emailService.accountReactivation);
+    // this.router.put(`${this.path}/reactivate/:user_id`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID), this.reactivateUser, emailsUtil.accountReactivation);
   }
 
   private readUsers = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {

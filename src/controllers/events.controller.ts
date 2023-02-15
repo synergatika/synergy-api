@@ -36,6 +36,7 @@ import OffsetHelper from '../middleware/items/offset.helper';
 /**
  * Helper's Instances
  */
+// const uploadFile = FilesMiddleware.uploadFile;
 const uploadFile = FilesMiddleware.uploadFile;
 const existFile = FilesMiddleware.existsFile;
 const deleteFile = FilesMiddleware.deleteFile;
@@ -49,6 +50,12 @@ const offsetParams = OffsetHelper.offsetLimit;
 import userModel from '../models/user.model';
 import eventModel from '../models/event.model';
 
+/**
+ * Files Util
+ */
+import FilesUtil from '../utils/files.util';
+const filesUtil = new FilesUtil();
+
 class EventsController implements Controller {
   public path = '/events';
   public router = express.Router();
@@ -61,30 +68,59 @@ class EventsController implements Controller {
 
   private initializeRoutes() {
     this.router.get(`${this.path}/public/:offset`, this.readEvents);
+
     this.router.get(`${this.path}/private/:offset`, authMiddleware, this.readEvents);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(EventDto), this.createEvent);
-    this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readEventsByStore);
-    this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readEventsByStore);
-    this.router.get(`${this.path}/:partner_id/:event_id`, validationParamsMiddleware(EventID), this.readEvent);
-    this.router.put(`${this.path}/:partner_id/:event_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, this.declareStaticPath, uploadFile.single('imageURL'), validationBodyAndFileMiddleware(EventDto), itemsMiddleware.eventMiddleware, this.updateEvent);
+
+    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsPartner,
+      // this.declareStaticPath, 
+      uploadFile('static', 'event').single('imageURL'),
+      validationBodyAndFileMiddleware(EventDto),
+      this.createEvent);
+
+    this.router.get(`${this.path}/public/:partner_id/:offset`,
+      validationParamsMiddleware(PartnerID),
+      this.readEventsByStore);
+
+    this.router.get(`${this.path}/private/:partner_id/:offset`,
+      authMiddleware,
+      validationParamsMiddleware(PartnerID),
+      this.readEventsByStore);
+
+    this.router.get(`${this.path}/:partner_id/:event_id`,
+      validationParamsMiddleware(EventID),
+      this.readEvent);
+
+    this.router.put(`${this.path}/:partner_id/:event_id`,
+      authMiddleware, accessMiddleware.onlyAsPartner,
+      validationParamsMiddleware(EventID),
+      accessMiddleware.belongsTo,
+      // this.declareStaticPath, 
+      uploadFile('static', 'event').single('imageURL'),
+      validationBodyAndFileMiddleware(EventDto), itemsMiddleware.eventMiddleware,
+      this.updateEvent);
+
     this.router.delete(`${this.path}/:partner_id/:event_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(EventID), accessMiddleware.belongsTo, itemsMiddleware.eventMiddleware, this.deleteEvent);
 
-    this.router.post(`${this.path}/image`, authMiddleware, this.declareContentPath, uploadFile.array('content_image', 8), this.uploadContentImage);
+    this.router.post(`${this.path}/image`,
+      authMiddleware,
+      // this.declareContentPath, 
+      uploadFile('content', 'event').array('content_image', 8),
+      this.uploadContentImages);
   }
 
-  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    request.params['path'] = 'static';
-    request.params['type'] = 'event';
-    next();
-  }
+  // private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   request.params['path'] = 'static';
+  //   request.params['type'] = 'event';
+  //   next();
+  // }
 
-  private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    request.params['path'] = 'content';
-    request.params['type'] = 'event';
-    next();
-  }
+  // private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   request.params['path'] = 'content';
+  //   request.params['type'] = 'event';
+  //   next();
+  // }
 
-  private uploadContentImage = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  private uploadContentImages = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     response.status(200).send({
       data: {
         files: request.files,
@@ -391,11 +427,11 @@ class EventsController implements Controller {
 
     const currentEvent: Event = response.locals.event;
     if ((currentEvent['imageURL'] && (currentEvent['imageURL']).includes('assets/static/')) && request.file) {
-      await this.removeFile(currentEvent);
+      await filesUtil.removeFile(currentEvent);
     }
 
     if (currentEvent.contentFiles) {
-      this.removeRichEditorFiles(currentEvent, data, true);
+      filesUtil.removeRichEditorFiles(currentEvent, (data.contentFiles) ? data.contentFiles.split(',') : [], true);
     }
 
     let error: Error, event: Event; // results = {"n": 1, "nModified": 1, "ok": 1}
@@ -442,11 +478,11 @@ class EventsController implements Controller {
 
     const currentEvent: Event = response.locals.event;
     if (currentEvent.imageURL && (currentEvent.imageURL).includes('assets/static/')) {
-      await this.removeFile(currentEvent);
+      await filesUtil.removeFile(currentEvent);
     }
 
     if (currentEvent.contentFiles) {
-      this.removeRichEditorFiles(currentEvent, null, false);
+      filesUtil.removeRichEditorFiles(currentEvent, currentEvent.contentFiles, false);
     }
 
     let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
@@ -473,68 +509,68 @@ class EventsController implements Controller {
    *
    * */
 
-  /** Project Partner (Local Function) */
-  private projectPartner() {
-    return {
-      _id: '$_id',
-      name: '$name',
-      email: '$email',
-      slug: '$slug',
-      imageURL: '$imageURL',
-      payments: '$payments',
-      address: '$address',
-      contacts: '$contacts',
-      phone: '$phone',
-    };
-  }
+  // /** Project Partner (Local Function) */
+  // private projectPartner() {
+  //   return {
+  //     _id: '$_id',
+  //     name: '$name',
+  //     email: '$email',
+  //     slug: '$slug',
+  //     imageURL: '$imageURL',
+  //     payments: '$payments',
+  //     address: '$address',
+  //     contacts: '$contacts',
+  //     phone: '$phone',
+  //   };
+  // }
 
-  /** Project Event (Local Function) */
-  private projectEvent() {
-    return {
-      _id: '$events._id',
-      slug: '$events.slug',
-      imageURL: '$events.imageURL',
-      title: '$events.title',
-      subtitle: '$events.subtitle',
-      description: '$events.description',
-      location: '$events.location',
-      dateTime: '$events.dateTime',
-      access: '$events.access',
+  // /** Project Event (Local Function) */
+  // private projectEvent() {
+  //   return {
+  //     _id: '$events._id',
+  //     slug: '$events.slug',
+  //     imageURL: '$events.imageURL',
+  //     title: '$events.title',
+  //     subtitle: '$events.subtitle',
+  //     description: '$events.description',
+  //     location: '$events.location',
+  //     dateTime: '$events.dateTime',
+  //     access: '$events.access',
 
-      createdAt: '$events.createdAt',
-      updatedAt: '$events.updatedAt'
-    };
-  }
+  //     createdAt: '$events.createdAt',
+  //     updatedAt: '$events.updatedAt'
+  //   };
+  // }
 
-  /** Remove File (Local Function) */
-  private async removeFile(currentEvent: Event) {
-    var imageFile = (currentEvent['imageURL']).split('assets/static/');
-    const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
-    if (existFile(file)) await deleteFile(file);
-  }
+  // /** Remove File (Local Function) */
+  // private async removeFile(currentEvent: Event) {
+  //   var imageFile = (currentEvent['imageURL']).split('assets/static/');
+  //   const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
+  //   if (existFile(file)) await deleteFile(file);
+  // }
 
-  /** Remove Content Files (Local Function) */
-  private async removeRichEditorFiles(currentEvent: Event, newEvent: EventDto, isUpdated: boolean) {
-    var toDelete: string[] = [];
+  // /** Remove Content Files (Local Function) */
+  // private async removeRichEditorFiles(currentEvent: Event, newEvent: EventDto, isUpdated: boolean) {
+  //   var toDelete: string[] = [];
 
-    if (isUpdated) {
-      (currentEvent.contentFiles).forEach((element: string) => {
-        if ((newEvent.contentFiles).indexOf(element) < 0) {
-          var imageFile = (element).split('assets/content/');
-          const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
-          toDelete.push(file);
-        }
-      });
-      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
-    } else {
-      (currentEvent.contentFiles).forEach((element: string) => {
-        var imageFile = (element).split('assets/content/');
-        const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
-        toDelete.push(file);
-      });
-      toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
-    }
-  }
+  //   if (isUpdated) {
+  //     (currentEvent.contentFiles).forEach((element: string) => {
+  //       if ((newEvent.contentFiles).indexOf(element) < 0) {
+  //         var imageFile = (element).split('assets/content/');
+  //         const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+  //         toDelete.push(file);
+  //       }
+  //     });
+  //     toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+  //   } else {
+  //     (currentEvent.contentFiles).forEach((element: string) => {
+  //       var imageFile = (element).split('assets/content/');
+  //       const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
+  //       toDelete.push(file);
+  //     });
+  //     toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
+  //   }
+  // }
 }
 
 export default EventsController;

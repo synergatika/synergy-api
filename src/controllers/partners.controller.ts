@@ -36,6 +36,7 @@ import OffsetHelper from '../middleware/items/offset.helper';
  * Helper's Instance
  */
 const uploadFile = FilesMiddleware.uploadFile;
+// const uploadFile = FilesMiddleware.uploadFile;
 const existFile = FilesMiddleware.existsFile;
 const deleteFile = FilesMiddleware.deleteFile;
 const createSlug = SlugHelper.partnerSlug;
@@ -62,7 +63,8 @@ class PartnersController implements Controller {
     this.router.put(`${this.path}/:partner_id`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(PartnerID), accessMiddleware.belongsTo,
-      this.declareStaticPath, uploadFile.single('imageURL'),
+      // this.declareStaticPath, 
+      uploadFile('static', 'partner').single('imageURL'),
       validationBodyAndFileMiddleware(PartnerDto), this.updatePartnerInfo);
 
     this.router.put(`${this.path}/payments/:partner_id`,
@@ -71,11 +73,11 @@ class PartnersController implements Controller {
       validationBodyMiddleware(PartnerPaymentsDto), this.updatePartnerPayment);
   }
 
-  private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    request.params['path'] = 'static';
-    request.params['type'] = 'partner';
-    next();
-  }
+  // private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+  //   request.params['path'] = 'static';
+  //   request.params['type'] = 'partner';
+  //   next();
+  // }
 
   private readPartners = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const params: string = request.params.offset;
