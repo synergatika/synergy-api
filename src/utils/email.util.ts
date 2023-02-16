@@ -66,8 +66,13 @@ class EmailsUtil {
           subject: options.subject,
           html: template.toString()
         };
+
         return Transporter.sendMail(mailOptions);
-      }).catch(error => { return error });
+      })
+    // .catch(error => {
+    //   console.log("error in sender catch", error)
+    //   return error
+    // });
   }
 
   /**
@@ -134,11 +139,11 @@ class EmailsUtil {
       `${this.translation(lang).registration.registeredBy[1]}` : `${this.translation(lang).registration.registeredBy[0]} ${registeredBy.name}`)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;
-
-    return 'EMAIL_SENT';
+    return await to(this.emailSender(options)).catch();
+    // .then(result => { return result; }).catch(error => {
+    //   console.log("error in resutn sender", error);
+    //   return error
+    // });
   }
 
   public emailVerification2 = async (_lang: string, email_to: string, token: string) => {
@@ -166,11 +171,8 @@ class EmailsUtil {
     console.log("token", token)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;// new UnprocessableEntityException(`EMAIL ERROR || ${error}`);
-
-    return 'EMAIL_SENT';
+    return await to(this.emailSender(options)).catch();
+    //.then(result => { return result; }).catch(error => { return error });
   }
 
   // public emailVerification = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -226,11 +228,7 @@ class EmailsUtil {
     console.log("token", token)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;
-
-    return 'EMAIL_SENT';
+    return await to(this.emailSender(options)).catch();
   }
 
   // public passwordRestoration = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -289,11 +287,7 @@ class EmailsUtil {
     console.log("email_to", email_to)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;
-
-    return 'EMAIL_SENT';
+    return await to(this.emailSender(options)).catch();
   }
 
   // public accountActivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -352,11 +346,7 @@ class EmailsUtil {
       `${this.translation(lang).deactivation.title[0]}` : `${this.translation(lang).deactivation.title[1]}`)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;//return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
-
-    return 'EMAIL_SENT';
+    return await to(this.emailSender(options)).catch();
   }
 
   // public accountDeactivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -413,11 +403,7 @@ class EmailsUtil {
     console.log("email_to", email_to)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;//return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
-
-    return 'EMAIL_SENT';
+    return await to(this.emailSender(options)).catch();
   }
 
   // public accountDeletion = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -475,11 +461,7 @@ class EmailsUtil {
     console.log("user.email", user.email)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error;
-
-    return 'EMAIL_SENT';
+    return await to(this.emailSender(options)).catch();
   }
 
   // public internalActivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -537,11 +519,7 @@ class EmailsUtil {
     console.log("reason", reason)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error; //return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
-
-    return 'EMAIL_SENT';
+    return await to(this.emailSender(options)).catch();
   }
 
   // public internalDeactivation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -599,11 +577,7 @@ class EmailsUtil {
     console.log("user.email", user.email)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return error // return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
-
-    return 'EMAIL_SENT'
+    return await to(this.emailSender(options)).catch();
   }
 
   // public internalDeletion = async (request: RequestWithUser, response: Response, next: NextFunction) => {
@@ -638,9 +612,11 @@ class EmailsUtil {
   /**
   * (internal) Communication By User
   */
-  public internalCommunication = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const data = response.locals;
-    const lang: string = request.headers['content-language'] || this.defaultLang();
+  // public internalCommunication = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  public internalCommunication = async (_lang: string, sender: string, content: string) => {
+    // const data = response.locals;
+    // const lang: string = request.headers['content-language'] || this.defaultLang();
+    const lang: string = _lang || this.defaultLang();
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
@@ -655,34 +631,40 @@ class EmailsUtil {
         ...this.translation(lang).internal_communication,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        sender: data.sender,
-        content: `${data.content}`
+        sender: sender,
+        content: `${content}`
+        // sender: data.sender,
+        // content: `${data.content}`
       },
     }
 
     console.log("# internalCommunication")
     console.log("to", `synergatika@gmail.com`)
-    console.log("sender", data.sender)
-    console.log("content", data.content)
+    console.log("sender", sender)
+    console.log("content", content)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+    return await to(this.emailSender(options)).catch();
 
-    response.status(data.res.code).send(data.res.body);
+    // let error, results: object = {};
+    // [error, results] = await to(this.emailSender(options));
+    // if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+
+    // response.status(data.res.code).send(data.res.body);
   }
 
   /**
   * Invitation to User
   */
-  public userInvitation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const data = response.locals;
-    const lang: string = request.headers['content-language'] || this.defaultLang();
+  // public userInvitation = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  public userInvitation = async (_lang: string, email_to: string, user: User) => {
+    const lang: string = _lang || this.defaultLang();
+    // const data = response.locals;
+    // const lang: string = request.headers['content-language'] || this.defaultLang();
 
     let options = {
       from: `${process.env.EMAIL_FROM}`,
-      to: data.receiver,
+      to: email_to, //data.receiver,
       cc: ``,
       bcc: ``,
       subject: this.translation(lang).invitation.subject,//'User Invitation',
@@ -693,20 +675,22 @@ class EmailsUtil {
         ...this.translation(lang).invitation,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        email: data.user.email
+        // email: data.user.email
+        email: user.email
       },
     }
 
     console.log("# userInvitation")
-    console.log("email_to", data.receiver)
-    console.log("email", data.user.email)
+    console.log("email_to", email_to)
+    console.log("email", user.email)
     console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+    return await to(this.emailSender(options)).catch();
+    // let error, results: object = {};
+    // [error, results] = await to(this.emailSender(options));
+    // if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
-    response.status(data.res.code).send(data.res.body);
+    // response.status(data.res.code).send(data.res.body);
   }
 
   /**
@@ -743,48 +727,48 @@ class EmailsUtil {
     console.log("payment", `${payment._id}`)
     console.log("---------------");
 
-    return this.emailSender(options);
+    return await to(this.emailSender(options)).catch();
   }
 
-  public newSupportPartner2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  // public newSupportPartner2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
 
-    if (response.locals['extras'].method.bic == 'store') {
-      return next();
-    }
+  //   if (response.locals['extras'].method.bic == 'store') {
+  //     return next();
+  //   }
 
-    const data = response.locals;
-    const lang: string = request.headers['content-language'] || this.defaultLang();
+  //   const data = response.locals;
+  //   const lang: string = request.headers['content-language'] || this.defaultLang();
 
-    let options = {
-      from: `${process.env.EMAIL_FROM}`,
-      to: data.partner.email,
-      cc: ``,
-      bcc: ``,
-      subject: this.translation(lang).new_support_partner.subject,
-      html: '',
-      type: 'create_support_partner',
-      locals: {
-        ...this.translation(lang).common,
-        ...this.translation(lang).new_support_partner,
-        logo_url: `${process.env.LOGO_URL}`,
-        home_page: `${process.env.APP_URL}`,
-        campaign: `${data.support.campaign_title}`,
-        method: `${this.translation(lang).payments.filter((o) => { return o.bic == data.extras.method.bic })[0].title}`,
-        tokens: `${data.extras.tokens}`,
-        payment: `${data.support.payment_id}`
-      },
-    }
+  //   let options = {
+  //     from: `${process.env.EMAIL_FROM}`,
+  //     to: data.partner.email,
+  //     cc: ``,
+  //     bcc: ``,
+  //     subject: this.translation(lang).new_support_partner.subject,
+  //     html: '',
+  //     type: 'create_support_partner',
+  //     locals: {
+  //       ...this.translation(lang).common,
+  //       ...this.translation(lang).new_support_partner,
+  //       logo_url: `${process.env.LOGO_URL}`,
+  //       home_page: `${process.env.APP_URL}`,
+  //       campaign: `${data.support.campaign_title}`,
+  //       method: `${this.translation(lang).payments.filter((o) => { return o.bic == data.extras.method.bic })[0].title}`,
+  //       tokens: `${data.extras.tokens}`,
+  //       payment: `${data.support.payment_id}`
+  //     },
+  //   }
 
-    console.log("# newSupportPartner2")
-    console.log("---------------");
+  //   console.log("# newSupportPartner2")
+  //   console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+  //   let error, results: object = {};
+  //   [error, results] = await to(this.emailSender(options));
+  //   if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
-    // response.status(data.res.code).send(data.res.body);
-    next();
-  }
+  //   // response.status(data.res.code).send(data.res.body);
+  //   next();
+  // }
 
   public newSupportMember = async (_lang: string, email_to: string, campaign: MicrocreditCampaign, payment: SupportPayment, data: EarnTokensDto) => {
     const lang: string = _lang || this.defaultLang();
@@ -820,54 +804,54 @@ class EmailsUtil {
     console.log("payment", `${payment._id}`)
     console.log("---------------");
 
-    return this.emailSender(options);
+    return await to(this.emailSender(options)).catch();
   }
 
-  public newSupportMember2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const data = response.locals;
-    const lang: string = request.headers['content-language'] || this.defaultLang();
+  // public newSupportMember2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  //   const data = response.locals;
+  //   const lang: string = request.headers['content-language'] || this.defaultLang();
 
-    let options = {
-      from: `${process.env.EMAIL_FROM}`,
-      to: data.member.email,
-      cc: ``,
-      bcc: ``,
-      subject: this.translation(lang).new_support_member.subject,
-      html: '',
-      type: 'create_support_member',
-      locals: {
-        ...this.translation(lang).common,
-        ...this.translation(lang).new_support_member,
-        title: (data.extras.status == 'paid') ? this.translation(lang).new_support_member.title[0] : this.translation(lang).new_support_member.title[1],
-        logo_url: `${process.env.LOGO_URL}`,
-        home_page: `${process.env.APP_URL}`,
-        campaign: `${data.support.campaign_title}`,
-        method: `${data.extras.method.value},
-          ${this.translation(lang).payments.filter((o) => { return o.bic == data.extras.method.bic })[0].title}`,
-        tokens: `${data.extras.tokens}`,
-        payment: `${data.support.payment_id}`
-      },
-    }
+  //   let options = {
+  //     from: `${process.env.EMAIL_FROM}`,
+  //     to: data.member.email,
+  //     cc: ``,
+  //     bcc: ``,
+  //     subject: this.translation(lang).new_support_member.subject,
+  //     html: '',
+  //     type: 'create_support_member',
+  //     locals: {
+  //       ...this.translation(lang).common,
+  //       ...this.translation(lang).new_support_member,
+  //       title: (data.extras.status == 'paid') ? this.translation(lang).new_support_member.title[0] : this.translation(lang).new_support_member.title[1],
+  //       logo_url: `${process.env.LOGO_URL}`,
+  //       home_page: `${process.env.APP_URL}`,
+  //       campaign: `${data.support.campaign_title}`,
+  //       method: `${data.extras.method.value},
+  //         ${this.translation(lang).payments.filter((o) => { return o.bic == data.extras.method.bic })[0].title}`,
+  //       tokens: `${data.extras.tokens}`,
+  //       payment: `${data.support.payment_id}`
+  //     },
+  //   }
 
-    console.log("# newSupportMember2")
-    console.log("---------------");
+  //   console.log("# newSupportMember2")
+  //   console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+  //   let error, results: object = {};
+  //   [error, results] = await to(this.emailSender(options));
+  //   if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
-    response.status(200).send({
-      data: {
-        support_id: data.support.support_id,
-        payment_id: data.support.payment_id,
-        status: data.support.status,
-        method: data.support.method,
-      },
-      code: 200
-    });
-    // response.status(data.res.code).send(data.res.body);
-    //  response.status(200).send({ data: response.locals.support, code: 200 })
-  }
+  //   response.status(200).send({
+  //     data: {
+  //       support_id: data.support.support_id,
+  //       payment_id: data.support.payment_id,
+  //       status: data.support.status,
+  //       method: data.support.method,
+  //     },
+  //     code: 200
+  //   });
+  //   // response.status(data.res.code).send(data.res.body);
+  //   //  response.status(200).send({ data: response.locals.support, code: 200 })
+  // }
 
   public changeSupportStatus = async (_lang: string, email_to: string, support: MicrocreditSupport) => {
     const lang: string = _lang || this.defaultLang();
@@ -896,36 +880,36 @@ class EmailsUtil {
       `'${this.translation(lang).change_support_status.title[0]}'` : `'${this.translation(lang).change_support_status.title[1]}'`)
     console.log("---------------");
 
-    return this.emailSender(options);
+    return await to(this.emailSender(options)).catch();
   }
 
-  public changeSupportStatus2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const data = response.locals;
-    const lang: string = request.headers['content-language'] || this.defaultLang();
+  // public changeSupportStatus2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  //   const data = response.locals;
+  //   const lang: string = request.headers['content-language'] || this.defaultLang();
 
-    let options = {
-      from: `${process.env.EMAIL_FROM}`,
-      to: data.member.email,
-      cc: ``,
-      bcc: ``,
-      subject: `${this.translation(lang).change_support_status.subject} (${data.support.payment_id})`,
-      html: '',
-      type: 'change_support_status',
-      locals: {
-        ...this.translation(lang).common,
-        ...this.translation(lang).change_support_status,
-        logo_url: `${process.env.LOGO_URL}`,
-        home_page: `${process.env.APP_URL}`,
-        title: (data.support.status == 'paid') ?
-          `'${this.translation(lang).change_support_status.title[0]}'` : `'${this.translation(lang).change_support_status.title[1]}'`
-      },
-    }
+  //   let options = {
+  //     from: `${process.env.EMAIL_FROM}`,
+  //     to: data.member.email,
+  //     cc: ``,
+  //     bcc: ``,
+  //     subject: `${this.translation(lang).change_support_status.subject} (${data.support.payment_id})`,
+  //     html: '',
+  //     type: 'change_support_status',
+  //     locals: {
+  //       ...this.translation(lang).common,
+  //       ...this.translation(lang).change_support_status,
+  //       logo_url: `${process.env.LOGO_URL}`,
+  //       home_page: `${process.env.APP_URL}`,
+  //       title: (data.support.status == 'paid') ?
+  //         `'${this.translation(lang).change_support_status.title[0]}'` : `'${this.translation(lang).change_support_status.title[1]}'`
+  //     },
+  //   }
 
-    console.log("# changeSupportStatus")
-    console.log("---------------");
+  //   console.log("# changeSupportStatus")
+  //   console.log("---------------");
 
-    return this.emailSender(options);
-  }
+  //   return this.emailSender(options);
+  // }
 
   public redeemSupport = async (_lang: string, email_to: string, campaign: MicrocreditCampaign, support: MicrocreditSupport, data: RedeemTokensDto) => {
     const lang: string = _lang || this.defaultLang();
@@ -954,43 +938,43 @@ class EmailsUtil {
     console.log("tokens", `${data._tokens}/${support.initialTokens}`)
     console.log("---------------");
 
-    return this.emailSender(options);
+    return await to(this.emailSender(options)).catch();
   }
 
-  public redeemSupport2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
-    const data = response.locals;
-    const lang: string = request.headers['content-language'] || this.defaultLang();
+  // public redeemSupport2 = async (request: RequestWithUser, response: Response, next: NextFunction) => {
+  //   const data = response.locals;
+  //   const lang: string = request.headers['content-language'] || this.defaultLang();
 
-    let options = {
-      from: `${process.env.EMAIL_FROM}`,
-      to: data.member.email,
-      cc: ``,
-      bcc: ``,
-      subject: `${this.translation(lang).redeem_support.subject} (${data.support.payment_id})`,
-      html: '',
-      type: 'redeem_support',
-      locals: {
-        ...this.translation(lang).common,
-        ...this.translation(lang).redeem_support,
-        logo_url: `${process.env.LOGO_URL}`,
-        home_page: `${process.env.APP_URL}`,
-        campaign: `${data.support.campaign_title}`,
-        tokens: `${data.extras.tokens}/${data.support.initialTokens}`,
-      },
-    }
+  //   let options = {
+  //     from: `${process.env.EMAIL_FROM}`,
+  //     to: data.member.email,
+  //     cc: ``,
+  //     bcc: ``,
+  //     subject: `${this.translation(lang).redeem_support.subject} (${data.support.payment_id})`,
+  //     html: '',
+  //     type: 'redeem_support',
+  //     locals: {
+  //       ...this.translation(lang).common,
+  //       ...this.translation(lang).redeem_support,
+  //       logo_url: `${process.env.LOGO_URL}`,
+  //       home_page: `${process.env.APP_URL}`,
+  //       campaign: `${data.support.campaign_title}`,
+  //       tokens: `${data.extras.tokens}/${data.support.initialTokens}`,
+  //     },
+  //   }
 
-    console.log("# redeemSupport2")
-    console.log("---------------");
+  //   console.log("# redeemSupport2")
+  //   console.log("---------------");
 
-    let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
-    if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error} `));
+  //   let error, results: object = {};
+  //   [error, results] = await to(this.emailSender(options));
+  //   if (error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error} `));
 
-    response.status(200).send({
-      message: 'Tokens Spent',
-      code: 200
-    });
-  }
+  //   response.status(200).send({
+  //     message: 'Tokens Spent',
+  //     code: 200
+  //   });
+  // }
 
   public campaignStarts = async (emails_to: string[], campaign: MicrocreditCampaign) => {
     const lang: string = this.defaultLang();

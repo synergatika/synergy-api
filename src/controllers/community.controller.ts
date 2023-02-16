@@ -66,45 +66,65 @@ class CommunityController implements Controller {
     this.router.get(`${this.path}/public/:partner_id/:offset`, validationParamsMiddleware(PartnerID), this.readPostsEventsByStore);
     this.router.get(`${this.path}/private/:partner_id/:offset`, authMiddleware, validationParamsMiddleware(PartnerID), this.readPostsEventsByStore);
 
-    this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.sendInvitation, emailsUtil.userInvitation);
+    this.router.post(`${this.path}/invite`, authMiddleware, validationBodyMiddleware(InvitationDto), this.sendInvitation,
+      //  emailsUtil.userInvitation
+    );
 
-    this.router.post(`${this.path}/communicate`, validationBodyMiddleware(CommunicationDto), this.sendCommunication, emailsUtil.internalCommunication);
+    this.router.post(`${this.path}/communicate`, validationBodyMiddleware(CommunicationDto), this.sendCommunication,
+      // emailsUtil.internalCommunication
+    );
   }
 
   private sendCommunication = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: CommunicationDto = request.body;
 
-    response.locals = {
-      res: {
-        code: 200,
-        body: {
-          message: "Communication sent",
-          code: 200
-        }
-      },
-      sender: data.sender,
-      content: data.content,
-    }
+    let email_error: Error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.internalCommunication(request.headers['content-language'], data.sender, data.content).catch());
+    if (email_error) throw (`EMAIL ERROR - InternalCommunication: ${email_error}`);
 
-    next();
+    response.status(200).send({
+      message: "Communication sent",
+      code: 200
+    });
+    // response.locals = {
+    //   res: {
+    //     code: 200,
+    //     body: {
+    //       message: "Communication sent",
+    //       code: 200
+    //     }
+    //   },
+    //   sender: data.sender,
+    //   content: data.content,
+    // }
+
+    // next();
   }
 
   private sendInvitation = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: InvitationDto = request.body;
 
-    response.locals = {
-      res: {
-        code: 200,
-        body: {
-          message: "Invitation sent",
-          code: 200
-        }
-      },
-      receiver: data.receiver,
-      user: request.user
-    }
+    let email_error: Error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.userInvitation(request.headers['content-language'], data.receiver, request.user).catch());
+    if (email_error) throw (`EMAIL ERROR - UserInvitation: ${email_error}`);
 
-    next();
+    response.status(200).send({
+      message: "Invitation sent",
+      code: 200
+    });
+
+    //   response.locals = {
+    //     code: 200,
+    //     body: {
+    //       message: "Invitation sent",
+    //       code: 200
+    //     }
+    //   },
+    //     receiver: data.receiver,
+    //       user: request.user
+    // }
+
+    // next();
   }
 
   private sortPostsEvents = (a: PostEvent, b: PostEvent) => {
@@ -238,7 +258,6 @@ class CommunityController implements Controller {
     [_error, _user] = await to(this.user.find(partner_filter).catch());
     /** ***** * ***** */
 
-
     let error: Error, posts: PostEvent[], events: PostEvent[];
     [error, posts] = await to(this.postModel.find(
       {
@@ -280,7 +299,7 @@ class CommunityController implements Controller {
         $and: [
           { 'partner': _user },
           { 'access': { $in: access_filter } },
-          { 'events.dateTime': { $gt: offset.greater } }
+          { 'dateTime': { $gt: offset.greater } }
         ]
       }
     )
@@ -321,62 +340,62 @@ class CommunityController implements Controller {
     });
   }
 
-  /**
-  *  
-  * Local Function Section 
-  *
-  * */
+  // /**
+  // *  
+  // * Local Function Section 
+  // *
+  // * */
 
-  /** Project Partner (Local Function) */
-  private projectPartner() {
-    return {
-      _id: '$_id',
-      name: '$name',
-      email: '$email',
-      slug: '$slug',
-      imageURL: '$imageURL',
-      payments: '$payments',
-      address: '$address',
-      contacts: '$contacts',
-      phone: '$phone',
-    };
-  }
+  // /** Project Partner (Local Function) */
+  // private projectPartner() {
+  //   return {
+  //     _id: '$_id',
+  //     name: '$name',
+  //     email: '$email',
+  //     slug: '$slug',
+  //     imageURL: '$imageURL',
+  //     payments: '$payments',
+  //     address: '$address',
+  //     contacts: '$contacts',
+  //     phone: '$phone',
+  //   };
+  // }
 
-  /** Project Post (Local Function) */
-  private projectPost() {
-    return {
-      _id: '$posts._id',
-      slug: '$posts.slug',
-      imageURL: '$posts.imageURL',
-      type: 'post',
-      title: '$posts.title',
-      subtitle: '$posts.subtitle',
-      description: '$posts.description',
-      access: '$posts.access',
+  // /** Project Post (Local Function) */
+  // private projectPost() {
+  //   return {
+  //     _id: '$posts._id',
+  //     slug: '$posts.slug',
+  //     imageURL: '$posts.imageURL',
+  //     type: 'post',
+  //     title: '$posts.title',
+  //     subtitle: '$posts.subtitle',
+  //     description: '$posts.description',
+  //     access: '$posts.access',
 
-      createdAt: '$posts.createdAt',
-      updatedAt: '$posts.updatedAt'
-    };
-  }
+  //     createdAt: '$posts.createdAt',
+  //     updatedAt: '$posts.updatedAt'
+  //   };
+  // }
 
-  /** Project Event (Local Function) */
-  private projectEvent() {
-    return {
-      _id: '$events._id',
-      slug: '$events.slug',
-      imageURL: '$events.imageURL',
-      type: 'event',
-      title: '$events.title',
-      subtitle: '$events.subtitle',
-      description: '$events.description',
-      access: '$events.access',
-      location: '$events.location',
-      dateTime: '$events.dateTime',
+  // /** Project Event (Local Function) */
+  // private projectEvent() {
+  //   return {
+  //     _id: '$events._id',
+  //     slug: '$events.slug',
+  //     imageURL: '$events.imageURL',
+  //     type: 'event',
+  //     title: '$events.title',
+  //     subtitle: '$events.subtitle',
+  //     description: '$events.description',
+  //     access: '$events.access',
+  //     location: '$events.location',
+  //     dateTime: '$events.dateTime',
 
-      createdAt: '$events.createdAt',
-      updatedAt: '$events.updatedAt'
-    };
-  }
+  //     createdAt: '$events.createdAt',
+  //     updatedAt: '$events.updatedAt'
+  //   };
+  // }
 }
 
 export default CommunityController;

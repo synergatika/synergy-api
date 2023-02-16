@@ -145,7 +145,12 @@ class EventsController implements Controller {
 
     let error: Error, events: Event[];
     [error, events] = await to(this.eventModel.find(
-      { 'access': { $in: access_filter } }
+      {
+        "$and": [
+          { 'access': { $in: access_filter } },
+          { 'dateTime': { $gt: offset.greater } }
+        ]
+      }
     )
       .populate([{
         path: 'partner'
@@ -283,7 +288,8 @@ class EventsController implements Controller {
       {
         $and: [
           { 'partner': _user },
-          { 'access': { $in: access_filter } }
+          { 'access': { $in: access_filter } },
+          { 'dateTime': { $gt: offset.greater } }
         ]
       }
     )

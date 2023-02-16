@@ -605,8 +605,9 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     let email_error: Error, email_result: any;
-    [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'invite', request.user).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
+    [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], data.email, tempPassword, 'invite', request.user).catch());
+    if (email_error) throw(`EMAIL ERROR - UserRegistration: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     // response.locals = {
     //   res: this.prefixedResponse(200, "User has been Invited to enjoy our Community!", {}, { "password": tempPassword }),
@@ -687,7 +688,9 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
           /** Email Block (Authentication - Registration) */
  let email_error: Error, email_result: any;
     [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'one-click', null).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw(`EMAIL ERROR - UserRegistration: ${email_error}`);
+    //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+
 
     response.status(200).send(
       {
@@ -735,8 +738,8 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
                 /** Email Block (Authentication - Verification) */
 let email_error: Error, email_result: any;
       [email_error, email_result ]= await to ( emailsUtil.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
-      if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
-
+      if (email_error) throw(`EMAIL ERROR - EmailVerification: ${email_error}`);
+      //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
       response.status(200).send(
         {
@@ -780,14 +783,16 @@ let email_error: Error, email_result: any;
       [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
       if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
       
-                   /** Email Block (Authentication - Verification) */
-                   let email_error: Error, email_result: any;
+      /** Email Block (Authentication - Verification) */
+      let email_error: Error, email_result: any;
       [email_error, email_result ]= await to ( emailsUtil.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
-      if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+      if (email_error) throw(`EMAIL ERROR - EmailVerification: ${email_error}`);
+      //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
                   /** Email Block (Authentication - Activation Internal) */
                   [email_error, email_result] = await to(emailsUtil.internalActivation2(request.headers['content-language'], user).catch());
-      if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+                  if (email_error) throw(`EMAIL ERROR - InternalActivation: ${email_error}`);
+                  //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
       response.status(200).send(
         {
@@ -838,10 +843,11 @@ let email_error: Error, email_result: any;
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
 
     if(user.email) {
-                       /** Email Block (Authentication - Registration) */
- let email_error, email_result: any;
-  [email_error, email_result ]= await to ( emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
-      if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+      /** Email Block (Authentication - Registration) */
+      let email_error, email_result: any;
+      [email_error, email_result ]= await to ( emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
+      if (email_error) throw(`EMAIL ERROR - UserRegistration: ${email_error}`);
+        //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
     }
     
     response.status(200).send(
@@ -872,10 +878,8 @@ let email_error: Error, email_result: any;
     const data: RegisterPartnerWithoutPasswordDto = request.body;
 
     let existingUser = await this.user.findOne({ email: data.email });
-    if (existingUser) {
-      return next(new NotFoundException('USER_EXISTS'));
-    }
-
+    if (existingUser) return next(new NotFoundException('USER_EXISTS'));
+    
     let potensialUser = await this.initializePartner(
       false,
       this.hasBlockchain,
@@ -888,15 +892,16 @@ let email_error: Error, email_result: any;
     ).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-                      /** Transaction Block (Registration - Partner) */
- let transaction_error: Error, transaction_result;
+    /** Transaction Block (Registration - Partner) */
+    let transaction_error: Error, transaction_result;
     [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
 
-                          /** Email Block (Authentication - Registration) */
- let email_error: Error, email_result: any;
-    [email_error, email_result ]= await to ( emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    /** Email Block (Authentication - Registration) */
+    let email_error: Error, email_result: any;
+    [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
+    if (email_error) throw(`EMAIL ERROR - UserRegistration: ${email_error}`);
+    //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
       {
@@ -966,7 +971,8 @@ let email_error: Error, email_result: any;
                          /** Email Block (Authentication - Verification) */
                          let email_error, email_result: any;
       [email_error, email_result ]= await to (emailsUtil.emailVerification2(request.headers['content-language'], data.email, token.token).catch())
-      if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+      if (email_error) throw(`EMAIL ERROR - EmailVerification: ${email_error}`);
+      // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
       response.status(202).send({
         data: { action: 'need_email_verification' },
@@ -1075,7 +1081,8 @@ let email_error: Error, email_result: any;
                           /** Email Block (Authentication - Verification) */
                           let email_error, email_result: any;
     [email_error, email_result ]= await to (emailsUtil.emailVerification2(request.headers['content-language'], email, token.token).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw(`EMAIL ERROR - EmailVerification: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
       {
@@ -1147,7 +1154,8 @@ let email_error: Error, email_result: any;
                             /** Email Block (Authentication - Restoration) */
  let email_error, email_result: any;
 [email_error, email_result] = await to (emailsUtil.passwordRestoration2(request.headers['content-language'], email, token.token).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+if (email_error) throw(`EMAIL ERROR - PasswordRestore: ${email_error}`);
+// if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
       {
@@ -1241,7 +1249,8 @@ let email_error: Error, email_result: any;
                               /** Email Block (Authentication - Activation) */
                               let email_error, email_result: any;
 [email_error, email_result] = await to (emailsUtil.accountActivation2(request.headers['content-language'], user.email).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+if (email_error) throw(`EMAIL ERROR - AccountActivation: ${email_error}`);
+// if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
       {
@@ -1284,7 +1293,8 @@ let email_error: Error, email_result: any;
                                  /** Email Block (Authentication - Deactivation) */
  let email_error, email_result: any;
     [email_error, email_result] = await to (emailsUtil.accountDeactivation2(request.headers['content-language'], user.email, request.user).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw(`EMAIL ERROR - AccountDeactivation: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
       {
@@ -1327,11 +1337,13 @@ let email_error: Error, email_result: any;
                                     /** Email Block (Authentication - Deactivation) */
  let email_error, email_result: any;
     [email_error, email_result] = await to (emailsUtil.accountDeactivation2(request.headers['content-language'], request.user.email, request.user).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw(`EMAIL ERROR - AccountDeactivation: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
                                     /** Email Block (Authentication - Deactivation Internal) */
  [email_error, email_result] = await to (emailsUtil.internalDeactivation2(request.headers['content-language'], request.user, data.reason).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+ if (email_error) throw(`EMAIL ERROR - InternalDeactivation: ${email_error}`); 
+ // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
       {
@@ -1371,11 +1383,13 @@ let email_error: Error, email_result: any;
                                       /** Email Block (Authentication - Deletion) */
                                       let email_error, email_result: any;
     [email_error, email_result] = await to ( emailsUtil.accountDeletion2(request.headers['content-language'], request.user.email).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw(`EMAIL ERROR - AccountDelete: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
                                       /** Email Block (Authentication - Deletion Internal) */
                                       [email_error, email_result] = await to (emailsUtil.internalDeletion2(request.headers['content-language'], request.user).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+                                      if (email_error) throw(`EMAIL ERROR - InternalDelete: ${email_error}`);
+                                      // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send(
       {

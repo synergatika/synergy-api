@@ -248,11 +248,13 @@ class MicrocreditController implements Controller {
     /** Email Block (Microcredit - New Support to Partner) */
     let email_error: Error, email_result: any;
     [email_error, email_result] = await to(emailsUtil.newSupportPartner(request.headers['content-language'], partner.email, campaign, _payment, data).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw (`EMAIL ERROR - NewSupportToPartner: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     /** Email Block (Microcredit - New Support to Member) */
     [email_error, email_result] = await to(emailsUtil.newSupportMember(request.headers['content-language'], member.email, campaign, _payment, data).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw (`EMAIL ERROR - NewSupportToMember: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send({
       data: {
@@ -305,11 +307,13 @@ class MicrocreditController implements Controller {
     /** Email Block (Microcredit - New Support to Partner) */
     let email_error: Error, email_result: any;
     [email_error, email_result] = await to(emailsUtil.newSupportPartner(request.headers['content-language'], partner.email, campaign, _payment, data).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw (`EMAIL ERROR - NewSupportToPartner: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     /** Email Block (Microcredit - New Support to Member) */
     [email_error, email_result] = await to(emailsUtil.newSupportMember(request.headers['content-language'], member.email, campaign, _payment, data).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw (`EMAIL ERROR - NewSupportToMember: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send({
       data: {
@@ -362,11 +366,13 @@ class MicrocreditController implements Controller {
     /** Email Block (Microcredit - New Support to Partner) */
     let email_error: Error, email_result: any;
     [email_error, email_result] = await to(emailsUtil.newSupportPartner(request.headers['content-language'], partner.email, campaign, _payment, data).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw (`EMAIL ERROR - NewSupportToPartner: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     /** Email Block (Microcredit - New Support to Member) */
     [email_error, email_result] = await to(emailsUtil.newSupportMember(request.headers['content-language'], member.email, campaign, _payment, data).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw (`EMAIL ERROR - NewSupportToMember: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send({
       data: {
@@ -410,7 +416,8 @@ class MicrocreditController implements Controller {
     /** Email Block (Microcredit - Change Status to Member) */
     let email_error: Error, email_result: any;
     [email_error, email_result] = await to(emailsUtil.changeSupportStatus(request.headers['content-language'], (support.member as Member).email, support).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw (`EMAIL ERROR - ChangeSupportStatus: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send({
       data: {
@@ -449,7 +456,8 @@ class MicrocreditController implements Controller {
     /** Email Block (Microcredit - Redeem Support to Member) */
     let email_error: Error, email_result: any;
     [email_error, email_result] = await to(emailsUtil.redeemSupport(request.headers['content-language'], member.email, campaign, support, data).catch());
-    if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    if (email_error) throw (`EMAIL ERROR - RedeemSupport: ${email_error}`);
+    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
     response.status(200).send({
       message: 'Tokens Spent',
