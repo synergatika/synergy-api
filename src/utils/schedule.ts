@@ -21,18 +21,17 @@ const emailsUtil = new EmailsUtil();
 /**
  * Interfaces
  */
-import { User, MicrocreditCampaign, MicrocreditSupport, TransactionStatus, RegistrationTransaction, MicrocreditTransaction, LoyaltyTransaction, LoyaltyTransactionType, RegistrationTransactionType, MicrocreditTransactionType, Account, Partner, Member } from '../_interfaces/index';
+import { User, MicrocreditCampaign, MicrocreditSupport, TransactionStatus, RegistrationTransaction, MicrocreditTransaction, LoyaltyTransaction, MicrocreditTransactionType, Partner, Member } from '../_interfaces/index';
 
 /**
  * Models
  */
+import userModel from '../models/user.model';
 import registrationTransactionModel from '../models/registration.transaction.model';
-import microcreditTransactionModel from '../models/microcredit.transaction.model';
 import loyaltyTransactionModel from '../models/loyalty.transaction.model';
 import microcreditCampaignModel from '../models/campaign.model';
 import microcreditSupportModel from '../models/support.model';
-import userModel from '../models/user.model';
-import { EarnTokensDto, RedeemTokensDto } from '_dtos';
+import microcreditTransactionModel from '../models/microcredit.transaction.model';
 
 /**
  * Transactions Util
@@ -55,7 +54,7 @@ class Schedule {
   private microcreditSupportModel = microcreditSupportModel;
 
   // private repeatEvery: string = '0 0 3 * * *'; // every day at 3am
-  private repeatEvery: string = '55 * * * * *'; // every day at 3am
+  private repeatEvery: string = '55 * * * * *'; // every minute at .55 seconds
   private repeatEveryRegistration: string = '30 * * * * *'; // every minute at .30 seconds
 
   constructor() { }
@@ -388,6 +387,30 @@ class Schedule {
     console.log(`${completed} of ${transactions.length} <<Microcredit Transactions (Receive, Revert, Spend)>> registered in blockchain`);
   }
 
+  private updateRegisterMicrocreditCampaigns = async (_campaign: MicrocreditCampaign) => {
+
+    let blockchain_error: Error, blockchain_result: any;
+    [blockchain_error, blockchain_result] = await to(registrationService.registerMicrocreditCampaign(_campaign.partner as Partner, _campaign).catch());
+    if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+
+    if (blockchain_result) {
+      let error: Error, campaign: MicrocreditCampaign;
+      [error, campaign] = await to(this.microcreditCampaignModel.findOneAndUpdate({
+        _id: _campaign._id
+      }, {
+        "$set": {
+          "address": blockchain_result?.address,
+          "transactionHash": blockchain_result?.transactionHash,
+          "registered": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING,
+        }
+      }).catch());
+
+      return campaign;
+    }
+
+    return null;
+  }
+
   // private updateRegistrationTransaction = async (_transaction: RegistrationTransaction) => {
   //   const user: User = _transaction.user;
   //   if (!user) return;
@@ -447,30 +470,6 @@ class Schedule {
 
   //   return null;
   // }
-
-  private updateRegisterMicrocreditCampaigns = async (_campaign: MicrocreditCampaign) => {
-
-    let blockchain_error: Error, blockchain_result: any;
-    [blockchain_error, blockchain_result] = await to(registrationService.registerMicrocreditCampaign(_campaign.partner as Partner, _campaign).catch());
-    if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-
-    if (blockchain_result) {
-      let error: Error, campaign: MicrocreditCampaign;
-      [error, campaign] = await to(this.microcreditCampaignModel.findOneAndUpdate({
-        _id: _campaign._id
-      }, {
-        "$set": {
-          "address": blockchain_result?.address,
-          "transactionHash": blockchain_result?.transactionHash,
-          "registered": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING,
-        }
-      }).catch());
-
-      return campaign;
-    }
-
-    return null;
-  }
 
   // private updateMicrocreditTransaction = async (_transaction: MicrocreditTransaction) => {
   //   let blockchain_error: Error, blockchain_result: any;

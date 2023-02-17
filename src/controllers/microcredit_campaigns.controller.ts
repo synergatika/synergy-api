@@ -34,7 +34,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, MicrocreditCampaign, MicrocreditTokens, MicrocreditStatistics, SupportStatus, Partner, TransactionStatus, MicrocreditTransactionType } from '../_interfaces/index';
+import { User, MicrocreditCampaign, MicrocreditTokens, MicrocreditStatistics, Partner, TransactionStatus, MicrocreditTransactionType, ItemAccess, UserAccess, MicrocreditCampaignStatus } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -221,9 +221,9 @@ class MicrocreditCampaignsController implements Controller {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    const access_filter: string[] = ['public'];
-    if (request.user) access_filter.push('private');
-    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+    const access_filter: ItemAccess[] = [ItemAccess.PUBLIC];
+    if (request.user) access_filter.push(ItemAccess.PRIVATE);
+    if (request.user && request.user.access == UserAccess.PARTNER) access_filter.push(ItemAccess.PARTNERS);
     /** ***** */
 
     let error: Error, campaigns: MicrocreditCampaign[];
@@ -392,12 +392,12 @@ class MicrocreditCampaignsController implements Controller {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    const access_filter: string[] = ['public'];
-    if (request.user) access_filter.push('private');
-    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+    const access_filter: ItemAccess[] = [ItemAccess.PUBLIC];
+    if (request.user) access_filter.push(ItemAccess.PRIVATE);
+    if (request.user && request.user.access == UserAccess.PARTNER) access_filter.push(ItemAccess.PARTNERS);
 
-    const status_filter: string[] = ['published'];
-    if ((request.user && request.user._id == new ObjectId(partner_id)) && offset.type) status_filter.push('draft');
+    const status_filter: MicrocreditCampaignStatus[] = [MicrocreditCampaignStatus.PUBLISHED];
+    if ((request.user && request.user._id == new ObjectId(partner_id)) && offset.type) status_filter.push(MicrocreditCampaignStatus.DRAFT);
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
 

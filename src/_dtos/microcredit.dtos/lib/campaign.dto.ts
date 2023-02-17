@@ -1,4 +1,5 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { ItemAccess } from '_interfaces';
 
 export class CampaignDto {
 
@@ -26,9 +27,8 @@ export class CampaignDto {
   @IsString()
   public category: string;
 
-  @IsString()
-  public access: string;
-
+  @IsEnum(['public', 'private', 'partners'])
+  public access: ItemAccess;
 
   @IsString()
   public redeemable: boolean;

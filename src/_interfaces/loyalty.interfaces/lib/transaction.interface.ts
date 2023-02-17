@@ -15,7 +15,10 @@ export interface LoyaltyTransaction {
   member: Member | ObjectId,
   offer: LoyaltyOffer | ObjectId,
 
-  data: EarnPointsDto | RedeemPointsDto;
+  // data: EarnPointsDto | RedeemPointsDto;
+  points: number;
+  amount: number;
+  quantity: number;
 
   /** begin: To be Removed in Next Version */
   partner_id: string;
@@ -24,10 +27,6 @@ export interface LoyaltyTransaction {
   offer_id: string;
   offer_title: string;
   /** end: To be Removed in Next Version */
-
-  points: number;
-  amount: number;
-  quantity: number;
 
   type: LoyaltyTransactionType;
   status: TransactionStatus;

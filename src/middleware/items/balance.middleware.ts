@@ -46,67 +46,6 @@ async function loyalty_balance(request: RequestWithUser, response: Response, nex
     'points': loyalty.length ? loyalty[0]?.currentPoints : 0,
   };
   next();
-
-  // let error: Error, points: any[];
-  // [error, points] = await to(loyaltyTransactionModel.aggregate([{
-  //   $match: {
-  //     // $and: [{
-  //     'member_id': (member._id).toString()
-  //     // }]
-  //   }
-  // },
-  // {
-  //   $group: {
-  //     _id: "$member_id",
-  //     member_id: { '$first': '$member_id' },
-  //     currentPoints: { $sum: '$points' }
-  //   }
-  // }]
-  // ).exec().catch());
-  // if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-  // response.locals["balance"] = {
-  //   address: points[0]?.member_id || (member._id).toString(),
-  //   points: points[0]?.currentPoints | 0,
-  // };
-  // next();
-
-
-  // const member: User = (response.locals.member) ? response.locals.member : request.user;
-
-  // let error: Error, result: any;
-  // [error, result] = await to(serviceInstance.getLoyaltyAppContract()
-  //   .then((instance) => {
-  //     return instance.members(member.account.address)
-  //   })
-  //   .catch((error) => {
-  //     return error; //next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //   })
-  // );
-  // if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-
-  // response.locals["balance"] = {
-  //   address: result.memberAddress,
-  //   points: result.points,
-  // };
-  // next();
-  // await serviceInstance.getLoyaltyAppContract()
-  //   .then((instance) => {
-  //     return instance.members(member.account.address)
-  //       .then((results: any) => {
-  //         response.locals["balance"] = {
-  //           address: results.memberAddress,
-  //           points: results.points,
-  //         };
-  //         next();
-  //       })
-  //       .catch((error: Error) => {
-  //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //       })
-  //   })
-  //   .catch((error) => {
-  //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //   })
 }
 
 async function loyalty_activity(request: RequestWithUser, response: Response, next: NextFunction) {
@@ -276,3 +215,68 @@ export default {
   microcredit_balance: microcredit_balance,
   microcredit_activity: microcredit_activity
 }
+
+
+
+
+
+  // let error: Error, points: any[];
+  // [error, points] = await to(loyaltyTransactionModel.aggregate([{
+  //   $match: {
+  //     // $and: [{
+  //     'member_id': (member._id).toString()
+  //     // }]
+  //   }
+  // },
+  // {
+  //   $group: {
+  //     _id: "$member_id",
+  //     member_id: { '$first': '$member_id' },
+  //     currentPoints: { $sum: '$points' }
+  //   }
+  // }]
+  // ).exec().catch());
+  // if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+  // response.locals["balance"] = {
+  //   address: points[0]?.member_id || (member._id).toString(),
+  //   points: points[0]?.currentPoints | 0,
+  // };
+  // next();
+
+
+  // const member: User = (response.locals.member) ? response.locals.member : request.user;
+
+  // let error: Error, result: any;
+  // [error, result] = await to(serviceInstance.getLoyaltyAppContract()
+  //   .then((instance) => {
+  //     return instance.members(member.account.address)
+  //   })
+  //   .catch((error) => {
+  //     return error; //next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  //   })
+  // );
+  // if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+
+  // response.locals["balance"] = {
+  //   address: result.memberAddress,
+  //   points: result.points,
+  // };
+  // next();
+  // await serviceInstance.getLoyaltyAppContract()
+  //   .then((instance) => {
+  //     return instance.members(member.account.address)
+  //       .then((results: any) => {
+  //         response.locals["balance"] = {
+  //           address: results.memberAddress,
+  //           points: results.points,
+  //         };
+  //         next();
+  //       })
+  //       .catch((error: Error) => {
+  //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  //       })
+  //   })
+  //   .catch((error) => {
+  //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  //   })

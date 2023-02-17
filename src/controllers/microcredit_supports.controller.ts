@@ -20,7 +20,7 @@ import { UnprocessableEntityException } from '../_exceptions/index';
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, SupportStatus } from '../_interfaces/index';
+import { User, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, MicrocreditSupportStatus } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -305,9 +305,9 @@ class MicrocreditSupportsController implements Controller {
    */
 
   private defineSupportStatus(a: any) {
-    if (a.currentTokens == 0) return SupportStatus.COMPLETED;
-    else if (a.type == 'PromiseFund' || a.type == 'RevertFund') return SupportStatus.UNPAID;
-    else if (a.type == 'ReceiveFund' || a.type == 'SpendFund') return SupportStatus.PAID;
+    if (a.currentTokens == 0) return MicrocreditSupportStatus.COMPLETED;
+    else if (a.type == 'PromiseFund' || a.type == 'RevertFund') return MicrocreditSupportStatus.UNPAID;
+    else if (a.type == 'ReceiveFund' || a.type == 'SpendFund') return MicrocreditSupportStatus.PAID;
   }
 
   private readCampaigns = async (supports: any[]) => {

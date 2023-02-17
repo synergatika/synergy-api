@@ -35,7 +35,7 @@ import { UnprocessableEntityException } from '../_exceptions/index';
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, Partner, PartnerPayment, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, SupportStatus, TransactionStatus, Member, SupportPayment, MicrocreditTransactionType } from '../_interfaces/index';
+import { User, Partner, PartnerPayment, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, MicrocreditSupportStatus, TransactionStatus, Member, SupportPayment, MicrocreditTransactionType } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -231,9 +231,10 @@ class MicrocreditController implements Controller {
       member: member._id,
       campaign: campaign_id,
       initialTokens: data._amount,
-      currentTokens: (data.paid) ? data._amount : 0,
+      // currentTokens: (data.paid) ? data._amount : 0,
+      currentTokens: data._amount,
       payment: _payment,
-      status: (data.paid) ? SupportStatus.PAID : SupportStatus.UNPAID,
+      status: (data.paid) ? MicrocreditSupportStatus.PAID : MicrocreditSupportStatus.UNPAID,
       contractRef: transaction_result?.logs[0]?.args.ref,
       contractIndex: transaction_result?.logs[0]?.args.index,
     }).catch());
@@ -290,9 +291,10 @@ class MicrocreditController implements Controller {
       member: member._id,
       campaign: campaign_id,
       initialTokens: data._amount,
-      currentTokens: (data.paid) ? data._amount : 0,
+      // currentTokens: (data.paid) ? data._amount : 0,
+      currentTokens: data._amount,
       payment: _payment,
-      status: (data.paid) ? SupportStatus.PAID : SupportStatus.UNPAID,
+      status: (data.paid) ? MicrocreditSupportStatus.PAID : MicrocreditSupportStatus.UNPAID,
       contractRef: transaction_result?.logs[0]?.args.ref,
       contractIndex: transaction_result?.logs[0]?.args.index,
     }).catch());
@@ -349,9 +351,10 @@ class MicrocreditController implements Controller {
       member: member._id,
       campaign: campaign_id,
       initialTokens: data._amount,
-      currentTokens: (data.paid) ? data._amount : 0,
+      // currentTokens: (data.paid) ? data._amount : 0,
+      currentTokens: data._amount,
       payment: _payment,
-      status: (data.paid) ? SupportStatus.PAID : SupportStatus.UNPAID,
+      status: (data.paid) ? MicrocreditSupportStatus.PAID : MicrocreditSupportStatus.UNPAID,
       contractRef: transaction_result?.logs[0]?.args.ref,
       contractIndex: transaction_result?.logs[0]?.args.index,
     }).catch());
@@ -395,13 +398,13 @@ class MicrocreditController implements Controller {
         _id: support._id
       }, {
       $set: {
-        currentTokens: (support.status == SupportStatus.UNPAID) ? support.initialTokens : 0,
-        status: (support.status == SupportStatus.UNPAID) ? SupportStatus.PAID : SupportStatus.UNPAID
+        // currentTokens: (support.status == SupportStatus.UNPAID) ? support.initialTokens : 0,
+        status: (support.status == MicrocreditSupportStatus.UNPAID) ? MicrocreditSupportStatus.PAID : MicrocreditSupportStatus.UNPAID
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    if (support.status != SupportStatus.PAID) {
+    if (support.status != MicrocreditSupportStatus.PAID) {
       /** Transaction Block (Microcredit - Receive) */
       let transaction_error: Error, transaction_result: any;
       [transaction_error, transaction_result] = await to(transactionsUtil.createReceiveTransaction(campaign, support).catch());
@@ -442,8 +445,9 @@ class MicrocreditController implements Controller {
       _id: support._id
     }, {
       $set: {
-        currentTokens: support.initialTokens - data._tokens,
-        status: ((support.status == SupportStatus.PAID) && (support.initialTokens - data._tokens <= 0)) ? SupportStatus.COMPLETED : SupportStatus.PAID
+        // currentTokens: support.initialTokens - data._tokens,
+        currentTokens: support.currentTokens - data._tokens,
+        status: ((support.status == MicrocreditSupportStatus.PAID) && (support.initialTokens - data._tokens <= 0)) ? MicrocreditSupportStatus.COMPLETED : MicrocreditSupportStatus.PAID
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));

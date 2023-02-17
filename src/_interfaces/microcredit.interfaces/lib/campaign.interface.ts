@@ -1,7 +1,12 @@
-import { Partner } from '../../index';
+import { ItemAccess, Partner } from '../../index';
 import { MicrocreditTokens } from './tokens.interface';
 import { MicrocreditStatistics } from './statistics.interface';
 import { ObjectId } from 'mongodb';
+
+export enum MicrocreditCampaignStatus {
+  PUBLISHED = 'published',
+  DRAFT = 'draft'
+}
 
 export interface MicrocreditCampaign {
   _id: ObjectId;
@@ -13,7 +18,7 @@ export interface MicrocreditCampaign {
   description: string;
   contentFiles: string[];
   category: string;
-  access: string;
+  access: ItemAccess;
   status: string;
 
   redeemable: boolean;

@@ -360,6 +360,8 @@ class LoyaltyController implements Controller {
           return;
       }
     });
+    return { _total, _daily };
+
     // /** Total */
     // var result_: { earn: number, redeem: number, uniqueUsers: string[], uniqueTransactions: string[] } = { earn: 0, redeem: 0, uniqueUsers: [], uniqueTransactions: [] };
     // statistics.map(o => { return { ...o, type: o.type, points: o.points, amount: o.amount, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
@@ -400,7 +402,6 @@ class LoyaltyController implements Controller {
     //   }
     // });
     // console.log(result)
-    return { _total, _daily };
     // response.status(200).send({
     //   data: {
     //     _total, _daily

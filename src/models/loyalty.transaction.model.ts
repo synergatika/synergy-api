@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { LoyaltyTransaction } from '../_interfaces/index';
+import { LoyaltyTransaction, LoyaltyTransactionType, TransactionStatus } from '../_interfaces/index';
 import { Schema } from 'mongoose';
 import { any } from 'bluebird';
 
@@ -68,7 +68,7 @@ const loyaltyTransactionSchema = new mongoose.Schema({
     ref: 'User'
   },
 
-  data: Object,
+  // data: Object,
 
   points: {
     type: Number,
@@ -98,13 +98,13 @@ const loyaltyTransactionSchema = new mongoose.Schema({
   /** end: To be Removed in Next Version */
 
   type: {
-    type: String,
+    type: LoyaltyTransactionType,
     enum: ['EarnPoints', 'RedeemPoints', 'RedeemPointsOffer'],
   },
   status: {
-    type: String,
+    type: TransactionStatus,
     enum: ['pending', 'completed'],
-    default: 'pending'
+    default: TransactionStatus.PENDING
   },
 
   /** Blockchain Variables (Optional) */

@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 import { Schema } from 'mongoose';
-import { MicrocreditSupport, SupportPayment, SupportStatus } from '../_interfaces/index';
+import { MicrocreditSupport, SupportPayment, MicrocreditSupportStatus } from '../_interfaces/index';
 
 const paymentSchema = new mongoose.Schema({
   _id: String,
@@ -25,9 +25,9 @@ const supportSchema = new mongoose.Schema({
   currentTokens: Number,
   payment: paymentSchema,
   status: {
-    type: String,
+    type: MicrocreditSupportStatus,
     enum: ['completed', 'paid', 'unpaid'],
-    default: 'unpaid'
+    default: MicrocreditSupportStatus.UNPAID
   },
 
   /** Blockchain Variables */

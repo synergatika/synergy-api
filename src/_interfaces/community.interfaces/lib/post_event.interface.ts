@@ -1,6 +1,12 @@
 import { Partner } from '../../index';
 import { ObjectId } from 'mongodb';
 
+export enum ItemAccess {
+  PUBLIC = 'public',
+  PRIVATE = 'private',
+  PARTNERS = 'partners',
+}
+
 export interface PostEvent {
   _id: ObjectId;
   slug: string;
@@ -9,7 +15,7 @@ export interface PostEvent {
   subtitle: string;
   description: string;
   contentFiles: string[];
-  access: string;
+  access: ItemAccess;
   type: string;
   location: string;
   dateTime: number;

@@ -30,7 +30,7 @@ class MicrocreditTransactionsUtil {
 
     public createPromiseTransaction = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto, support_id: MicrocreditSupport['_id']) => {
         let blockchain_error: Error, blockchain_result: any;
-        [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund(campaign, member, data).catch());
+        [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund(campaign, member, data._amount).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
         // let error: Error, transaction: MicrocreditTransaction;
@@ -40,7 +40,8 @@ class MicrocreditTransactionsUtil {
 
             ...blockchain_result,
 
-            data: data,
+            // data: data,
+            tokens: data._amount,
 
             type: MicrocreditTransactionType.PromiseFund,
             status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
@@ -53,8 +54,6 @@ class MicrocreditTransactionsUtil {
             partner_id: (campaign.partner as Partner)._id,
             partner_name: (campaign.partner as Partner).name,
             /** end: To be Removed in Next Version */
-
-            tokens: data._amount,
         })
         // .catch());
         // if (error) return error;
@@ -74,6 +73,8 @@ class MicrocreditTransactionsUtil {
 
             ...blockchain_result,
 
+            payoff: support.initialTokens,
+
             type: MicrocreditTransactionType.ReceiveFund,
             status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
 
@@ -83,11 +84,9 @@ class MicrocreditTransactionsUtil {
             campaign_title: campaign.title,
             support_id: support._id,
             partner_id: (campaign.partner as Partner)._id,
-            partner_name: (campaign.partner as Partner).name,
+            partner_name: (campaign.partner as Partner).name
             /** end: To be Removed in Next Version */
 
-            tokens: 0,
-            payoff: support.initialTokens
         })
         // .catch());
         // if (error) return error;
@@ -130,7 +129,7 @@ class MicrocreditTransactionsUtil {
 
     public createSpendTransaction = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto, support: MicrocreditSupport) => {
         let blockchain_error: Error, blockchain_result: any;
-        [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund(campaign, member, data).catch());
+        [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund(campaign, member, data._tokens).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
         // let error: Error, transaction: MicrocreditTransaction;
@@ -140,7 +139,8 @@ class MicrocreditTransactionsUtil {
 
             ...blockchain_result,
 
-            data: data,
+            // data: data,
+            tokens: data._tokens * (-1),
 
             type: MicrocreditTransactionType.SpendFund,
             status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
@@ -151,10 +151,8 @@ class MicrocreditTransactionsUtil {
             campaign_title: campaign.title,
             support_id: support._id,
             partner_id: (campaign.partner as Partner)._id,
-            partner_name: (campaign.partner as Partner).name,
+            partner_name: (campaign.partner as Partner).name
             /** end: To be Removed in Next Version */
-
-            tokens: data._tokens * (-1)
         })
         // .catch());
         // if (error) return error;
@@ -166,7 +164,7 @@ class MicrocreditTransactionsUtil {
         let blockchain_error: Error, blockchain_result: any;
 
         if (_transaction.type === MicrocreditTransactionType.PromiseFund) {
-            [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as EarnTokensDto).catch());
+            [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.tokens).catch());
             if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
             if (blockchain_result) {
@@ -191,7 +189,7 @@ class MicrocreditTransactionsUtil {
             if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
         }
         else if (_transaction.type === MicrocreditTransactionType.SpendFund) {
-            [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as RedeemTokensDto).catch());
+            [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.tokens * (-1)).catch());
             if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
         }
 

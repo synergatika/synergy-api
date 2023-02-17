@@ -40,16 +40,15 @@ export default class LoyaltyTransactionsUtil {
                 ...blockchain_result,
                 partner: partner,
                 member: member,
-                data: data,
+                // data: data,
+                points: _points,
+                amount: data._amount,
 
                 /** begin: To be Removed in Next Version */
                 partner_id: partner._id,
                 partner_name: partner.name,
                 member_id: member._id,
                 /** end: To be Removed in Next Version */
-
-                points: _points,
-                amount: data._amount,
 
                 status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
                 type: LoyaltyTransactionType.EarnPoints,
@@ -71,7 +70,10 @@ export default class LoyaltyTransactionsUtil {
             partner: partner,
             member: member,
             offer: offer,
-            data: data,
+            // data: data,
+            points: _points * (-1),
+            amount: (data._amount) ? (data._amount) * (-1) : 0,
+            quantity: data.quantity,
 
             ...blockchain_result,
 
@@ -81,11 +83,7 @@ export default class LoyaltyTransactionsUtil {
             member_id: member._id,
             offer_id: (offer) ? offer._id : null,
             offer_title: (offer) ? offer.title : null,
-            quantity: data.quantity,
             /** end: To be Removed in Next Version */
-
-            points: _points * (-1),
-            amount: (data._amount) ? (data._amount) * (-1) : 0,
 
             status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
             type: (offer) ? LoyaltyTransactionType.RedeemPointsOffer : LoyaltyTransactionType.RedeemPoints,

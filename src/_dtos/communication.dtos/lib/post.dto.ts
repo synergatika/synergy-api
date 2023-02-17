@@ -1,4 +1,5 @@
 import { IsString, IsEnum, IsArray, IsOptional } from 'class-validator';
+import { ItemAccess } from '_interfaces';
 
 export class PostDto {
   @IsOptional()
@@ -20,5 +21,5 @@ export class PostDto {
   public contentFiles: string;
 
   @IsEnum(['public', 'private', 'partners'])
-  public access: string;
+  public access: ItemAccess;
 }

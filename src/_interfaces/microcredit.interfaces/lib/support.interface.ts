@@ -5,7 +5,7 @@ import { MicrocreditCampaign } from './campaign.interface';
 import { MicrocreditTransaction } from './transaction.interface';
 import { ObjectId } from 'mongodb';
 
-export enum SupportStatus {
+export enum MicrocreditSupportStatus {
   COMPLETED = 'completed',
   PAID = 'paid',
   UNPAID = 'unpaid'
@@ -43,7 +43,7 @@ export interface MicrocreditSupport {
   currentTokens: number;
 
   payment: SupportPayment;
-  status: SupportStatus;
+  status: MicrocreditSupportStatus;
   // type: string;
   // transactions: MicrocreditTransaction[];
 

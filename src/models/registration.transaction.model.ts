@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 import { Schema } from 'mongoose';
-import { RegistrationTransaction } from '../_interfaces/index';
+import { RegistrationTransaction, RegistrationTransactionType, TransactionStatus } from '../_interfaces/index';
 
 const receiptSchema = new mongoose.Schema({
   transactionHash: String,
@@ -33,13 +33,13 @@ const registrationTransactionSchema = new mongoose.Schema({
   /** end: To be Removed in Next Version */
 
   type: {
-    type: String,
+    type: RegistrationTransactionType,
     enum: ['RegisterMember', 'RegisterPartner', 'RecoverPoints'],
   },
   status: {
-    type: String,
+    type: TransactionStatus,
     enum: ['pending', 'completed'],
-    default: 'pending'
+    default: TransactionStatus.PENDING
   },
 
   /** Blockchain Variables (Optional) */

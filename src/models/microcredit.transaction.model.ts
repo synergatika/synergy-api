@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 import { Schema } from 'mongoose';
-import { MicrocreditTransaction } from '../_interfaces/index';
+import { MicrocreditTransaction, MicrocreditTransactionType, TransactionStatus } from '../_interfaces/index';
 
 const logsSchema = new mongoose.Schema({
   logIndex: Number,
@@ -41,7 +41,7 @@ const microcreditTransactionSchema = new mongoose.Schema({
     ref: 'MicrocreditSupport'
   },
 
-  data: Object,
+  // data: Object,
 
   tokens: {
     type: Number,
@@ -62,13 +62,13 @@ const microcreditTransactionSchema = new mongoose.Schema({
   /** end: To be Removed in Next Version */
 
   type: {
-    type: String,
+    type: MicrocreditTransactionType,
     enum: ['PromiseFund', 'ReceiveFund', 'RevertFund', 'SpendFund'],
   },
   status: {
-    type: String,
+    type: TransactionStatus,
     enum: ['pending', 'completed'],
-    default: 'pending'
+    default: TransactionStatus.PENDING
   },
 
   /** Blockchain Variables (Optional) */

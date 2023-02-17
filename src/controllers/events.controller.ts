@@ -18,7 +18,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import Controller from '../interfaces/controller.interface';
-import { User, Event, Partner } from '../_interfaces/index';
+import { User, Event, Partner, ItemAccess, UserAccess } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -138,9 +138,9 @@ class EventsController implements Controller {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    const access_filter: string[] = ['public'];
-    if (request.user) access_filter.push('private');
-    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+    const access_filter: ItemAccess[] = [ItemAccess.PUBLIC];
+    if (request.user) access_filter.push(ItemAccess.PRIVATE);
+    if (request.user && request.user.access == 'partner') access_filter.push(ItemAccess.PARTNERS);
     /** ***** * ***** */
 
     let error: Error, events: Event[];
@@ -273,9 +273,9 @@ class EventsController implements Controller {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    const access_filter: string[] = ['public'];
-    if (request.user) access_filter.push('private');
-    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+    const access_filter: ItemAccess[] = [ItemAccess.PUBLIC];
+    if (request.user) access_filter.push(ItemAccess.PRIVATE);
+    if (request.user && request.user.access == UserAccess.PARTNER) access_filter.push(ItemAccess.PARTNERS);
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
     /** ***** * ***** */

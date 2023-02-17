@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { Event } from '../_interfaces/index';
+import { Event, ItemAccess } from '../_interfaces/index';
 
 const Schema = mongoose.Schema;
 
@@ -15,9 +15,9 @@ const eventSchema = new mongoose.Schema({
   contentFiles: [String],
   imageURL: String,
   access: {
-    type: String,
+    type: ItemAccess,
     enum: ['public', 'private', 'partners'],
-    default: 'public'
+    default: ItemAccess.PUBLIC
   },
   location: String,
   dateTime: Number

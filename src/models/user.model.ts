@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { User } from '../_interfaces/index';
+import { User, UserAccess } from '../_interfaces/index';
 
 // const microcreditSupportSchema = new mongoose.Schema({
 //   backer_id: String,
@@ -148,9 +148,9 @@ const userSchema = new mongoose.Schema({
   },
 
   access: {
-    type: String,
+    type: UserAccess,
     enum: ['member', 'partner', 'admin'],
-    default: 'member'
+    default: UserAccess.MEMBER
   },
   sector: {
     type: String,

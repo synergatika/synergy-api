@@ -26,8 +26,10 @@ export default class RegistrationTransactionsUtil {
     private isError = (err: unknown): err is Error => err instanceof Error;
 
     public createRegisterMemberTransaction = async (user: User, encryptBy: string) => {
+        const account = serviceInstance.unlockWallet(user.account, encryptBy);
+
         let blockchain_error: Error, blockchain_result: any;
-        [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(user.account).catch());
+        [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(account).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
         // let error: Error, transaction: RegistrationTransaction;
@@ -44,8 +46,10 @@ export default class RegistrationTransactionsUtil {
     }
 
     public createRegisterPartnerTransaction = async (user: User, encryptBy: string) => {
+        const account = serviceInstance.unlockWallet(user.account, encryptBy);
+
         let blockchain_error: Error, blockchain_result: any;
-        [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(user.account).catch());
+        [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(account).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
         // let error: Error, transaction: RegistrationTransaction;
@@ -62,7 +66,7 @@ export default class RegistrationTransactionsUtil {
     }
 
     public updateRegistrationTransaction = async (_transaction: RegistrationTransaction) => {
-        const user: User = _transaction.user;
+        const user: User = _transaction.user as User;
         if (!user) return;
 
         const newAccount: Account = serviceInstance.unlockWallet(user.account, (user.email) ? user.email : user.card);

@@ -289,7 +289,7 @@ private initializeMember = async (auto: boolean, blockchain: boolean, data: any)
     user = {
       ...data,
       password: hashedPassword,
-      access: 'member',
+      access: UserAccess.MEMBER,
       account: account,
       pass_verified: false,
     };
@@ -302,7 +302,7 @@ private initializeMember = async (auto: boolean, blockchain: boolean, data: any)
     user = {
       ...data,
       password: hashedPassword,
-      access: 'member',
+      access: UserAccess.MEMBER,
       pass_verified: false,
     };
   }
@@ -319,7 +319,7 @@ private initializeMember = async (auto: boolean, blockchain: boolean, data: any)
     user = {
       ...data,
       password: hashedPassword,
-      access: 'member',
+      access: UserAccess.MEMBER,
       account: account,
       email_verified: false,
       verificationToken: token.token,
@@ -334,7 +334,7 @@ private initializeMember = async (auto: boolean, blockchain: boolean, data: any)
     user = {
       ...data,
       password: hashedPassword,
-      access: 'member',
+      access: UserAccess.MEMBER,
       email_verified: false,
       verificationToken: token.token,
       verificationExpiration: token.expiresAt,
@@ -362,7 +362,7 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     user = {
       ...data,
       password: hashedPassword,
-      access: 'partner',
+      access: UserAccess.PARTNER,
       account: account,
       pass_verified: false,
     }
@@ -375,7 +375,7 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     user = {
       ...data,
       password: hashedPassword,
-      access: 'partner',
+      access: UserAccess.PARTNER,
       pass_verified: false,
     }
   }
@@ -391,7 +391,7 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     user = {
       ...data,
       password: hashedPassword,
-      access: 'partner',
+      access: UserAccess.PARTNER,
       activated: false,
       account: account,
       email_verified: false,
@@ -407,7 +407,7 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     user = {
       ...data,
       password: hashedPassword,
-      access: 'partner',
+      access:UserAccess.PARTNER,
       activated: false,
       email_verified: false,
       verificationToken: token.token,
@@ -680,13 +680,13 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-       /** Transaction Block (Registration - Member) */
- let transaction_error: Error, transaction_result;
+    /** Transaction Block (Registration - Member) */
+    let transaction_error: Error, transaction_result;
     [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterMemberTransaction(user, encryptBy).catch());
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
     
-          /** Email Block (Authentication - Registration) */
- let email_error: Error, email_result: any;
+    /** Email Block (Authentication - Registration) */
+    let email_error: Error, email_result: any;
     [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'one-click', null).catch());
     if (email_error) throw(`EMAIL ERROR - UserRegistration: ${email_error}`);
     //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
@@ -979,7 +979,7 @@ let email_error: Error, email_result: any;
         tempData: { token: token.token },
         code: 202
       });
-    } else if (!user.activated && user.access == 'member') {
+    } else if (!user.activated && user.access == UserAccess.MEMBER) {
       response.status(202).send({
         data: { action: 'need_account_activation' },
         code: 202

@@ -18,7 +18,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, Post, Partner } from '../_interfaces/index';
+import { User, Post, Partner, ItemAccess } from '../_interfaces/index';
 
 /**
  * Middlewares
@@ -129,14 +129,14 @@ class PostsController implements Controller {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    const access_filter: string[] = ['public'];
-    if (request.user) access_filter.push('private')
-    if (request.user && request.user.access) access_filter.push('partners')
+    const access_filter: ItemAccess[] = [ItemAccess.PUBLIC];
+    if (request.user) access_filter.push(ItemAccess.PRIVATE)
+    if (request.user && request.user.access) access_filter.push(ItemAccess.PARTNERS)
     /** ***** * ***** */
 
     let error: Error, posts: Post[];
     [error, posts] = await to(this.postModel.find(
-      { 'access': { $in: access_filter } }
+      { 'access': { "$in": access_filter } }
     )
       .populate([{
         path: 'partner'
@@ -220,9 +220,9 @@ class PostsController implements Controller {
       limit: number, skip: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    const access_filter: string[] = ['public'];
-    if (request.user) access_filter.push('private');
-    if (request.user && request.user.access === 'partner') access_filter.push('partners');
+    const access_filter: ItemAccess[] = [ItemAccess.PUBLIC];
+    if (request.user) access_filter.push(ItemAccess.PRIVATE);
+    if (request.user && request.user.access === 'partner') access_filter.push(ItemAccess.PARTNERS);
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
 

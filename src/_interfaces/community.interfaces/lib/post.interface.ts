@@ -1,4 +1,4 @@
-import { Partner } from '../../index';
+import { ItemAccess, Partner } from '../../index';
 import { ObjectId } from 'mongodb';
 
 export interface Post {
@@ -9,7 +9,7 @@ export interface Post {
   subtitle: string;
   description: string;
   contentFiles: string[];
-  access: string;
+  access: ItemAccess;
 
   createdAt?: Date;
   updatedAt?: Date;

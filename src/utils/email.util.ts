@@ -21,7 +21,7 @@ import { UnprocessableEntityException } from '../_exceptions/index';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 
 import Translation from '../translation';
-import { User, MicrocreditCampaign, MicrocreditSupport, SupportPayment, SupportStatus } from '../_interfaces/index';
+import { User, MicrocreditCampaign, MicrocreditSupport, SupportPayment, MicrocreditSupportStatus } from '../_interfaces/index';
 import { EarnTokensDto, RedeemTokensDto } from '../_dtos/index';
 
 class EmailsUtil {
@@ -869,14 +869,14 @@ class EmailsUtil {
         ...this.translation(lang).change_support_status,
         logo_url: `${process.env.LOGO_URL}`,
         home_page: `${process.env.APP_URL}`,
-        title: (support.status == SupportStatus.PAID) ?
+        title: (support.status == MicrocreditSupportStatus.PAID) ?
           `'${this.translation(lang).change_support_status.title[0]}'` : `'${this.translation(lang).change_support_status.title[1]}'`
       },
     }
 
     console.log("# changeSupportStatus")
     console.log("email_to", email_to)
-    console.log("title", (support.status == SupportStatus.PAID) ?
+    console.log("title", (support.status == MicrocreditSupportStatus.PAID) ?
       `'${this.translation(lang).change_support_status.title[0]}'` : `'${this.translation(lang).change_support_status.title[1]}'`)
     console.log("---------------");
 

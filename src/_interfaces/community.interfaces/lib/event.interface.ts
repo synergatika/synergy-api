@@ -1,4 +1,4 @@
-import { Partner } from '../../index';
+import { ItemAccess, Partner } from '../../index';
 import { ObjectId } from 'mongodb';
 
 export interface Event {
@@ -9,7 +9,7 @@ export interface Event {
   subtitle: string;
   description: string;
   contentFiles: string[];
-  access: string;
+  access: ItemAccess;
   location: string;
   dateTime: number;
 

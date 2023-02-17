@@ -10,7 +10,7 @@ import { ForbiddenException } from '../../_exceptions/index';
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import { User } from '../../_interfaces/index';
+import { User, UserAccess } from '../../_interfaces/index';
 
 /**
  * Models
@@ -39,7 +39,7 @@ class AccessMiddleware {
 
   static onlyAsAdmin = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const user: User = request.user;
-    if (user.access === 'admin') {
+    if (user.access === UserAccess.ADMIN) {
       next();
     } else {
       next(new ForbiddenException('Access to that resource is forbidden.'));
@@ -48,7 +48,7 @@ class AccessMiddleware {
 
   static onlyAsPartner = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const user: User = request.user;
-    if (user.access === 'partner') {
+    if (user.access === UserAccess.PARTNER) {
       next();
     } else {
       next(new ForbiddenException('Access to that resource is forbidden.'));
@@ -57,7 +57,7 @@ class AccessMiddleware {
 
   static onlyAsAdminOrPartner = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const user: User = request.user;
-    if ((user.access === 'admin') || (user.access === 'partner')) {
+    if ((user.access === UserAccess.ADMIN) || (user.access === UserAccess.PARTNER)) {
       next();
     } else {
       next(new ForbiddenException('Access to that resource is forbidden.'));
@@ -66,7 +66,7 @@ class AccessMiddleware {
 
   static onlyAsMember = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const user: User = request.user;
-    if (user.access === 'member') {
+    if (user.access === UserAccess.MEMBER) {
       next();
     } else {
       next(new ForbiddenException('Access to that resource is forbidden.'));

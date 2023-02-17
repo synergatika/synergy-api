@@ -14,7 +14,7 @@ import { NotFoundException } from '../../_exceptions/index';
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import { Partner, LoyaltyOffer, MicrocreditCampaign, MicrocreditSupport, MicrocreditTokens, SupportStatus } from '../../_interfaces/index';
+import { Partner, LoyaltyOffer, MicrocreditCampaign, MicrocreditSupport, MicrocreditTokens, MicrocreditSupportStatus } from '../../_interfaces/index';
 
 class CheckMiddleware {
 
@@ -122,10 +122,10 @@ class CheckMiddleware {
     if (campaign.startsAt > seconds) {
       return next(new NotFoundException('CAMPAIGN_NOT_STARTED')); //"Campaign's supporting period has not yet started",
     }
-    if ((support.status == SupportStatus.PAID) && (support.initialTokens - support.currentTokens > 0)) {
+    if ((support.status == MicrocreditSupportStatus.PAID) && (support.initialTokens - support.currentTokens > 0)) {
       return next(new NotFoundException('TOKENS_REDEEMED')); //"User has already redeem some tokens",
     }
-    if ((support.status == SupportStatus.PAID) && (campaign.redeemStarts < seconds)) {
+    if ((support.status == MicrocreditSupportStatus.PAID) && (campaign.redeemStarts < seconds)) {
       return next(new NotFoundException('CAMPAIGN_REDEEM_STARTED')); //"Campaign's redeeming has started",
     }
     if (campaign.redeemEnds < seconds) {
@@ -151,7 +151,7 @@ class CheckMiddleware {
     if (campaign.redeemEnds < seconds) {
       return next(new NotFoundException('CAMPAIGN_REDEEM_ENDED')); //"Campaign's redeeming period has expired",
     }
-    if (support.status === SupportStatus.UNPAID) {
+    if (support.status === MicrocreditSupportStatus.UNPAID) {
       return next(new NotFoundException('SUPPORT_NOT_PAID'));  // "User has not paid for the support",
     }
     // if ((support.type === 'PromiseFund') || (support.type === 'RevertFund')) {

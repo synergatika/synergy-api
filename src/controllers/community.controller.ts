@@ -24,7 +24,7 @@ import { UnprocessableEntityException } from '../_exceptions/index';
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, PostEvent, Partner } from '../_interfaces/index';
+import { User, PostEvent, Partner, ItemAccess, UserAccess } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -149,11 +149,11 @@ class CommunityController implements Controller {
       index: number, count: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    let access_filter: string[] = ['public'];
-    if (request.user) access_filter.push('private');
-    if (request.user && request.user.access == 'partner') access_filter.push('partners');
-    if (accessParam && accessParam == '1') access_filter = ['partners'];
-    if (accessParam && accessParam == '0') access_filter = ['public', 'private'];
+    let access_filter: ItemAccess[] = [ItemAccess.PUBLIC];
+    if (request.user) access_filter.push(ItemAccess.PRIVATE);
+    if (request.user && request.user.access == UserAccess.PARTNER) access_filter.push(ItemAccess.PARTNERS);
+    if (accessParam && accessParam == '1') access_filter = [ItemAccess.PARTNERS];
+    if (accessParam && accessParam == '0') access_filter = [ItemAccess.PUBLIC, ItemAccess.PRIVATE];
     /** ***** * ***** */
     console.log(access_filter)
     let error: Error, posts: PostEvent[], events: PostEvent[];
@@ -247,9 +247,9 @@ class CommunityController implements Controller {
       index: number, count: number, greater: number, type: boolean
     } = offsetParams(params);
 
-    const access_filter: string[] = ['public'];
-    if (request.user) access_filter.push('private');
-    if (request.user && request.user.access == 'partner') access_filter.push('partners');
+    const access_filter: ItemAccess[] = [ItemAccess.PUBLIC];
+    if (request.user) access_filter.push(ItemAccess.PRIVATE);
+    if (request.user && request.user.access == UserAccess.PARTNER) access_filter.push(ItemAccess.PARTNERS);
 
     const partner_filter = ObjectId.isValid(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
 

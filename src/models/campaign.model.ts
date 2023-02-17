@@ -1,5 +1,5 @@
 import * as mongoose from 'mongoose';
-import { MicrocreditCampaign, TransactionStatus } from '../_interfaces/index';
+import { ItemAccess, MicrocreditCampaign, MicrocreditCampaignStatus, TransactionStatus } from '../_interfaces/index';
 
 const Schema = mongoose.Schema;
 
@@ -18,7 +18,12 @@ const microcreditCampaignSchema = new mongoose.Schema({
 
   category: String,
   imageURL: String,
-  access: String,
+
+  access: {
+    type: ItemAccess,
+    enum: ['public', 'private', 'partners'],
+    default: ItemAccess.PUBLIC
+  },
 
   quantitative: Boolean,
   redeemable: {
@@ -36,14 +41,14 @@ const microcreditCampaignSchema = new mongoose.Schema({
   expiresAt: Number,
 
   registered: {
-    type: String,
+    type: TransactionStatus,
     enum: ['pending', 'completed'],
-    default: 'pending'
+    default: TransactionStatus.PENDING
   },
   status: {
-    type: String,
+    type: MicrocreditCampaignStatus,
     enum: ['draft', 'published'],
-    default: 'draft'
+    default: MicrocreditCampaignStatus.DRAFT
   },
 
   /** Blckchain Variables */

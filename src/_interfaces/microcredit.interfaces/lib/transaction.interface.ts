@@ -1,11 +1,7 @@
 import { EarnTokensDto, RedeemTokensDto } from "_dtos";
 import { MicrocreditSupport } from "./support.interface";
 import { ObjectId } from 'mongodb';
-
-export enum TransactionStatus {
-  COMPLETED = 'completed',
-  PENDING = 'pending'
-}
+import { TransactionStatus } from "_interfaces/authentication.interfaces";
 
 export enum MicrocreditTransactionType {
   PromiseFund = 'PromiseFund',
@@ -21,7 +17,9 @@ export interface MicrocreditTransaction {
   support: MicrocreditSupport | ObjectId,
   // member: Member,
 
-  data: EarnTokensDto | RedeemTokensDto;
+  // data: EarnTokensDto | RedeemTokensDto;
+  tokens: number;
+  payoff: number;
 
   /** begin: To be Removed in Next Version */
   partner_id: string;

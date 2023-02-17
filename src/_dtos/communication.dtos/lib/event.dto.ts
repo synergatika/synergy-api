@@ -1,4 +1,5 @@
 import { IsString, IsEnum, IsArray, IsOptional } from 'class-validator';
+import { ItemAccess } from '_interfaces';
 
 export class EventDto {
   @IsOptional()
@@ -20,7 +21,7 @@ export class EventDto {
   public contentFiles: string;
 
   @IsEnum(['public', 'private', 'partners'])
-  public access: string;
+  public access: ItemAccess;
 
   @IsString()
   public location: string;

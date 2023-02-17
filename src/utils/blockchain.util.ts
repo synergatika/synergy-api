@@ -111,12 +111,12 @@ class BlockchainRegistrationService {
     );
   }
 
-  public registerPromisedFund = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto) => {
+  public registerPromisedFund = async (campaign: MicrocreditCampaign, member: User, tokens: number) => {
     if (!this.blockchain) return null;
 
     return serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
-        return instance.promiseToFund('0x' + member.account.address, data._amount, serviceInstance.address);
+        return instance.promiseToFund('0x' + member.account.address, tokens, serviceInstance.address);
       })
       .catch((error) => {
         return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
@@ -147,13 +147,13 @@ class BlockchainRegistrationService {
       });
   }
 
-  public registerSpentFund = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto) => {
+  public registerSpentFund = async (campaign: MicrocreditCampaign, member: Member, tokens: number) => {
     if (!this.blockchain) return null;
 
     if (campaign.quantitative) {
       return serviceInstance.getMicrocredit(campaign.address)
         .then((instance) => {
-          return instance.spend('0x' + member.account.address, data._tokens, serviceInstance.address)
+          return instance.spend('0x' + member.account.address, tokens, serviceInstance.address)
         })
         .catch((error) => {
           return error; // next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
