@@ -155,7 +155,7 @@ class CommunityController implements Controller {
     if (accessParam && accessParam == '1') access_filter = [ItemAccess.PARTNERS];
     if (accessParam && accessParam == '0') access_filter = [ItemAccess.PUBLIC, ItemAccess.PRIVATE];
     /** ***** * ***** */
-    console.log(access_filter)
+
     let error: Error, posts: PostEvent[], events: PostEvent[];
     [error, posts] = await to(this.postModel.find(
       {
