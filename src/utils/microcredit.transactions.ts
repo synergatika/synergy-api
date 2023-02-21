@@ -18,15 +18,90 @@ import { EarnTokensDto, RedeemTokensDto } from '../_dtos/index';
 /**
  * Interfaces
  */
-import { User, Partner, Member, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, MicrocreditTransactionType, TransactionStatus } from '../_interfaces/index';
+import { User, Partner, Member, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, MicrocreditTransactionType, TransactionStatus, UserAccess } from '../_interfaces/index';
 
 /**
  * Models
  */
 import transactionModel from '../models/microcredit.transaction.model';
+import supportModel from '../models/support.model';
+import campaignModel from '../models/campaign.model';
 
 class MicrocreditTransactionsUtil {
     private isError = (err: unknown): err is Error => err instanceof Error;
+
+    public readCampaignTransactions = async (_campaign: MicrocreditCampaign, _types: MicrocreditTransactionType[], _date: string, _paging: { page: string, size: string }) => {
+        const campaign: MicrocreditCampaign = _campaign;
+
+        /** Filters */
+        var d = new Date(_date).setHours(0, 0, 0, 0);
+        var min = (_date != '0') ? (new Date(d)).setDate((new Date(d)).getDate()) : new Date('2020-01-01');
+        var max = (_date != '0') ? (new Date(d)).setDate((new Date(d)).getDate() + 1) : (new Date()).setDate((new Date).getDate() + 1);
+        /** ***** * ***** */
+
+        const supports: MicrocreditSupport[] = await supportModel.find({ campaign: campaign._id });
+        console.log("I found Supports");
+        console.log(supports);
+
+        return await transactionModel.find({
+            "$and": [
+                { support: { "$in": supports } },
+                { type: { "$in": [..._types] } },
+                { createdAt: { "$lt": new Date(max), "$gt": new Date(min) } }
+            ]
+        }).populate({
+            "path": "support",
+            "populate": [{
+                "path": "member"
+            }, {
+                "path": "campaign",
+                "populate": {
+                    "path": "partner"
+                }
+            }]
+        }).sort('-createdAt')
+            .limit(parseInt(_paging['size'] as string))
+            .skip((parseInt(_paging['page'] as string) - 1) * parseInt(_paging['size'] as string));
+    }
+
+    public readMicrocreditTransactions = async (_user: User, _types: MicrocreditTransactionType[], _date: string, _paging: { page: string, size: string }) => {
+        const user: User = _user;
+
+        let supports: MicrocreditSupport[] = [];
+
+        /** Filters */
+        if (user.access === UserAccess.MEMBER) {
+            supports = await supportModel.find({ member: user._id });
+        } else if (user.access === UserAccess.PARTNER) {
+            let campaigns: MicrocreditCampaign[] = await campaignModel.find({ partner: user._id });
+            supports = await supportModel.find({ campaign: { "$in": campaigns } });
+        }
+
+        var d = new Date(_date).setHours(0, 0, 0, 0);
+        var min = (_date != '0') ? (new Date(d)).setDate((new Date(d)).getDate()) : new Date('2020-01-01');
+        var max = (_date != '0') ? (new Date(d)).setDate((new Date(d)).getDate() + 1) : (new Date()).setDate((new Date).getDate() + 1);
+        /** ***** * ***** */
+
+        return await transactionModel.find({
+            "$and": [
+                { support: { "$in": supports } },
+                { type: { "$in": [..._types] } },
+                { createdAt: { "$lt": new Date(max), "$gt": new Date(min) } }
+            ]
+        }).populate({
+            "path": "support",
+            "populate": [{
+                "path": "member"
+            }, {
+                "path": "campaign",
+                "populate": {
+                    "path": "partner"
+                }
+            }]
+        }).sort('createdAt')
+            .limit(parseInt(_paging['size'] as string))
+            .skip((parseInt(_paging['page'] as string) - 1) * parseInt(_paging['size'] as string));
+    }
 
     public createPromiseTransaction = async (campaign: MicrocreditCampaign, member: User, data: EarnTokensDto, support_id: MicrocreditSupport['_id']) => {
         let blockchain_error: Error, blockchain_result: any;

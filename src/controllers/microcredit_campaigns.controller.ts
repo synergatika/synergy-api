@@ -2,6 +2,7 @@ import * as express from 'express';
 import to from 'await-to-ts';
 import { ObjectId } from 'mongodb';
 import path from 'path';
+import { Parser } from 'json2csv';
 
 /**
  * Blockchain Service
@@ -34,7 +35,7 @@ import { NotFoundException, UnprocessableEntityException } from '../_exceptions/
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, MicrocreditCampaign, MicrocreditTokens, MicrocreditStatistics, Partner, TransactionStatus, MicrocreditTransactionType, ItemAccess, UserAccess, MicrocreditCampaignStatus } from '../_interfaces/index';
+import { User, MicrocreditCampaign, MicrocreditTokens, MicrocreditStatistics, Partner, TransactionStatus, MicrocreditTransactionType, ItemAccess, UserAccess, MicrocreditCampaignStatus, MicrocreditTransaction, MicrocreditSupport, Member, MicrocreditSupportStatus } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -78,6 +79,12 @@ import supportModel from '../models/support.model';
  */
 import FilesUtil from '../utils/files.util';
 const filesUtil = new FilesUtil();
+
+/**
+ * Transactions Util
+ */
+import MicrocreditTransactionUtil from '../utils/microcredit.transactions';
+const transactionsUtil = new MicrocreditTransactionUtil();
 
 class MicrocreditCampaignsController implements Controller {
   public path = '/microcredit/campaigns';
@@ -158,6 +165,16 @@ class MicrocreditCampaignsController implements Controller {
       itemsMiddleware.microcreditCampaign,
       checkMiddleware.canEditMicrocredit,
       this.deleteCampaign);
+
+    this.router.get(`${this.path}/:partner_id/:campaign_id/statistics/:date`,
+      validationParamsMiddleware(CampaignID),
+      itemsMiddleware.microcreditCampaign,
+      this.readCampaignStatistics);
+
+    this.router.get(`${this.path}/:partner_id/:campaign_id/statistics/:date/:type/export`,
+      validationParamsMiddleware(CampaignID),
+      itemsMiddleware.microcreditCampaign,
+      this.exportStatistics);
 
     this.router.post(`${this.path}/image`,
       authMiddleware,
@@ -271,18 +288,18 @@ class MicrocreditCampaignsController implements Controller {
     // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
+    // const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
 
-    const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
-      Object.assign({}, a,
-        {
-          tokens: (tokens).find((b: MicrocreditTokens) => (b._id).toString() === (a._id).toString()),
-        }
-      )
-    );
+    // const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
+    //   Object.assign({}, a,
+    //     {
+    //       tokens: (tokens).find((b: MicrocreditTokens) => (b._id).toString() === (a._id).toString()),
+    //     }
+    //   )
+    // );
 
     response.status(200).send({
-      data: campaignsWithStatistics,
+      data: campaigns,
       code: 200
     });
   }
@@ -452,17 +469,17 @@ class MicrocreditCampaignsController implements Controller {
     // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
-    const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
-      Object.assign({}, a,
-        {
-          tokens: (tokens).find((b: MicrocreditTokens) => (b._id).toString() === (a._id).toString()),
-        }
-      )
-    );
+    // const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
+    // const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
+    //   Object.assign({}, a,
+    //     {
+    //       tokens: (tokens).find((b: MicrocreditTokens) => (b._id).toString() === (a._id).toString()),
+    //     }
+    //   )
+    // );
 
     response.status(200).send({
-      data: campaignsWithStatistics,
+      data: campaigns,
       code: 200
     });
   }
@@ -476,8 +493,8 @@ class MicrocreditCampaignsController implements Controller {
     const microcredit_filter = this.checkObjectIdValidity(campaign_id) ? { '_id': new ObjectId(campaign_id) } : { 'slug': campaign_id };
     /** ***** * ***** */
 
-    let error: Error, campaigns: MicrocreditCampaign[];
-    [error, campaigns] = await to(this.microcreditModel.find(
+    let error: Error, campaign: MicrocreditCampaign;
+    [error, campaign] = await to(this.microcreditModel.findOne(
       microcredit_filter
     )
       .populate([{
@@ -485,6 +502,55 @@ class MicrocreditCampaignsController implements Controller {
       }])
       .lean()
       .catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+
+
+    let tokens: any[];
+    [error, tokens] = await to(this.supportModel.aggregate(
+      [
+        {
+          $match: {
+            'campaign': campaign._id
+          }
+        }, {
+          $project: {
+            _id: "$status",
+            status: "$status",
+            initial: "$initialTokens",
+            current: "$currentTokens",
+          }
+        },
+        {
+          $group: {
+            _id: "$status",
+            initialTokens: { $sum: '$initial' },
+            currentTokens: { $sum: '$current' },
+          }
+        }
+      ]
+    ).exec().catch());
+    console.log("tokens");
+    console.log(tokens);
+    console.log("------");
+    var total = tokens.reduce((accumulator, object) => {
+      return accumulator + object.initialTokens;
+    }, 0);
+    var paid = tokens.filter(i => (i._id === MicrocreditSupportStatus.COMPLETED) || (i._id === MicrocreditSupportStatus.PAID)).reduce((accumulator, object) => {
+      return accumulator + object.initialTokens;
+    }, 0);
+    var current = tokens.filter(i => (i._id === MicrocreditSupportStatus.COMPLETED) || (i._id === MicrocreditSupportStatus.PAID)).reduce((accumulator, object) => {
+      return accumulator + object.currentTokens;
+    }, 0);
+    console.log("tokens");
+    console.log("total", total);
+    console.log("paid", paid);
+    console.log("current", current);
+    console.log("------");
+    response.status(200).send({
+      data: { ...campaign, tokens: { total, paid, current } },
+      code: 200
+    });
     // [error, campaigns] = await to(this.user.aggregate([{
     //   $unwind: '$microcredit'
     // }, {
@@ -501,39 +567,34 @@ class MicrocreditCampaignsController implements Controller {
     //     ...this.projectMicrocredit()
     //   }
     // }]).exec().catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    else if (!campaigns.length) {
-      return next(new NotFoundException('CAMPAIGN_NOT_EXIST'));
-    }
+    // else if (!campaigns.length) {
+    //   return next(new NotFoundException('CAMPAIGN_NOT_EXIST'));
+    // }
 
-    const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
-    //const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
-    const statisticsPromise: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'ReceiveFund', 'confirmed');
-    const statisticsRedeem: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'SpendFund', 'redeemed');
+    // const tokens: MicrocreditTokens[] = await this.readTokens(campaigns);
+    // //const orderedTokens: Tokens[] = await this.readTokens(campaigns, 'order');
+    // const statisticsPromise: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'ReceiveFund', 'confirmed');
+    // const statisticsRedeem: MicrocreditStatistics[] = await this.readStatistics(campaigns, 'SpendFund', 'redeemed');
 
-    var x = await this.readStatistics2(campaigns)
-    console.log("Read Campaign - New Statistics");
-    console.log(x);
+    // var x = await this.readStatistics2(campaigns)
+    // console.log("Read Campaign - New Statistics");
+    // console.log(x);
 
-    const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
-      Object.assign({}, a,
-        {
-          tokens: (tokens).find((b: MicrocreditTokens) => (b._id).toString() === (a._id).toString()),
-          //orderedTokens: (orderedTokens).find((c: Tokens) => (c._id).toString() === (a.campaign_id).toString()),
-          statistics: {
-            earned: (statisticsPromise).find((e: MicrocreditStatistics) => (e._id).toString() === (a._id).toString()),
-            redeemed: (statisticsRedeem).find((d: MicrocreditStatistics) => (d._id).toString() === (a._id).toString()),
-          }
-          // statisticsPromise: (statisticsPromise).find((e: MicrocreditCampaignStatistics) => (e._id).toString() === (a.campaign_id).toString()),
-          // statisticsRedeem: (statisticsRedeem).find((d: MicrocreditCampaignStatistics) => (d._id).toString() === (a.campaign_id).toString()),
-        }
-      )
-    );
+    // const campaignsWithStatistics = campaigns.map((a: MicrocreditCampaign) =>
+    //   Object.assign({}, a,
+    //     {
+    //       tokens: (tokens).find((b: MicrocreditTokens) => (b._id).toString() === (a._id).toString()),
+    //       //orderedTokens: (orderedTokens).find((c: Tokens) => (c._id).toString() === (a.campaign_id).toString()),
+    //       statistics: {
+    //         earned: (statisticsPromise).find((e: MicrocreditStatistics) => (e._id).toString() === (a._id).toString()),
+    //         redeemed: (statisticsRedeem).find((d: MicrocreditStatistics) => (d._id).toString() === (a._id).toString()),
+    //       }
+    //       // statisticsPromise: (statisticsPromise).find((e: MicrocreditCampaignStatistics) => (e._id).toString() === (a.campaign_id).toString()),
+    //       // statisticsRedeem: (statisticsRedeem).find((d: MicrocreditCampaignStatistics) => (d._id).toString() === (a.campaign_id).toString()),
+    //     }
+    //   )
+    // );
 
-    response.status(200).send({
-      data: campaignsWithStatistics[0],
-      code: 200
-    });
   }
 
   private updateCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -639,320 +700,441 @@ class MicrocreditCampaignsController implements Controller {
   * Tokens & Statistics Section 
   *
   * */
-  private readTokens2 = async (campaigns: MicrocreditCampaign[]) => {
-    let error: Error, tokens: MicrocreditTokens[];
-    [error, tokens] = await to(this.supportModel.aggregate(
-      [
-        {
-          $match: {
-            'campaign': { $in: campaigns.map(a => a._id) }
-          }
-        }, {
-          $project: {
-            _id: "$campaign",
-            campaign: 1,
-            initial: "$initialTokens",
-            paid: { $cond: [{ $or: [{ $eq: ['$status', 'paid'] }, { $eq: ['$type', 'completed'] }] }, '$initialTokens', 0] },
-            current: "$currentTokens",
-            status: "$status",
-          }
-        },
-        {
-          $group: {
-            _id: "$campaign",
-            earnedTokens: { $sum: '$initial' },
-            paidTokens: { $sum: '$paid' },
-            redeemedTokens: { $sum: '$current' }
-          }
-        }
-      ]
-    ).exec().catch());
+  // private readTokens2 = async (campaigns: MicrocreditCampaign[]) => {
+  //   let error: Error, tokens: MicrocreditTokens[];
+  //   [error, tokens] = await to(this.supportModel.aggregate(
+  //     [
+  //       {
+  //         $match: {
+  //           'campaign': { $in: campaigns.map(a => a._id) }
+  //         }
+  //       }, {
+  //         $project: {
+  //           _id: "$campaign",
+  //           campaign: 1,
+  //           initial: "$initialTokens",
+  //           paid: { $cond: [{ $or: [{ $eq: ['$status', 'paid'] }, { $eq: ['$type', 'completed'] }] }, '$initialTokens', 0] },
+  //           current: "$currentTokens",
+  //           status: "$status",
+  //         }
+  //       },
+  //       {
+  //         $group: {
+  //           _id: "$campaign",
+  //           earnedTokens: { $sum: '$initial' },
+  //           paidTokens: { $sum: '$paid' },
+  //           redeemedTokens: { $sum: '$current' }
+  //         }
+  //       }
+  //     ]
+  //   ).exec().catch());
 
-  }
+  // }
 
-  private readTokens = async (campaigns: MicrocreditCampaign[]) => {
+  // private readTokens = async (campaigns: MicrocreditCampaign[]) => {
 
-    let error: Error, tokens: MicrocreditTokens[];
-    [error, tokens] = await to(this.transaction.aggregate(
-      [
-        {
-          "$match": {
-            'campaign_id': { $in: campaigns.map(a => (a._id).toString()) }
-          }
-        }, {
-          "$project": {
-            _id: "$campaign_id",
-            campaign_id: 1,
-            earned: { $cond: [{ $eq: ['$type', 'PromiseFund'] }, '$tokens', 0] },
-            paid: { $cond: [{ $or: [{ $eq: ['$type', 'ReceiveFund'] }, { $eq: ['$type', 'RevertFund'] }] }, '$payoff', 0] },
-            redeemed: { $cond: [{ $eq: ['$type', 'SpendFund'] }, '$tokens', 0] }
-          }
-        },
-        {
-          "$group": {
-            _id: "$campaign_id",
-            earnedTokens: { $sum: '$earned' },
-            paidTokens: { $sum: '$paid' },
-            redeemedTokens: { $sum: '$redeemed' }
-          }
-        }]
-    ).exec().catch());
-    if (error) return [];
+  //   let error: Error, tokens: MicrocreditTokens[];
+  //   [error, tokens] = await to(this.transaction.aggregate(
+  //     [
+  //       {
+  //         "$match": {
+  //           'campaign_id': { $in: campaigns.map(a => (a._id).toString()) }
+  //         }
+  //       }, {
+  //         "$project": {
+  //           _id: "$campaign_id",
+  //           campaign_id: 1,
+  //           earned: { $cond: [{ $eq: ['$type', 'PromiseFund'] }, '$tokens', 0] },
+  //           paid: { $cond: [{ $or: [{ $eq: ['$type', 'ReceiveFund'] }, { $eq: ['$type', 'RevertFund'] }] }, '$payoff', 0] },
+  //           redeemed: { $cond: [{ $eq: ['$type', 'SpendFund'] }, '$tokens', 0] }
+  //         }
+  //       },
+  //       {
+  //         "$group": {
+  //           _id: "$campaign_id",
+  //           earnedTokens: { $sum: '$earned' },
+  //           paidTokens: { $sum: '$paid' },
+  //           redeemedTokens: { $sum: '$redeemed' }
+  //         }
+  //       }]
+  //   ).exec().catch());
+  //   if (error) return [];
 
-    campaigns.forEach((el: MicrocreditCampaign) => {
-      if (tokens.findIndex(obj => obj._id == el._id) < 1)
-        tokens.push({ _id: el._id, earnedTokens: '0', paidTokens: '0', redeemedTokens: '0' })
-    });
-    return tokens;
-  }
+  //   campaigns.forEach((el: MicrocreditCampaign) => {
+  //     if (tokens.findIndex(obj => obj._id == el._id) < 1)
+  //       tokens.push({ _id: el._id, earnedTokens: '0', paidTokens: '0', redeemedTokens: '0' })
+  //   });
+  //   return tokens;
+  // }
 
-  private readRevertSupports = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
-    let error: Error, supports: any[];
-    [error, supports] = await to(this.transaction.aggregate([
-      {
-        $match: {
-          'campaign_id': { $in: campaigns.map(a => (a._id).toString()) }
-        },
+  // private readRevertSupports = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
+  //   let error: Error, supports: any[];
+  //   [error, supports] = await to(this.transaction.aggregate([
+  //     {
+  //       $match: {
+  //         'campaign_id': { $in: campaigns.map(a => (a._id).toString()) }
+  //       },
+  //     },
+  //     { $sort: { status: 1 } },
+  //     {
+  //       $group:
+  //       {
+  //         _id: "$support_id",
+  //         campaign_id: { '$first': "$campaign_id" },
+  //         initialTokens: { '$first': "$tokens" },
+  //         currentTokens: { '$sum': '$tokens' },
+  //         method: { '$first': "$method" },
+  //         payment_id: { '$first': "$payment_id" },
+  //         type: { '$last': "$type" },
+  //         createdAt: { '$first': "$createdAt" },
+  //       }
+  //     }
+  //   ]).exec().catch());
+
+  //   return supports.filter((o: any) => { return o.type == 'RevertFund' })
+  // }
+
+  private readCampaignStatistics = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const campaign: MicrocreditCampaign = response.locals.campaign;
+    const date = request.params['date'];
+    const { page, size } = request.query;
+
+    let error: Error, transactions: MicrocreditTransaction[];
+    [error, transactions] = await to(transactionsUtil.readCampaignTransactions(campaign, [MicrocreditTransactionType.PromiseFund, MicrocreditTransactionType.ReceiveFund, MicrocreditTransactionType.RevertFund, MicrocreditTransactionType.SpendFund], date, { page: page as string, size: size as string })).catch();
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    console.log("Transactions")
+    console.log(transactions)
+
+    var promise = transactions.filter(s => s.type === MicrocreditTransactionType.PromiseFund);
+    var receive = transactions.filter(s => s.type === MicrocreditTransactionType.ReceiveFund);
+    var revert = transactions.filter(s => s.type === MicrocreditTransactionType.RevertFund);
+    var spend = transactions.filter(s => s.type === MicrocreditTransactionType.SpendFund);
+
+    let result = {
+      promise: {
+        tokens: promise.reduce((accumulator, object) => {
+          return accumulator + object.tokens;
+        }, 0),
+        payoff: 0,
+        uniqueUsers: [...new Set(promise.map(item => ((item.support as MicrocreditSupport).member as Member)._id))],
+        uniqueSupports: [...new Set(promise.map(item => (item.support as MicrocreditSupport)._id))]
       },
-      { $sort: { status: 1 } },
+      receive: {
+        tokens: 0,
+        payoff: receive.reduce((accumulator, object) => {
+          return accumulator + object.payoff;
+        }, 0),
+        uniqueUsers: [...new Set(receive.map(item => ((item.support as MicrocreditSupport).member as Member)._id))],
+        uniqueSupports: [...new Set(receive.map(item => (item.support as MicrocreditSupport)._id))]
+      },
+      revert: {
+        tokens: 0,
+        payoff: revert.reduce((accumulator, object) => {
+          return accumulator + object.payoff;
+        }, 0),
+        uniqueUsers: [...new Set(revert.map(item => ((item.support as MicrocreditSupport).member as Member)._id))],
+        uniqueSupports: [...new Set(revert.map(item => (item.support as MicrocreditSupport)._id))]
+      },
+      spend: {
+        tokens: spend.reduce((accumulator, object) => {
+          return accumulator + object.tokens;
+        }, 0),
+        payoff: 0,
+        uniqueUsers: [...new Set(spend.map(item => ((item.support as MicrocreditSupport).member as Member)._id))],
+        uniqueSupports: [...new Set(spend.map(item => (item.support as MicrocreditSupport)._id))]
+      },
+      dates: [...new Set(transactions.map(item => this.dateConvert(item.createdAt)))]
+    }
+
+    response.status(200).send({
+      data: result,
+      code: 200
+    });
+  }
+
+  private exportStatistics = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const campaign: MicrocreditCampaign = response.locals.campaign;
+    const date = request.params['date'];
+    const type = request.params['type'] === 'receive' ? MicrocreditTransactionType.ReceiveFund : MicrocreditTransactionType.SpendFund;
+    const { page, size } = request.query;
+
+    let error: Error, transactions: MicrocreditTransaction[];
+    [error, transactions] = await to(transactionsUtil.readCampaignTransactions(campaign, [type], date, { page: page as string, size: size as string })).catch();
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+    console.log("Export Campaign")
+
+    const total = transactions;
+
+    let result = {
+      total: {
+        tokens: 0,
+        payoff: total.reduce((accumulator, object) => {
+          return accumulator + object.payoff;
+        }, 0),
+        uniqueUsers: [...new Set(total.map(item => ((item.support as MicrocreditSupport).member as Member)._id))],
+        uniqueSupports: [...new Set(total.map(item => (item.support as MicrocreditSupport)._id))]
+      },
+      dates: [...new Set(transactions.map(item => this.dateConvert(item.createdAt)))]
+    }
+
+    // response.status(200).send({
+    //   data:  result,
+    //   code: 200
+    // });
+
+    const opts = {
+      fields: ['date', type === MicrocreditTransactionType.ReceiveFund ? 'payoff' : 'tokens', 'user', 'transactions']
+    };
+
+    const json2csvParser = new Parser(opts);
+    const csv = json2csvParser.parse([
+      ...transactions.map(t => {
+        return {
+          date: t.createdAt,
+          tokens: t.tokens,
+          payoff: t.payoff,
+          users: ((t.support as MicrocreditSupport).member as Member).email || ((t.support as MicrocreditSupport).member as Member).card,
+          transactions: (t.support as MicrocreditSupport)._id || `${t.contractIndex}_${t.contractRef}`
+        }
+      }),
       {
-        $group:
-        {
-          _id: "$support_id",
-          campaign_id: { '$first': "$campaign_id" },
-          initialTokens: { '$first': "$tokens" },
-          currentTokens: { '$sum': '$tokens' },
-          method: { '$first': "$method" },
-          payment_id: { '$first': "$payment_id" },
-          type: { '$last': "$type" },
-          createdAt: { '$first': "$createdAt" },
-        }
-      }
-    ]).exec().catch());
+        date: 'Total',
+        tokens: result['total'].tokens,
+        payoff: result['total'].payoff,
+        users: result['total'].uniqueUsers.length,
+        transactions: result['total'].uniqueSupports.length
+      }]);
 
-    return supports.filter((o: any) => { return o.type == 'RevertFund' })
-  }
-
-  private readStatistics2 = async (campaigns: MicrocreditCampaign[]) => {
-
-    let error: Error, statistics: any[];
-    [error, statistics] = await to(this.transaction.find({
-      'support': {
-        $in: (await supportModel.find({ 'campaign': { $in: campaigns.map(a => a._id) } }).populate({
-          path: 'campaign'
-        })).map(a => a._id)
-      }
-    }).populate({
-      "path": "support",
-      "populate": [{
-        "path": "member"
-      }, {
-        "path": "campaign"
-      }]
-    }).sort('createdAt').catch());
-    // console.log("start statistics");
-    // statistics.map(i => { console.log(`${i.support._id} - ${i.support.member._id} - ${i.support.campaign._id} - ${i.type} - ${i.createdAt} - ${i.tokens} - ${i.payoff}`) });
-    // console.log("end statistics");
-    /** */
-
-    var _total: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] }
-      = { promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] };
-    var _daily: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[], createdAt: string }[]
-      = [];
-    var _dates: string[] = [];
-
-    /** Total */
-    // var result_: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] } = { promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] };
-    statistics.map(o => {
-      return { ...o, support: o.support._id, member: o.support.member._id, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) }
-    }).forEach(element => {
-
-      /** Total */
-      if (_total.uniqueUsers.findIndex(i => i === element.member) < 0) {
-        _total.uniqueUsers.push(element.member);
-      }
-
-      if (_total.uniqueSupports.findIndex(i => i === element.support) < 0) {
-        _total.uniqueSupports.push(element.support);
-      }
-
-      if (_dates.findIndex(i => i === element.createdAt) < 0) {
-        _dates.push(element.createdAt);
-      }
-
-      switch (element.type) {
-        case (MicrocreditTransactionType.PromiseFund):
-          _total.promise += element.tokens;
-          break;
-        case (MicrocreditTransactionType.ReceiveFund):
-          _total.receive += element.payoff;
-          break;
-        case (MicrocreditTransactionType.RevertFund):
-          _total.revert += element.payoff;
-          break;
-        case (MicrocreditTransactionType.SpendFund):
-          _total.spend += element.tokens;
-          break;
-      }
-      // });
-      // result_.uniqueUsers = [...new Set(statistics.map(item => item.support.member._id))];
-      // result_.uniqueSupports = [...new Set(statistics.map(item => item.support._id))];
-
-      // var result: { createdAt: string, promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] }[] = [];
-      // statistics.map(o => { return { ...o, support: o.support._id, member: o.support.member._id, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
-      if (_daily.findIndex(i => i.createdAt === element.createdAt) < 0)
-        _daily.push({ createdAt: element.createdAt, promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] })
-
-      if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.findIndex(i => i === element.member) < 0) {
-        _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.push(element.member);
-      }
-
-      if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueSupports.findIndex(i => i === element.support) < 0) {
-        _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueSupports.push(element.support);
-      }
-
-      switch (element.type) {
-        case (MicrocreditTransactionType.PromiseFund):
-          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].promise += element.tokens;
-          return;
-        case (MicrocreditTransactionType.ReceiveFund):
-          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].receive += element.payoff;
-          return;
-        case (MicrocreditTransactionType.RevertFund):
-          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].revert += element.payoff;
-          return;
-        case (MicrocreditTransactionType.SpendFund):
-          _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].spend += element.tokens;
-          return;
-      }
-    });
-
-    return { _total, _daily };
-    // statistics.map(o => { return { ...o, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) } }).reduce(function (res, value) {
-    //   console.log(value.type + " - " + value.tokens + " - " + value.payoff + " - " + value.createdAt)
-    //   if (!res[value.createdAt]) {
-    //     res[value.createdAt] = { createdAt: value.createdAt, promise: 0, receive: 0, revert: 0, spend: 0 };
-    //     result.push(res[value.createdAt])
-    //   }
-    //   switch (value.type) {
-    //     case (MicrocreditTransactionType.PromiseFund && value.tokens > 0):
-    //       res[value.createdAt].promise += value.tokens;
-    //     case (MicrocreditTransactionType.ReceiveFund && value.payoff > 0):
-    //       res[value.createdAt].receive += value.payoff;
-    //     case (MicrocreditTransactionType.RevertFund && value.payoff < 0):
-    //       res[value.createdAt].revert += value.payoff;
-    //     case (MicrocreditTransactionType.SpendFund && value.tokens < 0):
-    //       res[value.createdAt].spend += value.tokens;
-    //   }
-    //   return res;
-    // }, {});
-    // const groupByCategory = statistics.reduce((group, _date) => {
-    //   const { category } = _date.createdAt;
-    //   group[category] = group[category] ?? [];
-    //   group[category].push(_date);
-    //   return group;
-    // }, {});
-    // console.log(groupByCategory)
-  }
-
-  private readStatistics = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
-
-    const sumarize = (type == "confirmed") ? "$payoff" : "$tokens"
-    const supports = (type == "confirmed") ? (await this.readRevertSupports(campaigns, status, type)).map(a => (a._id).toString()) : [];
-
-    let error: Error, statistics: MicrocreditStatistics[];
-    [error, statistics] = await to(this.transaction.aggregate([{
-      $match: {
-        $and: [
-          { 'campaign_id': { $in: campaigns.map(a => (a._id).toString()) } },
-          { 'type': status },
-          { 'support_id': { $nin: supports } }
-        ]
-      }
-    },
-    {
-      $group: {
-        _id: '$campaign_id',
-        tokens: { $sum: sumarize },
-        users: { "$addToSet": "$member_id" },
-        count: { "$addToSet": "$_id" }
-      }
-    },
-    {
-      "$project": {
-        "tokens": 1,
-        "users": { "$size": "$users" },
-        "usersArray": '$users',
-        "count": { "$size": "$count" }
-      }
+    try {
+      // const csv = json2csvs.parse(fields)
+      response.attachment(`Statistics-${campaign.title}_${(date != '0' ? date : 'total')}.csv`);
+      response.status(200).send(csv)
+    } catch (error) {
+      console.log('error:', error.message)
+      response.status(500).send(error.message)
     }
-    ]).exec().catch());
-    if (error) return [];
-
-    const byDate: any = await this.readDailyStatistics(campaigns, status, type);
-    const fullStatistics = statistics.map((a: MicrocreditStatistics) =>
-      Object.assign({}, a,
-        {
-          byDate: ((byDate).find((e: MicrocreditStatistics) => (e._id).toString() === (a._id).toString())).byDate,
-        }
-      )
-    );
-
-    return fullStatistics;
   }
+  // private readStatistics2 = async (campaigns: MicrocreditCampaign[]) => {
 
-  private readDailyStatistics = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
+  //   let error: Error, statistics: any[];
+  //   [error, statistics] = await to(this.transaction.find({
+  //     'support': {
+  //       $in: (await supportModel.find({ 'campaign': { $in: campaigns.map(a => a._id) } }).populate({
+  //         path: 'campaign'
+  //       })).map(a => a._id)
+  //     }
+  //   }).populate({
+  //     "path": "support",
+  //     "populate": [{
+  //       "path": "member"
+  //     }, {
+  //       "path": "campaign"
+  //     }]
+  //   }).sort('createdAt').catch());
+  //   // console.log("start statistics");
+  //   // statistics.map(i => { console.log(`${i.support._id} - ${i.support.member._id} - ${i.support.campaign._id} - ${i.type} - ${i.createdAt} - ${i.tokens} - ${i.payoff}`) });
+  //   // console.log("end statistics");
+  //   /** */
 
-    const sumarize = (type == "confirmed") ? "$payoff" : "$tokens"
-    const supports = (type == "confirmed") ? (await this.readRevertSupports(campaigns, status, type)).map(a => (a._id).toString()) : [];
+  //   var _total: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] }
+  //     = { promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] };
+  //   var _daily: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[], createdAt: string }[]
+  //     = [];
+  //   var _dates: string[] = [];
 
-    let error: Error, statistics: MicrocreditStatistics[];
-    [error, statistics] = await to(this.transaction.aggregate([{
-      $match: {
-        $and: [
-          { 'campaign_id': { $in: campaigns.map(a => (a._id).toString()) } },
-          { 'type': status },
-          { 'support_id': { $nin: supports } }
-        ]
-      }
-    },
-    {
-      $group: {
-        _id: {
-          campaign_id: "$campaign_id",
-          date: { day: { $dayOfMonth: "$createdAt" }, month: { $month: "$createdAt" }, year: { $year: "$createdAt" } }
-        },
-        tokens: { $sum: sumarize },
-        users: { "$addToSet": "$member_id" },
-        count: { "$addToSet": "$_id" }
-      }
-    },
-    {
-      $group: {
-        _id: "$_id.campaign_id",
-        byDate: {
-          $push: {
-            date: "$_id.date", tokens: "$tokens", users: { "$size": "$users" }, usersArray: '$users', count: { "$size": "$count" }
-          }
-        }
-      }
-    },
-    {
-      "$project": {
-        "byDate": { date: 1, tokens: 1, users: 1, usersArray: 1, count: 1 },
-      }
-    }
-    ]).exec().catch());
-    if (error) return [];
+  //   /** Total */
+  //   // var result_: { promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] } = { promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] };
+  //   statistics.map(o => {
+  //     return { ...o, support: o.support._id, member: o.support.member._id, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) }
+  //   }).forEach(element => {
 
-    statistics.forEach((element: any) => {
-      element.byDate.forEach((element: any) => {
-        element.date = (element.date.year).toString() + "/" + ("0" + (element.date.month).toString()).slice(-2) + "/" + ("0" + (element.date.day).toString()).slice(-2);
-      });
-    });
+  //     /** Total */
+  //     if (_total.uniqueUsers.findIndex(i => i === element.member) < 0) {
+  //       _total.uniqueUsers.push(element.member);
+  //     }
 
-    return statistics;
-  }
+  //     if (_total.uniqueSupports.findIndex(i => i === element.support) < 0) {
+  //       _total.uniqueSupports.push(element.support);
+  //     }
+
+  //     if (_dates.findIndex(i => i === element.createdAt) < 0) {
+  //       _dates.push(element.createdAt);
+  //     }
+
+  //     switch (element.type) {
+  //       case (MicrocreditTransactionType.PromiseFund):
+  //         _total.promise += element.tokens;
+  //         break;
+  //       case (MicrocreditTransactionType.ReceiveFund):
+  //         _total.receive += element.payoff;
+  //         break;
+  //       case (MicrocreditTransactionType.RevertFund):
+  //         _total.revert += element.payoff;
+  //         break;
+  //       case (MicrocreditTransactionType.SpendFund):
+  //         _total.spend += element.tokens;
+  //         break;
+  //     }
+  //     // });
+  //     // result_.uniqueUsers = [...new Set(statistics.map(item => item.support.member._id))];
+  //     // result_.uniqueSupports = [...new Set(statistics.map(item => item.support._id))];
+
+  //     // var result: { createdAt: string, promise: number, receive: number, revert: number, spend: number, uniqueUsers: string[], uniqueSupports: string[] }[] = [];
+  //     // statistics.map(o => { return { ...o, support: o.support._id, member: o.support.member._id, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) } }).forEach(element => {
+  //     if (_daily.findIndex(i => i.createdAt === element.createdAt) < 0)
+  //       _daily.push({ createdAt: element.createdAt, promise: 0, receive: 0, revert: 0, spend: 0, uniqueUsers: [], uniqueSupports: [] })
+
+  //     if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.findIndex(i => i === element.member) < 0) {
+  //       _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueUsers.push(element.member);
+  //     }
+
+  //     if (_daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueSupports.findIndex(i => i === element.support) < 0) {
+  //       _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].uniqueSupports.push(element.support);
+  //     }
+
+  //     switch (element.type) {
+  //       case (MicrocreditTransactionType.PromiseFund):
+  //         _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].promise += element.tokens;
+  //         return;
+  //       case (MicrocreditTransactionType.ReceiveFund):
+  //         _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].receive += element.payoff;
+  //         return;
+  //       case (MicrocreditTransactionType.RevertFund):
+  //         _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].revert += element.payoff;
+  //         return;
+  //       case (MicrocreditTransactionType.SpendFund):
+  //         _daily[_daily.findIndex(i => i.createdAt === element.createdAt)].spend += element.tokens;
+  //         return;
+  //     }
+  //   });
+
+  //   return { _total, _daily };
+  //   // statistics.map(o => { return { ...o, type: o.type, payoff: o.payoff, tokens: o.tokens, createdAt: this.dateConvert(o.createdAt) } }).reduce(function (res, value) {
+  //   //   console.log(value.type + " - " + value.tokens + " - " + value.payoff + " - " + value.createdAt)
+  //   //   if (!res[value.createdAt]) {
+  //   //     res[value.createdAt] = { createdAt: value.createdAt, promise: 0, receive: 0, revert: 0, spend: 0 };
+  //   //     result.push(res[value.createdAt])
+  //   //   }
+  //   //   switch (value.type) {
+  //   //     case (MicrocreditTransactionType.PromiseFund && value.tokens > 0):
+  //   //       res[value.createdAt].promise += value.tokens;
+  //   //     case (MicrocreditTransactionType.ReceiveFund && value.payoff > 0):
+  //   //       res[value.createdAt].receive += value.payoff;
+  //   //     case (MicrocreditTransactionType.RevertFund && value.payoff < 0):
+  //   //       res[value.createdAt].revert += value.payoff;
+  //   //     case (MicrocreditTransactionType.SpendFund && value.tokens < 0):
+  //   //       res[value.createdAt].spend += value.tokens;
+  //   //   }
+  //   //   return res;
+  //   // }, {});
+  //   // const groupByCategory = statistics.reduce((group, _date) => {
+  //   //   const { category } = _date.createdAt;
+  //   //   group[category] = group[category] ?? [];
+  //   //   group[category].push(_date);
+  //   //   return group;
+  //   // }, {});
+  //   // console.log(groupByCategory)
+  // }
+
+  // private readStatistics = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
+
+  //   const sumarize = (type == "confirmed") ? "$payoff" : "$tokens"
+  //   const supports = (type == "confirmed") ? (await this.readRevertSupports(campaigns, status, type)).map(a => (a._id).toString()) : [];
+
+  //   let error: Error, statistics: MicrocreditStatistics[];
+  //   [error, statistics] = await to(this.transaction.aggregate([{
+  //     $match: {
+  //       $and: [
+  //         { 'campaign_id': { $in: campaigns.map(a => (a._id).toString()) } },
+  //         { 'type': status },
+  //         { 'support_id': { $nin: supports } }
+  //       ]
+  //     }
+  //   },
+  //   {
+  //     $group: {
+  //       _id: '$campaign_id',
+  //       tokens: { $sum: sumarize },
+  //       users: { "$addToSet": "$member_id" },
+  //       count: { "$addToSet": "$_id" }
+  //     }
+  //   },
+  //   {
+  //     "$project": {
+  //       "tokens": 1,
+  //       "users": { "$size": "$users" },
+  //       "usersArray": '$users',
+  //       "count": { "$size": "$count" }
+  //     }
+  //   }
+  //   ]).exec().catch());
+  //   if (error) return [];
+
+  //   const byDate: any = await this.readDailyStatistics(campaigns, status, type);
+  //   const fullStatistics = statistics.map((a: MicrocreditStatistics) =>
+  //     Object.assign({}, a,
+  //       {
+  //         byDate: ((byDate).find((e: MicrocreditStatistics) => (e._id).toString() === (a._id).toString())).byDate,
+  //       }
+  //     )
+  //   );
+
+  //   return fullStatistics;
+  // }
+
+  // private readDailyStatistics = async (campaigns: MicrocreditCampaign[], status: string, type: string) => {
+
+  //   const sumarize = (type == "confirmed") ? "$payoff" : "$tokens"
+  //   const supports = (type == "confirmed") ? (await this.readRevertSupports(campaigns, status, type)).map(a => (a._id).toString()) : [];
+
+  //   let error: Error, statistics: MicrocreditStatistics[];
+  //   [error, statistics] = await to(this.transaction.aggregate([{
+  //     $match: {
+  //       $and: [
+  //         { 'campaign_id': { $in: campaigns.map(a => (a._id).toString()) } },
+  //         { 'type': status },
+  //         { 'support_id': { $nin: supports } }
+  //       ]
+  //     }
+  //   },
+  //   {
+  //     $group: {
+  //       _id: {
+  //         campaign_id: "$campaign_id",
+  //         date: { day: { $dayOfMonth: "$createdAt" }, month: { $month: "$createdAt" }, year: { $year: "$createdAt" } }
+  //       },
+  //       tokens: { $sum: sumarize },
+  //       users: { "$addToSet": "$member_id" },
+  //       count: { "$addToSet": "$_id" }
+  //     }
+  //   },
+  //   {
+  //     $group: {
+  //       _id: "$_id.campaign_id",
+  //       byDate: {
+  //         $push: {
+  //           date: "$_id.date", tokens: "$tokens", users: { "$size": "$users" }, usersArray: '$users', count: { "$size": "$count" }
+  //         }
+  //       }
+  //     }
+  //   },
+  //   {
+  //     "$project": {
+  //       "byDate": { date: 1, tokens: 1, users: 1, usersArray: 1, count: 1 },
+  //     }
+  //   }
+  //   ]).exec().catch());
+  //   if (error) return [];
+
+  //   statistics.forEach((element: any) => {
+  //     element.byDate.forEach((element: any) => {
+  //       element.date = (element.date.year).toString() + "/" + ("0" + (element.date.month).toString()).slice(-2) + "/" + ("0" + (element.date.day).toString()).slice(-2);
+  //     });
+  //   });
+
+  //   return statistics;
+  // }
 }
 
 export default MicrocreditCampaignsController;

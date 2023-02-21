@@ -136,6 +136,7 @@ class LoyaltyController implements Controller {
 
       this.router.get(`${this.path}/statistics/:date/:type/export`,
       // authMiddleware, accessMiddleware.onlyAsPartner,
+      // authMiddleware, accessMiddleware.onlyAsPartner,
       this.exportStatistics);
 
     // this.router.get(`${this.path}/statistics2/test/:id`,
@@ -313,8 +314,8 @@ class LoyaltyController implements Controller {
 
     console.log("Statistics")
 
-    var earn = transactions.filter(s => s.type === 'EarnPoints');
-    var redeem = transactions.filter(s => s.type === 'RedeemPoints');
+    var earn = transactions.filter(s => s.type === LoyaltyTransactionType.EarnPoints);
+    var redeem = transactions.filter(s => s.type === LoyaltyTransactionType.RedeemPoints);
   
     let result = {
         earn: {
@@ -360,7 +361,7 @@ class LoyaltyController implements Controller {
     console.log("params: " , date)
     console.log("query: " , {page, size})
 
-const total = transactions;
+    const total = transactions;
 
     let result = {
       total: {

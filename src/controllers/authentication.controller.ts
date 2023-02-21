@@ -127,7 +127,7 @@ class AuthenticationController implements Controller {
      * Register & Invite
      */
     this.router.post(`${this.path}/register/one-click`,
-      blockchainStatus,
+     // blockchainStatus,
       validationBodyMiddleware(EmailDto),
       this.oneClickRegister,
       // this.registerAccount,
@@ -135,7 +135,7 @@ class AuthenticationController implements Controller {
     );
 
     this.router.post(`${this.path}/register/auto-member`,
-      blockchainStatus,
+      // blockchainStatus,
       validationBodyMiddleware(RegisterUserWithPasswordDto),
       this.autoRegisterMember,
       // this.registerAccount, /*this.askVerification,*/
@@ -143,7 +143,7 @@ class AuthenticationController implements Controller {
     );
 
     this.router.post(`${this.path}/register/auto-partner`,
-      blockchainStatus,
+      // blockchainStatus,
       validationBodyMiddleware(RegisterPartnerWithPasswordDto),
       this.autoRegisterPartner,
       // this.registerAccount, /*this.askVerification,*/
@@ -152,7 +152,7 @@ class AuthenticationController implements Controller {
     );
 
     this.router.post(`${this.path}/register/invite-member`,
-      blockchainStatus,
+      // blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsAdminOrPartner, validationBodyMiddleware(RegisterUserWithoutPasswordDto),
       this.inviteMember,
       // this.registerAccount,
@@ -160,7 +160,7 @@ class AuthenticationController implements Controller {
     );
 
     this.router.post(`${this.path}/register/invite-partner`,
-      blockchainStatus,
+      // blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsAdmin,
       validationBodyMiddleware(RegisterPartnerWithoutPasswordDto),
       this.invitePartner,

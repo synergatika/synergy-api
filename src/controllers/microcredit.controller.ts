@@ -97,7 +97,8 @@ class MicrocreditController implements Controller {
     //   balanceMiddleware.microcredit_balance,
     //   this.readBalance);
 
-    this.router.post(`${this.path}/one-click/:partner_id/:campaign_id/:token`, /*blockchainStatus,*/
+    this.router.post(`${this.path}/one-click/:partner_id/:campaign_id/:token`,
+      /*blockchainStatus,*/
       oneClickMiddleware,
       validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto),
       usersMiddleware.partner, usersMiddleware.member, itemsMiddleware.microcreditCampaign,
@@ -108,7 +109,8 @@ class MicrocreditController implements Controller {
       // emailsUtil.newSupportPartner, emailsUtil.newSupportMember
     );
 
-    this.router.post(`${this.path}/earn/:partner_id/:campaign_id`,/* blockchainStatus,*/
+    this.router.post(`${this.path}/earn/:partner_id/:campaign_id`,
+      /* blockchainStatus,*/
       authMiddleware,
       validationParamsMiddleware(CampaignID), validationBodyMiddleware(EarnTokensDto),
       usersMiddleware.partner, itemsMiddleware.microcreditCampaign,
@@ -120,7 +122,8 @@ class MicrocreditController implements Controller {
       // emailsUtil.newSupportPartner, emailsUtil.newSupportMember
     );
 
-    this.router.post(`${this.path}/earn/:partner_id/:campaign_id/:_to`, /*blockchainStatus,*/
+    this.router.post(`${this.path}/earn/:partner_id/:campaign_id/:_to`,
+      /*blockchainStatus,*/
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CampaignID), accessMiddleware.belongsTo, usersMiddleware.partner,
       validationBodyMiddleware(EarnTokensDto), itemsMiddleware.microcreditCampaign,
@@ -132,7 +135,8 @@ class MicrocreditController implements Controller {
       // emailsUtil.newSupportPartner, emailsUtil.newSupportMember
     );
 
-    this.router.put(`${this.path}/confirm/:partner_id/:campaign_id/:support_id`, /*blockchainStatus,*/
+    this.router.put(`${this.path}/confirm/:partner_id/:campaign_id/:support_id`,
+      /*blockchainStatus,*/
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(SupportID), accessMiddleware.belongsTo,
       itemsMiddleware.microcreditCampaign, itemsMiddleware.microcreditSupport, usersMiddleware.member,
@@ -142,7 +146,8 @@ class MicrocreditController implements Controller {
       // emailsUtil.changeSupportStatus
     );
 
-    this.router.post(`${this.path}/redeem/:partner_id/:campaign_id/:support_id`,/* blockchainStatus,*/
+    this.router.post(`${this.path}/redeem/:partner_id/:campaign_id/:support_id`,
+      /* blockchainStatus,*/
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(SupportID), accessMiddleware.belongsTo,
       validationBodyMiddleware(RedeemTokensDto),
@@ -152,6 +157,10 @@ class MicrocreditController implements Controller {
       // this.registerSpendFund,
       // emailsUtil.redeemSupport
     );
+
+    this.router.get(`${this.path}/transactions/:offset`,
+      authMiddleware,
+      this.readTransactions);
 
     this.router.get(`${this.path}/badge`,
       authMiddleware,
@@ -470,32 +479,43 @@ class MicrocreditController implements Controller {
   }
 
   private readTransactions = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const params: string = request.params.offset;
     const user: User = request.user;
-    const offset: {
-      limit: number, skip: number, greater: number, type: boolean
-    } = offsetParams(params);
+    const date = request.params['date'];
+    const { page, size } = request.query;
 
     let error: Error, transactions: MicrocreditTransaction[];
-    [error, transactions] = await to(this.transactionModel.find({
-      $and: [
-        { $or: [{ member_id: user._id.toString() }, { partner_id: user._id.toString() }] },
-        { $or: [{ type: MicrocreditTransactionType.PromiseFund }, { type: MicrocreditTransactionType.SpendFund }, { type: MicrocreditTransactionType.ReceiveFund }, { type: MicrocreditTransactionType.RevertFund }] }
-      ]
-    }).populate({
-      path: 'support'
-    }).sort({ 'createdAt': -1, '_id': -1 })
-      .limit(offset.limit)
-      .skip(offset.skip)
-      .catch());
-    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+    [error, transactions] = await to(transactionsUtil.readMicrocreditTransactions(user, [MicrocreditTransactionType.PromiseFund, MicrocreditTransactionType.ReceiveFund, MicrocreditTransactionType.RevertFund, MicrocreditTransactionType.SpendFund], date, { page: page as string, size: size as string })).catch();
+    console.log(transactions)
 
     response.status(200).send({
       data: transactions,
       code: 200
     });
   }
+  // const params: string = request.params.offset;
+  // const user: User = request.user;
+  // const offset: {
+  //   limit: number, skip: number, greater: number, type: boolean
+  // } = offsetParams(params);
 
+  // let error: Error, transactions: MicrocreditTransaction[];
+  // [error, transactions] = await to(this.transactionModel.find({
+  //   $and: [
+  //     { $or: [{ member_id: user._id.toString() }, { partner_id: user._id.toString() }] },
+  //     { $or: [{ type: MicrocreditTransactionType.PromiseFund }, { type: MicrocreditTransactionType.SpendFund }, { type: MicrocreditTransactionType.ReceiveFund }, { type: MicrocreditTransactionType.RevertFund }] }
+  //   ]
+  // }).populate({
+  //   path: 'support'
+  // }).sort({ 'createdAt': -1, '_id': -1 })
+  //   .limit(offset.limit)
+  //   .skip(offset.skip)
+  //   .catch());
+  // if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+  // response.status(200).send({
+  //   data: transactions,
+  //   code: 200
+  // });
 }
 
 export default MicrocreditController;
