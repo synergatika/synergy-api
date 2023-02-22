@@ -50,7 +50,6 @@ import userModel from '../models/user.model';
 class PartnersController implements Controller {
   public path = '/partners';
   public router = express.Router();
-  private user = userModel;
 
   constructor() {
     this.initializeRoutes();
@@ -63,7 +62,6 @@ class PartnersController implements Controller {
     this.router.put(`${this.path}/:partner_id`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(PartnerID), accessMiddleware.belongsTo,
-      // this.declareStaticPath, 
       uploadFile('static', 'partner').single('imageURL'),
       validationBodyAndFileMiddleware(PartnerDto), this.updatePartnerInfo);
 
@@ -73,12 +71,6 @@ class PartnersController implements Controller {
       validationBodyMiddleware(PartnerPaymentsDto), this.updatePartnerPayment);
   }
 
-  // private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   request.params['path'] = 'static';
-  //   request.params['type'] = 'partner';
-  //   next();
-  // }
-
   private readPartners = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const params: string = request.params.offset;
     const offset: {
@@ -86,7 +78,7 @@ class PartnersController implements Controller {
     } = offsetParams(params);
 
     let error: Error, partners: Partner[];
-    [error, partners] = await to(this.user.find({
+    [error, partners] = await to(userModel.find({
       $and: [
         { 'activated': true },
         { 'access': UserAccess.PARTNER }
@@ -106,8 +98,9 @@ class PartnersController implements Controller {
       "contacts": 1,
       "payments": 1,
       "createdAt": 1
-    }).sort('-createdAt')
-      .limit(offset.limit).skip(offset.skip)
+    }).sort({ "createdAt": 1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
       .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
@@ -121,7 +114,7 @@ class PartnersController implements Controller {
     const partner_id: PartnerID["partner_id"] = request.params.partner_id;
 
     let error: Error, partner: Partner;
-    [error, partner] = await to(this.user.findOne({
+    [error, partner] = await to(userModel.findOne({
       $or: [
         { _id: ObjectId.isValid(partner_id) ? partner_id : new ObjectId() },
         { slug: partner_id }
@@ -167,7 +160,7 @@ class PartnersController implements Controller {
     // }
 
     let error: Error, partner: Partner;
-    [error, partner] = await to(this.user.findOneAndUpdate({
+    [error, partner] = await to(userModel.findOneAndUpdate({
       _id: user._id
     }, {
       $set: {
@@ -204,7 +197,7 @@ class PartnersController implements Controller {
     const user: User = request.user;
 
     let error: Error, partner: Partner;
-    [error, partner] = await to(this.user.findOneAndUpdate({
+    [error, partner] = await to(userModel.findOneAndUpdate({
       _id: user._id
     }, {
       $set: {

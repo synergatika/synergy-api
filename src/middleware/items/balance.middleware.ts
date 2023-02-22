@@ -18,7 +18,7 @@ import { UnprocessableEntityException } from '../../_exceptions/index';
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import { User, MicrocreditCampaign, History, MicrocreditTokens, Loyalty } from '../../_interfaces/index';
+import { User, MicrocreditCampaign, History, Loyalty, LoyaltyTransactionType, MicrocreditTransactionType } from '../../_interfaces/index';
 
 /**
  * Middleware
@@ -36,15 +36,16 @@ import loyaltyModel from '../../models/loyalty.model';
 async function loyalty_balance(request: RequestWithUser, response: Response, next: NextFunction) {
   const member: User = (response.locals.member) ? response.locals.member : request.user;
 
-  let error: Error, loyalty: Loyalty[];
-  [error, loyalty] = await to(loyaltyModel.find({
+  let error: Error, loyalty: Loyalty;
+  [error, loyalty] = await to(loyaltyModel.findOne({
     member: member._id
   }).catch());
 
   response.locals["balance"] = {
-    '_id': member._id,
-    'points': loyalty.length ? loyalty[0]?.currentPoints : 0,
+    "_id": member._id,
+    "points": loyalty?.currentPoints || 0,
   };
+
   next();
 }
 
@@ -57,38 +58,35 @@ async function loyalty_activity(request: RequestWithUser, response: Response, ne
   _date.setHours(0, 0, 0, 0);
   _date.setMonth(_date.getMonth() - 12);
 
-
   let error: Error, history: History[];
   [error, history] = await to(loyaltyTransactionModel.aggregate([{
-    $match: {
-      $and: [
-        { 'member_id': (member._id).toString() },
-        { 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
-        { 'type': "EarnPoints" }
+    "$match": {
+      "$and": [
+        { "member": member._id },
+        { "createdAt": { "$gte": new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
+        { "type": LoyaltyTransactionType.EarnPoints }
       ]
     }
-  },
-  {
-    $group: {
-      _id: '$member_id',
-      amount: { $sum: "$amount" },
-      stores: { "$addToSet": "$partner_id" },
-      transactions: { "$addToSet": "$_id" }
+  }, {
+    "$group": {
+      "_id": "$member_id",
+      "amount": { "$sum": "$amount" },
+      "stores": { "$addToSet": "$partner_id" },
+      "transactions": { "$addToSet": "$_id" }
     }
-  },
-  {
+  }, {
     "$project": {
       "amount": 1,
       "stores": { "$size": "$stores" },
       "transactions": { "$size": "$transactions" },
     }
   }]).exec().catch());
-
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
   response.locals["activity"] = (history.length) ?
     convertHelper.activityToBagde(history[0]) :
     convertHelper.activityToBagde({ amount: 0, stores: 0, transactions: 0 });
+
   next();
 }
 
@@ -99,69 +97,33 @@ async function microcredit_balance(request: RequestWithUser, response: Response,
   let error: Error, tokens: { member: ObjectId, campaign: ObjectId, tokens: number }[];
   [error, tokens] = await to(supportModel.aggregate([
     {
-      $match: {
-        $and: [{
-          'member': member._id
+      "$match": {
+        "$and": [{
+          "member": member._id
         }, {
-          'campaign': campaign._id
+          "campaign": campaign._id
         }]
       }
     }, {
-      $project: {
-        _id: "$member",
-        member: 1,
-        tokens: { $sum: '$initialTokens' }
+      "$project": {
+        "_id": "$member",
+        "member": 1,
+        "tokens": { "$sum": "$initialTokens" }
       }
-    },
-    {
-      $group: {
-        _id: "$member",
-        tokens: { $sum: '$tokens' },
+    }, {
+      "$group": {
+        "_id": "$member",
+        "tokens": { "$sum": "$tokens" },
       }
     }
   ]).exec().catch());
 
   response.locals["balance"] = {
-    '_id': member._id,
-    'tokens': tokens.length ? tokens[0]?.tokens : 0,
+    "_id": member._id,
+    "tokens": tokens.length ? tokens[0]?.tokens : 0,
   };
+
   next();
-
-  // let error: Error, tokens: MicrocreditTokens[];
-  // [error, tokens] = await to(microcreditTransactionModel.aggregate(
-  //   [
-  //     {
-  //       $match: {
-  //         $and: [{
-  //           'member_id': (member._id).toString()
-  //         }, {
-  //           'campaign_id': (campaign._id).toString()
-  //         }]
-  //       }
-  //     }, {
-  //       $project: {
-  //         _id: "$campaign_id",
-  //         campaign_id: 1,
-  //         earned: { $cond: [{ $eq: ['$type', 'PromiseFund'] }, '$tokens', 0] },
-  //         redeemed: { $cond: [{ $eq: ['$type', 'ReceiveFund'] }, '$tokens', 0] }
-  //       }
-  //     },
-  //     {
-  //       $group: {
-  //         _id: "$campaign_id",
-  //         earnedTokens: { $sum: '$earned' },
-  //         redeemedTokens: { $sum: '$redeemed' }
-  //       }
-  //     }]
-  // ).exec().catch());
-  // if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-  // response.locals["balance"] = {
-  //   '_id': campaign._id,
-  //   'earnedTokens': tokens.length ? tokens[0].earnedTokens : '0',
-  //   'redeemedTokens': tokens.length ? tokens[0].redeemedTokens : '0'
-  // };
-  //  next();
 }
 
 async function microcredit_activity(request: RequestWithUser, response: Response, next: NextFunction) {
@@ -176,23 +138,21 @@ async function microcredit_activity(request: RequestWithUser, response: Response
 
   let error: Error, history: History[];
   [error, history] = await to(microcreditTransactionModel.aggregate([{
-    $match: {
-      $and: [
-        { 'member_id': (member._id).toString() },
-        { 'createdAt': { '$gte': new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
-        { 'type': "PromiseFund" }
+    "$match": {
+      "$and": [
+        { "member_id": member._id },
+        { "createdAt": { "$gte": new Date((_date.toISOString()).substring(0, (_date.toISOString()).length - 1) + "00:00") } },
+        { "type": MicrocreditTransactionType.PromiseFund }
       ]
     }
-  },
-  {
-    $group: {
-      _id: '$member_id',
-      amount: { $sum: "$data.tokens" },
-      stores: { "$addToSet": "$partner_id" },
-      transactions: { "$addToSet": "$_id" }
+  }, {
+    "$group": {
+      "_id": "$member_id",
+      "amount": { "$sum": "$data.tokens" },
+      "stores": { "$addToSet": "$partner_id" },
+      "transactions": { "$addToSet": "$_id" }
     }
-  },
-  {
+  }, {
     "$project": {
       "amount": 1,
       "stores": { "$size": "$stores" },
@@ -215,68 +175,3 @@ export default {
   microcredit_balance: microcredit_balance,
   microcredit_activity: microcredit_activity
 }
-
-
-
-
-
-  // let error: Error, points: any[];
-  // [error, points] = await to(loyaltyTransactionModel.aggregate([{
-  //   $match: {
-  //     // $and: [{
-  //     'member_id': (member._id).toString()
-  //     // }]
-  //   }
-  // },
-  // {
-  //   $group: {
-  //     _id: "$member_id",
-  //     member_id: { '$first': '$member_id' },
-  //     currentPoints: { $sum: '$points' }
-  //   }
-  // }]
-  // ).exec().catch());
-  // if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-  // response.locals["balance"] = {
-  //   address: points[0]?.member_id || (member._id).toString(),
-  //   points: points[0]?.currentPoints | 0,
-  // };
-  // next();
-
-
-  // const member: User = (response.locals.member) ? response.locals.member : request.user;
-
-  // let error: Error, result: any;
-  // [error, result] = await to(serviceInstance.getLoyaltyAppContract()
-  //   .then((instance) => {
-  //     return instance.members(member.account.address)
-  //   })
-  //   .catch((error) => {
-  //     return error; //next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //   })
-  // );
-  // if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-
-  // response.locals["balance"] = {
-  //   address: result.memberAddress,
-  //   points: result.points,
-  // };
-  // next();
-  // await serviceInstance.getLoyaltyAppContract()
-  //   .then((instance) => {
-  //     return instance.members(member.account.address)
-  //       .then((results: any) => {
-  //         response.locals["balance"] = {
-  //           address: results.memberAddress,
-  //           points: results.points,
-  //         };
-  //         next();
-  //       })
-  //       .catch((error: Error) => {
-  //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //       })
-  //   })
-  //   .catch((error) => {
-  //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
-  //   })

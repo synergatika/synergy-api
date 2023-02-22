@@ -78,10 +78,8 @@ const transactionsUtil = new RegistrationTransactionsUtil();
 class AuthenticationController implements Controller {
   public path = '/auth';
   public router = express.Router();
-  private user = userModel;
-  private transaction = transactionModel;
 
-  private hasBlockchain = `${process.env.HAS_BLOCKCHAIN}` == 'true';
+  private usesBlockchain: boolean = `${process.env.USES_BLOCKCHAIN}` == 'true';
 
   constructor() {
     this.initializeRoutes();
@@ -92,6 +90,7 @@ class AuthenticationController implements Controller {
     /**
      * Identifier & Card
      */
+
     this.router.get(`${this.path}/check_identifier/:identifier`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(IdentifierDto),
@@ -106,17 +105,15 @@ class AuthenticationController implements Controller {
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CardDto), validationBodyMiddleware(EmailDto),
       this.link_email,
-      // emailsUtil.userRegistration
     );
 
     /**
      * Authentication
      */
+
     this.router.post(`${this.path}/authenticate`,
       validationBodyMiddleware(AuthenticationDto),
       this.authAuthenticate,
-      // this.askVerification,
-      // emailsUtil.emailVerification
     );
 
     this.router.post(`${this.path}/logout`,
@@ -126,56 +123,42 @@ class AuthenticationController implements Controller {
     /**
      * Register & Invite
      */
+
     this.router.post(`${this.path}/register/one-click`,
-     // blockchainStatus,
       validationBodyMiddleware(EmailDto),
       this.oneClickRegister,
-      // this.registerAccount,
-      // emailsUtil.userRegistration
     );
 
     this.router.post(`${this.path}/register/auto-member`,
-      // blockchainStatus,
       validationBodyMiddleware(RegisterUserWithPasswordDto),
       this.autoRegisterMember,
-      // this.registerAccount, /*this.askVerification,*/
-      // emailsUtil.emailVerification
     );
 
     this.router.post(`${this.path}/register/auto-partner`,
-      // blockchainStatus,
       validationBodyMiddleware(RegisterPartnerWithPasswordDto),
       this.autoRegisterPartner,
-      // this.registerAccount, /*this.askVerification,*/
-      // emailsUtil.internalActivation,
-      // emailsUtil.emailVerification
     );
 
     this.router.post(`${this.path}/register/invite-member`,
-      // blockchainStatus,
-      authMiddleware, accessMiddleware.onlyAsAdminOrPartner, validationBodyMiddleware(RegisterUserWithoutPasswordDto),
+      authMiddleware, accessMiddleware.onlyAsAdminOrPartner,
+      validationBodyMiddleware(RegisterUserWithoutPasswordDto),
       this.inviteMember,
-      // this.registerAccount,
-      // emailsUtil.userRegistration
     );
 
     this.router.post(`${this.path}/register/invite-partner`,
-      // blockchainStatus,
       authMiddleware, accessMiddleware.onlyAsAdmin,
       validationBodyMiddleware(RegisterPartnerWithoutPasswordDto),
       this.invitePartner,
-      // this.registerAccount,
-      // emailsUtil.userRegistration
     );
 
     /**
      * Verify Email Address
      */
+
     this.router.get(`${this.path}/verify_email/:email`,
       validationParamsMiddleware(EmailDto),
       this.askVerification);
-    // this.askVerification,
-    // emailsUtil.emailVerification);
+
     this.router.post(`${this.path}/verify_email`,
       validationBodyMiddleware(CheckTokenDto),
       this.checkVerification);
@@ -183,299 +166,247 @@ class AuthenticationController implements Controller {
     /**
      * Change & Update Password
      */
+
     this.router.put(`${this.path}/set_pass/:email`,
       validationParamsMiddleware(EmailDto), validationBodyMiddleware(ChangePassInDto),
       this.changePassMiddle);
+
     this.router.put(`${this.path}/change_pass`,
       authMiddleware, validationBodyMiddleware(ChangePassInDto),
       this.changePassInside);
+
     this.router.get(`${this.path}/forgot_pass/:email`,
       validationParamsMiddleware(EmailDto),
       this.askRestoration,
-      //emailsUtil.passwordRestoration
     );
+
     this.router.post(`${this.path}/forgot_pass`,
       validationBodyMiddleware(CheckTokenDto),
       this.checkRestoration);
+
     this.router.put(`${this.path}/forgot_pass`,
       validationBodyMiddleware(ChangePassOutDto),
       this.changePassOutside);
 
     /**
-     * Activate - Deactivate Account
+     * Activate / Deactivate / Delete Account
      */
+
     this.router.put(`${this.path}/deactivate`,
       authMiddleware, validationBodyMiddleware(DeactivationDto),
       this.autoDeactivation,
-      // emailsUtil.internalDeactivation,
-      // emailsUtil.accountDeactivation
     );
 
     this.router.put(`${this.path}/activate/:user_id`,
       authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID),
       this.activateUser,
-      // emailsUtil.accountActivation
     );
 
     this.router.put(`${this.path}/deactivate/:user_id`,
       authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID),
       this.deactivateUser,
-      // emailsUtil.accountDeactivation
     );
 
     this.router.put(`${this.path}/delete`,
       authMiddleware,
       this.autoDeletion,
-      //emailsUtil.internalDeletion,
-      //emailsUtil.accountDeletion
     );
   }
 
-/**
- * 
- * Secondary Function (General)
- * 
- */
- private isError = (err: unknown): err is Error => err instanceof Error;
+  /**
+   * 
+   * Secondary Functions (General)
+   * 
+   */
+  private isError = (err: unknown): err is Error => err instanceof Error;
 
- private generateToken(length: number, hours: number): AuthTokenData {
-  let outString: string = '';
-  let inOptions: string = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789';
+  private generateToken(length: number, hours: number): AuthTokenData {
+    let outString: string = '';
+    let inOptions: string = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz0123456789';
 
-  for (let i = 0; i < length; i++) {
-    outString += inOptions.charAt(Math.floor(Math.random() * inOptions.length));
+    for (let i = 0; i < length; i++) {
+      outString += inOptions.charAt(Math.floor(Math.random() * inOptions.length));
+    }
+
+    let now = new Date()
+    now.setHours(now.getHours() + hours);
+    let seconds = now.getTime();
+
+    return {
+      token: outString,
+      expiresAt: parseInt(seconds.toString())
+    }
   }
 
-  let now = new Date()
-  now.setHours(now.getHours() + hours);
-  let seconds = now.getTime();
-
-  return {
-    token: outString,
-    expiresAt: parseInt(seconds.toString())
-  }
-}
-
-private createToken(user: User): TokenData {
-  const expiresIn = parseInt(`${process.env.JWT_EXPIRATION}`); // an hour
-  const secret = `${process.env.JWT_SECRET}`;
-  const dataStoredInToken: DataStoredInToken = {
-    _id: user._id.toString(),
-  };
-  return {
-    expiresIn,
-    token: jwt.sign(dataStoredInToken, secret, { expiresIn }),
-  };
-}
-
-private currentDateTime(): Number {
-  const now = new Date();
-  return parseInt(now.getTime().toString());
-}
-
-private initializeMember = async (auto: boolean, blockchain: boolean, data: any) => {
-  var user: User;
-  var extras: any = {};
-
-  if (!auto && blockchain) {
-    const tempPassword = (data.email) ? this.generateToken(10, 1).token : data.card;
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-    extras['tempPassword'] = tempPassword;
-
-    const encryptBy = (data.email) ? data.email : data.card;
-    const account: Account = serviceInstance.createWallet(encryptBy);
-    extras['encryptBy'] = encryptBy;
-
-    user = {
-      ...data,
-      password: hashedPassword,
-      access: UserAccess.MEMBER,
-      account: account,
-      pass_verified: false,
+  private createToken(user: User): TokenData {
+    const expiresIn = parseInt(`${process.env.JWT_EXPIRATION}`); // an hour
+    const secret = `${process.env.JWT_SECRET}`;
+    const dataStoredInToken: DataStoredInToken = {
+      _id: user._id.toString(),
+    };
+    return {
+      expiresIn,
+      token: jwt.sign(dataStoredInToken, secret, { expiresIn }),
     };
   }
-  else if (!auto && !blockchain) {
-    const tempPassword = (data.email) ? this.generateToken(10, 1).token : data.card;
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-    extras['tempPassword'] = tempPassword;
 
-    user = {
-      ...data,
-      password: hashedPassword,
-      access: UserAccess.MEMBER,
-      pass_verified: false,
+  private currentDateTime(): Number {
+    const now = new Date();
+    return parseInt(now.getTime().toString());
+  }
+
+  private initializeMember = async (auto: boolean, blockchain: boolean, data: any) => {
+    var user: User;
+    var extras: any = {};
+
+    if (!auto && blockchain) {
+      const tempPassword = (data.email) ? this.generateToken(10, 1).token : data.card;
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      extras['tempPassword'] = tempPassword;
+
+      const encryptBy = (data.email) ? data.email : data.card;
+      const account: Account = serviceInstance.createWallet(encryptBy);
+      extras['encryptBy'] = encryptBy;
+
+      user = {
+        ...data,
+        password: hashedPassword,
+        access: UserAccess.MEMBER,
+        account: account,
+        pass_verified: false,
+      };
+    }
+    else if (!auto && !blockchain) {
+      const tempPassword = (data.email) ? this.generateToken(10, 1).token : data.card;
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      extras['tempPassword'] = tempPassword;
+
+      user = {
+        ...data,
+        password: hashedPassword,
+        access: UserAccess.MEMBER,
+        pass_verified: false,
+      };
+    }
+    else if (auto && blockchain) {
+
+      const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      extras['token'] = token.token;
+
+      const encryptBy = data.email;
+      const account: Account = serviceInstance.createWallet(encryptBy);
+      extras['encryptBy'] = encryptBy;
+
+      user = {
+        ...data,
+        password: hashedPassword,
+        access: UserAccess.MEMBER,
+        account: account,
+        email_verified: false,
+        verificationToken: token.token,
+        verificationExpiration: token.expiresAt,
+      }
+    }
+    else if (auto && !blockchain) {
+      const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      extras['token'] = token.token;
+
+      user = {
+        ...data,
+        password: hashedPassword,
+        access: UserAccess.MEMBER,
+        email_verified: false,
+        verificationToken: token.token,
+        verificationExpiration: token.expiresAt,
+      }
+    }
+    return {
+      user: user,
+      extras: extras
     };
   }
-  else if (auto && blockchain) {
 
-    const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    extras['token'] = token.token;
+  private initializePartner = async (auto: boolean, blockchain: boolean, data: any) => {
+    var user: User;
+    var extras: any = {};
 
-    const encryptBy = data.email;
-    const account: Account = serviceInstance.createWallet(encryptBy);
-    extras['encryptBy'] = encryptBy;
+    if (!auto && blockchain) {
+      const tempPassword = this.generateToken(10, 1).token;
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      extras['tempPassword'] = tempPassword;
 
-    user = {
-      ...data,
-      password: hashedPassword,
-      access: UserAccess.MEMBER,
-      account: account,
-      email_verified: false,
-      verificationToken: token.token,
-      verificationExpiration: token.expiresAt,
+      const encryptBy = data.email;
+      const account: Account = serviceInstance.createWallet(encryptBy);
+      extras['encryptBy'] = encryptBy;
+
+      user = {
+        ...data,
+        password: hashedPassword,
+        access: UserAccess.PARTNER,
+        account: account,
+        pass_verified: false,
+      }
     }
-  }
-  else if (auto && !blockchain) {
-    const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    extras['token'] = token.token;
+    else if (!auto && !blockchain) {
+      const tempPassword = this.generateToken(10, 1).token;
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      extras['tempPassword'] = tempPassword;
 
-    user = {
-      ...data,
-      password: hashedPassword,
-      access: UserAccess.MEMBER,
-      email_verified: false,
-      verificationToken: token.token,
-      verificationExpiration: token.expiresAt,
+      user = {
+        ...data,
+        password: hashedPassword,
+        access: UserAccess.PARTNER,
+        pass_verified: false,
+      }
     }
-  }
-  return {
-    user: user,
-    extras: extras
-  };
-}
+    else if (auto && blockchain) {
+      const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      extras['token'] = token.token;
 
-private initializePartner = async (auto: boolean, blockchain: boolean, data: any) => {
-  var user: User;
-  var extras: any = {};
+      const encryptBy = data.email;
+      const account: Account = serviceInstance.createWallet(encryptBy);
+      extras['encryptBy'] = encryptBy;
 
-  if (!auto && blockchain) {
-    const tempPassword = this.generateToken(10, 1).token;
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-    extras['tempPassword'] = tempPassword;
-
-    const encryptBy = data.email;
-    const account: Account = serviceInstance.createWallet(encryptBy);
-    extras['encryptBy'] = encryptBy;
-
-    user = {
-      ...data,
-      password: hashedPassword,
-      access: UserAccess.PARTNER,
-      account: account,
-      pass_verified: false,
+      user = {
+        ...data,
+        password: hashedPassword,
+        access: UserAccess.PARTNER,
+        activated: false,
+        account: account,
+        email_verified: false,
+        verificationToken: token.token,
+        verificationExpiration: token.expiresAt,
+      }
     }
-  }
-  else if (!auto && !blockchain) {
-    const tempPassword = this.generateToken(10, 1).token;
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-    extras['tempPassword'] = tempPassword;
+    else if (auto && !blockchain) {
+      const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
+      const hashedPassword = await bcrypt.hash(data.password, 10);
+      extras['token'] = token.token;
 
-    user = {
-      ...data,
-      password: hashedPassword,
-      access: UserAccess.PARTNER,
-      pass_verified: false,
+      user = {
+        ...data,
+        password: hashedPassword,
+        access: UserAccess.PARTNER,
+        activated: false,
+        email_verified: false,
+        verificationToken: token.token,
+        verificationExpiration: token.expiresAt,
+      }
     }
+
+    return {
+      user: user,
+      extras: extras
+    };
   }
-  else if (auto && blockchain) {
-    const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    extras['token'] = token.token;
-
-    const encryptBy = data.email;
-    const account: Account = serviceInstance.createWallet(encryptBy);
-    extras['encryptBy'] = encryptBy;
-
-    user = {
-      ...data,
-      password: hashedPassword,
-      access: UserAccess.PARTNER,
-      activated: false,
-      account: account,
-      email_verified: false,
-      verificationToken: token.token,
-      verificationExpiration: token.expiresAt,
-    }
-  }
-  else if (auto && !blockchain) {
-    const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    extras['token'] = token.token;
-
-    user = {
-      ...data,
-      password: hashedPassword,
-      access:UserAccess.PARTNER,
-      activated: false,
-      email_verified: false,
-      verificationToken: token.token,
-      verificationExpiration: token.expiresAt,
-    }
-  }
-
-  return {
-    user: user,
-    extras: extras
-  };
-}
-
-/**
- * 
- * Secondary Function (Transactions)
- * 
- */
-
-// private createRegisterMemberTransaction = async (user: User, encryptBy: string) => {
-//   let blockchain_error: Error, blockchain_result: any;
-//   [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(user.account).catch());
-//   if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-
-//   // let error: Error, transaction: RegistrationTransaction;
-//   // [error, transaction] = await to(
-//     return this.transaction.create({
-//     ...blockchain_result,
-//     user: user,
-//     user_id: user._id,
-//     encryptBy: encryptBy,
-//     type: RegistrationTransactionType.RegisterMember,
-//     status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
-//   })
-//   // .catch());
-// }
-
-// private createRegisterPartnerTransaction = async (user: User, encryptBy: string) => {
-//   let blockchain_error: Error, blockchain_result: any;
-//   [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(user.account).catch());
-//   if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-
-//   // let error: Error, transaction: RegistrationTransaction;
-//   // [error, transaction] = await to(
-//     return await this.transaction.create({
-//     ...blockchain_result,
-//     user: user,
-//     user_id: user._id,
-//     encryptBy: encryptBy,
-//     type: RegistrationTransactionType.RegisterPartner,
-//     status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
-//   })
-//   // .catch());
-// }
 
   /**
-   * Responses
    *
-   * checkIdentifier: Data { status: string }
-   * link_card: Message("A card has been linked to member's email.")
-   * link_email: Message ("User has been Invited to enjoy our Community!") EmailSent
-   *
-   * oneClickRegister: Data { registration: boolean, oneClickToken: string}
-
-   * autoRegisterMember: Message ("Please, follow your link to Validate your Email.") EmailSent
-   * autoRegisterPartner: Message ("Please, follow your link to Validate your Email.") EmailSent
-   * inviteMember: Message ("User has been Invited to enjoy our Community!") EmailSent
-   * invitePartner: Message ("User has been Invited to enjoy our Community!") EmailSent
+   * Main Functions (Route: `/auth`)
+   *  
    */
 
   private checkIdentifier = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -486,7 +417,7 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
 
     if (emailPatern) {
       let error: Error, user: Member;
-      [error, user] = await to(this.user.findOne({ email: identifier })
+      [error, user] = await to(userModel.findOne({ email: identifier })
         .select({ "_id": 1, "email": 1, "card": 1 }).catch());
       if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
       else if (!user) {
@@ -507,7 +438,7 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
       }
     } else if (cardPatern) {
       let error: Error, user: Member;
-      [error, user] = await to(this.user.findOne({ card: identifier })
+      [error, user] = await to(userModel.findOne({ card: identifier })
         .select({ "_id": 1, "email": 1, "card": 1 }).catch());
       if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
       else if (!user) {
@@ -536,21 +467,21 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     const data: CardDto = request.body;
 
     let error: Error, user: Member;
-    [error, user] = await to(this.user.findOne({ email: email }).catch());
+    [error, user] = await to(userModel.findOne({ email: email }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     if (!user) {
       return next(new NotFoundException('WRONG_CREDENTIALS'));
       // } else if (user.card) {
       //   return next(new NotFoundException('USER_HAS_CARD'));
-    } else if (await this.user.findOne({ card: data.card })) {
+    } else if (await userModel.findOne({ card: data.card })) {
       return next(new NotFoundException('USER_EXISTS'));
     } else if (!user.activated) {
       return next(new NotFoundException('USER_DEACTIVATED'));
     }
 
     let results: Object;
-    [error, results] = await to(this.user.updateOne({
+    [error, results] = await to(userModel.updateOne({
       email: email
     }, {
       $set: {
@@ -570,14 +501,14 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     const data: EmailDto = request.body;
 
     let error: Error, user: Member;
-    [error, user] = await to(this.user.findOne({ card: card }).catch());
+    [error, user] = await to(userModel.findOne({ card: card }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     if (!user) {
       return next(new NotFoundException('WRONG_CREDENTIALS'));
     } else if (user.email) {
       return next(new NotFoundException('USER_HAS_EMAIL'));
-    } else if (await this.user.findOne({ email: data.email })) {
+    } else if (await userModel.findOne({ email: data.email })) {
       return next(new NotFoundException('USER_EXISTS'));
     } else if (!user.activated) {
       return next(new NotFoundException('USER_DEACTIVATED'));
@@ -586,14 +517,17 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     const tempPassword = this.generateToken(10, 1).token;
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
     const encryptBy = data.email;
-    const account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, user.card)).privateKey, data.email)
+
+    let account;
+    if (this.usesBlockchain) account = serviceInstance.lockWallet((serviceInstance.unlockWallet(user.account, user.card)).privateKey, data.email)
+
     const extras = {
       encryptBy: encryptBy,
       tempPassword: tempPassword
     };
 
     let results: Object;
-    [error, results] = await to(this.user.updateOne({
+    [error, results] = await to(userModel.updateOne({
       card: card
     }, {
       $set: {
@@ -605,8 +539,8 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     let email_error: Error, email_result: any;
-    [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], data.email, tempPassword, 'invite', request.user).catch());
-    if (email_error) throw(`EMAIL ERROR - UserRegistration: ${email_error}`);
+    [email_error, email_result] = await to(emailsUtil.userRegistration2(request.headers['content-language'], data.email, tempPassword, 'invite', request.user).catch());
+    if (email_error) throw (`EMAIL ERROR - UserRegistration: ${email_error}`);
     // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${error}`));
 
     // response.locals = {
@@ -635,10 +569,10 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     const email: EmailDto["email"] = request.body.email;
     const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
 
-    const existingUser = await this.user.findOne({ email: email });
+    const existingUser = await userModel.findOne({ email: email });
     if (existingUser) {
       let error: Error, results: Object;
-      [error, results] = await to(this.user.updateOne({
+      [error, results] = await to(userModel.updateOne({
         email: email
       }, {
         $set: {
@@ -668,7 +602,7 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
     };
 
     let error: Error, user: User;
-    [error, user] = await to(this.user.create({
+    [error, user] = await to(userModel.create({
       email: email,
       password: hashedPassword,
       access: UserAccess.MEMBER,
@@ -682,13 +616,13 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
 
     /** Transaction Block (Registration - Member) */
     let transaction_error: Error, transaction_result;
-    [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterMemberTransaction(user, encryptBy).catch());
+    [transaction_error, transaction_result] = await to(transactionsUtil.createRegisterMemberTransaction(user, encryptBy).catch());
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
-    
+
     /** Email Block (Authentication - Registration) */
     let email_error: Error, email_result: any;
-    [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'one-click', null).catch());
-    if (email_error) throw(`EMAIL ERROR - UserRegistration: ${email_error}`);
+    [email_error, email_result] = await to(emailsUtil.userRegistration2(request.headers['content-language'], user.email, tempPassword, 'one-click', null).catch());
+    if (email_error) throw (`EMAIL ERROR - UserRegistration: ${email_error}`);
     //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
 
 
@@ -711,227 +645,165 @@ private initializePartner = async (auto: boolean, blockchain: boolean, data: any
   }
 
   private autoRegisterMember = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-      const data: RegisterUserWithPasswordDto = request.body;
+    const data: RegisterUserWithPasswordDto = request.body;
 
-      const existingUser = await this.user.findOne({ email: data.email });
-      if (existingUser) {
-        return next(new NotFoundException('USER_EXISTS'));
-      }
-
-      let potensialUser = await this.initializeMember(
-        true,
-        this.hasBlockchain,
-        { ...data, createdBy: 'auto' }
-      );
-
-      let error: Error, user: User;
-      [error, user] = await to(this.user.create(
-        potensialUser.user
-      ).catch());
-      if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-            /** Transaction Block (Registration - Member) */
- let transaction_error: Error, transaction_result;
-      [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterMemberTransaction(user, potensialUser.extras.encryptBy).catch());
-      if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
-      
-                /** Email Block (Authentication - Verification) */
-let email_error: Error, email_result: any;
-      [email_error, email_result ]= await to ( emailsUtil.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
-      if (email_error) throw(`EMAIL ERROR - EmailVerification: ${email_error}`);
-      //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
-
-      response.status(200).send(
-        {
-          // body: {
-          message: "",
-          data: {},
-          tempData: { "token": potensialUser.extras.token }
-          // }
-        }
-      );
-      // response.locals = {
-      //   user: user,
-      //   extras: potensialUser.extras,
-      //   res: this.prefixedResponse(200, "Registration has been completed!", {}, { "token": potensialUser.extras.token })
-      // }
-      // next();
-    }
-
-  private autoRegisterPartner = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-      const data: RegisterPartnerWithPasswordDto = request.body;
-
-      const existingUser = await this.user.findOne({ email: data.email });
-      if (existingUser) {
-        return next(new NotFoundException('USER_EXISTS'));
-      }
-
-      let potensialUser = await this.initializePartner(
-        true,
-        this.hasBlockchain,
-        { ...data, createdBy: 'auto', slug: await createSlug(request) }
-      );
-
-      let error: Error, user: User;
-      [error, user] = await to(this.user.create(
-        potensialUser.user
-      ).catch());
-      if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-                /** Transaction Block (Registration - Partner) */
-  let transaction_error: Error, transaction_result;
-      [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
-      if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
-      
-      /** Email Block (Authentication - Verification) */
-      let email_error: Error, email_result: any;
-      [email_error, email_result ]= await to ( emailsUtil.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
-      if (email_error) throw(`EMAIL ERROR - EmailVerification: ${email_error}`);
-      //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
-
-                  /** Email Block (Authentication - Activation Internal) */
-                  [email_error, email_result] = await to(emailsUtil.internalActivation2(request.headers['content-language'], user).catch());
-                  if (email_error) throw(`EMAIL ERROR - InternalActivation: ${email_error}`);
-                  //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
-
-      response.status(200).send(
-        {
-          // body: {
-          message: "",
-          data: {},
-          tempData: { "token": potensialUser.extras.token }
-          // }
-        }
-      );
-
-      // response.locals = {
-      //   user: user,
-      //   extras: potensialUser.extras,
-      //   res: this.prefixedResponse(200,
-      //     "Registration has been completed!",
-      //     {},
-      //     { "token": potensialUser.extras.token }
-      //   )
-      // }
-      // next();
-    }
-
-  private inviteMember = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const data: RegisterUserWithoutPasswordDto = request.body;
-
-    if (
-      ((data.email) && (await this.user.findOne({ email: data.email }))) ||
-      ((data.card) && (await this.user.findOne({ card: data.card })))) {
+    const existingUser = await userModel.findOne({ email: data.email });
+    if (existingUser) {
       return next(new NotFoundException('USER_EXISTS'));
     }
 
     let potensialUser = await this.initializeMember(
-      false,
-      this.hasBlockchain,
-      { ...data, createdBy: request['user']._id }
+      true,
+      this.usesBlockchain,
+      { ...data, createdBy: 'auto' }
     );
 
     let error: Error, user: User;
-    [error, user] = await to(this.user.create(
+    [error, user] = await to(userModel.create(
       potensialUser.user
     ).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-                   /** Transaction Block (Registration - Member) */
- let transaction_error: Error, transaction_result;
-    [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterMemberTransaction(user, potensialUser.extras.encryptBy).catch());
+    /** Transaction Block (Registration - Member) */
+    let transaction_error: Error, transaction_result;
+    [transaction_error, transaction_result] = await to(transactionsUtil.createRegisterMemberTransaction(user, potensialUser.extras.encryptBy).catch());
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
 
-    if(user.email) {
-      /** Email Block (Authentication - Registration) */
-      let email_error, email_result: any;
-      [email_error, email_result ]= await to ( emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
-      if (email_error) throw(`EMAIL ERROR - UserRegistration: ${email_error}`);
-        //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
-    }
-    
-    response.status(200).send(
-      {
-        // body: {
-        message: "",
-        data: {},
-        tempData: { "password": potensialUser.extras.tempPassword }
-        // }
-      }
-    );
+    /** Email Block (Authentication - Verification) */
+    let email_error: Error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
+    if (email_error) throw (`EMAIL ERROR - EmailVerification: ${email_error}`);
 
-    // response.locals = {
-    //   user: user,
-    //   registeredBy: request.user,
-    //   registrationType: 'invite',
-    //   extras: potensialUser.extras,
-    //   res: this.prefixedResponse(200,
-    //     "User has been Invited to enjoy our Community!",
-    //     {},
-    //     { "password": potensialUser.extras.tempPassword }
-    //   )
-    // }
-    // next();
+    response.status(200).send({
+      message: "",
+      data: {},
+      tempData: { "token": potensialUser.extras.token }
+    });
   }
 
-  private invitePartner = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-    const data: RegisterPartnerWithoutPasswordDto = request.body;
+  private autoRegisterPartner = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterPartnerWithPasswordDto = request.body;
 
-    let existingUser = await this.user.findOne({ email: data.email });
-    if (existingUser) return next(new NotFoundException('USER_EXISTS'));
-    
+    const existingUser = await userModel.findOne({ email: data.email });
+    if (existingUser) {
+      return next(new NotFoundException('USER_EXISTS'));
+    }
+
     let potensialUser = await this.initializePartner(
-      false,
-      this.hasBlockchain,
-      { ...data, createdBy: request['user']._id, slug: await createSlug(request) }
+      true,
+      this.usesBlockchain,
+      { ...data, createdBy: 'auto', slug: await createSlug(request) }
     );
 
     let error: Error, user: User;
-    [error, user] = await to(this.user.create(
+    [error, user] = await to(userModel.create(
       potensialUser.user
     ).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     /** Transaction Block (Registration - Partner) */
     let transaction_error: Error, transaction_result;
-    [transaction_error, transaction_result] = await to (transactionsUtil.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
+    [transaction_error, transaction_result] = await to(transactionsUtil.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
+    if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
+
+    /** Email Block (Authentication - Verification) */
+    let email_error: Error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.emailVerification2(request.headers['content-language'], user.email, potensialUser.extras.token).catch());
+    if (email_error) throw (`EMAIL ERROR - EmailVerification: ${email_error}`);
+
+    /** Email Block (Authentication - Activation Internal) */
+    [email_error, email_result] = await to(emailsUtil.internalActivation2(request.headers['content-language'], user).catch());
+    if (email_error) throw (`EMAIL ERROR - InternalActivation: ${email_error}`);
+
+    response.status(200).send({
+      message: "",
+      data: {},
+      tempData: { "token": potensialUser.extras.token }
+    });
+  }
+
+  private inviteMember = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterUserWithoutPasswordDto = request.body;
+
+    if (
+      ((data.email) && (await userModel.findOne({ email: data.email }))) ||
+      ((data.card) && (await userModel.findOne({ card: data.card })))) {
+      return next(new NotFoundException('USER_EXISTS'));
+    }
+
+    let potensialUser = await this.initializeMember(
+      false,
+      this.usesBlockchain,
+      { ...data, createdBy: request['user']._id }
+    );
+
+    let error: Error, user: User;
+    [error, user] = await to(userModel.create(
+      potensialUser.user
+    ).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    /** Transaction Block (Registration - Member) */
+    let transaction_error: Error, transaction_result;
+    [transaction_error, transaction_result] = await to(transactionsUtil.createRegisterMemberTransaction(user, potensialUser.extras.encryptBy).catch());
+    if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
+
+    if (user.email) {
+      /** Email Block (Authentication - Registration) */
+      let email_error, email_result: any;
+      [email_error, email_result] = await to(emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
+      if (email_error) throw (`EMAIL ERROR - UserRegistration: ${email_error}`);
+    }
+
+    response.status(200).send({
+      message: "",
+      data: {},
+      tempData: { "password": potensialUser.extras.tempPassword }
+    });
+  }
+
+  private invitePartner = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
+    const data: RegisterPartnerWithoutPasswordDto = request.body;
+
+    let existingUser = await userModel.findOne({ email: data.email });
+    if (existingUser) return next(new NotFoundException('USER_EXISTS'));
+
+    let potensialUser = await this.initializePartner(
+      false,
+      this.usesBlockchain,
+      { ...data, createdBy: request['user']._id, slug: await createSlug(request) }
+    );
+
+    let error: Error, user: User;
+    [error, user] = await to(userModel.create(
+      { ...potensialUser.user }
+    ).catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
+    /** Transaction Block (Registration - Partner) */
+    let transaction_error: Error, transaction_result;
+    [transaction_error, transaction_result] = await to(transactionsUtil.createRegisterPartnerTransaction(user, potensialUser.extras.encryptBy).catch());
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
 
     /** Email Block (Authentication - Registration) */
     let email_error: Error, email_result: any;
-    [email_error, email_result ]= await to (emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
-    if (email_error) throw(`EMAIL ERROR - UserRegistration: ${email_error}`);
-    //return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    [email_error, email_result] = await to(emailsUtil.userRegistration2(request.headers['content-language'], user.email, potensialUser.extras.tempPassword, 'invite', request.user).catch());
+    if (email_error) throw (`EMAIL ERROR - UserRegistration: ${email_error}`);
 
-    response.status(200).send(
-      {
-        // body: {
-        message: "",
-        data: {},
-        tempData: { "password": potensialUser.extras.tempPassword }
-        // }
-      }
-    );
-
-    // response.locals = {
-    //   user: user,
-    //   extras: potensialUser.extras,
-    //   registeredBy: request.user,
-    //   registrationType: 'invite',
-    //   res: this.prefixedResponse(200,
-    //     "User has been Invited to enjoy our Community!",
-    //     {},
-    //     { "password": potensialUser.extras.tempPassword }
-    //   )
-    // }
-    // next();
+    response.status(200).send({
+      // body: {
+      message: "",
+      data: {},
+      tempData: { "password": potensialUser.extras.tempPassword }
+      // }
+    });
   }
 
   private authAuthenticate = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: AuthenticationDto = request.body;
 
     let error: Error, user: User;
-    [error, user] = await to(this.user.findOne({
+    [error, user] = await to(userModel.findOne({
       email: data.email
     }).select({
       "_id": 1,
@@ -958,7 +830,7 @@ let email_error: Error, email_result: any;
       const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
 
       let error: Error, result: User;
-      [error, result] = await to(this.user.findOneAndUpdate({
+      [error, result] = await to(userModel.findOneAndUpdate({
         email: data.email
       }, {
         $set: {
@@ -968,11 +840,10 @@ let email_error: Error, email_result: any;
       }).catch());
       if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-                         /** Email Block (Authentication - Verification) */
-                         let email_error, email_result: any;
-      [email_error, email_result ]= await to (emailsUtil.emailVerification2(request.headers['content-language'], data.email, token.token).catch())
-      if (email_error) throw(`EMAIL ERROR - EmailVerification: ${email_error}`);
-      // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+      /** Email Block (Authentication - Verification) */
+      let email_error, email_result: any;
+      [email_error, email_result] = await to(emailsUtil.emailVerification2(request.headers['content-language'], data.email, token.token).catch())
+      if (email_error) throw (`EMAIL ERROR - EmailVerification: ${email_error}`);
 
       response.status(202).send({
         data: { action: 'need_email_verification' },
@@ -1014,11 +885,11 @@ let email_error: Error, email_result: any;
     const hashedPassword = await bcrypt.hash(data.newPassword, 10);
 
     let error: Error, results: Object;
-    [error, results] = await to(this.user.updateOne({
-      _id: user._id
+    [error, results] = await to(userModel.updateOne({
+      "_id": user._id
     }, {
-      $set: {
-        password: hashedPassword
+      "$set": {
+        "password": hashedPassword
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -1033,7 +904,7 @@ let email_error: Error, email_result: any;
     const data: ChangePassInDto = request.body;
     const email: EmailDto["email"] = request.params.email;
 
-    let user: User = await this.user.findOne({
+    let user: User = await userModel.findOne({
       email: email, email_verified: true, pass_verified: false
     });
     if ((!user) || (!(await bcrypt.compare(data.oldPassword, user.password)))) {
@@ -1041,12 +912,12 @@ let email_error: Error, email_result: any;
     }
 
     let error: Error, results: Object;
-    [error, results] = await to(this.user.updateOne({
-      email: email
+    [error, results] = await to(userModel.updateOne({
+      "email": email
     }, {
-      $set: {
-        pass_verified: true,
-        password: await bcrypt.hash(data.newPassword, 10)
+      "$set": {
+        "pass_verified": true,
+        "password": await bcrypt.hash(data.newPassword, 10)
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -1060,7 +931,7 @@ let email_error: Error, email_result: any;
   private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const email: EmailDto["email"] = request.params.email;
 
-    let user: User = await this.user.findOne({ email: email });
+    let user: User = await userModel.findOne({ email: email });
     if ((!user) || (user && user.email_verified)) {
       return next(new NotFoundException('WRONG_CREDENTIALS'));
     }
@@ -1068,37 +939,32 @@ let email_error: Error, email_result: any;
     const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
 
     let error: Error, result: User;
-    [error, result] = await to(this.user.findOneAndUpdate({
-      email: email
+    [error, result] = await to(userModel.findOneAndUpdate({
+      "email": email
     }, {
-      $set: {
-        verificationToken: token.token,
-        verificationExpiration: token.expiresAt
+      "$set": {
+        "verificationToken": token.token,
+        "verificationExpiration": token.expiresAt
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-                          /** Email Block (Authentication - Verification) */
-                          let email_error, email_result: any;
-    [email_error, email_result ]= await to (emailsUtil.emailVerification2(request.headers['content-language'], email, token.token).catch());
-    if (email_error) throw(`EMAIL ERROR - EmailVerification: ${email_error}`);
-    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    /** Email Block (Authentication - Verification) */
+    let email_error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.emailVerification2(request.headers['content-language'], email, token.token).catch());
+    if (email_error) throw (`EMAIL ERROR - EmailVerification: ${email_error}`);
 
-    response.status(200).send(
-      {
-        // body: {
-        message: "",
-        data: {},
-        tempData: { "token": token.token }
-        // }
-      }
-    );
+    response.status(200).send({
+      message: "",
+      data: {},
+      tempData: { "token": token.token }
+    });
   }
 
   private checkVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: CheckTokenDto = request.body;
 
-    let user: User = await this.user.findOne({
+    let user: User = await userModel.findOne({
       verificationToken: data.token,
       verificationExpiration: { $gt: this.currentDateTime() },
       email_verified: false,
@@ -1109,15 +975,15 @@ let email_error: Error, email_result: any;
     }
 
     let error, results: Object;
-    [error, results] = await to(this.user.updateOne({
-      verificationToken: data.token
+    [error, results] = await to(userModel.updateOne({
+      "verificationToken": data.token
     }, {
-      $set: {
-        email_verified: true,
+      "$set": {
+        "email_verified": true,
       },
-      $unset: {
-        verificationToken: "",
-        verificationExpiration: "",
+      "$unset": {
+        "verificationToken": '',
+        "verificationExpiration": '',
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -1131,7 +997,7 @@ let email_error: Error, email_result: any;
   private askRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const email: EmailDto["email"] = request.params.email;
 
-    let user: User = await this.user.findOne(
+    let user: User = await userModel.findOne(
       { email: email }
     );
     if ((!user)) {
@@ -1141,45 +1007,35 @@ let email_error: Error, email_result: any;
     const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
 
     let error: Error, results: Object;
-    [error, results] = await to(this.user.updateOne({
-      email: email
+    [error, results] = await to(userModel.updateOne({
+      "email": email
     }, {
-      $set: {
-        restorationToken: token.token,
-        restorationExpiration: token.expiresAt
+      "$set": {
+        "restorationToken": token.token,
+        "restorationExpiration": token.expiresAt
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-                            /** Email Block (Authentication - Restoration) */
- let email_error, email_result: any;
-[email_error, email_result] = await to (emailsUtil.passwordRestoration2(request.headers['content-language'], email, token.token).catch());
-if (email_error) throw(`EMAIL ERROR - PasswordRestore: ${email_error}`);
-// if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    /** Email Block (Authentication - Restoration) */
+    let email_error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.passwordRestoration2(request.headers['content-language'], email, token.token).catch());
+    if (email_error) throw (`EMAIL ERROR - PasswordRestore: ${email_error}`);
 
-    response.status(200).send(
-      {
-        // body: {
-        message: "",
-        data: {},
-        tempData: { "token": token.token }
-        // }
-      }
-    );
-    // response.locals = {
-    //   res: this.prefixedResponse(200, "Please, follow your link to Update your Password.", {}, { "token": token.token }),
-    //   user: {
-    //     email: email
-    //   },
-    //   extras: { token: token.token }
-    // };
-    // next();
+    response.status(200).send({
+      // body: {
+      message: "",
+      data: {},
+      tempData: { "token": token.token }
+      // }
+    });
+
   }
 
   private checkRestoration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: CheckTokenDto = request.body;
 
-    let user: User = await this.user.findOne({
+    let user: User = await userModel.findOne({
       restorationToken: data.token,
       restorationExpiration: { $gt: this.currentDateTime() }
     });
@@ -1196,7 +1052,7 @@ if (email_error) throw(`EMAIL ERROR - PasswordRestore: ${email_error}`);
   private changePassOutside = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     const data: ChangePassOutDto = request.body;
 
-    let user: User = await this.user.findOne({
+    let user: User = await userModel.findOne({
       restorationToken: data.token,
       restorationExpiration: { $gt: this.currentDateTime() }
     });
@@ -1207,15 +1063,15 @@ if (email_error) throw(`EMAIL ERROR - PasswordRestore: ${email_error}`);
     const hashedPassword = await bcrypt.hash(data.newPassword, 10);
 
     let error: Error, results: Object;
-    [error, results] = await to(this.user.updateOne({
-      restorationToken: data.token
+    [error, results] = await to(userModel.updateOne({
+      "restorationToken": data.token
     }, {
-      $set: {
-        password: hashedPassword,
+      "$set": {
+        "password": hashedPassword,
       },
-      $unset: {
-        restorationToken: "",
-        restorationExpiration: ""
+      "$unset": {
+        "restorationToken": '',
+        "restorationExpiration": ''
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -1229,16 +1085,16 @@ if (email_error) throw(`EMAIL ERROR - PasswordRestore: ${email_error}`);
   private activateUser = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user_id: UserID["user_id"] = request.params.user_id;
 
-    if (await this.user.findOne({ _id: user_id, activated: true })) {
+    if (await userModel.findOne({ _id: user_id, activated: true })) {
       return next(new NotFoundException("USER_ACTIVATED"));
     }
 
     let error: Error, user: User; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, user] = await to(this.user.findOneAndUpdate({
-      _id: user_id
+    [error, user] = await to(userModel.findOneAndUpdate({
+      "_id": user_id
     }, {
-      $set: {
-        'activated': true
+      "$set": {
+        "activated": true
       }
     }, {
       "fields": { "email": 1, "name": 1, "access": 1 },
@@ -1246,43 +1102,30 @@ if (email_error) throw(`EMAIL ERROR - PasswordRestore: ${email_error}`);
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-                              /** Email Block (Authentication - Activation) */
-                              let email_error, email_result: any;
-[email_error, email_result] = await to (emailsUtil.accountActivation2(request.headers['content-language'], user.email).catch());
-if (email_error) throw(`EMAIL ERROR - AccountActivation: ${email_error}`);
-// if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    /** Email Block (Authentication - Activation) */
+    let email_error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.accountActivation2(request.headers['content-language'], user.email).catch());
+    if (email_error) throw (`EMAIL ERROR - AccountActivation: ${email_error}`);
 
-    response.status(200).send(
-      {
-        // body: {
-        message: "",
-        data: {},
-        // }
-      }
-    );
-
-    // response.locals = {
-    //   res: this.prefixedResponse(200, "Account has been successfully activated.", {}, {}),
-    //   user: {
-    //     email: user.email
-    //   }
-    // };
-    // next();
+    response.status(200).send({
+      message: "",
+      data: {},
+    });
   }
 
   private deactivateUser = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user_id: UserID["user_id"] = request.params.user_id;
 
-    if (await this.user.findOne({ _id: user_id, activated: false })) {
+    if (await userModel.findOne({ _id: user_id, activated: false })) {
       return next(new NotFoundException("USER_DECTIVATED"));
     }
 
     let error: Error, user: User; // results = {"n": 1, "nModified": 1, "ok": 1}
-    [error, user] = await to(this.user.findOneAndUpdate({
-      _id: user_id
+    [error, user] = await to(userModel.findOneAndUpdate({
+      "_id": user_id
     }, {
-      $set: {
-        'activated': false
+      "$set": {
+        "activated": false
       }
     }, {
       "fields": { "email": 1, "name": 1, "access": 1 },
@@ -1290,122 +1133,80 @@ if (email_error) throw(`EMAIL ERROR - AccountActivation: ${email_error}`);
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-                                 /** Email Block (Authentication - Deactivation) */
- let email_error, email_result: any;
-    [email_error, email_result] = await to (emailsUtil.accountDeactivation2(request.headers['content-language'], user.email, request.user).catch());
-    if (email_error) throw(`EMAIL ERROR - AccountDeactivation: ${email_error}`);
-    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    /** Email Block (Authentication - Deactivation) */
+    let email_error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.accountDeactivation2(request.headers['content-language'], user.email, request.user).catch());
+    if (email_error) throw (`EMAIL ERROR - AccountDeactivation: ${email_error}`);
 
-    response.status(200).send(
-      {
-        // body: {
-        message: "",
-        data: {},
-        // }
-      }
-    );
-
-    // response.locals = {
-    //   res: this.prefixedResponse(200, "Account has been successfully deactivated.", {}, {}),
-    //   user: {
-    //     email: user.email
-    //   },
-    //   decision: 'admin'
-    // };
-    // next();
+    response.status(200).send({
+      message: "",
+      data: {},
+    });
   }
 
   private autoDeactivation = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: DeactivationDto = request.body;
 
     let error: Error, results: Object;
-    [error, results] = await to(this.user.updateOne({
-      _id: request.user._id
+    [error, results] = await to(userModel.updateOne({
+      "_id": request.user._id
     }, {
-      $set: {
-        activated: false
+      "$set": {
+        "activated": false
       },
-      $push: {
-        deactivations: {
-          reason: data.reason,
-          createdAt: new Date()
+      "$push": {
+        "deactivations": {
+          "reason": data.reason,
+          "createdAt": new Date()
         }
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-                                    /** Email Block (Authentication - Deactivation) */
- let email_error, email_result: any;
-    [email_error, email_result] = await to (emailsUtil.accountDeactivation2(request.headers['content-language'], request.user.email, request.user).catch());
-    if (email_error) throw(`EMAIL ERROR - AccountDeactivation: ${email_error}`);
-    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    /** Email Block (Authentication - Deactivation) */
+    let email_error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.accountDeactivation2(request.headers['content-language'], request.user.email, request.user).catch());
+    if (email_error) throw (`EMAIL ERROR - AccountDeactivation: ${email_error}`);
 
-                                    /** Email Block (Authentication - Deactivation Internal) */
- [email_error, email_result] = await to (emailsUtil.internalDeactivation2(request.headers['content-language'], request.user, data.reason).catch());
- if (email_error) throw(`EMAIL ERROR - InternalDeactivation: ${email_error}`); 
- // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    /** Email Block (Authentication - Deactivation Internal) */
+    [email_error, email_result] = await to(emailsUtil.internalDeactivation2(request.headers['content-language'], request.user, data.reason).catch());
+    if (email_error) throw (`EMAIL ERROR - InternalDeactivation: ${email_error}`);
 
-    response.status(200).send(
-      {
-        // body: {
-        message: "",
-        data: {},
-        // }
-      }
-    );
-    // response.locals = {
-    //   res: this.prefixedResponse(200, "Your account has been successfully deactivated.", {}, {}),
-    //   user: {
-    //     email: request.user.email
-    //   },
-    //   reason: data.reason,
-    //   decision: 'user'
-    // };
-    // next();
+    response.status(200).send({
+      message: "",
+      data: {},
+    });
   }
 
   private autoDeletion = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const data: DeletionDto = request.body;
 
-    let user: User = await this.user.findOne({
-      _id: request.user._id
+    let user: User = await userModel.findOne({
+      "_id": request.user._id
     });
     if ((!user) || (!(await bcrypt.compare(data.password, user.password)))) {
       return next(new NotFoundException('WRONG_CREDENTIALS'));
     }
 
     let error: Error, results: Object;
-    [error, results] = await to(this.user.deleteOne({
+    [error, results] = await to(userModel.deleteOne({
       _id: request.user._id
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-                                      /** Email Block (Authentication - Deletion) */
-                                      let email_error, email_result: any;
-    [email_error, email_result] = await to ( emailsUtil.accountDeletion2(request.headers['content-language'], request.user.email).catch());
-    if (email_error) throw(`EMAIL ERROR - AccountDelete: ${email_error}`);
-    // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    /** Email Block (Authentication - Deletion) */
+    let email_error, email_result: any;
+    [email_error, email_result] = await to(emailsUtil.accountDeletion2(request.headers['content-language'], request.user.email).catch());
+    if (email_error) throw (`EMAIL ERROR - AccountDelete: ${email_error}`);
 
-                                      /** Email Block (Authentication - Deletion Internal) */
-                                      [email_error, email_result] = await to (emailsUtil.internalDeletion2(request.headers['content-language'], request.user).catch());
-                                      if (email_error) throw(`EMAIL ERROR - InternalDelete: ${email_error}`);
-                                      // if (email_error) return next(new UnprocessableEntityException(`EMAIL ERROR || ${email_error}`));
+    /** Email Block (Authentication - Deletion Internal) */
+    [email_error, email_result] = await to(emailsUtil.internalDeletion2(request.headers['content-language'], request.user).catch());
+    if (email_error) throw (`EMAIL ERROR - InternalDelete: ${email_error}`);
 
-    response.status(200).send(
-      {
-        // body: {
-        message: "",
-        data: {},
-        // }
-      }
-    );
-    // response.locals = {
-    //   res: this.prefixedResponse(200, "Your account has been successfully deactivated.", {}, {}),
-    //   user: {
-    //     email: request.user.email
-    //   },
-    // };
-    // next();
+    response.status(200).send({
+      message: "",
+      data: {},
+    });
   }
 }
 export default AuthenticationController;
@@ -1413,207 +1214,3 @@ export default AuthenticationController;
 
 
 
-   
-  // private registerAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-  //   const data = response.locals;
-  //   const newAccount = serviceInstance.unlockWallet(data.user.account, data.extras.encryptBy);
-
-  //   if (data.user.access === 'member') {
-
-  //     let error: Error, result: any;
-  //     [error, result] = await to(serviceInstance.getLoyaltyAppContract()
-  //       .then((instance) => {
-  //         return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
-  //       })
-  //       .catch((error: Error) => {
-  //         return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-  //       })
-  //     );
-  //     if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-
-  //     await this.transaction.create({
-  //       ...result,
-  //       user_id: data.user._id,
-  //       type: "RegisterMember"
-  //     });
-
-  //     if (data.user.email) {
-  //       next();
-  //     } else {
-  //       response.status(response.locals.res.code).send(response.locals.res.body);
-  //     }
-
-  //     // await serviceInstance.getLoyaltyAppContract()
-  //     //   .then((instance) => {
-  //     //     return instance.methods['registerMember(address)'].sendTransaction(newAccount.address, serviceInstance.address)
-  //     //       .then(async (result: any) => {
-  //     //         await this.transaction.create({
-  //     //           ...result,
-  //     //           user_id: data.user._id, type: "RegisterMember"
-  //     //         });
-  //     //         if (data.user.email) {
-  //     //           next();
-  //     //         } else {
-  //     //           response.status(response.locals.res.code).send(response.locals.res.body);
-  //     //         }
-  //     //       })
-  //     //       .catch((error: Error) => {
-  //     //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-  //     //       })
-  //     //   })
-  //     //   .catch((error: Error) => {
-  //     //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-  //     //   })
-  //   } else if (data.user.access === 'partner') {
-
-  //     let error: Error, result: any;
-  //     [error, result] = await to(serviceInstance.getLoyaltyAppContract()
-  //       .then((instance) => {
-  //         return instance.registerPartner(newAccount.address, serviceInstance.address)
-  //       })
-  //       .catch((error: Error) => {
-  //         return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-  //       })
-  //     );
-  //     if (error) return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-
-  //     await this.transaction.create({
-  //       ...result,
-  //       user_id: data.user._id,
-  //       type: "RegisterPartner"
-  //     });
-  //     next();
-
-  //     // await serviceInstance.getLoyaltyAppContract()
-  //     //   .then((instance) => {
-  //     //     return instance.registerPartner(newAccount.address, serviceInstance.address)
-  //     //       .then(async (result: any) => {
-  //     //         await this.transaction.create({
-  //     //           ...result,
-  //     //           user_id: data.user._id, type: "RegisterPartner"
-  //     //         });
-  //     //         next();
-  //     //       })
-  //     //       .catch((error: Error) => {
-  //     //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-  //     //       })
-  //     //   })
-  //     //   .catch((error: Error) => {
-  //     //     next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-  //     //   })
-  //   }
-  // }
-  
-  // private askVerification = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-  //   const email: EmailDto["email"] = request.params.email;
-
-  //   let user: User = await this.user.findOne({ email: email });
-  //   if ((!user) || (user && user.email_verified)) {
-  //     return next(new NotFoundException('WRONG_CREDENTIALS'));
-  //   }
-
-  //   const token = this.generateToken(parseInt(`${process.env.TOKEN_LENGTH}`), parseInt(`${process.env.TOKEN_EXPIRATION}`));
-
-  //   let error, results: Object;
-  //   [error, results] = await to(this.user.updateOne({
-  //     email: email
-  //   }, {
-  //     $set: {
-  //       verificationToken: token.token,
-  //       verificationExpiration: token.expiresAt
-  //     }
-  //   }).catch());
-  //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-  //   response.locals["res"] = (response.locals.res) ?
-  //     this.prefixedResponse(response.locals.res.code, "", response.locals.res.body.data, { "token": token.token }) :
-  //     this.prefixedResponse(200, "Please, follow your link to Validate your Email.", {}, { "user_id": response.locals.user._id, "token": token.token })
-  //   response.locals["user"] = {
-  //     email: email
-  //   };
-  //   response.locals["extras"] = { token: token.token };
-
-  //   next();
-  // }
-  
-  // private prefixedResponse = (code: number, message: string, data: any, tempData: any) => {
-  //   let response: any;
-
-  //   if (message) {
-  //     response = {
-  //       code: code,
-  //       body: {
-  //         message: message,
-  //         code: code
-  //       }
-  //     }
-  //   } else {
-  //     response = {
-  //       code: code,
-  //       body: {
-  //         data: data,
-  //         code: code
-  //       }
-  //     }
-  //   }
-
-  //   if (`${process.env.PRODUCTION}` == 'false' && tempData) {
-  //     response.body['tempData'] = tempData;
-  //   }
-
-  //   return response;
-  // }
-
-  //  private recoverAccount = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-  //   const data = response.locals;
-
-  //   if (data.user.access === 'member') {
-  //     await serviceInstance.getLoyaltyAppContract()
-  //       .then((instance) => {
-  //         return instance.recoverPoints(data.oldAccount.address, data.account.address, serviceInstance.address)
-  //           .then(async (result: any) => {
-  //             await this.transaction.create({
-  //               ...result, type: "RecoverPoints"
-  //             });
-  //             next();
-  //           })
-  //           .catch((error: Error) => {
-  //             next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${ error }`))
-  //           })
-  //       })
-  //       .catch((error: Error) => {
-  //         next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${ error }`))
-  //       });
-  //   } else if (data.user.access === 'partner') {
-
-  //   }
-  //   response.status(200).send({
-  //     message: "Success! You Password has been Updated!",
-  //     code: 200
-  //   });
-  //   }
-
-  /**
-   * 
-   * Blockchain Register Functions (registerPartnerAccount, registerMemberAccount)
-   * 
-   */
-  // private registerPartnerAccount = async (account: Account) => {
-  //   return serviceInstance.getLoyaltyAppContract()
-  //     .then((instance) => {
-  //       return instance.methods['registerMember(address)'].sendTransaction(account.address, serviceInstance.address)
-  //     })
-  //     .catch((error: Error) => {
-  //       return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-  //     });
-  // }
-
-  // private registerMemberAccount = async (account: Account) => {
-  //   return serviceInstance.getLoyaltyAppContract()
-  //     .then((instance) => {
-  //       return instance.methods['registerMember(address)'].sendTransaction(account.address, serviceInstance.address)
-  //     })
-  //     .catch((error: Error) => {
-  //       return error;//return next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`));
-  //     });
-  // }

@@ -43,21 +43,6 @@ describe("Admin - Authentication", () => {
           name: partner_a.name,
           sector: partner_a.sector
         })
-        // .field('email', partner_a.email)
-        // .field('name', partner_a.name)
-        // .field('subtitle', partner_a.subtitle)
-        // .field('description', partner_a.description)
-        // .field('timetable', partner_a.timetable)
-        // .field('phone', partner_a.contact.phone)
-        // .field('websiteURL', partner_a.contact.websiteURL)
-        // .field('street', partner_a.address.street)
-        // .field('postCode', partner_a.address.postCode)
-        // .field('city', partner_a.address.city)
-        // .field('lat', partner_a.address.coordinates[0])
-        // .field('long', partner_a.address.coordinates[1])
-        // .field('sector', partner_a.sector)
-        //        .field('payments', JSON.stringify(partner_a.payments))
-        //       .attach('imageURL', fs.readFileSync(`${imagesLocation}/${partner_a.imageFile}`), `${partner_a.imageFile}`)
         .end((err, res) => {
           res.should.have.status(200);
           res.body.should.be.a('object');

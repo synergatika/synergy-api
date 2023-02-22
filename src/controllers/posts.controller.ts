@@ -58,8 +58,6 @@ const filesUtil = new FilesUtil();
 class PostsController implements Controller {
   public path = '/posts';
   public router = express.Router();
-  private user = userModel;
-  private postModel = postModel;
 
   constructor() {
     this.initializeRoutes();
@@ -79,19 +77,22 @@ class PostsController implements Controller {
     this.router.get(`${this.path}/:partner_id/:post_id`, validationParamsMiddleware(PostID), this.readPost);
 
     this.router.put(`${this.path}/:partner_id/:post_id`, authMiddleware, accessMiddleware.onlyAsPartner,
-      // this.declareStaticPath, 
       validationParamsMiddleware(PostID), accessMiddleware.belongsTo,
-      uploadFile('static', 'post').single('imageURL'), validationBodyAndFileMiddleware(PostDto), itemsMiddleware.postMiddleware, this.updatePost);
+      uploadFile('static', 'post').single('imageURL'),
+      validationBodyAndFileMiddleware(PostDto), itemsMiddleware.postMiddleware, this.updatePost);
 
     this.router.delete(`${this.path}/:partner_id/:post_id`, authMiddleware, accessMiddleware.onlyAsPartner, validationParamsMiddleware(PostID), accessMiddleware.belongsTo, itemsMiddleware.postMiddleware, this.deletePost);
 
     this.router.post(`${this.path}/image`,
       authMiddleware,
-      // this.declareContentPath, 
       uploadFile('content', 'post').array('content_image', 8), this.uploadContentImages);
   }
 
-  /** Secondary Functions */
+  /** 
+   * 
+   * Secondary Functions 
+   * 
+   */
   private checkObjectIdValidity(id: string) {
     if (ObjectId.isValid(id) && ((new ObjectId(id).toString()) == id))
       return true;
@@ -99,17 +100,11 @@ class PostsController implements Controller {
     return false;
   }
 
-  // private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   request.params['path'] = 'static';
-  //   request.params['type'] = 'post';
-  //   next();
-  // }
-
-  // private declareContentPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   request.params['path'] = 'content';
-  //   request.params['type'] = 'post';
-  //   next();
-  // }
+  /**
+   * 
+   * Main Functions (Route: `/posts`)
+   * 
+   */
 
   private uploadContentImages = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     response.status(200).send({
@@ -135,38 +130,44 @@ class PostsController implements Controller {
     /** ***** * ***** */
 
     let error: Error, posts: Post[];
-    [error, posts] = await to(this.postModel.find(
-      { 'access': { "$in": access_filter } }
-    )
-      .populate([{
-        path: 'partner'
+    [error, posts] = await to(postModel.aggregate([
+      {
+        "$match": {
+          "$and": [
+            { "expiresAt": { "$gt": offset.greater } },
+            { "published": { "$eq": true } }
+          ]
+        },
+      },
+      {
+        "$lookup": {
+          "from": 'Partner',
+          "localField": 'partner',
+          "foreignField": '_id',
+          "as": 'partner'
+        }
+      },
+      {
+        "$match": { 'partner.activated': true }
       }])
-      .sort({ updatedAt: -1 })
-      .limit(offset.limit)
-      .skip(offset.skip)
-      .lean()
+      .sort({ "updatedAt": -1 })
+      .exec()
       .catch());
 
     // let error: Error, posts: Post[];
-    // [error, posts] = await to(this.user.aggregate([{
-    //   $unwind: '$posts'
-    // }, {
-    //   $match: {
-    //     'posts.access': { $in: access_filter }
-    //   }
-    // }, {
-    //   $project: {
-    //     partner: this.projectPartner(),
-    //     ...this.projectPost()
-    //   }
-    // }, {
-    //   $sort: {
-    //     updatedAt: -1
-    //   }
-    // },
-    // { $limit: offset.limit },
-    // { $skip: offset.skip }
-    // ]).exec().catch());
+    // [error, posts] = await to(postModel.find({
+    //   "$and": [
+    //     { "access": { "$in": access_filter } },
+    //     { "published": { "$eq": true } }
+    //   ]
+    // }).populate([{
+    //   "path": 'partner'
+    // }])
+    //   .sort({ "updatedAt": -1 })
+    //   .limit(offset.limit)
+    //   .skip(offset.skip)
+    //   .lean()
+    //   .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -180,29 +181,13 @@ class PostsController implements Controller {
     const user: User = request.user;
 
     let error: Error, results: Object;
-    [error, results] = await to(this.postModel.create({
+    [error, results] = await to(postModel.create({
       ...data,
-      partner: user._id,
+      "partner": user._id,
       "slug": await createSlug(request),
       "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
       "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : [],
     }).catch());
-    // let error: Error, results: Object; // {"n": 1, "nModified": 1, "ok": 1}
-    // [error, results] = await to(this.user.updateOne({
-    //   _id: user._id
-    // }, {
-    //   $push: {
-    //     posts: {
-    //       "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : '',
-    //       "title": data.title,
-    //       "subtitle": data.subtitle,
-    //       "slug": await createSlug(request),
-    //       "description": data.description,
-    //       "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : 0,
-    //       "access": data.access
-    //     }
-    //   }
-    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(201).send({
@@ -228,49 +213,24 @@ class PostsController implements Controller {
 
     /** ***** * ***** */
     let _error: Error, _user: Partner;
-    [_error, _user] = await to(this.user.find(partner_filter).catch());
+    [_error, _user] = await to(userModel.find(partner_filter).catch());
     /** ***** * ***** */
 
     let error: Error, posts: Post[];
-    [error, posts] = await to(this.postModel.find(
-      {
-        $and: [
-          { 'partner': _user },
-          { 'access': { $in: access_filter } }
-        ]
-      }
-    )
-      .populate([{
-        path: 'partner'
-      }])
-      .sort({ updatedAt: -1 })
+    [error, posts] = await to(postModel.find({
+      $and: [
+        { 'partner': _user },
+        { 'access': { "$in": access_filter } },
+        { "published": { "$eq": true } }
+      ]
+    }).populate([{
+      "path": 'partner'
+    }])
+      .sort({ "updatedAt": -1 })
       .limit(offset.limit)
       .skip(offset.skip)
       .lean()
       .catch());
-    // let error: Error, posts: Post[];
-    // [error, posts] = await to(this.user.aggregate([{
-    //   $unwind: '$posts'
-    // }, {
-    //   $match: {
-    //     $and: [
-    //       partner_filter,
-    //       { 'posts.access': { $in: access_filter } }
-    //     ]
-    //   }
-    // }, {
-    //   $project: {
-    //     partner: this.projectPartner(),
-    //     ...this.projectPost()
-    //   }
-    // }, {
-    //   $sort: {
-    //     updatedAt: -1
-    //   }
-    // },
-    // { $limit: offset.limit },
-    // { $skip: offset.skip }
-    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -284,43 +244,22 @@ class PostsController implements Controller {
     const post_id: PostID["post_id"] = request.params.post_id;
 
     /** Params & Filters */
-    const partner_filter = this.checkObjectIdValidity(partner_id) ? { _id: new ObjectId(partner_id) } : { slug: partner_id };
-    const post_filter = this.checkObjectIdValidity(post_id) ? { '_id': new ObjectId(post_id) } : { 'slug': post_id };
+    const partner_filter = this.checkObjectIdValidity(partner_id) ? { "_id": new ObjectId(partner_id) } : { "slug": partner_id };
+    const post_filter = this.checkObjectIdValidity(post_id) ? { "_id": new ObjectId(post_id) } : { "slug": post_id };
     /** ***** * ***** */
 
-    let error: Error, posts: Post[];
-    [error, posts] = await to(this.postModel.find(
+    let error: Error, post: Post;
+    [error, post] = await to(postModel.findOne(
       post_filter
-    )
-      .populate([{
-        path: 'partner'
-      }])
+    ).populate([{
+      "path": 'partner'
+    }])
       .lean()
       .catch());
-    // let error: Error, posts: Post[];
-    // [error, posts] = await to(this.user.aggregate([{
-    //   $unwind: '$posts'
-    // }, {
-    //   $match: {
-    //     $and: [
-    //       partner_filter,
-    //       post_filter
-    //     ]
-    //   }
-    // }, {
-    //   $project: {
-    //     partner: this.projectPartner(),
-    //     ...this.projectPost()
-    //   }
-    // }
-    // ]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    else if (!posts.length) {
-      return next(new NotFoundException('POST_NOT_EXISTS'));
-    }
 
     response.status(200).send({
-      data: posts[0],
+      data: post,
       code: 200
     });
   }
@@ -331,7 +270,7 @@ class PostsController implements Controller {
     const data: PostDto = request.body;
 
     const currentPost: Post = response.locals.post;
-    if (currentPost['imageURL'] && request.file) {
+    if (currentPost["imageURL"] && request.file) {
       await filesUtil.removeFile(currentPost);
     }
 
@@ -340,35 +279,18 @@ class PostsController implements Controller {
     }
 
     let error: Error, post: Post;
-    [error, post] = await to(this.postModel.findOneAndUpdate({
-      _id: post_id
+    [error, post] = await to(postModel.findOneAndUpdate({
+      "_id": new ObjectId(post_id)
     }, {
-      $set: {
+      "$set": {
         ...data,
-        imageURL: (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentPost['imageURL'],
-        'slug': await createSlug(request),
-        'contentFiles': (data.contentFiles) ? data.contentFiles.split(',') : [],
+        "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentPost['imageURL'],
+        "slug": await createSlug(request),
+        "contentFiles": (data.contentFiles) ? data.contentFiles.split(',') : [],
       }
     }, {
       "new": true
     }).catch());
-    // let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-    // [error, results] = await to(this.user.updateOne(
-    //   {
-    //     _id: partner_id,
-    //     'posts._id': post_id
-    //   }, {
-    //   '$set': {
-    //     'posts.$._id': post_id,
-    //     'posts.$.imageURL': (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : currentPost['imageURL'],
-    //     'posts.$.title': data.title,
-    //     'posts.$.slug': await createSlug(request),
-    //     'posts.$.subtitle': data.subtitle,
-    //     'posts.$.description': data.description,
-    //     'posts.$.contentFiles': (data.contentFiles) ? data.contentFiles.split(',') : 0,
-    //     'posts.$.access': data.access,
-    //   }
-    // }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -382,7 +304,7 @@ class PostsController implements Controller {
     const post_id: PostID["post_id"] = request.params.post_id;
 
     const currentPost: Post = response.locals.post;
-    if (currentPost['imageURL']) {
+    if (currentPost["imageURL"]) {
       await filesUtil.removeFile(currentPost);
     }
 
@@ -391,18 +313,7 @@ class PostsController implements Controller {
     }
 
     let error: Error, results: Object;
-    [error, results] = await to(this.postModel.findOneAndDelete({ _id: new ObjectId(post_id) }).catch());
-
-    // let error: Error, results: Object; // results = {"n": 1, "nModified": 1, "ok": 1}
-    // [error, results] = await to(this.user.updateOne({
-    //   _id: partner_id
-    // }, {
-    //   $pull: {
-    //     posts: {
-    //       _id: post_id
-    //     }
-    //   }
-    // }).catch());
+    [error, results] = await to(postModel.findOneAndDelete({ "_id": new ObjectId(post_id) }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -410,72 +321,6 @@ class PostsController implements Controller {
       code: 200
     });
   }
-
-  /**
-   *  
-   * Local Function Section 
-   *
-   * */
-
-  // /** Project Partner (Local Function) */
-  // private projectPartner() {
-  //   return {
-  //     _id: '$_id',
-  //     name: '$name',
-  //     email: '$email',
-  //     slug: '$slug',
-  //     imageURL: '$imageURL',
-  //     payments: '$payments',
-  //     address: '$address',
-  //     contacts: '$contacts',
-  //     phone: '$phone',
-  //   };
-  // }
-
-  // /** Project Post (Local Function) */
-  // private projectPost() {
-  //   return {
-  //     _id: '$posts._id',
-  //     slug: '$posts.slug',
-  //     imageURL: '$posts.imageURL',
-  //     title: '$posts.title',
-  //     subtitle: '$posts.subtitle',
-  //     description: '$posts.description',
-
-  //     createdAt: '$posts.createdAt',
-  //     updatedAt: '$posts.updatedAt'
-  //   };
-  // }
-
-  // /** Remove File (Local Function) */
-  // private async removeFile(currentPost: Post) {
-  //   var imageFile = (currentPost['imageURL']).split('assets/static/');
-  //   const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
-  //   if (existFile(file)) await deleteFile(file);
-  // }
-
-  // /** Remove Content Files (Local Function) */
-  // private async removeRichEditorFiles(currentPost: Post, newPost: PostDto, isUpdated: boolean) {
-  //   var toDelete: string[] = [];
-
-  //   if (isUpdated) {
-  //     (currentPost.contentFiles).forEach((element: string) => {
-  //       if ((newPost.contentFiles).indexOf(element) < 0) {
-  //         var imageFile = (element).split('assets/content/');
-  //         const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
-  //         toDelete.push(file);
-  //       }
-  //     });
-  //     toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
-  //   } else {
-  //     (currentPost.contentFiles).forEach((element: string) => {
-  //       var imageFile = (element).split('assets/content/');
-  //       const file = path.join(__dirname, '../assets/content/' + imageFile[1]);
-  //       toDelete.push(file);
-  //     });
-  //     toDelete.forEach(path => { if (existFile(path)) deleteSync(path) })
-  //   }
-  // }
 }
 
 export default PostsController;

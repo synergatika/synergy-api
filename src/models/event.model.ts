@@ -20,7 +20,12 @@ const eventSchema = new mongoose.Schema({
     default: ItemAccess.PUBLIC
   },
   location: String,
-  dateTime: Number
+  dateTime: Number,
+
+  published: {
+    type: Boolean,
+    default: true
+  }
 }, { timestamps: true });
 
 const eventModel = mongoose.model<Event & mongoose.Document>('Event', eventSchema);

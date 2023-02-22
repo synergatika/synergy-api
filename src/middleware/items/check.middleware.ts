@@ -14,7 +14,7 @@ import { NotFoundException } from '../../_exceptions/index';
  * Interfaces
  */
 import RequestWithUser from '../../interfaces/requestWithUser.interface';
-import { Partner, LoyaltyOffer, MicrocreditCampaign, MicrocreditSupport, MicrocreditTokens, MicrocreditSupportStatus } from '../../_interfaces/index';
+import { Partner, LoyaltyOffer, MicrocreditCampaign, MicrocreditSupport, MicrocreditSupportStatus } from '../../_interfaces/index';
 
 class CheckMiddleware {
 
@@ -65,7 +65,6 @@ class CheckMiddleware {
     }
     next();
   }
-
 
   static canEarnMicrocredit = async (request: RequestWithUser, response: Response, next: NextFunction) => {
     const campaign: MicrocreditCampaign = response.locals.campaign;

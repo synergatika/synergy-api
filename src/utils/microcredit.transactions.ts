@@ -40,8 +40,6 @@ class MicrocreditTransactionsUtil {
         /** ***** * ***** */
 
         const supports: MicrocreditSupport[] = await supportModel.find({ campaign: campaign._id });
-        console.log("I found Supports");
-        console.log(supports);
 
         return await transactionModel.find({
             "$and": [
@@ -50,16 +48,16 @@ class MicrocreditTransactionsUtil {
                 { createdAt: { "$lt": new Date(max), "$gt": new Date(min) } }
             ]
         }).populate({
-            "path": "support",
+            "path": 'support',
             "populate": [{
-                "path": "member"
+                "path": 'member'
             }, {
-                "path": "campaign",
+                "path": 'campaign',
                 "populate": {
-                    "path": "partner"
+                    "path": 'partner'
                 }
             }]
-        }).sort('-createdAt')
+        }).sort({ "createdAt": -1 })
             .limit(parseInt(_paging['size'] as string))
             .skip((parseInt(_paging['page'] as string) - 1) * parseInt(_paging['size'] as string));
     }
@@ -84,21 +82,21 @@ class MicrocreditTransactionsUtil {
 
         return await transactionModel.find({
             "$and": [
-                { support: { "$in": supports } },
-                { type: { "$in": [..._types] } },
-                { createdAt: { "$lt": new Date(max), "$gt": new Date(min) } }
+                { "support": { "$in": supports } },
+                { "type": { "$in": [..._types] } },
+                { "createdAt": { "$lt": new Date(max), "$gt": new Date(min) } }
             ]
         }).populate({
-            "path": "support",
+            "path": 'support',
             "populate": [{
-                "path": "member"
+                "path": 'member'
             }, {
-                "path": "campaign",
+                "path": 'campaign',
                 "populate": {
-                    "path": "partner"
+                    "path": 'partner'
                 }
             }]
-        }).sort('createdAt')
+        }).sort({ "createdAt": 1 })
             .limit(parseInt(_paging['size'] as string))
             .skip((parseInt(_paging['page'] as string) - 1) * parseInt(_paging['size'] as string));
     }
@@ -108,14 +106,11 @@ class MicrocreditTransactionsUtil {
         [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund(campaign, member, data._amount).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-        // let error: Error, transaction: MicrocreditTransaction;
-        // [error, transaction] = await to(
         return await transactionModel.create({
             support: support_id,
 
             ...blockchain_result,
 
-            // data: data,
             tokens: data._amount,
 
             type: MicrocreditTransactionType.PromiseFund,
@@ -130,10 +125,6 @@ class MicrocreditTransactionsUtil {
             partner_name: (campaign.partner as Partner).name,
             /** end: To be Removed in Next Version */
         })
-        // .catch());
-        // if (error) return error;
-
-        // return blockchain_result;
     }
 
     public createReceiveTransaction = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
@@ -141,8 +132,6 @@ class MicrocreditTransactionsUtil {
         [blockchain_error, blockchain_result] = await to(registrationService.registerReceivedFund(campaign, support).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-        // let error: Error, transaction: MicrocreditTransaction;
-        // [error, transaction] = await to(
         return await transactionModel.create({
             support: support._id,
 
@@ -161,12 +150,7 @@ class MicrocreditTransactionsUtil {
             partner_id: (campaign.partner as Partner)._id,
             partner_name: (campaign.partner as Partner).name
             /** end: To be Removed in Next Version */
-
         })
-        // .catch());
-        // if (error) return error;
-
-        // return blockchain_result;
     }
 
     public createRevertTransaction = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
@@ -174,8 +158,6 @@ class MicrocreditTransactionsUtil {
         [blockchain_error, blockchain_result] = await to(registrationService.registerRevertFund(campaign, support).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-        // let error: Error, transaction: MicrocreditTransaction;
-        // [error, transaction] = await to(
         return await transactionModel.create({
             support: support._id,
 
@@ -196,10 +178,6 @@ class MicrocreditTransactionsUtil {
             tokens: 0,
             payoff: support.initialTokens * (-1)
         })
-        // .catch());
-        // if (error) return error;
-
-        // return blockchain_result;
     }
 
     public createSpendTransaction = async (campaign: MicrocreditCampaign, member: Member, data: RedeemTokensDto, support: MicrocreditSupport) => {
@@ -207,14 +185,11 @@ class MicrocreditTransactionsUtil {
         [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund(campaign, member, data._tokens).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-        // let error: Error, transaction: MicrocreditTransaction;
-        // [error, transaction] = await to(
         return await transactionModel.create({
             support: support._id,
 
             ...blockchain_result,
 
-            // data: data,
             tokens: data._tokens * (-1),
 
             type: MicrocreditTransactionType.SpendFund,
@@ -229,10 +204,6 @@ class MicrocreditTransactionsUtil {
             partner_name: (campaign.partner as Partner).name
             /** end: To be Removed in Next Version */
         })
-        // .catch());
-        // if (error) return error;
-
-        // return blockchain_result;
     }
 
     public updateMicrocreditTransaction = async (_transaction: MicrocreditTransaction) => {
@@ -245,7 +216,7 @@ class MicrocreditTransactionsUtil {
             if (blockchain_result) {
                 let error: Error, support: MicrocreditSupport;
                 [error, support] = await to(transactionModel.updateOne({
-                    _id: (_transaction.support as MicrocreditSupport)._id
+                    "_id": (_transaction.support as MicrocreditSupport)._id
                 }, {
                     "$set": {
                         "contractRef": blockchain_result?.logs[0].args.ref,
@@ -271,13 +242,13 @@ class MicrocreditTransactionsUtil {
         if (blockchain_result) {
             let error: Error, transaction: MicrocreditTransaction;
             [error, transaction] = await to(transactionModel.updateOne({
-                '_id': _transaction._id
+                "_id": _transaction._id
             }, {
-                '$set': {
+                "$set": {
                     ...blockchain_result,
-                    status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+                    "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
                 }
-            }, { new: true }).catch());
+            }, { "new": true }).catch());
 
             return transaction;
         }

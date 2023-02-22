@@ -17,7 +17,6 @@ class FilesMiddleware {
         cb(null, path.join(__dirname, `../assets/${_path}`));
       },
       filename: function (req: RequestWithUser, file, cb) {
-        console.log(file.originalname)
         cb(null, `${_type}_${new Date().getTime()}${path.extname(file.originalname)}`);
       }
     })

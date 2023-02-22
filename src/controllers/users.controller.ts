@@ -1,7 +1,7 @@
 import * as express from 'express';
 import to from 'await-to-ts';
-import path from 'path';
-import { ObjectId } from 'mongodb';
+// import path from 'path';
+// import { ObjectId } from 'mongodb';
 
 /**
  * Emails Util
@@ -12,7 +12,7 @@ import { ObjectId } from 'mongodb';
 /**
  * DTOs
  */
-import { AccessDto, UserID } from '../_dtos/index';
+import { AccessDto } from '../_dtos/index';
 
 /**
  * Exceptions
@@ -26,12 +26,9 @@ import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 import { User, UserAccess } from '../_interfaces/index';
 
-//import Content from '../contentInterfaces/content.interface';
-
 /**
  * Middleware
  */
-import validationBodyMiddleware from '../middleware/validators/body.validation';
 import validationParamsMiddleware from '../middleware/validators/params.validation';
 import authMiddleware from '../middleware/auth/auth.middleware';
 import accessMiddleware from '../middleware/auth/access.middleware';
@@ -50,15 +47,16 @@ import userModel from '../models/user.model';
 class UserController implements Controller {
   public path = '/users';
   public router = express.Router();
-  private user = userModel;
 
   constructor() {
     this.initializeRoutes();
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/:access/:offset`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(AccessDto), this.readUsers);
-    // this.router.put(`${this.path}/reactivate/:user_id`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(UserID), this.reactivateUser, emailsUtil.accountReactivation);
+    this.router.get(`${this.path}/:access/:offset`,
+      authMiddleware, accessMiddleware.onlyAsAdmin,
+      validationParamsMiddleware(AccessDto),
+      this.readUsers);
   }
 
   private readUsers = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -70,55 +68,28 @@ class UserController implements Controller {
     } = offsetParams(params);
 
     let error: Error, users: User[];
-    [error, users] = await to(this.user.find({ access: access }).select({
-      "_id": 1, "address": 1,
-      "email": 1, "card": 1,
-      "name": 1, "imageURL": 1,
-      "activated": 1, "createdAt": 1
-    }).sort('-createdAt')
-      .limit(offset.limit).skip(offset.skip)
+    [error, users] = await to(userModel.find({
+      access: access
+    }).select({
+      "_id": 1,
+      "address": 1,
+      "email": 1,
+      "card": 1,
+      "name": 1,
+      "imageURL": 1,
+      "activated": 1,
+      "createdAt": 1
+    }).sort({ "createdAt": -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
       .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
     response.status(200).send({
       data: users,
       code: 200
     });
   }
-
-  // private reactivateUser = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   const user_id: UserID["user_id"] = request.params.user_id;
-
-  //   if (await this.user.findOne({ _id: user_id, activated: true })) {
-  //     next(new NotFoundException("USER_ACTIVATED"));
-  //   }
-
-  //   let error: Error, user: User; // results = {"n": 1, "nModified": 1, "ok": 1}
-  //   [error, user] = await to(this.user.findOneAndUpdate({
-  //     _id: user_id
-  //   }, {
-  //     $set: {
-  //       'activated': true
-  //     }
-  //   }, {
-  //     "fields": { "email": 1, "name": 1, "acceess": 1 },
-  //     "new": true
-  //   }).catch());
-  //   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-
-  //   response.locals = {
-  //     res: {
-  //       code: 200,
-  //       body: {
-  //         message: "Account has been successfully activated.",
-  //         code: 200
-  //       }
-  //     },
-  //     user: {
-  //       email: user.email
-  //     }
-  //   };
-  //   next();
-  // }
 }
 
 export default UserController;

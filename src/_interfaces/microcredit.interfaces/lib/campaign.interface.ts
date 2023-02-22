@@ -1,7 +1,11 @@
-import { ItemAccess, Partner } from '../../index';
-import { MicrocreditTokens } from './tokens.interface';
-import { MicrocreditStatistics } from './statistics.interface';
+import { ItemAccess, Partner, TransactionStatus } from '../../index';
 import { ObjectId } from 'mongodb';
+
+interface MicrocreditTokens {
+  total: number;
+  paid: number;
+  current: number;
+}
 
 export enum MicrocreditCampaignStatus {
   PUBLISHED = 'published',
@@ -19,7 +23,9 @@ export interface MicrocreditCampaign {
   contentFiles: string[];
   category: string;
   access: ItemAccess;
-  status: string;
+
+  status: MicrocreditCampaignStatus;
+  registered: TransactionStatus;
 
   redeemable: boolean;
   quantitative: boolean;
@@ -35,16 +41,13 @@ export interface MicrocreditCampaign {
 
   tokens?: MicrocreditTokens;
 
-  statistics?: {
-    earned: MicrocreditStatistics,
-    redeemed: MicrocreditStatistics
-  }
-
   address: string;
   transactionHash: string;
 
   createdAt?: Date;
   updatedAt?: Date;
+
+  published?: Boolean, // Future Variable to Hide Items
 
   partner: Partner | ObjectId;
 }

@@ -1,9 +1,35 @@
-export interface MicrocreditStatistics {
-  _id: string;
+import { ObjectId } from "bson";
+
+interface MicrocreditData {
+  date?: number
   tokens: number;
-  users: number;
-  usersArray: [string];
-  count: number;
-  byDate?: [];
-  type: string;
+  payoff?: number;
+  uniqueUsers: string[];
+  uniqueSupports: (string | ObjectId)[];
 }
+
+export interface MicrocreditStatistics {
+  promise?: MicrocreditData;
+  receive?: MicrocreditData;
+  revert?: MicrocreditData;
+  spend?: MicrocreditData;
+  total?: MicrocreditData;
+  dates: string[];
+}
+
+export interface ExportedMicrocreditStatistics {
+  date: string;
+  tokens?: number;
+  payoff?: number;
+  users: string | number;
+  transactions: string | number;
+}
+// export interface MicrocreditStatistics {
+//   _id: string;
+//   tokens: number;
+//   users: number;
+//   usersArray: [string];
+//   count: number;
+//   byDate?: [];
+//   type: string;
+// }

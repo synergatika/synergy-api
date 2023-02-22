@@ -15,7 +15,12 @@ const offerSchema = new mongoose.Schema({
   imageURL: String,
   cost: Number,
   instructions: String,
-  expiresAt: Number
+  expiresAt: Number,
+
+  published: {
+    type: Boolean,
+    default: true
+  }
 }, { timestamps: true });
 
 const offerModel = mongoose.model<LoyaltyOffer & mongoose.Document>('Offer', offerSchema);

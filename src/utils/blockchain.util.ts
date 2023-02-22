@@ -16,13 +16,13 @@ import { EarnTokensDto, RedeemTokensDto } from '../_dtos/index';
 import convertHelper from '../middleware/items/convert.helper';
 
 class BlockchainRegistrationService {
-  private blockchain: boolean = true;
+  private usesBlockchain: boolean = `${process.env.USES_BLOCKCHAIN}` == 'true';
   private campaignHours: number[] = [5, 20];
 
   constructor() { }
 
   public registerPartnerAccount = async (account: Account) => {
-    if (!this.blockchain) return null;
+    if (!this.usesBlockchain) return null;
 
     return serviceInstance.getLoyaltyAppContract()
       .then((instance) => {
@@ -34,7 +34,7 @@ class BlockchainRegistrationService {
   }
 
   public registerMemberAccount = async (account: Account) => {
-    if (!this.blockchain) return null;
+    if (!this.usesBlockchain) return null;
 
     return serviceInstance.getLoyaltyAppContract()
       .then((instance) => {
@@ -52,7 +52,7 @@ class BlockchainRegistrationService {
    */
 
   public registerEarnLoyalty = async (partner: User, member: User, points: number) => {
-    if (!this.blockchain) return null;
+    if (!this.usesBlockchain) return null;
 
     const _account = serviceInstance.unlockWallet(partner.account, partner.email);
 
@@ -67,7 +67,7 @@ class BlockchainRegistrationService {
   }
 
   public registerRedeemLoyalty = async (partner: User, member: User, points: number) => {
-    if (!this.blockchain) return null;
+    if (!this.usesBlockchain) return null;
 
     const _account = serviceInstance.unlockWallet(partner.account, partner.email);
 
@@ -87,7 +87,7 @@ class BlockchainRegistrationService {
    */
 
   public registerMicrocreditCampaign = async (user: User, campaign: MicrocreditCampaign) => {
-    if (!this.blockchain) return null;
+    if (!this.usesBlockchain) return null;
 
     const dates = {
       startsAt: (convertHelper.roundDate(campaign.startsAt, this.campaignHours[0])).toString(),
@@ -112,7 +112,7 @@ class BlockchainRegistrationService {
   }
 
   public registerPromisedFund = async (campaign: MicrocreditCampaign, member: User, tokens: number) => {
-    if (!this.blockchain) return null;
+    if (!this.usesBlockchain) return null;
 
     return serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
@@ -124,7 +124,7 @@ class BlockchainRegistrationService {
   }
 
   public registerReceivedFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
-    if (!this.blockchain) return null;
+    if (!this.usesBlockchain) return null;
 
     return serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
@@ -136,7 +136,7 @@ class BlockchainRegistrationService {
   }
 
   public registerRevertFund = async (campaign: MicrocreditCampaign, support: MicrocreditSupport) => {
-    if (!this.blockchain) return null;
+    if (!this.usesBlockchain) return null;
 
     return serviceInstance.getMicrocredit(campaign.address)
       .then((instance) => {
@@ -148,7 +148,7 @@ class BlockchainRegistrationService {
   }
 
   public registerSpentFund = async (campaign: MicrocreditCampaign, member: Member, tokens: number) => {
-    if (!this.blockchain) return null;
+    if (!this.usesBlockchain) return null;
 
     if (campaign.quantitative) {
       return serviceInstance.getMicrocredit(campaign.address)

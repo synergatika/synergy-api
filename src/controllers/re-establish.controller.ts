@@ -37,15 +37,11 @@ import postModel from '../models/post.model';
 import eventModel from '../models/event.model';
 import offerModel from '../models/offer.model';
 import campaignModel from '../models/campaign.model';
-
 import loyaltyModel from '../models/loyalty.model';
-
 import registrationTransactionModel from '../models/registration.transaction.model';
 import loyaltyTransactionModel from '../models/loyalty.transaction.model';
 import microcreditTransactionModel from '../models/microcredit.transaction.model';
 import supportModel from '../models/support.model';
-import { RegisterUserWithoutPasswordDto } from '_dtos';
-import microcreditModel from '../models/campaign.model';
 
 /**
  * Transactions Util
@@ -56,10 +52,6 @@ const transactionsUtil = new RegistrationTransactionsUtil();
 class ReEstablishController implements Controller {
     public path = '/establish';
     public router = express.Router();
-    // private userModel = userModel;
-    // private registrationTransaction = registrationTransactionModel;
-    // private loyaltyTransaction = loyaltyTransactionModel;
-    // private microcreditTransaction = microcreditTransactionModel;
 
     constructor() {
         this.initializeRoutes();
@@ -122,11 +114,11 @@ class ReEstablishController implements Controller {
         transactions.forEach(async (transaction: any) => {
 
             await registrationTransactionModel.updateOne({
-                _id: transaction._id
+                "_id": transaction._id
             }, {
-                $set: {
-                    user: new ObjectId(transaction.user_id),
-                    status: TransactionStatus.COMPLETED
+                "$set": {
+                    "user": new ObjectId(transaction.user_id),
+                    "status": TransactionStatus.COMPLETED
                 }
             })
 
@@ -140,13 +132,13 @@ class ReEstablishController implements Controller {
         transactions.forEach(async (transaction: any) => {
 
             await loyaltyTransactionModel.updateOne({
-                _id: transaction._id
+                "_id": transaction._id
             }, {
-                $set: {
-                    partner: new ObjectId(transaction.partner_id),
-                    member: new ObjectId(transaction.member_id),
-                    offer: new ObjectId(transaction.offer_id),
-                    status: TransactionStatus.COMPLETED
+                "$set": {
+                    "partner": new ObjectId(transaction.partner_id),
+                    "member": new ObjectId(transaction.member_id),
+                    "offer": new ObjectId(transaction.offer_id),
+                    "status": TransactionStatus.COMPLETED
                 }
             });
 

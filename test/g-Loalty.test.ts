@@ -153,7 +153,18 @@ describe("Loyalty", () => {
     });
     it("6. should read loyalty statistics - 200 LoyaltyStatistics", (done) => {
       chai.request(`${process.env.API_URL}`)
-        .get("loyalty/statistics")
+        .get("loyalty/statistics/0")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          done();
+        });
+    });
+    it("7. should read loyalty offer statistics - 200 LoyaltyOfferStatistics", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .get("loyalty/offers/" + partner_a._id + "/" + offers[0]._id + "/" + "statistics/0")
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .end((err, res) => {
           res.should.have.status(200);

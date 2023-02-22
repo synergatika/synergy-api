@@ -14,5 +14,7 @@ export interface Post {
   createdAt?: Date;
   updatedAt?: Date;
 
+  published?: Boolean, // Future Variable to Hide Items
+
   partner: Partner | ObjectId;
 }

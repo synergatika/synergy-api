@@ -21,7 +21,7 @@ const emailsUtil = new EmailsUtil();
 /**
  * Interfaces
  */
-import { User, MicrocreditCampaign, MicrocreditSupport, TransactionStatus, RegistrationTransaction, MicrocreditTransaction, LoyaltyTransaction, MicrocreditTransactionType, Partner, Member } from '../_interfaces/index';
+import { User, MicrocreditCampaign, MicrocreditSupport, TransactionStatus, RegistrationTransaction, MicrocreditTransaction, LoyaltyTransaction, MicrocreditTransactionType, Partner, Member, MicrocreditCampaignStatus } from '../_interfaces/index';
 
 /**
  * Models
@@ -82,19 +82,17 @@ class Schedule {
       const secondsEnd = parseInt(nowEnds.getTime().toString());
 
       let error: Error, campaigns: MicrocreditCampaign[];
-      [error, campaigns] = await to(this.microcreditCampaignModel
-        .find({
-          $and: [
-            { 'status': 'published' },
-            { 'redeemable': true },
-            { 'redeemStarts': { $gt: secondsStart } },
-            { 'redeemStarts': { $lt: secondsEnd } },
-          ]
-        })
-        .populate([{
-          path: 'partner'
-        }])
-        .sort({ updatedAt: -1 })
+      [error, campaigns] = await to(this.microcreditCampaignModel.find({
+        "$and": [
+          { "status": MicrocreditCampaignStatus.PUBLISHED },
+          { "redeemable": true },
+          { "redeemStarts": { $gt: secondsStart } },
+          { "redeemStarts": { $lt: secondsEnd } },
+        ]
+      }).populate([{
+        "path": 'partner'
+      }])
+        .sort({ "updatedAt": -1 })
         .catch());
       if (error) return;
 
@@ -127,63 +125,25 @@ class Schedule {
   public readSupportsByCampaign = async (_campaign: MicrocreditCampaign) => {
 
     let error: Error, supports: MicrocreditSupport[];
-    [error, supports] = await to(this.microcreditSupportModel
-      .find({
-        campaign: _campaign._id
-      })
-      .populate({
-        path: "member"
-      }).catch());
+    [error, supports] = await to(this.microcreditSupportModel.find({
+      "campaign": _campaign._id
+    }).populate({
+      "path": 'member'
+    }).catch());
 
-    // let error: Error, supports: any[];
-    // [error, supports] = await to(this.microcreditTransactionModel.aggregate([
-    //   {
-    //     $match: {
-    //       'campaign_id': { $in: campaigns.map(a => (a._id).toString()) }
-    //     }
-    //   },
-    //   { $sort: { date: 1 } },
-    //   {
-    //     $group:
-    //     {
-    //       _id: "$member_id",
-    //       campaign_id: { '$first': "$campaign_id" },
-    //       initialTokens: { '$first': "$tokens" },
-    //       currentTokens: { '$sum': '$tokens' },
-    //       method: { '$first': "$method" },
-    //       payment_id: { '$first': "$payment_id" },
-    //       type: { '$last': "$type" },
-    //       createdAt: { '$first': "$createdAt" },
-    //     }
-    //   }
-    // ]).exec().catch());
-    // if (error) return;
-
-    // console.log("supports");
-    // console.log(supports.map(a => a._id));
-    // console.log(supports.map(a => (a.member as Member)._id));
     const users: User[] = await this.readUsersBySupports(supports);
-    // const supportsWithUsers = supports.map((a: MicrocreditSupport) =>
-    //   Object.assign({}, a,
-    //     {
-    //       member_email: users.find((b: User) => b._id === (a.member as Member)._id).email,
-    //     }
-    //   )
-    // );
+
     return users.map(o => o.email);
-    // return supportsWithUsers;
   }
 
   public readUsersBySupports = async (supports: MicrocreditSupport[]) => {
     let error: Error, users: User[];
 
-    [error, users] = await to(this.userModel
-      .find({
-        _id: { $in: supports.map((a: MicrocreditSupport) => (a.member as Member)._id) }
-      })
-      .select({
-        "_id": 1, "email": 1,
-      }).catch());
+    [error, users] = await to(this.userModel.find({
+      "_id": { "$in": supports.map((a: MicrocreditSupport) => (a.member as Member)._id) }
+    }).select({
+      "_id": 1, "email": 1, "card": 1
+    }).catch());
 
     return users;
   }
@@ -207,14 +167,12 @@ class Schedule {
 
   public readPendingRegistrationTransactions = async () => {
     let error: Error, transactions: RegistrationTransaction[];
-    [error, transactions] = await to(this.registrationTransactionModel
-      .find({
-        'status': TransactionStatus.PENDING
-      })
-      .populate([{
-        path: 'user'
-      }])
-      .sort({ createdAt: 1 })
+    [error, transactions] = await to(this.registrationTransactionModel.find({
+      "status": TransactionStatus.PENDING
+    }).populate([{
+      "path": 'user'
+    }])
+      .sort({ "createdAt": 1 })
       .catch());
 
     let completed = 0;
@@ -237,16 +195,16 @@ class Schedule {
 
   public readPendingLoayltyTransactions = async () => {
     let error: Error, transactions: LoyaltyTransaction[];
-    [error, transactions] = await to(this.loyaltyTransactionModel
-      .find({ 'status': TransactionStatus.PENDING })
-      .populate([{
-        path: 'partner'
-      }, {
-        path: 'member'
-      }, {
-        path: 'offer'
-      }])
-      .sort({ createdAt: 1 })
+    [error, transactions] = await to(this.loyaltyTransactionModel.find({
+      "status": TransactionStatus.PENDING
+    }).populate([{
+      "path": 'partner'
+    }, {
+      "path": 'member'
+    }, {
+      "path": 'offer'
+    }])
+      .sort({ "createdAt": 1 })
       .catch());
 
     let completed = 0;
@@ -269,12 +227,12 @@ class Schedule {
 
   public readPendingCampaigns = async () => {
     let error: Error, campaigns: MicrocreditCampaign[];
-    [error, campaigns] = await to(this.microcreditCampaignModel
-      .find({ 'registered': TransactionStatus.PENDING })
-      .populate([{
-        path: 'partner'
-      }])
-      .sort({ createdAt: 1 })
+    [error, campaigns] = await to(this.microcreditCampaignModel.find({
+      "registered": TransactionStatus.PENDING
+    }).populate([{
+      "path": 'partner'
+    }])
+      .sort({ "createdAt": 1 })
       .catch());
 
     let completed = 0;
@@ -297,27 +255,23 @@ class Schedule {
 
   public readPendingMicrocreditPromiseTransactions = async () => {
     let error: Error, transactions: MicrocreditTransaction[];
-    [error, transactions] = await to(this.microcreditTransactionModel
-      .find(
-        {
-          "$and": [
-            { 'status': TransactionStatus.PENDING },
-            { 'type': MicrocreditTransactionType.PromiseFund }
-          ]
+    [error, transactions] = await to(this.microcreditTransactionModel.find({
+      "$and": [
+        { 'status': TransactionStatus.PENDING },
+        { 'type': MicrocreditTransactionType.PromiseFund }
+      ]
+    }).populate({
+      "path": 'support',
+      "populate": [{
+        "path": 'campaign',
+        "populate": {
+          "path": 'partner'
         }
-      )
-      .populate({
-        path: 'support',
-        populate: [{
-          path: 'campaign',
-          populate: {
-            path: 'partner'
-          }
-        }, {
-          path: 'member'
-        }]
-      })
-      .sort({ createdAt: 1 })
+      }, {
+        "path": 'member'
+      }]
+    })
+      .sort({ "createdAt": 1 })
       .catch());
 
     let completed = 0;
@@ -340,33 +294,23 @@ class Schedule {
 
   public readPendingMicrocreditTransactions = async () => {
     let error: Error, transactions: MicrocreditTransaction[];
-    [error, transactions] = await to(this.microcreditTransactionModel
-      .find(
-        {
-          "$and": [
-            { 'status': TransactionStatus.PENDING },
-            {
-              "$or": [
-                { 'type': MicrocreditTransactionType.ReceiveFund },
-                { 'type': MicrocreditTransactionType.RevertFund },
-                { 'type': MicrocreditTransactionType.SpendFund }
-              ]
-            }
-          ]
+    [error, transactions] = await to(this.microcreditTransactionModel.find({
+      "$and": [
+        { "status": TransactionStatus.PENDING },
+        { "type": { "$in": [MicrocreditTransactionType.ReceiveFund, MicrocreditTransactionType.RevertFund, MicrocreditTransactionType.SpendFund] } }
+      ]
+    }).populate({
+      "path": 'support',
+      "populate": [{
+        "path": 'campaign',
+        "populate": {
+          "path": 'partner'
         }
-      )
-      .populate({
-        path: 'support',
-        populate: [{
-          path: 'campaign',
-          populate: {
-            path: 'partner'
-          }
-        }, {
-          path: 'member'
-        }]
-      })
-      .sort({ createdAt: 1 })
+      }, {
+        "path": 'member'
+      }]
+    })
+      .sort({ "createdAt": 1 })
       .catch());
 
     let completed = 0;
@@ -376,13 +320,6 @@ class Schedule {
 
       if (!error && transaction) completed++;
     });
-
-    // for (let i = 0; i < transactions.length; i++) {
-    //   let transaction: MicrocreditTransaction;
-    //   [error, transaction] = await to(this.updateMicrocreditTransaction(transactions[i]).catch());
-
-    //   if (!error && transaction) completed++;
-    // }
 
     console.log(`${completed} of ${transactions.length} <<Microcredit Transactions (Receive, Revert, Spend)>> registered in blockchain`);
   }
@@ -396,7 +333,7 @@ class Schedule {
     if (blockchain_result) {
       let error: Error, campaign: MicrocreditCampaign;
       [error, campaign] = await to(this.microcreditCampaignModel.findOneAndUpdate({
-        _id: _campaign._id
+        "_id": _campaign._id
       }, {
         "$set": {
           "address": blockchain_result?.address,
@@ -410,115 +347,5 @@ class Schedule {
 
     return null;
   }
-
-  // private updateRegistrationTransaction = async (_transaction: RegistrationTransaction) => {
-  //   const user: User = _transaction.user;
-  //   if (!user) return;
-
-  //   const newAccount: Account = serviceInstance.unlockWallet(user.account, (user.email) ? user.email : user.card);
-
-  //   let blockchain_error: Error, blockchain_result: any;
-  //   if (_transaction.type === RegistrationTransactionType.RegisterMember) {
-  //     [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(newAccount).catch());
-  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-  //   } else if (_transaction.type === RegistrationTransactionType.RegisterPartner) {
-  //     [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(newAccount).catch());
-  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-  //   }
-  //   if (blockchain_result) {
-  //     let error: Error, transaction: RegistrationTransaction;
-  //     [error, transaction] = await to(this.registrationTransactionModel.updateOne({
-  //       '_id': new ObjectId(_transaction._id)
-  //     }, {
-  //       '$set': {
-  //         ...blockchain_result,
-  //         status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
-  //       }
-  //     }, { new: true }).catch());
-
-  //     return transaction;
-  //   }
-
-  //   return null;
-  // }
-
-  // private updateLoyaltyTransaction = async (_transaction: LoyaltyTransaction) => {
-
-  //   let blockchain_error: Error, blockchain_result: any;
-
-  //   if (_transaction.type === LoyaltyTransactionType.EarnPoints) {
-  //     [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points).catch());
-  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-  //   } else if ((_transaction.type === LoyaltyTransactionType.RedeemPoints) || (_transaction.type === LoyaltyTransactionType.RedeemPointsOffer)) {
-  //     [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points * (-1)).catch());
-  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-  //   }
-
-  //   if (blockchain_result) {
-  //     let error: Error, transaction: LoyaltyTransaction;
-  //     [error, transaction] = await to(this.loyaltyTransactionModel.updateOne({
-  //       '_id': _transaction._id
-  //     }, {
-  //       '$set': {
-  //         ...blockchain_result,
-  //         status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
-  //       }
-  //     }, { new: true }).catch());
-
-  //     return transaction;
-  //   }
-
-  //   return null;
-  // }
-
-  // private updateMicrocreditTransaction = async (_transaction: MicrocreditTransaction) => {
-  //   let blockchain_error: Error, blockchain_result: any;
-
-  //   if (_transaction.type === MicrocreditTransactionType.PromiseFund) {
-  //     [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as EarnTokensDto).catch());
-  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-
-  //     if (blockchain_result) {
-  //       let error: Error, support: MicrocreditSupport;
-  //       [error, support] = await to(this.microcreditSupportModel.updateOne({
-  //         _id: (_transaction.support as MicrocreditSupport)._id
-  //       }, {
-  //         "$set": {
-  //           "contractRef": blockchain_result?.logs[0].args.ref,
-  //           "contractIndex": blockchain_result?.logs[0].args.index,
-  //         }
-  //       }).catch());
-  //       if (error) return null;
-  //     }
-  //   }
-  //   else if (_transaction.type === MicrocreditTransactionType.ReceiveFund) {
-  //     [blockchain_error, blockchain_result] = await to(registrationService.registerReceivedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
-  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-  //   }
-  //   else if (_transaction.type === MicrocreditTransactionType.RevertFund) {
-  //     [blockchain_error, blockchain_result] = await to(registrationService.registerRevertFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
-  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-  //   }
-  //   else if (_transaction.type === MicrocreditTransactionType.SpendFund) {
-  //     [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.data as RedeemTokensDto).catch());
-  //     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-  //   }
-
-  //   if (blockchain_result) {
-  //     let error: Error, transaction: MicrocreditTransaction;
-  //     [error, transaction] = await to(this.microcreditTransactionModel.updateOne({
-  //       '_id': _transaction._id
-  //     }, {
-  //       '$set': {
-  //         ...blockchain_result,
-  //         status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
-  //       }
-  //     }, { new: true }).catch());
-
-  //     return transaction;
-  //   }
-
-  //   return null;
-  // }
 }
 export default new Schedule();

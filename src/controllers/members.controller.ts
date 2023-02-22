@@ -42,32 +42,28 @@ import userModel from '../models/user.model';
 class MembersController implements Controller {
   public path = '/profile';
   public router = express.Router();
-  private user = userModel;
 
   constructor() {
     this.initializeRoutes()
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}`, authMiddleware, this.readUserProfile);
+    this.router.get(`${this.path}`,
+      authMiddleware,
+      this.readUserProfile);
 
-    this.router.put(`${this.path}`, authMiddleware,
-      // this.declareStaticPath, 
+    this.router.put(`${this.path}`,
+      authMiddleware,
       uploadFile('static', 'member').single('imageURL'),
-      validationBodyAndFileMiddleware(MemberDto), this.updateUserProfile);
+      validationBodyAndFileMiddleware(MemberDto),
+      this.updateUserProfile);
   }
-
-  // private declareStaticPath = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-  //   request.params['path'] = 'static';
-  //   request.params['type'] = 'member';
-  //   next();
-  // }
 
   private readUserProfile = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
 
     let error: Error, member: Member;
-    [error, member] = await to(this.user.findOne({
+    [error, member] = await to(userModel.findOne({
       _id: user._id
     }).select({
       "id": 1, "email": 1,
@@ -91,19 +87,14 @@ class MembersController implements Controller {
       const file = path.join(__dirname, '../assets/static/' + imageFile[1]);
       if (existFile(file)) await deleteFile(file);
     }
-    // if ((user.imageURL && (user.imageURL).includes(user._id)) && request.file) {
-    //   //if (user.imageURL && request.file) {
-    //   var imageFile = (user.imageURL).split('assets/profile/');
-    //   await deleteFile(path.join(__dirname, '../assets/profile/' + imageFile[1]));
-    // }
 
     let error: Error, member: Member;
-    [error, member] = await to(this.user.findOneAndUpdate({
-      _id: user._id
+    [error, member] = await to(userModel.findOneAndUpdate({
+      "_id": user._id
     }, {
-      $set: {
-        name: data.name,
-        imageURL: (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : user.imageURL
+      "$set": {
+        "name": data.name,
+        "imageURL": (request.file) ? `${process.env.API_URL}assets/static/${request.file.filename}` : user.imageURL
       }
     }, {
       "fields": { "name": 1, "imageURL": 1 },

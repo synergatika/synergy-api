@@ -19,6 +19,11 @@ const postSchema = new mongoose.Schema({
     enum: ['public', 'private', 'partners'],
     default: ItemAccess.PUBLIC
   },
+
+  published: {
+    type: Boolean,
+    default: true
+  }
 }, { timestamps: true });
 
 const postModel = mongoose.model<Post & mongoose.Document>('Post', postSchema);

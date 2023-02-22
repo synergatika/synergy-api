@@ -23,17 +23,20 @@ import transactionModel from '../models/registration.transaction.model';
 
 export default class RegistrationTransactionsUtil {
 
+    private usesBlockchain: boolean = `${process.env.USES_BLOCKCHAIN}` == 'true';
+
     private isError = (err: unknown): err is Error => err instanceof Error;
 
     public createRegisterMemberTransaction = async (user: User, encryptBy: string) => {
-        const account = serviceInstance.unlockWallet(user.account, encryptBy);
 
         let blockchain_error: Error, blockchain_result: any;
-        [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(account).catch());
-        if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-        // let error: Error, transaction: RegistrationTransaction;
-        // [error, transaction] = await to(
+        if (this.usesBlockchain) {
+            const account = serviceInstance.unlockWallet(user.account, encryptBy);
+            [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(account).catch());
+            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+        }
+
         return await transactionModel.create({
             ...blockchain_result,
             user: user,
@@ -46,14 +49,15 @@ export default class RegistrationTransactionsUtil {
     }
 
     public createRegisterPartnerTransaction = async (user: User, encryptBy: string) => {
-        const account = serviceInstance.unlockWallet(user.account, encryptBy);
 
         let blockchain_error: Error, blockchain_result: any;
-        [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(account).catch());
-        if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-        // let error: Error, transaction: RegistrationTransaction;
-        // [error, transaction] = await to(
+        if (this.usesBlockchain) {
+            const account = serviceInstance.unlockWallet(user.account, encryptBy);
+            [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(account).catch());
+            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+        }
+
         return await transactionModel.create({
             ...blockchain_result,
             user: user,
@@ -62,33 +66,36 @@ export default class RegistrationTransactionsUtil {
             type: RegistrationTransactionType.RegisterPartner,
             status: (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
         })
-        // .catch());
     }
 
     public updateRegistrationTransaction = async (_transaction: RegistrationTransaction) => {
         const user: User = _transaction.user as User;
         if (!user) return;
 
-        const newAccount: Account = serviceInstance.unlockWallet(user.account, (user.email) ? user.email : user.card);
-
         let blockchain_error: Error, blockchain_result: any;
-        if (_transaction.type === RegistrationTransactionType.RegisterMember) {
-            [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(newAccount).catch());
-            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-        } else if (_transaction.type === RegistrationTransactionType.RegisterPartner) {
-            [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(newAccount).catch());
-            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+
+        if (this.usesBlockchain) {
+            const newAccount: Account = serviceInstance.unlockWallet(user.account, (user.email) ? user.email : user.card);
+
+            if (_transaction.type === RegistrationTransactionType.RegisterMember) {
+                [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(newAccount).catch());
+                if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+            } else if (_transaction.type === RegistrationTransactionType.RegisterPartner) {
+                [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(newAccount).catch());
+                if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+            }
         }
+
         if (blockchain_result) {
             let error: Error, transaction: RegistrationTransaction;
             [error, transaction] = await to(transactionModel.updateOne({
-                '_id': new ObjectId(_transaction._id)
+                "_id": new ObjectId(_transaction._id)
             }, {
-                '$set': {
+                "$set": {
                     ...blockchain_result,
-                    status: (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+                    "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
                 }
-            }, { new: true }).catch());
+            }, { "new": true }).catch());
 
             return transaction;
         }

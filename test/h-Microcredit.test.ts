@@ -314,5 +314,16 @@ describe("Microcredit", () => {
           done();
         });
     });
+    it("6. should read microcredit campaign statistics - 200 MicrocreditCampaignStatistics", (done) => {
+      chai.request(`${process.env.API_URL}`)
+        .get("microcredit/campaigns/" + partner_a._id + "/" + microcredit_a._id + "/" + "statistics/0")
+        .set('Authorization', 'Bearer ' + partner_a.authToken)
+        .end((err, res) => {
+          res.should.have.status(200);
+          res.body.should.be.a('object');
+          res.body.should.have.property('data');
+          done();
+        });
+    });
   });
 });

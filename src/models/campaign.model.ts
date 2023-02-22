@@ -51,6 +51,11 @@ const microcreditCampaignSchema = new mongoose.Schema({
     default: MicrocreditCampaignStatus.DRAFT
   },
 
+  published: {
+    type: Boolean,
+    default: true
+  },
+
   /** Blckchain Variables */
   address: String,
   transactionHash: String

@@ -38,7 +38,6 @@ describe("Partner - Offers, Posts, Events", () => {
           res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('data');
-
           let i = 0;
           for (i = 0; i < (res.body.data).length; i++) {
             offers.push((res.body.data)[i]);

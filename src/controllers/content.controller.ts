@@ -38,27 +38,49 @@ import sectorModel from '../models/sector.model';
 class ContentController implements Controller {
   public path = '/content';
   public router = express.Router();
-  private content = contentModel;
-  private sector = sectorModel;
 
   constructor() {
     this.initializeRoutes();
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/sectors`, this.readSectors);
-    this.router.post(`${this.path}/sectors`, authMiddleware, accessMiddleware.onlyAsAdmin, validationBodyMiddleware(SectorsDto), this.updateSectors);
+    /**
+     * Sectors
+     */
+    this.router.get(`${this.path}/sectors`,
+      this.readSectors);
 
-    this.router.get(`${this.path}/`, this.readContent);
-    this.router.get(`${this.path}/:content_id`, validationParamsMiddleware(ContentID), this.readContentById);
-    this.router.post(`${this.path}/`, authMiddleware, accessMiddleware.onlyAsAdmin, validationBodyMiddleware(ContentDto), this.createContent);
-    this.router.put(`${this.path}/:content_id`, authMiddleware, accessMiddleware.onlyAsAdmin, validationParamsMiddleware(ContentID), validationBodyMiddleware(ContentDto), this.updateContent);
+    this.router.post(`${this.path}/sectors`,
+      authMiddleware, accessMiddleware.onlyAsAdmin,
+      validationBodyMiddleware(SectorsDto),
+      this.updateSectors);
+
+    /**
+     * Content
+     */
+    this.router.get(`${this.path}/`,
+      this.readContent);
+
+    this.router.get(`${this.path}/:content_id`,
+      validationParamsMiddleware(ContentID),
+      this.readContentById);
+
+    this.router.post(`${this.path}/`,
+      authMiddleware, accessMiddleware.onlyAsAdmin,
+      validationBodyMiddleware(ContentDto),
+      this.createContent);
+
+    this.router.put(`${this.path}/:content_id`,
+      authMiddleware, accessMiddleware.onlyAsAdmin,
+      validationParamsMiddleware(ContentID), validationBodyMiddleware(ContentDto),
+      this.updateContent);
   }
 
   private readSectors = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     let error: Error, sectors: Sector[];
-    [error, sectors] = await to(this.sector.find().catch());
+    [error, sectors] = await to(sectorModel.find().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
+
     response.status(200).send({
       data: sectors,
       code: 200
@@ -69,7 +91,7 @@ class ContentController implements Controller {
     const data: SectorsDto = request.body;
 
     let error: Error, sectors: Sector[];
-    [error, sectors] = await to(this.sector.find().catch());
+    [error, sectors] = await to(sectorModel.find().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     var toUpdate: Sector[] = data.sectors.filter((o) => { return o._id != '0' }).map((o) => { return { _id: o._id, slug: latinize((o.en_title).toLowerCase()).split(' ').join('_'), el_title: o.el_title, en_title: o.en_title } });
@@ -77,23 +99,21 @@ class ContentController implements Controller {
     var toInsert: Sector[] = data.sectors.filter((o) => { return o._id == '0' }).map((o) => { return { slug: latinize((o.en_title).toLowerCase()).split(' ').join('_'), el_title: o.el_title, en_title: o.en_title } });
 
     let error_1: Error, result_1: any;
-    [error_1, result_1] = await to(this.sector.deleteMany(
-      { _id: { $in: toDelete } }
+    [error_1, result_1] = await to(sectorModel.deleteMany(
+      { _id: { "$in": toDelete } }
     ).catch());
     if (error_1) return next(new UnprocessableEntityException(`DB ERROR || ${error_1}`));
 
     let error_2: Error, result_2: any;
-    [error_2, result_2] = await to(this.sector.insertMany(
+    [error_2, result_2] = await to(sectorModel.insertMany(
       toInsert
     ).catch());
     if (error_2) return next(new UnprocessableEntityException(`DB ERROR || ${error_2}`));
 
-    //toUpdate.forEach(element => {
     let error_3: Error, result_3: any;
-    [error_3, result_3] = await to(this.sector.insertMany(
+    [error_3, result_3] = await to(sectorModel.insertMany(
       toUpdate
     ).catch());
-    //  });
     if (error_3) return next(new UnprocessableEntityException(`DB ERROR || ${error_3}`));
 
     response.status(200).send({
@@ -104,7 +124,7 @@ class ContentController implements Controller {
 
   private readContent = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
     let error: Error, content: Content[];
-    [error, content] = await to(this.content.find().catch());
+    [error, content] = await to(contentModel.find().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
@@ -114,14 +134,13 @@ class ContentController implements Controller {
   }
 
   private readContentById = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
-
     const content_id: ContentID["content_id"] = request.params.content_id;
 
     let error: Error, content: Content;
-    [error, content] = await to(this.content.findOne({
+    [error, content] = await to(contentModel.findOne({
       $or: [
-        { _id: ObjectId.isValid(content_id) ? new ObjectId(content_id) : new ObjectId() },
-        { name: content_id }
+        { "_id": ObjectId.isValid(content_id) ? new ObjectId(content_id) : new ObjectId() },
+        { "name": content_id }
       ]
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -136,7 +155,7 @@ class ContentController implements Controller {
     const data: Content = request.body;
 
     let error: Error, results: Content;
-    [error, results] = await to(this.content.create({
+    [error, results] = await to(contentModel.create({
       ...data
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
@@ -152,15 +171,11 @@ class ContentController implements Controller {
     const data: Content = request.body;
 
     let error: Error, results: Object;
-    [error, results] = await to(this.content.updateOne({
-      _id: content_id
+    [error, results] = await to(contentModel.updateOne({
+      "_id": content_id
     }, {
-      $set: {
-        name: data.name,
-        el_title: data.el_title,
-        en_title: data.en_title,
-        el_content: data.el_content,
-        en_content: data.en_content
+      "$set": {
+        ...data
       }
     }).catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
