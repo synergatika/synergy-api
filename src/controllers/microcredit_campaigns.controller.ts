@@ -132,7 +132,7 @@ class MicrocreditCampaignsController implements Controller {
       checkMiddleware.canEditMicrocredit,
       this.updateCampaign);
 
-    this.router.put(`${this.path}/:partner_id/:campaign_id/publish`, blockchainStatus,
+    this.router.put(`${this.path}/:partner_id/:campaign_id/publish`,
       authMiddleware, accessMiddleware.onlyAsPartner,
       validationParamsMiddleware(CampaignID),
       accessMiddleware.belongsTo,
@@ -174,8 +174,8 @@ class MicrocreditCampaignsController implements Controller {
   private dateConvert = (x: string | number | Date) => {
     var today = new Date(x);
     var year = today.getFullYear();
-    var month = `0${today.getMonth() + 1}`.slice(0, 2);
-    var day = `0${today.getDate()}`.slice(0, 2);
+    var month = `0${today.getMonth() + 1}`.slice(-2);
+    var day = `0${today.getDate()}`.slice(-2);
     return `${year}-${month}-${day}`;
   }
 
@@ -198,9 +198,9 @@ class MicrocreditCampaignsController implements Controller {
 
   private setUniqueTransactions(transactions: MicrocreditTransaction[]): (string | ObjectId)[] {
     return [...new Set(transactions.map(item =>
-      `${(item.support as MicrocreditSupport).contractIndex}_${(item.support as MicrocreditSupport).contractRef}`
-      ||
-      (item.support as MicrocreditSupport)._id
+      (((item.support as MicrocreditSupport).contractIndex) < 0 && (item.support as MicrocreditSupport).contractRef) ?
+        `${(item.support as MicrocreditSupport).contractIndex}_${(item.support as MicrocreditSupport).contractRef}` :
+        `${(item.support as MicrocreditSupport)._id}`
     ))];
   }
 
@@ -424,7 +424,7 @@ class MicrocreditCampaignsController implements Controller {
     [error, supports] = await to(supportModel.aggregate(
       [{
         "$match": {
-          "campaign": campaign._id
+          "campaign": new ObjectId(campaign._id)
         }
       }, {
         "$project": {
@@ -433,26 +433,25 @@ class MicrocreditCampaignsController implements Controller {
           "initial": "$initialTokens",
           "current": "$currentTokens",
         }
-      },
-      {
+      }, {
         "$group": {
           "_id": "$status",
-          "status": "$status",
+          // "status": "$status",
           "initialTokens": { "$sum": "$initial" },
           "currentTokens": { "$sum": "$current" },
         }
-      }
-      ]
-    ).exec().catch());
+      }]).exec().catch());
 
 
+    console.log("supports");
+    console.log(supports);
     var total = supports?.reduce((accumulator, object) => {
       return accumulator + object.initialTokens;
     }, 0) | 0;
-    var paid = supports?.filter(i => (i.status === MicrocreditSupportStatus.COMPLETED) || (i.status === MicrocreditSupportStatus.PAID)).reduce((accumulator, object) => {
+    var paid = supports?.filter(i => ((i._id).toString() === MicrocreditSupportStatus.COMPLETED) || ((i._id).toString() === MicrocreditSupportStatus.PAID)).reduce((accumulator, object) => {
       return accumulator + object.initialTokens;
     }, 0) | 0;
-    var current = supports?.filter(i => (i.status === MicrocreditSupportStatus.COMPLETED) || (i.status === MicrocreditSupportStatus.PAID)).reduce((accumulator, object) => {
+    var current = supports?.filter(i => ((i._id).toString() === MicrocreditSupportStatus.COMPLETED) || ((i._id).toString() === MicrocreditSupportStatus.PAID)).reduce((accumulator, object) => {
       return accumulator + object.currentTokens;
     }, 0) | 0;
 
@@ -568,8 +567,8 @@ class MicrocreditCampaignsController implements Controller {
           return accumulator + object.tokens;
         }, 0),
         payoff: 0,
-        uniqueUsers: this.setUniqueUsers(promise),
-        uniqueSupports: this.setUniqueTransactions(promise)
+        uniqueUsers: this.setUniqueUsers(spend),
+        uniqueSupports: this.setUniqueTransactions(spend)
       },
       dates: [...new Set(transactions.map(item => this.dateConvert(item.createdAt)))]
     }
@@ -587,10 +586,36 @@ class MicrocreditCampaignsController implements Controller {
     const { page, size } = request.query;
 
     let error: Error, transactions: MicrocreditTransaction[];
-    [error, transactions] = await to(transactionsUtil.readCampaignTransactions(campaign, [type], date, { page: page as string, size: size as string })).catch();
+    [error, transactions] = await to(transactionsUtil.readCampaignTransactions(campaign, [MicrocreditTransactionType.PromiseFund, MicrocreditTransactionType.ReceiveFund, MicrocreditTransactionType.RevertFund, MicrocreditTransactionType.SpendFund], date, { page: page as string, size: size as string })).catch();
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     const total = transactions;
+
+    var y: { groupBy: string, transactions: MicrocreditTransaction[] }[] = [];
+    transactions.forEach(x => {
+      var index = y.findIndex(i => i.groupBy === (x.support as MicrocreditSupport)._id.toString())
+      if (index < 0) {
+        y.push({ transactions: [x], groupBy: (x.support as MicrocreditSupport)._id.toString() })
+      } else {
+        y[index].transactions.push(x)
+      }
+
+    })
+
+    console.log(y);
+    // const mergedArray = Array.from(
+    //   transactions.reduce(
+    //     (entryMap, e) => entryMap.set((e.support as MicrocreditSupport)._id, { ...entryMap.get((e.support as MicrocreditSupport)._id) || {}, ...e }),
+    //     new Map()
+    //   ).values()
+    // );
+    // console.log("mergedArray");
+    // console.log(mergedArray);
+
+    var promise = transactions.filter(s => s.type === MicrocreditTransactionType.PromiseFund);
+    var receive = transactions.filter(s => s.type === MicrocreditTransactionType.ReceiveFund);
+    var revert = transactions.filter(s => s.type === MicrocreditTransactionType.RevertFund);
+    var spend = transactions.filter(s => s.type === MicrocreditTransactionType.SpendFund);
 
     let result: MicrocreditStatistics = {
       total: {
@@ -605,7 +630,7 @@ class MicrocreditCampaignsController implements Controller {
     }
 
     const opts = {
-      fields: ['date', type === MicrocreditTransactionType.ReceiveFund ? 'payoff' : 'tokens', 'user', 'transactions']
+      fields: ['date', 'total', 'redeemed', 'remain', 'users', 'transactions']
     };
 
     const json2csvParser = new Parser(opts);
@@ -615,8 +640,13 @@ class MicrocreditCampaignsController implements Controller {
           date: t.createdAt,
           tokens: t.tokens,
           payoff: t.payoff,
-          users: ((t.support as MicrocreditSupport).member as Member).email || ((t.support as MicrocreditSupport).member as Member).card,
-          transactions: `${(t.support as MicrocreditSupport).contractIndex}_${(t.support as MicrocreditSupport).contractRef}` || (t.support as MicrocreditSupport)._id
+          users:
+            ((t.support as MicrocreditSupport).member as Member).email
+            || ((t.support as MicrocreditSupport).member as Member).card,
+          transactions:
+            (((t.support as MicrocreditSupport).contractIndex) < 0 && (t.support as MicrocreditSupport).contractRef) ?
+              `${(t.support as MicrocreditSupport).contractIndex}_${(t.support as MicrocreditSupport).contractRef}` :
+              `${(t.support as MicrocreditSupport)._id}`
         }
       }), {
         date: 'Total',
@@ -627,7 +657,7 @@ class MicrocreditCampaignsController implements Controller {
       }] as ExportedMicrocreditStatistics[]);
 
     try {
-      response.attachment(`Statistics-${campaign.title}_${(date != '0' ? date : 'total')}.csv`);
+      response.attachment(`Statistics-${campaign.title}_${type}_${(date != '0' ? date : 'total')}.csv`);
       response.status(200).send(csv)
     } catch (error) {
       return next(new UnprocessableEntityException(`EXPORT ERROR || ${error}`));

@@ -58,7 +58,6 @@ async function partner(request: RequestWithUser, response: Response, next: NextF
     "activated": 1
   }).catch());
 
-
   if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
   else if (!partner) {
     return next(new NotFoundException('PARTNER_NOT_EXISTS'));

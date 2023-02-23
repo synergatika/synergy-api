@@ -58,6 +58,7 @@ class MicrocreditTransactionsUtil {
                 }
             }]
         }).sort({ "createdAt": -1 })
+            .lean()
             .limit(parseInt(_paging['size'] as string))
             .skip((parseInt(_paging['page'] as string) - 1) * parseInt(_paging['size'] as string));
     }
