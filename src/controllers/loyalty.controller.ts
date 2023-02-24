@@ -129,7 +129,7 @@ class LoyaltyController implements Controller {
       this.readLoyaltyStatistics);
 
     this.router.get(`${this.path}/statistics/:date/:type/export`,
-      authMiddleware, accessMiddleware.onlyAsPartner,
+      // authMiddleware, accessMiddleware.onlyAsPartner,
       this.exportStatistics);
   }
 

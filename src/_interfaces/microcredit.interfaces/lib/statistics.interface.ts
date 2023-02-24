@@ -19,8 +19,8 @@ export interface MicrocreditStatistics {
 
 export interface ExportedMicrocreditStatistics {
   date: string;
-  tokens?: number;
-  payoff?: number;
+  initial?: number;
+  current?: number;
   users: string | number;
   transactions: string | number;
 }

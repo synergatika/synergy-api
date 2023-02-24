@@ -437,10 +437,22 @@ class MicrocreditCampaignsController implements Controller {
         "$group": {
           "_id": "$status",
           // "status": "$status",
-          "initialTokens": { "$sum": "$initial" },
-          "currentTokens": { "$sum": "$current" },
+          "initial": { "$sum": "$initial" },
+          "paid": {
+            "$sum": {
+              "$cond": [{
+                "$or": [
+                  { "$eq": ["$status", MicrocreditSupportStatus.COMPLETED] },
+                  { "$eq": ["$status", MicrocreditSupportStatus.COMPLETED] },
+                ]
+              }, "$initial", 0]
+            }
+          }
+          // "initialTokens": { "$sum": "$initial" },
+          // "currentTokens": { "$sum": "$current" },
         }
       }]).exec().catch());
+    if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
 
     console.log("supports");
@@ -448,12 +460,16 @@ class MicrocreditCampaignsController implements Controller {
     var total = supports?.reduce((accumulator, object) => {
       return accumulator + object.initialTokens;
     }, 0) | 0;
-    var paid = supports?.filter(i => ((i._id).toString() === MicrocreditSupportStatus.COMPLETED) || ((i._id).toString() === MicrocreditSupportStatus.PAID)).reduce((accumulator, object) => {
-      return accumulator + object.initialTokens;
-    }, 0) | 0;
-    var current = supports?.filter(i => ((i._id).toString() === MicrocreditSupportStatus.COMPLETED) || ((i._id).toString() === MicrocreditSupportStatus.PAID)).reduce((accumulator, object) => {
-      return accumulator + object.currentTokens;
-    }, 0) | 0;
+    var paid = supports?.filter(i =>
+      ((i._id).toString() == MicrocreditSupportStatus.COMPLETED) || ((i._id).toString() == MicrocreditSupportStatus.PAID))
+      .reduce((accumulator, object) => {
+        return accumulator + object.initialTokens;
+      }, 0) | 0;
+    var current = supports?.filter(i =>
+      ((i._id).toString() == MicrocreditSupportStatus.COMPLETED) || ((i._id).toString() == MicrocreditSupportStatus.PAID))
+      .reduce((accumulator, object) => {
+        return accumulator + object.currentTokens;
+      }, 0) | 0;
 
     response.status(200).send({
       data: { ...campaign, tokens: { total, paid, current } },
@@ -589,75 +605,76 @@ class MicrocreditCampaignsController implements Controller {
     [error, transactions] = await to(transactionsUtil.readCampaignTransactions(campaign, [MicrocreditTransactionType.PromiseFund, MicrocreditTransactionType.ReceiveFund, MicrocreditTransactionType.RevertFund, MicrocreditTransactionType.SpendFund], date, { page: page as string, size: size as string })).catch();
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
-    const total = transactions;
-
-    var y: { groupBy: string, transactions: MicrocreditTransaction[] }[] = [];
+    var groupedBySupport: { groupBy: string, transactions: MicrocreditTransaction[], initial: number, current: number, payoff: number }[] = [];
     transactions.forEach(x => {
-      var index = y.findIndex(i => i.groupBy === (x.support as MicrocreditSupport)._id.toString())
+      console.log(x.type, x.tokens)
+      var index = groupedBySupport.findIndex(i => i.groupBy === (x.support as MicrocreditSupport)._id.toString())
       if (index < 0) {
-        y.push({ transactions: [x], groupBy: (x.support as MicrocreditSupport)._id.toString() })
+        groupedBySupport.push({ transactions: [x], groupBy: (x.support as MicrocreditSupport)._id.toString(), initial: (x.type === MicrocreditTransactionType.PromiseFund) ? x.tokens : 0, current: x.tokens, payoff: x.payoff })
       } else {
-        y[index].transactions.push(x)
+        if (x.type === MicrocreditTransactionType.PromiseFund) groupedBySupport[index].initial += x.tokens;
+        groupedBySupport[index].current += x.tokens;
+        groupedBySupport[index].payoff += x.payoff;
+        groupedBySupport[index].transactions.push(x);
       }
-
     })
 
-    console.log(y);
-    // const mergedArray = Array.from(
-    //   transactions.reduce(
-    //     (entryMap, e) => entryMap.set((e.support as MicrocreditSupport)._id, { ...entryMap.get((e.support as MicrocreditSupport)._id) || {}, ...e }),
-    //     new Map()
-    //   ).values()
-    // );
-    // console.log("mergedArray");
-    // console.log(mergedArray);
+    var total = groupedBySupport.filter(x => x.payoff > 0).map(o => {
+      return {
+        date: this.dateConvert(o.transactions.filter(i => i.type === MicrocreditTransactionType.ReceiveFund)[0].createdAt),
+        initial: o.initial,
+        current: o.current,
+        users: this.setUniqueUsers(o.transactions)[0],
+        transactions: this.setUniqueTransactions(o.transactions)[0]
+      }
+    })
+    // const total = transactions;
 
-    var promise = transactions.filter(s => s.type === MicrocreditTransactionType.PromiseFund);
-    var receive = transactions.filter(s => s.type === MicrocreditTransactionType.ReceiveFund);
-    var revert = transactions.filter(s => s.type === MicrocreditTransactionType.RevertFund);
-    var spend = transactions.filter(s => s.type === MicrocreditTransactionType.SpendFund);
-
-    let result: MicrocreditStatistics = {
+    let result: any = {
       total: {
-        tokens: 0,
-        payoff: total.reduce((accumulator, object) => {
-          return accumulator + object.payoff;
+        initial: total.reduce((accumulator, object) => {
+          return accumulator + object.initial;
         }, 0),
-        uniqueUsers: this.setUniqueUsers(total),
-        uniqueSupports: this.setUniqueTransactions(total)
+        current: total.reduce((accumulator, object) => {
+          return accumulator + object.current;
+        }, 0),
+        uniqueUsers: [...new Set(total.map(item => item.users))],
+        uniqueSupports: [...new Set(total.map(item => item.transactions))]
       },
-      dates: [...new Set(transactions.map(item => this.dateConvert(item.createdAt)))]
+      dates: [...new Set(total.map(item => this.dateConvert(item.date)))]
     }
 
     const opts = {
-      fields: ['date', 'total', 'redeemed', 'remain', 'users', 'transactions']
+      fields: ['date', 'initial', 'current', 'users', 'transactions']
     };
 
     const json2csvParser = new Parser(opts);
     const csv = json2csvParser.parse([
-      ...transactions.map(t => {
-        return {
-          date: t.createdAt,
-          tokens: t.tokens,
-          payoff: t.payoff,
-          users:
-            ((t.support as MicrocreditSupport).member as Member).email
-            || ((t.support as MicrocreditSupport).member as Member).card,
-          transactions:
-            (((t.support as MicrocreditSupport).contractIndex) < 0 && (t.support as MicrocreditSupport).contractRef) ?
-              `${(t.support as MicrocreditSupport).contractIndex}_${(t.support as MicrocreditSupport).contractRef}` :
-              `${(t.support as MicrocreditSupport)._id}`
-        }
-      }), {
+      ...total,
+      // ...transactions.map(t => {
+      //   return {
+      //     date: t.createdAt,
+      //     tokens: t.tokens,
+      //     payoff: t.payoff,
+      //     users:
+      //       ((t.support as MicrocreditSupport).member as Member).email
+      //       || ((t.support as MicrocreditSupport).member as Member).card,
+      //     transactions:
+      //       (((t.support as MicrocreditSupport).contractIndex) < 0 && (t.support as MicrocreditSupport).contractRef) ?
+      //         `${(t.support as MicrocreditSupport).contractIndex}_${(t.support as MicrocreditSupport).contractRef}` :
+      //         `${(t.support as MicrocreditSupport)._id}`
+      //   }
+      // })
+      {
         date: 'Total',
-        tokens: result['total'].tokens,
-        payoff: result['total'].payoff,
+        initial: result['total'].initial,
+        current: result['total'].current,
         users: result['total'].uniqueUsers.length,
         transactions: result['total'].uniqueSupports.length
       }] as ExportedMicrocreditStatistics[]);
 
     try {
-      response.attachment(`Statistics-${campaign.title}_${type}_${(date != '0' ? date : 'total')}.csv`);
+      response.attachment(`Statistics-${campaign.title}_${(date != '0' ? date : 'total')}.csv`);
       response.status(200).send(csv)
     } catch (error) {
       return next(new UnprocessableEntityException(`EXPORT ERROR || ${error}`));
