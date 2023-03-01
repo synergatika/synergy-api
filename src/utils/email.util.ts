@@ -21,7 +21,7 @@ import { UnprocessableEntityException } from '../_exceptions/index';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
 
 import Translation from '../translation';
-import { User, MicrocreditCampaign, MicrocreditSupport, SupportPayment, MicrocreditSupportStatus } from '../_interfaces/index';
+import { User, MicrocreditCampaign, MicrocreditSupport, MicrocreditSupportPayment, MicrocreditSupportStatus } from '../_interfaces/index';
 import { EarnTokensDto, RedeemTokensDto } from '../_dtos/index';
 
 class EmailsUtil {
@@ -696,7 +696,7 @@ class EmailsUtil {
   /**
   * Notification for New Support to Partner & Member
   */
-  public newSupportPartner = async (_lang: string, email_to: string, campaign: MicrocreditCampaign, payment: SupportPayment, data: EarnTokensDto) => {
+  public newSupportPartner = async (_lang: string, email_to: string, campaign: MicrocreditCampaign, payment: MicrocreditSupportPayment, data: EarnTokensDto) => {
     const lang: string = _lang || this.defaultLang();
 
     let options = {
@@ -770,7 +770,7 @@ class EmailsUtil {
   //   next();
   // }
 
-  public newSupportMember = async (_lang: string, email_to: string, campaign: MicrocreditCampaign, payment: SupportPayment, data: EarnTokensDto) => {
+  public newSupportMember = async (_lang: string, email_to: string, campaign: MicrocreditCampaign, payment: MicrocreditSupportPayment, data: EarnTokensDto) => {
     const lang: string = _lang || this.defaultLang();
 
     let options = {

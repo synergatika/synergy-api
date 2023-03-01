@@ -22,7 +22,7 @@ class CheckMiddleware {
     const balance = response.locals.balance;
     const data: RedeemPointsDto = request.body;
 
-    if (data._points > parseInt(balance.points, 10)) {
+    if (data._points > balance.points) {
       return next(new NotFoundException('NOT_ENOUGH_POINTS'));
     }
     next();
@@ -38,7 +38,7 @@ class CheckMiddleware {
     if (offer.expiresAt < seconds) {
       return next(new NotFoundException('OFFER_EXPIRED'));
     }
-    if ((offer.cost * data.quantity) > parseInt(balance.points, 10)) {
+    if ((offer.cost * data.quantity) > balance.points) {
       return next(new NotFoundException('NOT_ENOUGH_POINTS'));
     }
     next();

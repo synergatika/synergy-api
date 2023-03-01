@@ -35,7 +35,7 @@ import { UnprocessableEntityException } from '../_exceptions/index';
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, Partner, PartnerPayment, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, MicrocreditSupportStatus, TransactionStatus, Member, SupportPayment, MicrocreditTransactionType } from '../_interfaces/index';
+import { User, Partner, PartnerPayment, MicrocreditCampaign, MicrocreditSupport, MicrocreditTransaction, MicrocreditSupportStatus, TransactionStatus, Member, MicrocreditSupportPayment, MicrocreditTransactionType } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -170,7 +170,7 @@ class MicrocreditController implements Controller {
     return [year, month, day].join('-');
   }
 
-  private createPayment = async (partner: Partner, data: EarnTokensDto): Promise<SupportPayment> => {
+  private createPayment = async (partner: Partner, data: EarnTokensDto): Promise<MicrocreditSupportPayment> => {
     return {
       _id: convertHelper.indexToPayment(
         ((await transactionModel.find({ type: MicrocreditTransactionType.PromiseFund })).filter((o: MicrocreditTransaction) => {
@@ -215,7 +215,7 @@ class MicrocreditController implements Controller {
     const campaign: MicrocreditCampaign = response.locals.campaign;
 
     const _support_id = new ObjectId();
-    const _payment: SupportPayment = await this.createPayment(partner, data)
+    const _payment: MicrocreditSupportPayment = await this.createPayment(partner, data)
 
     /** Transaction Block (Microcredit - Promise) */
     let transaction_error: Error, transaction_result: any;
@@ -273,7 +273,7 @@ class MicrocreditController implements Controller {
     const campaign: MicrocreditCampaign = response.locals.campaign;
 
     const _support_id = new ObjectId();
-    const _payment: SupportPayment = await this.createPayment(partner, data);
+    const _payment: MicrocreditSupportPayment = await this.createPayment(partner, data);
 
     /** Transaction Block (Microcredit - Promise) */
     let transaction_error: Error, transaction_result: any;
@@ -331,7 +331,7 @@ class MicrocreditController implements Controller {
     const campaign: MicrocreditCampaign = response.locals.campaign;
 
     const _support_id = new ObjectId();
-    const _payment: SupportPayment = await this.createPayment(partner, data);
+    const _payment: MicrocreditSupportPayment = await this.createPayment(partner, data);
 
     /** Transaction Block (Microcredit - Promise) */
     let transaction_error: Error, transaction_result: any;

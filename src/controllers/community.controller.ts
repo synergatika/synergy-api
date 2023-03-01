@@ -155,86 +155,36 @@ class CommunityController implements Controller {
     /** ***** * ***** */
 
     let error: Error, posts: PostEvent[], events: PostEvent[];
-    [error, posts] = await to(postModel.aggregate([
-      {
-        "$match": {
-          "$and": [
-            { "access": { "$in": access_filter } },
-            { "published": { "$eq": true } }
-          ]
-        }
-      },
-      {
-        "$lookup": {
-          "from": 'Partner',
-          "localField": 'partner',
-          "foreignField": '_id',
-          "as": 'partner'
-        }
-      },
-      {
-        "$match": { 'partner.activated': true }
-      }])
+    [error, posts] = await to(postModel.find({
+      "$and": [
+        { "access": { "$in": access_filter } },
+        { "published": { "$eq": true } }
+      ]
+    }).populate([{
+      "path": 'partner'
+    }])
       .sort({ "updatedAt": -1 })
-      .exec()
+      .lean()
       .catch());
 
-    // let error: Error, posts: PostEvent[], events: PostEvent[];
-    // [error, posts] = await to(postModel.find({
-    //   "$and": [
-    //     { "access": { "$in": access_filter } },
-    //     { "published": { "$eq": true } }
-    //   ]
-    // }).populate([{
-    //   "path": 'partner'
-    // }])
-    //   .sort({ "updatedAt": -1 })
-    //   .lean()
-    //   .catch());
-
-    [error, events] = await to(eventModel.aggregate([
-      {
-        "$match": {
-          "$and": [
-            { "access": { "$in": access_filter } },
-            { "dateTime": { "$gt": offset.greater } },
-            { "published": { "$eq": true } }
-          ]
-        },
-      },
-      {
-        "$lookup": {
-          "from": 'Partner',
-          "localField": 'partner',
-          "foreignField": '_id',
-          "as": 'partner'
-        }
-      },
-      {
-        "$match": { 'partner.activated': true }
-      }])
+    [error, events] = await to(eventModel.find({
+      "$and": [
+        { "access": { "$in": access_filter } },
+        { "dateTime": { "$gt": offset.greater } },
+        { "activated": { "$eq": true } }
+      ]
+    }).populate([{
+      "path": 'partner'
+    }])
       .sort({ "updatedAt": -1 })
-      .exec()
+      .lean()
       .catch());
-
-    // [error, events] = await to(eventModel.find({
-    //   "$and": [
-    //     { "access": { "$in": access_filter } },
-    //     { "dateTime": { "$gt": offset.greater } },
-    //     { "activated": { "$eq": true } }
-    //   ]
-    // }).populate([{
-    //   "path": 'partner'
-    // }])
-    //   .sort({ "updatedAt": -1 })
-    //   .lean()
-    //   .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
       data: (([
-        ...(posts.map((o => { return { ...o, type: 'post' } }))),
-        ...(events.map((o => { return { ...o, type: 'event' } })))
+        ...(posts.filter(o => (o['partner'] as Partner).activated).map((o => { return { ...o, type: 'post' } }))),
+        ...(events.filter(o => (o['partner'] as Partner).activated).map((o => { return { ...o, type: 'event' } })))
       ]).sort(this.sortPostsEvents)).slice(offset.index, offset.index + offset.count),
       code: 200
     });

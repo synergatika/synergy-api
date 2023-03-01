@@ -130,48 +130,23 @@ class PostsController implements Controller {
     /** ***** * ***** */
 
     let error: Error, posts: Post[];
-    [error, posts] = await to(postModel.aggregate([
-      {
-        "$match": {
-          "$and": [
-            { "expiresAt": { "$gt": offset.greater } },
-            { "published": { "$eq": true } }
-          ]
-        },
-      },
-      {
-        "$lookup": {
-          "from": 'Partner',
-          "localField": 'partner',
-          "foreignField": '_id',
-          "as": 'partner'
-        }
-      },
-      {
-        "$match": { 'partner.activated': true }
-      }])
+    [error, posts] = await to(postModel.find({
+      "$and": [
+        { "access": { "$in": access_filter } },
+        { "published": { "$eq": true } }
+      ]
+    }).populate([{
+      "path": 'partner'
+    }])
       .sort({ "updatedAt": -1 })
-      .exec()
+      .limit(offset.limit)
+      .skip(offset.skip)
+      .lean()
       .catch());
-
-    // let error: Error, posts: Post[];
-    // [error, posts] = await to(postModel.find({
-    //   "$and": [
-    //     { "access": { "$in": access_filter } },
-    //     { "published": { "$eq": true } }
-    //   ]
-    // }).populate([{
-    //   "path": 'partner'
-    // }])
-    //   .sort({ "updatedAt": -1 })
-    //   .limit(offset.limit)
-    //   .skip(offset.skip)
-    //   .lean()
-    //   .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
-      data: posts,
+      data: posts.filter(o => (o['partner'] as Partner).activated),
       code: 200
     });
   }

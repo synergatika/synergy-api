@@ -1,5 +1,7 @@
-import { EarnPointsDto, RedeemPointsDto } from "_dtos";
-import { Member, Partner, TransactionStatus, LoyaltyOffer } from "_interfaces";
+import { Member, Partner, } from "../../users.interfaces";
+import { LoyaltyOffer } from '../../loyalty.interfaces';
+import { TransactionStatus } from '../../authentication.interfaces';
+
 import { ObjectId } from 'mongodb';
 
 export enum LoyaltyTransactionType {

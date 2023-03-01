@@ -72,7 +72,7 @@ export default class LoyaltyTransactionsUtil {
             { "path": 'partner' },
             { "path": 'member' }
         ])
-            .sort({ "createdAt": 1 })
+            .sort({ "createdAt": -1 })
             .limit(parseInt(_paging['size'] as string))
             .skip((parseInt(_paging['page'] as string) - 1) * parseInt(_paging['size'] as string));
     }

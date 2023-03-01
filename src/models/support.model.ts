@@ -1,6 +1,6 @@
 import * as mongoose from 'mongoose';
 import { Schema } from 'mongoose';
-import { MicrocreditSupport, SupportPayment, MicrocreditSupportStatus } from '../_interfaces/index';
+import { MicrocreditSupport, MicrocreditSupportPayment, MicrocreditSupportStatus } from '../_interfaces/index';
 
 const paymentSchema = new mongoose.Schema({
   _id: String,

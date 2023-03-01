@@ -156,47 +156,23 @@ class OffersController implements Controller {
     /** ***** * ***** */
 
     let error: Error, offers: LoyaltyOffer[];
-    [error, offers] = await to(offerModel.aggregate([
-      {
-        "$match": {
-          "$and": [
-            { "expiresAt": { "$gt": offset.greater } },
-            { "published": { "$eq": true } }
-          ]
-        },
-      },
-      {
-        "$lookup": {
-          "from": 'Partner',
-          "localField": 'partner',
-          "foreignField": '_id',
-          "as": 'partner'
-        }
-      },
-      {
-        "$match": { 'partner.activated': true }
-      }])
-      .sort({ "updatedAt": -1 })
-      .exec()
+    [error, offers] = await to(offerModel.find({
+      "$and": [
+        { "expiresAt": { "$gt": offset.greater } },
+        { "published": true }
+      ]
+    }).populate([{
+      "path": 'partner'
+    }])
+      .sort({ updatedAt: -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
+      .lean()
       .catch());
-    // let error: Error, offers: LoyaltyOffer[];
-    // [error, offers] = await to(offerModel.find({
-    //   "$and": [
-    //     { "expiresAt": { "$gt": offset.greater } },
-    //     { "published": true }
-    //   ]
-    // }).populate([{
-    //   "path": 'partner'
-    // }])
-    //   .sort({ updatedAt: -1 })
-    //   .limit(offset.limit)
-    //   .skip(offset.skip)
-    //   .lean()
-    //   .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
-      data: offers,
+      data: offers.filter(o => (o['partner'] as Partner).activated),
       code: 200
     });
   }

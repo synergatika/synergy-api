@@ -180,7 +180,7 @@ class LoyaltyController implements Controller {
     [_error, current_loyalty] = await to(loyaltyModel.findOne({ member: member }).catch());
 
     let error: Error, loyalty: Loyalty;
-    [error, loyalty] = await to(loyaltyModel.updateOne({
+    [error, loyalty] = await to(loyaltyModel.findOneAndUpdate({
       member: member
     }, {
       member: member, currentPoints: (current_loyalty) ? current_loyalty.currentPoints + _points : _points
@@ -195,7 +195,7 @@ class LoyaltyController implements Controller {
     if (transaction_error) return next(new UnprocessableEntityException(`DB ERROR || ${transaction_error}`));
 
     response.status(201).send({
-      data: 'OK',
+      data: loyalty,
       code: 201
     });
   }
@@ -207,7 +207,7 @@ class LoyaltyController implements Controller {
     const member: User = response.locals.member;
 
     const offer: LoyaltyOffer = (response.locals.offer) ? response.locals.offer : null;
-    const _points = (offer) ? Math.round(data._points) * data.quantity : Math.round(data._points);
+    const _points = (offer) ? Math.round(offer.cost) * data.quantity : Math.round(data._points);
     // const _partner = '0x' + request.user.account.address; //(serviceInstance.unlockWallet(request.user.account, data.password)).address;
     // const offer_id: OfferID['offer_id'] = request.params.offer_id || '-1';
     // const offer_title = (response.locals.offer) ? response.locals.offer.title : null;
@@ -216,7 +216,7 @@ class LoyaltyController implements Controller {
     [_error, current_loyalty] = await to(loyaltyModel.findOne({ member: member }).catch());
 
     let error: Error, loyalty: Loyalty;
-    [error, loyalty] = await to(loyaltyModel.updateOne(
+    [error, loyalty] = await to(loyaltyModel.findOneAndUpdate(
       {
         member: member
       }, {

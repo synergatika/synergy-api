@@ -173,7 +173,7 @@ class EventsController implements Controller {
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
-      data: events,
+      data: events.filter(o => (o['partner'] as Partner).activated),
       code: 200
     });
   }

@@ -1,5 +1,5 @@
 import { ObjectId } from "mongodb";
-import { User } from "_interfaces/users.interfaces";
+import { User } from "../../users.interfaces/index";
 
 export enum TransactionStatus {
   COMPLETED = 'completed',

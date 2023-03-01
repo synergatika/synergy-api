@@ -1,6 +1,6 @@
 import { User } from '@sentry/node';
 import { Schema } from 'mongoose';
-import { Member } from '_interfaces/users.interfaces';
+import { Member, PartnerPayment } from '../../../_interfaces/users.interfaces';
 import { MicrocreditCampaign } from './campaign.interface';
 import { MicrocreditTransaction } from './transaction.interface';
 import { ObjectId } from 'mongodb';
@@ -11,13 +11,9 @@ export enum MicrocreditSupportStatus {
   UNPAID = 'unpaid'
 }
 
-export interface SupportPayment {
+export interface MicrocreditSupportPayment {
   _id: string;
-  method: {
-    bic: string,
-    name: string,
-    value: string
-  };
+  method: PartnerPayment;
 }
 
 export interface MicrocreditSupport {
@@ -42,7 +38,7 @@ export interface MicrocreditSupport {
   initialTokens: number;
   currentTokens: number;
 
-  payment: SupportPayment;
+  payment: MicrocreditSupportPayment;
   status: MicrocreditSupportStatus;
   // type: string;
   // transactions: MicrocreditTransaction[];

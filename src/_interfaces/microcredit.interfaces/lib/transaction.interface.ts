@@ -1,7 +1,6 @@
-import { EarnTokensDto, RedeemTokensDto } from "_dtos";
 import { MicrocreditSupport } from "./support.interface";
 import { ObjectId } from 'mongodb';
-import { TransactionStatus } from "_interfaces/authentication.interfaces";
+import { TransactionStatus } from "../../../_interfaces/authentication.interfaces";
 
 export enum MicrocreditTransactionType {
   PromiseFund = 'PromiseFund',

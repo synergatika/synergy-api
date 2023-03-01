@@ -235,51 +235,27 @@ class MicrocreditCampaignsController implements Controller {
     /** ***** */
 
     let error: Error, campaigns: MicrocreditCampaign[];
-    [error, campaigns] = await to(campaignModel.aggregate([
+    [error, campaigns] = await to(campaignModel.find(
       {
-        "$match": {
-          "$and": [
-            { "access": { "$in": access_filter } },
-            { "expiresAt": { "$gt": offset.greater } },
-            { "published": { "$eq": true } }
-          ]
-        },
-      },
-      {
-        "$lookup": {
-          "from": 'Partner',
-          "localField": 'partner',
-          "foreignField": '_id',
-          "as": 'partner'
-        }
-      },
-      {
-        "$match": { 'partner.activated': true }
-      }])
-      .sort({ "updatedAt": -1 })
-      .exec()
+        "$and": [
+          { "access": { "$in": access_filter } },
+          { "expiresAt": { "$gt": offset.greater } },
+          { "status": { "$eq": MicrocreditCampaignStatus.PUBLISHED } },
+          { "published": { "$eq": true } }
+        ]
+      }
+    ).populate([{
+      "path": 'partner'
+    }])
+      .lean()
+      .sort({ updatedAt: -1 })
+      .limit(offset.limit)
+      .skip(offset.skip)
       .catch());
-    // let error: Error, campaigns: MicrocreditCampaign[];
-    // [error, campaigns] = await to(campaignModel.find(
-    //   {
-    //     "$and": [
-    //       { "access": { "$in": access_filter } },
-    //       { "expiresAt": { "$gt": offset.greater } },
-    //       { "published": { "$eq": true } }
-    //     ]
-    //   }
-    // ).populate([{
-    //   "path": 'partner'
-    // }])
-    //   .lean()
-    //   .sort({ updatedAt: -1 })
-    //   .limit(offset.limit)
-    //   .skip(offset.skip)
-    //   .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
     response.status(200).send({
-      data: campaigns,
+      data: campaigns.filter(o => (o['partner'] as Partner).activated),
       code: 200
     });
   }
@@ -437,26 +413,23 @@ class MicrocreditCampaignsController implements Controller {
         "$group": {
           "_id": "$status",
           // "status": "$status",
-          "initial": { "$sum": "$initial" },
-          "paid": {
-            "$sum": {
-              "$cond": [{
-                "$or": [
-                  { "$eq": ["$status", MicrocreditSupportStatus.COMPLETED] },
-                  { "$eq": ["$status", MicrocreditSupportStatus.COMPLETED] },
-                ]
-              }, "$initial", 0]
-            }
-          }
-          // "initialTokens": { "$sum": "$initial" },
-          // "currentTokens": { "$sum": "$current" },
+          "initialTokens": { "$sum": "$initial" },
+          "currentTokens": { "$sum": "$current" },
+          // "current": {
+          //   "$sum": {
+          //     "$cond": [{
+          //       "$or": [
+          //         { "$eq": ["$status", MicrocreditSupportStatus.PAID] },
+          //         { "$eq": ["$status", MicrocreditSupportStatus.COMPLETED] },
+          //       ]
+          //     }, "$current", 0]
+          //   }
+          // }
         }
       }]).exec().catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
 
 
-    console.log("supports");
-    console.log(supports);
     var total = supports?.reduce((accumulator, object) => {
       return accumulator + object.initialTokens;
     }, 0) | 0;
@@ -472,7 +445,12 @@ class MicrocreditCampaignsController implements Controller {
       }, 0) | 0;
 
     response.status(200).send({
-      data: { ...campaign, tokens: { total, paid, current } },
+      data: {
+        ...campaign,
+        tokens: {
+          total, paid, current
+        }
+      },
       code: 200
     });
   }
@@ -618,6 +596,7 @@ class MicrocreditCampaignsController implements Controller {
         groupedBySupport[index].transactions.push(x);
       }
     })
+    console.log(groupedBySupport);
 
     var total = groupedBySupport.filter(x => x.payoff > 0).map(o => {
       return {
@@ -629,7 +608,7 @@ class MicrocreditCampaignsController implements Controller {
       }
     })
     // const total = transactions;
-
+    // console.log(total);
     let result: any = {
       total: {
         initial: total.reduce((accumulator, object) => {
@@ -650,7 +629,7 @@ class MicrocreditCampaignsController implements Controller {
 
     const json2csvParser = new Parser(opts);
     const csv = json2csvParser.parse([
-      ...total,
+      ...total.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
       // ...transactions.map(t => {
       //   return {
       //     date: t.createdAt,

@@ -36,6 +36,24 @@ import loyaltyModel from '../../models/loyalty.model';
 async function loyalty_balance(request: RequestWithUser, response: Response, next: NextFunction) {
   const member: User = (response.locals.member) ? response.locals.member : request.user;
 
+  // await serviceInstance.getLoyaltyAppContract()
+  // .then((instance) => {
+  //   return instance.members(member.account.address)
+  //     .then((results: any) => {
+  //       response.locals["balance"] = {
+  //         address: results.memberAddress,
+  //         points: results.points,
+  //       };
+  //       next();
+  //     })
+  //     .catch((error: Error) => {
+  //       next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  //     })
+  // })
+  // .catch((error) => {
+  //   next(new UnprocessableEntityException(`BLOCKCHAIN ERROR || ${error}`))
+  // })
+
   let error: Error, loyalty: Loyalty;
   [error, loyalty] = await to(loyaltyModel.findOne({
     member: member._id
@@ -43,7 +61,7 @@ async function loyalty_balance(request: RequestWithUser, response: Response, nex
 
   response.locals["balance"] = {
     "_id": member._id,
-    "points": loyalty?.currentPoints || 0,
+    "currentPoints": loyalty?.currentPoints || 0,
   };
 
   next();
