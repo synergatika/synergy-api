@@ -43,7 +43,7 @@ jobs:
         ETH_REMOTE_API: localhost
         ETH_CONTRACTS_PATH: ../contracts/build/contracts
     - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@master
+      uses: elgohr/Publish-Docker-Github-Action@v5
       with:
         registry: docker.pkg.github.com
         name: synergatika/synergy-api/synergy-api
