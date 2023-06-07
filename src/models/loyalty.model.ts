@@ -10,5 +10,5 @@ const loyaltySchema = new mongoose.Schema({
     currentPoints: Number,
 }, { timestamps: true });
 
-const loyaltyModel = mongoose.model<Loyalty & mongoose.Document>('Loaylty', loyaltySchema);
+const loyaltyModel = mongoose.model<Loyalty & mongoose.Document>('Loyalty', loyaltySchema);
 export default loyaltyModel;

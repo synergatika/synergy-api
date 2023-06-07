@@ -1,9 +1,11 @@
 import * as express from "express";
 import * as mongoose from "mongoose";
 import to from "await-to-ts";
-import { API_VERSION } from "../version";
+// import { API_VERSION } from "../version";
 
 const path = require("path");
+
+var pjson = require('../../package.json');
 
 /**
  * Blockchain Service
@@ -224,8 +226,13 @@ class HelpController implements Controller {
     response: express.Response,
     next: express.NextFunction
   ) => {
+    
+    // let result: any = {
+    //   api_version: API_VERSION,
+    // };
     let result: any = {
-      api_version: API_VERSION,
+      "API_NAME": pjson.name,
+      "API_VERSION": pjson.version
     };
 
     result = await this.checkEthereum(result);

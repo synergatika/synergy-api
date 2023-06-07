@@ -38,10 +38,11 @@ jobs:
         EMAIL_PORT: ${{ secrets.EMAIL_PORT }}
         EMAIL_USER: ${{ secrets.EMAIL_USER }}
         EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
-        EMAIL_FROM: Synergy | A Social and Solidarity Economy Toolkit
+        EMAIL_FROM: Synergy | A Social and Solidarity Economy Toolkit <${{ secrets.EMAIL_USER }}>
         ETH_API_ACCOUNT_PRIVKEY: '0xc87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3'
         ETH_REMOTE_API: localhost
         ETH_CONTRACTS_PATH: ../contracts/build/contracts
+        ADMINISTRATOR_TOKEN: ${{ADMINISTRATOR_TOKEN}}
     - name: Publish to Registry
       uses: elgohr/Publish-Docker-Github-Action@master
       with:

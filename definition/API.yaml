@@ -2231,9 +2231,9 @@ components:
     Not_Found:
       description: "Not Found (404) -
         Auth (/auth) ['Wrong Credentials', 'Wrong Token', 'User Exists', 'User has Email', 'User has Card']
-        Offer (/loaylty/offers/:partner_id/:offer_id) ['Offer does not Exist']
-        Post (/loaylty/offers/:partner_id/:post_id) ['Post does not Exist']
-        Event (/loaylty/offers/:partner_id/:event_id) ['Event does not Exist']
+        Offer (/loyalty/offers/:partner_id/:offer_id) ['Offer does not Exist']
+        Post (/loyalty/offers/:partner_id/:post_id) ['Post does not Exist']
+        Event (/loyalty/offers/:partner_id/:event_id) ['Event does not Exist']
         Loyalty (/loyalty) ['Uses does not Exist', 'Offer does not Exist', 'Not enough Tokens', 'Expired Offer']"
       content:
         application/json:

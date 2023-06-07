@@ -12,14 +12,14 @@ const serviceInstance = new BlockchainService(process.env.ETH_REMOTE_API, path.j
 /**
  * Exceptions
  */
-import { NotFoundException, UnprocessableEntityException } from '../_exceptions/index';
+import { NotFoundException, UnauthorizedException, UnprocessableEntityException } from '../_exceptions/index';
 
 /**
  * Interfaces
  */
 import Controller from '../interfaces/controller.interface';
 import RequestWithUser from '../interfaces/requestWithUser.interface';
-import { User, MicrocreditCampaign, Member, Partner, UserAccess, Post, TransactionStatus, RegistrationTransactionType, MicrocreditSupport } from '../_interfaces/index';
+import { User, MicrocreditCampaign, Member, Partner, UserAccess, Post, TransactionStatus, RegistrationTransactionType, MicrocreditSupport, LoyaltyTransactionType, LoyaltyTransaction, RegistrationTransaction } from '../_interfaces/index';
 
 /**
  * Middleware
@@ -59,9 +59,14 @@ class ReEstablishController implements Controller {
 
     private initializeRoutes() {
         // this.router.get(`${this.path}/update/account/:id`, this.updateUserBlockchainAccount);
-        // this.router.get(`${this.path}/registration`, this.registrationIdentifier);
-        // this.router.get(`${this.path}/loyalty`, this.loyaltyIdentifier);
-        // this.router.get(`${this.path}/microcredit`, this.microcreditIdentifier);
+
+        /** Migration to v1.0 - Jun23 */
+        this.router.get(`${this.path}/migration/:token?`, this.checkAuthenticationToken, this.migration);
+
+        /** Check if models agree with transactions (v1.0 - Jun23) */
+        this.router.get(`${this.path}/registration/:token?`, this.checkAuthenticationToken, this.registrationIdentifier);
+        this.router.get(`${this.path}/loyalty/:token?`, this.checkAuthenticationToken, this.loyaltyIdentifier);
+        this.router.get(`${this.path}/microcredit/:token?`, this.checkAuthenticationToken, this.microcreditIdentifier);
 
         // this.router.get(`${this.path}/users`, this.establishUsers);
         // this.router.get(`${this.path}/campaigns`, this.establishCampaigns);
@@ -69,36 +74,59 @@ class ReEstablishController implements Controller {
         // this.router.get(`${this.path}/microcredit`, this.removeMicrocreditHistory);
     }
 
+    private checkAuthenticationToken = (request: express.Request, response: express.Response, next: express.NextFunction) => {
+        const token: string = request.params['token'];
+        if (token != process.env.ADMINISTRATOR_TOKEN) {
+            return next(new UnauthorizedException("Invalid Master Token."));
+        }
+
+        next();
+    }
+
+    private migration = async (request: express.Request, response: express.Response, next: express.NextFunction) => {
+        await this.transferItems();
+        await this.updateRegistrationTransactions();
+        await this.updateLoyaltyTransactions();
+
+        response.status(200).send({
+            data: {
+                message: 'OK',
+            },
+        });
+    }
+
     private transferItems = async () => {
         let error: Error, users: any[];
         [error, users] = await to(userModel.find({
             access: UserAccess.PARTNER
         }).catch());
+        if (error) console.log(error);
 
-        users.forEach((partner: any) => {
+        users.forEach((user: any) => {
+            let partner = user.toJSON();
 
-            partner.posts.forEach(async (post: any) => {
+            partner.posts?.forEach(async (post: any) => {
                 await postModel.create({
                     ...post,
                     partner: new ObjectId(partner._id)
                 })
             });
 
-            partner.events.forEach(async (event: any) => {
+            partner.events?.forEach(async (event: any) => {
                 await eventModel.create({
                     ...event,
                     partner: new ObjectId(partner._id)
                 })
             });
 
-            partner.offers.forEach(async (offer: any) => {
+            partner.offers?.forEach(async (offer: any) => {
                 await offerModel.create({
                     ...offer,
                     partner: new ObjectId(partner._id)
                 })
             });
 
-            partner.microcredits.forEach(async (microcredit: any) => {
+            partner.microcredit?.forEach(async (microcredit: any) => {
                 await campaignModel.create({
                     ...microcredit,
                     partner: new ObjectId(partner._id)
@@ -108,55 +136,96 @@ class ReEstablishController implements Controller {
     }
 
     private updateRegistrationTransactions = async () => {
-        let error: Error, transactions: any[];
+
+        let error: Error, transactions: RegistrationTransaction[];
         [error, transactions] = await to(registrationTransactionModel.find().catch());
+        if (error) console.log(error);
 
         transactions.forEach(async (transaction: any) => {
 
-            await registrationTransactionModel.updateOne({
+            let update_old: any;
+            [error, update_old] = await to(registrationTransactionModel.updateOne({
                 "_id": transaction._id
             }, {
                 "$set": {
                     "user": new ObjectId(transaction.user_id),
                     "status": TransactionStatus.COMPLETED
                 }
-            })
+            }).catch());
+            if (error) console.log(error);
 
+            console.log("---------- ----------");
+            console.log("updateRegistrationTransactions");
+            console.log("update_old");
+            console.log(update_old);
+            console.log("---------- ----------");
         })
     }
 
     private updateLoyaltyTransactions = async () => {
         let error: Error, transactions: any[];
         [error, transactions] = await to(loyaltyTransactionModel.find().catch());
+        if (error) console.log(error);
 
-        transactions.forEach(async (transaction: any) => {
+        let i = 0
+        for (i = 0; i < transactions.length; i++) {
+            let transaction = transactions[i];
 
-            await loyaltyTransactionModel.updateOne({
+            let error: Error, update_old: LoyaltyTransaction, create_new, update_new;
+            [error, update_old] = await to(loyaltyTransactionModel.updateOne({
                 "_id": transaction._id
             }, {
                 "$set": {
                     "partner": new ObjectId(transaction.partner_id),
                     "member": new ObjectId(transaction.member_id),
-                    "offer": new ObjectId(transaction.offer_id),
+                    "offer": (transaction.offer_id != '-1') ? new ObjectId(transaction.offer_id) : null,
                     "status": TransactionStatus.COMPLETED
                 }
-            });
+            }, { new: true }).catch());
 
+            console.log("---------- ----------");
+            console.log("updateLoyaltyTransactions");
+            console.log("update_old");
+            console.log(update_old);
+            console.log("---------- ----------");
 
             let _error: Error, current_loyalty: any;
             [_error, current_loyalty] = await to(loyaltyModel.findOne({ member: new ObjectId(transaction.member_id) }).catch());
+            if (error) console.log(error);
 
-            await loyaltyModel.updateOne(
-                {
-                    member: new ObjectId(transaction.member_id)
-                },
-                {
-                    member: new ObjectId(transaction.member_id),
-                    currentPoints: (current_loyalty) ? current_loyalty.currentPoints + transaction.points : transaction.points
-                },
-                { upsert: true, new: true }
-            )
-        });
+            var mult = -1;
+            if (transaction.type == LoyaltyTransactionType.EarnPoints) mult = 1;
+
+            if (current_loyalty && current_loyalty.member) {
+                [error, update_new] = await to(loyaltyModel.updateOne(
+                    {
+                        member: new ObjectId(transaction.member_id)
+                    },
+                    {
+                        currentPoints: current_loyalty.currentPoints + (mult) * transaction.points
+                    },
+                    { upsert: true, new: true }
+                ).catch());
+                if (error) console.log(error);
+
+                console.log("update_new");
+                console.log(update_new);
+                console.log("---------- ----------");
+
+            } else {
+                [error, create_new] = await to(loyaltyModel.create(
+                    {
+                        member: new ObjectId(transaction.member_id),
+                        currentPoints: (mult) * transaction.points
+                    }
+                ).catch());
+                if (error) console.log(error);
+
+                console.log("create_new");
+                console.log(create_new);
+                console.log("---------- ----------");
+            }
+        };
     }
 
     private updateUserBlockchainAccount = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
@@ -249,20 +318,29 @@ class ReEstablishController implements Controller {
         });
     }
 
+
+    /**
+     *
+     *  Check if number of users agrees with number of registrationTransactions (for v1.0 - Jun23)
+     *  
+     */
+
     private registrationIdentifier = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         let error: Error, registration_transactions: { user: ObjectId, type: RegistrationTransactionType }[];
         [error, registration_transactions] = await to(registrationTransactionModel.find().select({
             user: 1, type: 1
         }).catch());
+        if (error) console.log(error);
 
-        let registration_partners: { _id: ObjectId }[];
+        let registration_partners: { _id: ObjectId, name: string, email: string, card: string, createdAt: Date }[];
         [error, registration_partners] = await to(userModel.find({
             access: { "$in": [UserAccess.MEMBER, UserAccess.PARTNER] }
         }).select({
-            _id: 1, access: 1
+            _id: 1, access: 1, name: 1, email: 1, card: 1, createdAt: 1
         }).catch());
+        if (error) console.log(error);
 
-        const result = registration_partners.map((a: { _id: ObjectId, access: UserAccess }) =>
+        const result = registration_partners.map((a: { _id: ObjectId, access: UserAccess, name: string, email: string, card: string, createdAt: Date }) =>
             Object.assign({},
                 {
                     user: a._id,
@@ -273,34 +351,79 @@ class ReEstablishController implements Controller {
             )
         );
 
+        var exclude: { _id: ObjectId, name: string, email: string, card: string, createdAt: Date }[] = [];
+        let i = 0;
+        for (i = 0; i < registration_partners.length; i++) {
+
+            if (!registration_transactions.find((b: { user: ObjectId }) => (b.user).toString() == (registration_partners[i]._id).toString())) {
+                exclude.push({
+                    _id: registration_partners[i]._id,
+                    name: registration_partners[i].name,
+                    email: registration_partners[i].email,
+                    card: registration_partners[i].card,
+                    createdAt: new Date(registration_partners[i].createdAt)
+                });
+            }
+        }
+
         response.status(200).send({
             data: {
                 result: result,
-                identify: `${result.filter((x) => x.identify === true).length} of ${result.length}`
+                identify: `${result.filter((x) => x.identify === true).length} of ${result.length}`,
+                exclude: exclude
+
             },
         });
     }
 
+
+    /**
+     *
+     *  Check if number of loyalty(points) agrees with number of loyaltyTransactions (for v1.0 - Jun23)
+     *  
+     */
+
     private loyaltyIdentifier = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
-        let error: Error, points_transactions: { member: ObjectId, currentPoints: number }[];
+        let error: Error, points_transactions: { member: ObjectId, currentPoints: number, currentPointsAdd: number, currentPointsSub: number }[];
         [error, points_transactions] = await to(loyaltyTransactionModel.aggregate([
             {
                 $group: {
-                    _id: "$member",
-                    currentPoints: { $sum: '$points' }
+                    _id: "$member_id",
+                    currentPointsSub: {
+                        $sum: {
+                            "$cond": [{
+                                "$or": [
+                                    { "$eq": ["$type", LoyaltyTransactionType.RedeemPoints] },
+                                    { "$eq": ["$type", LoyaltyTransactionType.RedeemPointsOffer] },
+                                ]
+                            }, "$points", 0]
+                        }
+                    },
+                    currentPointsAdd: {
+                        $sum: {
+                            "$cond": [{
+                                "$eq": ["$type", LoyaltyTransactionType.EarnPoints]
+                            }, "$points", 0]
+                        }
+                    }
                 }
             }, {
                 $project: {
                     "member": "$_id",
-                    "currentPoints": "$currentPoints"
+                    "currentPointsAdd": "$currentPointsAdd",
+                    "currentPointsSub": "$currentPointsSub"
                 }
             }]
         ).exec().catch());
+        if (error) console.log(error);
+
+        points_transactions.map(x => x.currentPoints = x.currentPointsAdd - x.currentPointsSub);
 
         let points_loyalty: { member: ObjectId, currentPoints: number }[];
         [error, points_loyalty] = await to(loyaltyModel.find().select({
             member: 1, currentPoints: 1
         }).catch());
+        if (error) console.log(error);
 
         const result = points_loyalty.map((a: { member: ObjectId, currentPoints: number }) =>
             Object.assign({},
@@ -308,7 +431,8 @@ class ReEstablishController implements Controller {
                     member: a.member,
                     points_loyalty: a.currentPoints,
                     points_transactions: points_transactions.find((b: { member: ObjectId, currentPoints: number }) => (b.member).toString() == (a.member).toString())?.currentPoints,
-                    identify: points_transactions.find((b: { member: ObjectId, currentPoints: number }) => (b.member).toString() == (a.member).toString())?.currentPoints === a.currentPoints,
+                    identify: points_transactions.find(
+                        (b: { member: ObjectId, currentPoints: number }) => (b.member).toString() == (a.member).toString())?.currentPoints === a.currentPoints,
                 }
             )
         );
@@ -320,6 +444,13 @@ class ReEstablishController implements Controller {
             },
         });
     }
+
+
+    /**
+     *
+     *  Check if number of microcredit(toknes) agrees with number of microcreditTransactions (for v1.0 - Jun23)
+     *  
+     */
 
     private microcreditIdentifier = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         let error: Error, tokens_transactions: { support: ObjectId, currentTokens: number }[];
@@ -336,11 +467,15 @@ class ReEstablishController implements Controller {
                 }
             }]
         ).exec().catch());
+        if (error) console.log(error);
+        console.log(tokens_transactions);
 
         let tokens_microcredit: { _id: ObjectId, currentTokens: number }[];
         [error, tokens_microcredit] = await to(supportModel.find().select({
             _id: 1, currentTokens: 1
         }).catch());
+        if (error) console.log(error);
+        console.log(tokens_microcredit);
 
         const result = tokens_microcredit.map((a: { _id: ObjectId, currentTokens: number }) =>
             Object.assign({},

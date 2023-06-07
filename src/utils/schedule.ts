@@ -157,7 +157,7 @@ class Schedule {
     schedule.scheduleJob(this.repeatEveryRegistration, async () => {
       console.log(`\n#Starting <<Register Failed Transactions>> Scheduled Tasks @${new Date()}... `)
       await this.readPendingRegistrationTransactions();
-      await this.readPendingLoayltyTransactions();
+      await this.readPendingLoyaltyTransactions();
       await this.readPendingCampaigns();
       await this.readPendingMicrocreditPromiseTransactions();
       await this.readPendingMicrocreditTransactions();
@@ -193,7 +193,7 @@ class Schedule {
     console.log(`${completed} of ${transactions.length} <<User Accounts>> registered in blockchain`);
   }
 
-  public readPendingLoayltyTransactions = async () => {
+  public readPendingLoyaltyTransactions = async () => {
     let error: Error, transactions: LoyaltyTransaction[];
     [error, transactions] = await to(this.loyaltyTransactionModel.find({
       "status": TransactionStatus.PENDING

@@ -1,4 +1,7 @@
+import { Post } from '_interfaces/community.interfaces';
 import { User } from './user.interface';
+import { MicrocreditCampaign } from '_interfaces/microcredit.interfaces';
+import { LoyaltyOffer } from '_interfaces/loyalty.interfaces';
 // import {PartnerAddress} from './partner_address.interface';
 // import {PartnerContact} from './partner_contact.interface';
 // import {PartnerPayment} from './partner_payment.interface';
@@ -34,4 +37,9 @@ export interface Partner extends User {
   address: PartnerAddress;
   payments: [PartnerPayment];
   contacts: [PartnerContact];
+
+  offers?: [LoyaltyOffer];
+  posts?: [Post];
+  events?: [Event];
+  microcredit?: [MicrocreditCampaign];
 }
