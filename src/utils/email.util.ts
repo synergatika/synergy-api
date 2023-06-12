@@ -1003,5 +1003,29 @@ class EmailsUtil {
     // response.status(data.res.code).send(data.res.body);
     //  response.status(200).send({ data: response.locals.support, code: 200 })
   }
+
+  public notificationBlockchainStatus = async () => {
+    const lang: string = this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM} `,
+      to: `contact@sociality.gr`,
+      subject: `${this.translation(lang).notification.subject}`,
+      cc: ``,
+      bcc: ``,
+      html: '',
+      type: 'notification',
+      locals: {
+        ...this.translation(lang).common,
+        ...this.translation(lang).notification,
+        logo_url: `${process.env.LOGO_URL} `,
+        home_page: `${process.env.APP_URL} `
+      },
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options));
+    if (error) return;
+  }
 }
 export default EmailsUtil;

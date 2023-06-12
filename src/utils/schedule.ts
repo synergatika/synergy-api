@@ -45,6 +45,10 @@ const loyaltyTransactionsUtil = new LoyaltyTransactionsUtil;
 import MicrocreditTransactionsUtil from './microcredit.transactions';
 const microcreditTransactionsUtil = new MicrocreditTransactionsUtil;
 
+/**
+ * Email Service
+ */
+
 class Schedule {
   private userModel = userModel;
   private registrationTransactionModel = registrationTransactionModel;
@@ -56,6 +60,8 @@ class Schedule {
   // private repeatEvery: string = '0 0 3 * * *'; // every day at 3am
   private repeatEvery: string = '55 * * * * *'; // every minute at .55 seconds
   private repeatEveryRegistration: string = '30 * * * * *'; // every minute at .30 seconds
+
+  private repeatEveryBlockchainStatus: string = '45 * * * * *'; //every hour at :30 minutes
 
   constructor() { }
 
@@ -69,6 +75,7 @@ class Schedule {
   public campaingStarts = () => {
 
     schedule.scheduleJob(this.repeatEvery, async () => {
+      console.log(`\n---------- ---------- ---------- ---------- ---------- ---------- ----------`)
       console.log(`\n#Starting <<Notify Members For Upcoming Redeems>> Scheduled Tasks @${new Date()}... `)
       const nowStarts = new Date();
       nowStarts.setDate(nowStarts.getDate() + 1);
@@ -155,6 +162,7 @@ class Schedule {
    */
   public registerFailedTransactions = () => {
     schedule.scheduleJob(this.repeatEveryRegistration, async () => {
+      console.log(`\n---------- ---------- ---------- ---------- ---------- ---------- ----------`)
       console.log(`\n#Starting <<Register Failed Transactions>> Scheduled Tasks @${new Date()}... `)
       await this.readPendingRegistrationTransactions();
       await this.readPendingLoyaltyTransactions();
@@ -347,5 +355,121 @@ class Schedule {
 
     return null;
   }
+
+
+
+  public checkBlockchainStatus = () => {
+    schedule.scheduleJob(this.repeatEveryBlockchainStatus, async () => {
+      console.log(`\n---------- ---------- ---------- ---------- ---------- ---------- ----------`)
+      console.log(`\n#Starting <<Check Blockchain Status>> Scheduled Task @${new Date()}... `)
+      await this.checkEthereum();
+      console.log(`<<Check Blockchain Status>> Scheduled Task Ended... `)
+    });
+  }
+
+  private checkEthereum = async () => {
+    var result: { [key: string]: string | number | unknown } = { date: new Date() };
+
+    const {
+      ETH_REMOTE_API,
+      ETH_CONTRACTS_PATH,
+      ETH_API_ACCOUNT_PRIVKEY,
+      ETH_REMOTE_WS,
+      ETH_REMOTE_REST,
+      ETH_REMOTE_NETWORK_TYPE,
+    } = process.env;
+
+    const timeOutPromise = new Promise(function (resolve, reject) {
+      setTimeout(() => {
+        resolve(false);
+      }, 5000);
+    });
+
+    let start_time = new Date().getTime(),
+      end_time = 0;
+    let serviceInstance = null;
+    try {
+      serviceInstance = new BlockchainService(
+        ETH_REMOTE_API,
+        path.join(__dirname, ETH_CONTRACTS_PATH),
+        ETH_API_ACCOUNT_PRIVKEY
+      );
+      if (serviceInstance == null) {
+        result["ethereum_api_status"] = false;
+      } else {
+        const status = await Promise.race([
+          timeOutPromise,
+          serviceInstance.isConnected(),
+        ]);
+
+        if (`${process.env.PRODUCTION}` == 'true') {
+          const clusterStatus = await Promise.race([
+            timeOutPromise,
+            serviceInstance.getClusterStatus(),
+          ]);
+
+          result = await this.parseClusterStatus(result, clusterStatus);
+        }
+
+        result["ethereum_api_up"] = status;
+        result["ethereum_api_is_ok"] = await serviceInstance.isOk();
+        result["ethereum_api_url"] = ETH_REMOTE_API;
+        result["ethereum_api_ws_port"] = Number(ETH_REMOTE_WS);
+        result["ethereum_api_rpc_port"] = Number(ETH_REMOTE_REST);
+        result["ethereum_api_type"] = ETH_REMOTE_NETWORK_TYPE;
+        result["ethereum_api_address"] = serviceInstance.address.from;
+        if (status) {
+          result[
+            "ethereum_loyalty_app_address"
+          ] = await serviceInstance.getLoyaltyAppAddress();
+          result["ethereum_api_balance"] = parseInt(
+            await serviceInstance.getBalance()
+          );
+        }
+      }
+    } catch (error) {
+      result["ethereum_api_status"] = false;
+      console.error("Blockchain connection is limited");
+      console.error(error);
+    }
+    end_time = new Date().getTime();
+    result["ethereum_time_to_connect"] = Number(end_time - start_time);
+
+    console.log(result);
+    if (result["ethereum_api_status"] == false) {
+      let email_error: Error, email_result: any;
+      [email_error, email_result] = await to(emailsUtil.notificationBlockchainStatus().catch());
+      console.log("email_result");
+      console.log(email_result);
+      console.log(email_error);
+      if (email_error) throw (`EMAIL ERROR - Notification: ${email_error}`);
+
+    }
+
+    return result;
+  };
+
+
+  private parseClusterStatus = async (result: any, status: any) => {
+    let node_count = 0,
+      node_minter_count = 0;
+
+    for (let index = 0; index < status.length; index++) {
+      const node = status[index];
+      result[`ethereum_node_${node.raftId}_id`] = node.nodeId;
+      result[`ethereum_node_${node.raftId}_role`] = node.role;
+      result[`ethereum_node_${node.raftId}_active`] = node.nodeActive;
+
+      if (node.role === "minter") {
+        node_count += node.nodeActive ? 1 : 0;
+        node_minter_count += 1;
+      }
+    }
+
+    result[`ethereum_cluster_availability`] =
+      (node_count * 100) / node_minter_count;
+
+    return result;
+  };
 }
 export default new Schedule();

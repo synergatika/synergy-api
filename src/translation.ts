@@ -96,6 +96,11 @@ class Translation {
         "body": "Your account will be activated by our Amdin soon.",
         "button": "Veify"
       },
+      notification: {
+        "subject": "Το synergatika.gr Blockchain φαίνεται να αντιμετωπίζει κάποιο πρόβλημα!",
+        "title": "Το synergatika.gr Blockchain φαίνεται να αντιμετωπίζει κάποιο πρόβλημα!",
+        "body": "Θα μου πείτε τι πιο σύνηθες.",
+      },
       common: {
         "EMAIL_TEXT": "Email",
         "REASON_TEXT": "Reason",
@@ -232,6 +237,11 @@ class Translation {
         "title": "Ακολουθήστε το παρακάτω λινκ",
         "body": "",
         "button": "Επιβεβαίωση"
+      },
+      notification: {
+        "subject": "Το synergatika.gr Blockchain φαίνεται να αντιμετωπίζει κάποιο πρόβλημα!",
+        "title": "Το synergatika.gr Blockchain φαίνεται να αντιμετωπίζει κάποιο πρόβλημα!",
+        "body": "Θα μου πείτε τι πιο σύνηθες.",
       },
       common: {
         "EMAIL_TEXT": "Email",

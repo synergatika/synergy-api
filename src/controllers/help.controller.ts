@@ -196,7 +196,11 @@ class HelpController implements Controller {
         subject: "Test email",
         html: "<h3>Hello world?</h3><p>Test</p>",
         type: "_test",
-        locals: { home_page: `${process.env.APP_URL}` },
+        locals: {
+          home_page: `${process.env.APP_URL}`,
+          "API_NAME": pjson.name,
+          "API_VERSION": pjson.version
+        },
       };
       let error,
         results: object = {};
@@ -226,7 +230,7 @@ class HelpController implements Controller {
     response: express.Response,
     next: express.NextFunction
   ) => {
-    
+
     // let result: any = {
     //   api_version: API_VERSION,
     // };
@@ -239,12 +243,12 @@ class HelpController implements Controller {
     result = await this.checkMongoDB(result);
     result = await this.checkSMTP(result);
 
-    if (process.env.PRODUCTION == "false") {
-      result = {
-        ...result,
-        ...process.env
-      };
-    }
+    // if (process.env.PRODUCTION == "false") {
+    //   result = {
+    //     ...result,
+    //     ...process.env
+    //   };
+    // }
 
     response.status(200).send({ ...result, current_date: new Date() });
 

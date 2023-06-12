@@ -171,7 +171,7 @@ class CommunityController implements Controller {
       "$and": [
         { "access": { "$in": access_filter } },
         { "dateTime": { "$gt": offset.greater } },
-        { "activated": { "$eq": true } }
+        { "published": { "$eq": true } }
       ]
     }).populate([{
       "path": 'partner'
