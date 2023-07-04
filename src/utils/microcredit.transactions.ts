@@ -106,7 +106,7 @@ class MicrocreditTransactionsUtil {
         let blockchain_error: Error, blockchain_result: any;
         [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund(campaign, member, data._amount).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-        console.log("PromiseFund", support_id)
+        // console.log("PromiseFund", support_id)
         return await transactionModel.create({
             support: support_id,
 
@@ -132,7 +132,7 @@ class MicrocreditTransactionsUtil {
         let blockchain_error: Error, blockchain_result: any;
         [blockchain_error, blockchain_result] = await to(registrationService.registerReceivedFund(campaign, support).catch());
         if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
-        console.log("PromiseFund", support._id)
+        // console.log("PromiseFund", support._id)
 
         return await transactionModel.create({
             support: support._id,

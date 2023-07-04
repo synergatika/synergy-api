@@ -15,7 +15,8 @@ export default function validateEnv() {
     EMAIL_PASS: str(),
     EMAIL_PORT: port({ default: 587 }),
     EMAIL_USER: email(),
-    TEST_EMAIL: str(),
+    TEST_EMAIL: email(),
+    NOTIFICATION_EMAIL: email(),
     ETH_API_ACCOUNT_PRIVKEY: str(),
     ETH_REMOTE_WS: num({ default: 8546 }),
     ETH_REMOTE_REST: num({ default: 8545 }),
@@ -28,6 +29,7 @@ export default function validateEnv() {
     TOKEN_LENGTH: num({ default: 32 }),
     SENTRY_URI: str(),
     PRODUCTION: bool({ default: true }),
+    ADMINISTRATOR_TOKEN: str(),
     RE_ESTABLISH_OPTION: bool({ default: false }),
   });
 }

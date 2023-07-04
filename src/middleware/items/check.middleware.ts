@@ -22,7 +22,8 @@ class CheckMiddleware {
     const balance = response.locals.balance;
     const data: RedeemPointsDto = request.body;
 
-    if (data._points > balance.points) {
+    // console.log(balance, data._points);
+    if (data._points > balance.currentPoints) {
       return next(new NotFoundException('NOT_ENOUGH_POINTS'));
     }
     next();

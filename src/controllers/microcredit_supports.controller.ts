@@ -69,7 +69,7 @@ class MicrocreditSupportsController implements Controller {
   private readAllBackerSupports = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const user: User = request.user;
     const params: string = request.params.offset;
-    console.log("1")
+    // console.log("1")
 
     const offset: {
       limit: number, skip: number, greater: number, type: boolean
@@ -97,7 +97,7 @@ class MicrocreditSupportsController implements Controller {
   private readAllSupportsByCampaign = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
     const partner_id: CampaignID["partner_id"] = request.params.partner_id;
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
-    console.log("2")
+    // console.log("2")
 
     let error: Error, supports: any[];
     [error, supports] = await to(supportModel.find({
@@ -118,8 +118,8 @@ class MicrocreditSupportsController implements Controller {
     const campaign_id: CampaignID["campaign_id"] = request.params.campaign_id;
     const member: User = response.locals.member;
 
-    console.log("3")
-    console.log(campaign_id, member._id)
+    // console.log("3")
+    // console.log(campaign_id, member._id)
     let error: Error, supports: MicrocreditSupport[];
     [error, supports] = await to(supportModel.find({
       "$and": [
@@ -131,7 +131,7 @@ class MicrocreditSupportsController implements Controller {
       .lean()
       .catch());
     if (error) return next(new UnprocessableEntityException(`DB ERROR || ${error}`));
-    console.log(supports)
+    // console.log(supports)
     response.status(200).send({
       data: supports,
       code: 200

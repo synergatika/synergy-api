@@ -82,7 +82,7 @@ describe("Loyalty", () => {
         .set('Authorization', 'Bearer ' + partner_a.authToken)
         .send({
           password: partner_a.password,
-          _points: 100,
+          _points: 30,
           _amount: 1
         })
         .end((err, res) => {

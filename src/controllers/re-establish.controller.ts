@@ -154,11 +154,11 @@ class ReEstablishController implements Controller {
             }).catch());
             if (error) console.log(error);
 
-            console.log("---------- ----------");
-            console.log("updateRegistrationTransactions");
-            console.log("update_old");
-            console.log(update_old);
-            console.log("---------- ----------");
+            // console.log("---------- ----------");
+            // console.log("updateRegistrationTransactions");
+            // console.log("update_old");
+            // console.log(update_old);
+            // console.log("---------- ----------");
         })
     }
 
@@ -183,11 +183,11 @@ class ReEstablishController implements Controller {
                 }
             }, { new: true }).catch());
 
-            console.log("---------- ----------");
-            console.log("updateLoyaltyTransactions");
-            console.log("update_old");
-            console.log(update_old);
-            console.log("---------- ----------");
+            // console.log("---------- ----------");
+            // console.log("updateLoyaltyTransactions");
+            // console.log("update_old");
+            // console.log(update_old);
+            // console.log("---------- ----------");
 
             let _error: Error, current_loyalty: any;
             [_error, current_loyalty] = await to(loyaltyModel.findOne({ member: new ObjectId(transaction.member_id) }).catch());
@@ -208,9 +208,9 @@ class ReEstablishController implements Controller {
                 ).catch());
                 if (error) console.log(error);
 
-                console.log("update_new");
-                console.log(update_new);
-                console.log("---------- ----------");
+                // console.log("update_new");
+                // console.log(update_new);
+                // console.log("---------- ----------");
 
             } else {
                 [error, create_new] = await to(loyaltyModel.create(
@@ -221,12 +221,17 @@ class ReEstablishController implements Controller {
                 ).catch());
                 if (error) console.log(error);
 
-                console.log("create_new");
-                console.log(create_new);
-                console.log("---------- ----------");
+                // console.log("create_new");
+                // console.log(create_new);
+                // console.log("---------- ----------");
             }
         };
     }
+
+
+    /**
+     * Reset A User's Blockchain Account
+     */
 
     private updateUserBlockchainAccount = async (request: RequestWithUser, response: express.Response, next: express.NextFunction) => {
         const user_id = request.params.id;
@@ -256,8 +261,8 @@ class ReEstablishController implements Controller {
             }
         }, { new: true }).catch());
 
-        let result: any;
         /** Update Registration Transaction */
+        let result: any;
         [error, result] = await to(registrationTransactionModel.updateMany(
             {
                 user: new ObjectId(user_id)
@@ -266,7 +271,7 @@ class ReEstablishController implements Controller {
                 status: TransactionStatus.PENDING
             }
         }).catch());
-        console.log("Update Registration Transactions:", result);
+        // console.log("Update Registration Transactions:", result);
 
         /** Update Loyalty Transaction */
         [error, result] = await to(loyaltyTransactionModel.updateMany({
@@ -279,7 +284,7 @@ class ReEstablishController implements Controller {
                 status: TransactionStatus.PENDING
             }
         }).catch());
-        console.log("Update Loyalty Transactions:", result);
+        // console.log("Update Loyalty Transactions:", result);
 
         /** Update Campaigns */
         [error, result] = await to(campaignModel.updateMany({
@@ -291,7 +296,7 @@ class ReEstablishController implements Controller {
         }).catch());
 
         let campaigns: MicrocreditCampaign[] = await campaignModel.find({ partner: new ObjectId(user_id) });
-        console.log("Microcredit Campaigns:", campaigns.map(c => c._id));
+        // console.log("Microcredit Campaigns:", campaigns.map(c => c._id));
 
         /** Update Registration Transaction */
         let supports: MicrocreditSupport[];
@@ -301,7 +306,7 @@ class ReEstablishController implements Controller {
                 { campaign: { "$in": campaigns?.map(c => c._id) } }
             ]
         }).catch());
-        console.log("Microcredit Supports:", supports?.map(c => c._id));
+        // console.log("Microcredit Supports:", supports?.map(c => c._id));
 
         [error, result] = await to(microcreditTransactionModel.updateMany({
             support: { "$in": supports?.map(s => s._id) }
@@ -310,7 +315,7 @@ class ReEstablishController implements Controller {
                 registered: TransactionStatus.PENDING
             }
         }).catch());
-        console.log("Update Microcredit Transactions:", result);
+        // console.log("Update Microcredit Transactions:", result);
 
         response.status(200).send({
             message: "User's Blockchain Account has been successfully updated!",
@@ -468,14 +473,14 @@ class ReEstablishController implements Controller {
             }]
         ).exec().catch());
         if (error) console.log(error);
-        console.log(tokens_transactions);
+        // console.log(tokens_transactions);
 
         let tokens_microcredit: { _id: ObjectId, currentTokens: number }[];
         [error, tokens_microcredit] = await to(supportModel.find().select({
             _id: 1, currentTokens: 1
         }).catch());
         if (error) console.log(error);
-        console.log(tokens_microcredit);
+        // console.log(tokens_microcredit);
 
         const result = tokens_microcredit.map((a: { _id: ObjectId, currentTokens: number }) =>
             Object.assign({},

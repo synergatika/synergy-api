@@ -57,11 +57,10 @@ class Schedule {
   private microcreditCampaignModel = microcreditCampaignModel;
   private microcreditSupportModel = microcreditSupportModel;
 
-  // private repeatEvery: string = '0 0 3 * * *'; // every day at 3am
-  private repeatEvery: string = '55 * * * * *'; // every minute at .55 seconds
-  private repeatEveryRegistration: string = '30 * * * * *'; // every minute at .30 seconds
-
-  private repeatEveryBlockchainStatus: string = '45 * * * * *'; //every hour at :30 minutes
+  private repeatEvery: string = '0 0 3 * * *'; // every day at 3am
+  // private repeatEvery: string = '55 * * * * *'; // every minute at .55 seconds
+  private repeatEveryRegistration: string = '0 30 * * * *'; // every minute at .30 seconds
+  private repeatEveryBlockchainStatus: string = '0 20 * * * *'; //every hour at :30 minutes
 
   constructor() { }
 
@@ -430,18 +429,15 @@ class Schedule {
     } catch (error) {
       result["ethereum_api_status"] = false;
       console.error("Blockchain connection is limited");
-      console.error(error);
+      // console.error(error);
     }
     end_time = new Date().getTime();
     result["ethereum_time_to_connect"] = Number(end_time - start_time);
 
-    console.log(result);
     if (result["ethereum_api_status"] == false) {
+
       let email_error: Error, email_result: any;
       [email_error, email_result] = await to(emailsUtil.notificationBlockchainStatus().catch());
-      console.log("email_result");
-      console.log(email_result);
-      console.log(email_error);
       if (email_error) throw (`EMAIL ERROR - Notification: ${email_error}`);
 
     }

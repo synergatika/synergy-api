@@ -25,6 +25,12 @@ const email = new Email();
  */
 import Controller from "../interfaces/controller.interface";
 
+/**
+ * Emails Util
+ */
+import EmailsUtil from '../utils/email.util';
+const emailsUtil = new EmailsUtil();
+
 class HelpController implements Controller {
   public path = "/status";
   public router = express.Router();
@@ -98,7 +104,7 @@ class HelpController implements Controller {
     } catch (error) {
       result["ethereum_api_status"] = false;
       console.error("Blockchain connection is limited");
-      console.error(error);
+      // console.error(error);
     }
     end_time = new Date().getTime();
     result["ethereum_time_to_connect"] = Number(end_time - start_time);
@@ -191,35 +197,43 @@ class HelpController implements Controller {
       result["smtp_email_user"] = EMAIL_USER;
       result["smtp_email_from"] = EMAIL_FROM;
     } else {
-      let emailInfo = {
-        to: `${process.env.EMAIL_USER}`, // 'synergatika@gmail.com',
-        subject: "Test email",
-        html: "<h3>Hello world?</h3><p>Test</p>",
-        type: "_test",
-        locals: {
-          home_page: `${process.env.APP_URL}`,
-          "API_NAME": pjson.name,
-          "API_VERSION": pjson.version
-        },
-      };
-      let error,
-        results: object = {};
-      [error, results] = await to(
-        Promise.all([email.render(emailInfo.type, emailInfo.locals)]).then(
-          (template: object) => {
-            const mailOptions: nodemailer.SendMailOptions = {
-              from: process.env.EMAIL_FROM,
-              to: `${process.env.TEST_EMAIL}` || emailInfo.to,
-              subject: emailInfo.subject, // Subject line
-              html: template.toString(), // html body
-            };
-            return Transporter.sendMail(mailOptions);
-          }
-        )
-      );
-      console.error(emailInfo);
-      console.error(error);
-      console.error(results);
+      let email_error: Error, email_result: any;
+      [email_error, email_result] = await to(emailsUtil.notificationSMTP().catch());
+      // console.log("-----------------")
+      // console.log(email_error)
+      // console.log(email_result)
+      // console.log("-----------------")
+      if (email_error) throw (`EMAIL ERROR - Test: ${email_error}`);
+
+      // let emailInfo = {
+      //   to: `contact@sociality.gr`, // 'synergatika@gmail.com',
+      //   subject: "Test email",
+      //   html: "",
+      //   type: "_test",
+      //   locals: {
+      //     home_page: `${process.env.APP_URL}`,
+      //     "API_NAME": pjson.name,
+      //     "API_VERSION": pjson.version
+      //   },
+      // };
+      // let error,
+      //   results: object = {};
+      // [error, results] = await to(
+      //   Promise.all([email.render(emailInfo.type, emailInfo.locals)]).then(
+      //     (template: object) => {
+      //       const mailOptions: nodemailer.SendMailOptions = {
+      //         from: process.env.EMAIL_FROM,
+      //         to: `${process.env.TEST_EMAIL}` || emailInfo.to,
+      //         subject: emailInfo.subject, // Subject line
+      //         html: template.toString(), // html body
+      //       };
+      //       return Transporter.sendMail(mailOptions);
+      //     }
+      //   )
+      // );
+      // console.error(emailInfo);
+      // console.error(error);
+      // console.error(results);
     }
 
     return result;

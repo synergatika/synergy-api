@@ -10,12 +10,12 @@ var options: any = {
   }
 }
 
-if (process.env.EMAIL_SERVICE != null) {
-  options.service = process.env.EMAIL_SERVICE;
-} else {
-  options.host = process.env.EMAIL_HOST;
-  options.port = process.env.EMAIL_PORT;
-}
+// if (process.env.EMAIL_SERVICE != null) {
+//   options.service = process.env.EMAIL_SERVICE;
+// } else {
+options.host = process.env.EMAIL_HOST;
+options.port = process.env.EMAIL_PORT;
+// }
 
 // create reusable transporter object using SMTP transport
 const transporter: nodemailer.Transporter = nodemailer.createTransport(options);

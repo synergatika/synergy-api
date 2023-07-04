@@ -585,7 +585,7 @@ class MicrocreditCampaignsController implements Controller {
 
     var groupedBySupport: { groupBy: string, transactions: MicrocreditTransaction[], initial: number, current: number, payoff: number }[] = [];
     transactions.forEach(x => {
-      console.log(x.type, x.tokens)
+      // console.log(x.type, x.tokens)
       var index = groupedBySupport.findIndex(i => i.groupBy === (x.support as MicrocreditSupport)._id.toString())
       if (index < 0) {
         groupedBySupport.push({ transactions: [x], groupBy: (x.support as MicrocreditSupport)._id.toString(), initial: (x.type === MicrocreditTransactionType.PromiseFund) ? x.tokens : 0, current: x.tokens, payoff: x.payoff })
@@ -596,7 +596,7 @@ class MicrocreditCampaignsController implements Controller {
         groupedBySupport[index].transactions.push(x);
       }
     })
-    console.log(groupedBySupport);
+    // console.log(groupedBySupport);
 
     var total = groupedBySupport.filter(x => x.payoff > 0).map(o => {
       return {

@@ -24,6 +24,8 @@ import Translation from '../translation';
 import { User, MicrocreditCampaign, MicrocreditSupport, MicrocreditSupportPayment, MicrocreditSupportStatus } from '../_interfaces/index';
 import { EarnTokensDto, RedeemTokensDto } from '../_dtos/index';
 
+var pjson = require('../../package.json');
+
 class EmailsUtil {
 
   /** To add */
@@ -132,12 +134,12 @@ class EmailsUtil {
       },
     }
 
-    console.log("# userRegistration")
-    console.log("email_to", email_to)
-    console.log("password", tempPassword)
-    console.log("registeredBy", (registrationType == 'one-click') ? '' : (registeredBy && registeredBy.access == 'admin') ?
-      `${this.translation(lang).registration.registeredBy[1]}` : `${this.translation(lang).registration.registeredBy[0]} ${registeredBy.name}`)
-    console.log("---------------");
+    // console.log("# userRegistration")
+    // console.log("email_to", email_to)
+    // console.log("password", tempPassword)
+    // console.log("registeredBy", (registrationType == 'one-click') ? '' : (registeredBy && registeredBy.access == 'admin') ?
+    //   `${this.translation(lang).registration.registeredBy[1]}` : `${this.translation(lang).registration.registeredBy[0]} ${registeredBy.name}`)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
     // .then(result => { return result; }).catch(error => {
@@ -166,10 +168,10 @@ class EmailsUtil {
       },
     }
 
-    console.log("# emailVerification")
-    console.log("email_to", email_to)
-    console.log("token", token)
-    console.log("---------------");
+    // console.log("# emailVerification")
+    // console.log("email_to", email_to)
+    // console.log("token", token)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
     //.then(result => { return result; }).catch(error => { return error });
@@ -223,10 +225,10 @@ class EmailsUtil {
       },
     }
 
-    console.log("# passwordRestoration")
-    console.log("email_to", email_to)
-    console.log("token", token)
-    console.log("---------------");
+    // console.log("# passwordRestoration")
+    // console.log("email_to", email_to)
+    // console.log("token", token)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -283,9 +285,9 @@ class EmailsUtil {
       },
     }
 
-    console.log("# accountActivation")
-    console.log("email_to", email_to)
-    console.log("---------------");
+    // console.log("# accountActivation")
+    // console.log("email_to", email_to)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -340,11 +342,11 @@ class EmailsUtil {
       },
     }
 
-    console.log("# accountDeactivation")
-    console.log("email_to", email_to)
-    console.log("title", (deletedBy.access == 'admin') ?
-      `${this.translation(lang).deactivation.title[0]}` : `${this.translation(lang).deactivation.title[1]}`)
-    console.log("---------------");
+    // console.log("# accountDeactivation")
+    // console.log("email_to", email_to)
+    // console.log("title", (deletedBy.access == 'admin') ?
+    //   `${this.translation(lang).deactivation.title[0]}` : `${this.translation(lang).deactivation.title[1]}`)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -399,9 +401,9 @@ class EmailsUtil {
       },
     }
 
-    console.log("# accountDeletion")
-    console.log("email_to", email_to)
-    console.log("---------------");
+    // console.log("# accountDeletion")
+    // console.log("email_to", email_to)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -456,10 +458,10 @@ class EmailsUtil {
       },
     }
 
-    console.log("# internalActivation")
-    console.log("to", `synergatika@gmail.com`)
-    console.log("user.email", user.email)
-    console.log("---------------");
+    // console.log("# internalActivation")
+    // console.log("to", `synergatika@gmail.com`)
+    // console.log("user.email", user.email)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -513,11 +515,11 @@ class EmailsUtil {
       },
     }
 
-    console.log("# internalActivation")
-    console.log("to", `synergatika@gmail.com`)
-    console.log("user.email", user.email)
-    console.log("reason", reason)
-    console.log("---------------");
+    // console.log("# internalActivation")
+    // console.log("to", `synergatika@gmail.com`)
+    // console.log("user.email", user.email)
+    // console.log("reason", reason)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -572,10 +574,10 @@ class EmailsUtil {
       },
     }
 
-    console.log("# internalDeletion")
-    console.log("to", `synergatika@gmail.com`)
-    console.log("user.email", user.email)
-    console.log("---------------");
+    // console.log("# internalDeletion")
+    // console.log("to", `synergatika@gmail.com`)
+    // console.log("user.email", user.email)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -638,11 +640,11 @@ class EmailsUtil {
       },
     }
 
-    console.log("# internalCommunication")
-    console.log("to", `synergatika@gmail.com`)
-    console.log("sender", sender)
-    console.log("content", content)
-    console.log("---------------");
+    // console.log("# internalCommunication")
+    // console.log("to", `synergatika@gmail.com`)
+    // console.log("sender", sender)
+    // console.log("content", content)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
 
@@ -680,10 +682,10 @@ class EmailsUtil {
       },
     }
 
-    console.log("# userInvitation")
-    console.log("email_to", email_to)
-    console.log("email", user.email)
-    console.log("---------------");
+    // console.log("# userInvitation")
+    // console.log("email_to", email_to)
+    // console.log("email", user.email)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
     // let error, results: object = {};
@@ -719,13 +721,13 @@ class EmailsUtil {
       },
     }
 
-    console.log("# newSupportPartner")
-    console.log("email_to", email_to)
-    console.log("campaign", `${campaign.title}`)
-    console.log("method", `${this.translation(lang).payments.filter((o) => { return o.bic == payment.method.bic })[0].title}`)
-    console.log("tokens", `${data._amount}`)
-    console.log("payment", `${payment._id}`)
-    console.log("---------------");
+    // console.log("# newSupportPartner")
+    // console.log("email_to", email_to)
+    // console.log("campaign", `${campaign.title}`)
+    // console.log("method", `${this.translation(lang).payments.filter((o) => { return o.bic == payment.method.bic })[0].title}`)
+    // console.log("tokens", `${data._amount}`)
+    // console.log("payment", `${payment._id}`)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -795,14 +797,14 @@ class EmailsUtil {
       },
     }
 
-    console.log("# newSupportMember")
-    console.log("email_to", email_to)
-    console.log("campaign", `${campaign.title}`)
-    console.log("method", `${payment.method.value},
-    ${this.translation(lang).payments.filter((o) => { return o.bic == payment.method.bic })[0].title}`)
-    console.log("tokens", `${data._amount}`)
-    console.log("payment", `${payment._id}`)
-    console.log("---------------");
+    // console.log("# newSupportMember")
+    // console.log("email_to", email_to)
+    // console.log("campaign", `${campaign.title}`)
+    // console.log("method", `${payment.method.value},
+    // ${this.translation(lang).payments.filter((o) => { return o.bic == payment.method.bic })[0].title}`)
+    // console.log("tokens", `${data._amount}`)
+    // console.log("payment", `${payment._id}`)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -874,11 +876,11 @@ class EmailsUtil {
       },
     }
 
-    console.log("# changeSupportStatus")
-    console.log("email_to", email_to)
-    console.log("title", (support.status == MicrocreditSupportStatus.PAID) ?
-      `'${this.translation(lang).change_support_status.title[0]}'` : `'${this.translation(lang).change_support_status.title[1]}'`)
-    console.log("---------------");
+    // console.log("# changeSupportStatus")
+    // console.log("email_to", email_to)
+    // console.log("title", (support.status == MicrocreditSupportStatus.PAID) ?
+    // `'${this.translation(lang).change_support_status.title[0]}'` : `'${this.translation(lang).change_support_status.title[1]}'`)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -932,11 +934,11 @@ class EmailsUtil {
       },
     }
 
-    console.log("# redeemSupport")
-    console.log("email_to", email_to)
-    console.log("campaign", campaign)
-    console.log("tokens", `${data._tokens}/${support.initialTokens}`)
-    console.log("---------------");
+    // console.log("# redeemSupport")
+    // console.log("email_to", email_to)
+    // console.log("campaign", campaign)
+    // console.log("tokens", `${data._tokens}/${support.initialTokens}`)
+    // console.log("---------------");
 
     return await to(this.emailSender(options)).catch();
   }
@@ -997,7 +999,7 @@ class EmailsUtil {
     }
 
     let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
+    [error, results] = await to(this.emailSender(options)).catch();
     if (error) return;
 
     // response.status(data.res.code).send(data.res.body);
@@ -1009,7 +1011,7 @@ class EmailsUtil {
 
     let options = {
       from: `${process.env.EMAIL_FROM} `,
-      to: `contact@sociality.gr`,
+      to: `${process.env.NOTIFICATION_EMAIL}`,
       subject: `${this.translation(lang).notification.subject}`,
       cc: ``,
       bcc: ``,
@@ -1024,7 +1026,30 @@ class EmailsUtil {
     }
 
     let error, results: object = {};
-    [error, results] = await to(this.emailSender(options));
+    [error, results] = await to(this.emailSender(options)).catch();
+    if (error) return;
+  }
+
+  public notificationSMTP = async () => {
+    const lang: string = this.defaultLang();
+
+    let options = {
+      from: `${process.env.EMAIL_FROM} `,
+      to: `${process.env.NOTIFICATION_EMAIL}`,
+      subject: `Test Email`,
+      cc: ``,
+      bcc: ``,
+      html: '',
+      type: '_test',
+      locals: {
+        home_page: `${process.env.APP_URL}`,
+        "API_NAME": pjson.name,
+        "API_VERSION": pjson.version
+      }
+    }
+
+    let error, results: object = {};
+    [error, results] = await to(this.emailSender(options)).catch();
     if (error) return;
   }
 }
