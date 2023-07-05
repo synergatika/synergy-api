@@ -79,28 +79,37 @@ export default class RegistrationTransactionsUtil {
 
             if (_transaction.type === RegistrationTransactionType.RegisterMember) {
                 [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(newAccount).catch());
-                if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+                if (this.isError(blockchain_result) || blockchain_error) return null;
             } else if (_transaction.type === RegistrationTransactionType.RegisterPartner) {
                 [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(newAccount).catch());
-                if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+                if (this.isError(blockchain_result) || blockchain_error) return null;
             }
         }
 
-        if (blockchain_result) {
-            let error: Error, transaction: RegistrationTransaction;
-            [error, transaction] = await to(transactionModel.updateOne({
-                "_id": new ObjectId(_transaction._id)
-            }, {
-                "$set": {
-                    ...blockchain_result,
-                    "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
-                }
-            }, { "new": true }).catch());
+        return await transactionModel.updateOne({
+            "_id": new ObjectId(_transaction._id)
+        }, {
+            "$set": {
+                ...blockchain_result,
+                "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+            }
+        }, { "new": true });
 
-            return transaction;
-        }
+        // if (blockchain_result) {
+        //     let error: Error, transaction: RegistrationTransaction;
+        //     [error, transaction] = await to(transactionModel.updateOne({
+        //         "_id": new ObjectId(_transaction._id)
+        //     }, {
+        //         "$set": {
+        //             ...blockchain_result,
+        //             "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+        //         }
+        //     }, { "new": true }).catch());
 
-        return null;
+        //     return transaction;
+        // }
+
+        // return null;
     }
 }
 

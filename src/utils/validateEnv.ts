@@ -29,6 +29,7 @@ export default function validateEnv() {
     TOKEN_LENGTH: num({ default: 32 }),
     SENTRY_URI: str(),
     PRODUCTION: bool({ default: true }),
+    USES_BLOCKCHAIN: bool({ default: true }),
     ADMINISTRATOR_TOKEN: str(),
     RE_ESTABLISH_OPTION: bool({ default: false }),
   });

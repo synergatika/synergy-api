@@ -28,6 +28,7 @@ var pjson = require('../../package.json');
 
 class EmailsUtil {
 
+  public production: Boolean = (`${process.env.PRODUCTION}` === "true");
   /** To add */
   // Email: To member (when orders a microcredit campaign). [OK]
   // Email: To partner (when a member orders a microcredit campaign). [OK]
@@ -50,15 +51,20 @@ class EmailsUtil {
     return Promise.all([email.render(options.type, options.locals)])
       .then((template: object) => {
 
-        if (`${process.env.PRODUCTION}` == 'true') {
-          options.to = options.to;
-          options.cc = options.cc;
-          options.bcc = options.bcc;
-        } else {
+        if (!this.production) {
           options.to = (options.to) ? `${process.env.TEST_EMAIL}` : ``;
           options.cc = (options.cc) ? `${process.env.TEST_EMAIL},${process.env.TEST_EMAIL}` : ``;
           options.bcc = (options.bcc) ? `${process.env.TEST_EMAIL},${process.env.TEST_EMAIL}` : ``;
         }
+        // if (`${process.env.PRODUCTION}` == 'true') {
+        //   options.to = options.to;
+        //   options.cc = options.cc;
+        //   options.bcc = options.bcc;
+        // } else {
+        //   options.to = (options.to) ? `${process.env.TEST_EMAIL}` : ``;
+        //   options.cc = (options.cc) ? `${process.env.TEST_EMAIL},${process.env.TEST_EMAIL}` : ``;
+        //   options.bcc = (options.bcc) ? `${process.env.TEST_EMAIL},${process.env.TEST_EMAIL}` : ``;
+        // }
 
         const mailOptions: nodemailer.SendMailOptions = {
           from: options.from,

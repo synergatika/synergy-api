@@ -137,26 +137,35 @@ export default class LoyaltyTransactionsUtil {
 
         if (_transaction.type === LoyaltyTransactionType.EarnPoints) {
             [blockchain_error, blockchain_result] = await to(registrationService.registerEarnLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points).catch());
-            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+            if (this.isError(blockchain_result) || blockchain_error) return null;
         } else if ((_transaction.type === LoyaltyTransactionType.RedeemPoints) || (_transaction.type === LoyaltyTransactionType.RedeemPointsOffer)) {
             [blockchain_error, blockchain_result] = await to(registrationService.registerRedeemLoyalty(_transaction.partner as Partner, _transaction.member as Member, _transaction.points * (-1)).catch());
-            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+            if (this.isError(blockchain_result) || blockchain_error) return null;
         }
 
-        if (blockchain_result) {
-            let error: Error, transaction: LoyaltyTransaction;
-            [error, transaction] = await to(transactionModel.updateOne({
-                "_id": _transaction._id
-            }, {
-                "$set": {
-                    ...blockchain_result,
-                    "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
-                }
-            }, { new: true }).catch());
+        return await transactionModel.updateOne({
+            "_id": _transaction._id
+        }, {
+            "$set": {
+                ...blockchain_result,
+                "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+            }
+        }, { new: true });
 
-            return transaction;
-        }
+        // if (blockchain_result) {
+        //     let error: Error, transaction: LoyaltyTransaction;
+        //     [error, transaction] = await to(transactionModel.updateOne({
+        //         "_id": _transaction._id
+        //     }, {
+        //         "$set": {
+        //             ...blockchain_result,
+        //             "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+        //         }
+        //     }, { new: true }).catch());
 
-        return null;
+        //     return transaction;
+        // }
+
+        // return null;
     }
 }

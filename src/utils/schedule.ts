@@ -59,7 +59,7 @@ class Schedule {
 
   private repeatEvery: string = '0 0 3 * * *'; // every day at 3am
   // private repeatEvery: string = '55 * * * * *'; // every minute at .55 seconds
-  private repeatEveryRegistration: string = '0 30 * * * *'; // every minute at .30 seconds
+  private repeatEveryRegistration: string = '0 52 * * * *'; // every minute at .30 seconds
   private repeatEveryBlockchainStatus: string = '0 20 * * * *'; //every hour at :30 minutes
 
   constructor() { }
@@ -173,6 +173,8 @@ class Schedule {
   }
 
   public readPendingRegistrationTransactions = async () => {
+    console.log(`Calculate...`);
+
     let error: Error, transactions: RegistrationTransaction[];
     [error, transactions] = await to(this.registrationTransactionModel.find({
       "status": TransactionStatus.PENDING
@@ -186,6 +188,9 @@ class Schedule {
     transactions.forEach(async (item: RegistrationTransaction) => {
       let transaction: RegistrationTransaction;
       [error, transaction] = await to(registrationTransactionsUtil.updateRegistrationTransaction(item).catch());
+
+      console.log("readPendingRegistrationTransactions");
+      console.log(transaction);
 
       if (!error && transaction) completed++;
     });
@@ -201,6 +206,8 @@ class Schedule {
   }
 
   public readPendingLoyaltyTransactions = async () => {
+    console.log(`Calculate...`);
+
     let error: Error, transactions: LoyaltyTransaction[];
     [error, transactions] = await to(this.loyaltyTransactionModel.find({
       "status": TransactionStatus.PENDING
@@ -219,6 +226,9 @@ class Schedule {
       let transaction: LoyaltyTransaction;
       [error, transaction] = await to(loyaltyTransactionsUtil.updateLoyaltyTransaction(item).catch());
 
+      console.log("readPendingLoyaltyTransactions");
+      console.log(transaction);
+
       if (!error && transaction) completed++;
     });
 
@@ -233,6 +243,8 @@ class Schedule {
   }
 
   public readPendingCampaigns = async () => {
+    console.log(`Calculate...`);
+
     let error: Error, campaigns: MicrocreditCampaign[];
     [error, campaigns] = await to(this.microcreditCampaignModel.find({
       "registered": TransactionStatus.PENDING
@@ -261,6 +273,8 @@ class Schedule {
   }
 
   public readPendingMicrocreditPromiseTransactions = async () => {
+    console.log(`Calculate...`);
+
     let error: Error, transactions: MicrocreditTransaction[];
     [error, transactions] = await to(this.microcreditTransactionModel.find({
       "$and": [
@@ -286,6 +300,9 @@ class Schedule {
       let transaction: MicrocreditTransaction;
       [error, transaction] = await to(microcreditTransactionsUtil.updateMicrocreditTransaction(item).catch());
 
+      console.log("readPendingMicrocreditPromiseTransactions");
+      console.log(transaction);
+
       if (!error && transaction) completed++;
     });
 
@@ -300,6 +317,8 @@ class Schedule {
   }
 
   public readPendingMicrocreditTransactions = async () => {
+    console.log(`Calculate...`);
+
     let error: Error, transactions: MicrocreditTransaction[];
     [error, transactions] = await to(this.microcreditTransactionModel.find({
       "$and": [
@@ -325,6 +344,9 @@ class Schedule {
       let transaction: MicrocreditTransaction;
       [error, transaction] = await to(microcreditTransactionsUtil.updateMicrocreditTransaction(item).catch());
 
+      console.log("readPendingMicrocreditTransactions");
+      console.log(transaction);
+
       if (!error && transaction) completed++;
     });
 
@@ -337,22 +359,31 @@ class Schedule {
     [blockchain_error, blockchain_result] = await to(registrationService.registerMicrocreditCampaign(_campaign.partner as Partner, _campaign).catch());
     if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
 
-    if (blockchain_result) {
-      let error: Error, campaign: MicrocreditCampaign;
-      [error, campaign] = await to(this.microcreditCampaignModel.findOneAndUpdate({
-        "_id": _campaign._id
-      }, {
-        "$set": {
-          "address": blockchain_result?.address,
-          "transactionHash": blockchain_result?.transactionHash,
-          "registered": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING,
-        }
-      }).catch());
+    return await microcreditCampaignModel.findOneAndUpdate({
+      "_id": _campaign._id
+    }, {
+      "$set": {
+        "address": blockchain_result?.address,
+        "transactionHash": blockchain_result?.transactionHash,
+        "registered": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING,
+      }
+    });
+    // if (blockchain_result) {
+    //   let error: Error, campaign: MicrocreditCampaign;
+    //   [error, campaign] = await to(this.microcreditCampaignModel.findOneAndUpdate({
+    //     "_id": _campaign._id
+    //   }, {
+    //     "$set": {
+    //       "address": blockchain_result?.address,
+    //       "transactionHash": blockchain_result?.transactionHash,
+    //       "registered": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING,
+    //     }
+    //   }).catch());
 
-      return campaign;
-    }
+    //   return campaign;
+    // }
 
-    return null;
+    // return null;
   }
 
 

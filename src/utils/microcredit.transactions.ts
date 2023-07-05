@@ -210,52 +210,69 @@ class MicrocreditTransactionsUtil {
 
     public updateMicrocreditTransaction = async (_transaction: MicrocreditTransaction) => {
         let blockchain_error: Error, blockchain_result: any;
-
+        console.log(_transaction.type)
         if (_transaction.type === MicrocreditTransactionType.PromiseFund) {
             [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.tokens).catch());
-            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+            if (this.isError(blockchain_result) || blockchain_error) return null;
 
-            if (blockchain_result) {
-                let error: Error, support: MicrocreditSupport;
-                [error, support] = await to(transactionModel.updateOne({
-                    "_id": (_transaction.support as MicrocreditSupport)._id
-                }, {
-                    "$set": {
-                        "contractRef": blockchain_result?.logs[0].args.ref,
-                        "contractIndex": blockchain_result?.logs[0].args.index,
-                    }
-                }).catch());
-                if (error) return null;
-            }
+            return await transactionModel.updateOne({
+                "_id": (_transaction.support as MicrocreditSupport)._id
+            }, {
+                "$set": {
+                    "contractRef": blockchain_result?.logs[0].args.ref,
+                    "contractIndex": blockchain_result?.logs[0].args.index,
+                    "status": (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
+                }
+            });
+            // if (blockchain_result) {
+            //     let error: Error, support: MicrocreditSupport;
+            //     [error, support] = await to(transactionModel.updateOne({
+            //         "_id": (_transaction.support as MicrocreditSupport)._id
+            //     }, {
+            //         "$set": {
+            //             "contractRef": blockchain_result?.logs[0].args.ref,
+            //             "contractIndex": blockchain_result?.logs[0].args.index,
+            //         }
+            //     }).catch());
+            //     if (error) return null;
+            // }
         }
         else if (_transaction.type === MicrocreditTransactionType.ReceiveFund) {
             [blockchain_error, blockchain_result] = await to(registrationService.registerReceivedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
-            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+            if (this.isError(blockchain_result) || blockchain_error) return null;
         }
         else if (_transaction.type === MicrocreditTransactionType.RevertFund) {
             [blockchain_error, blockchain_result] = await to(registrationService.registerRevertFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, _transaction.support as MicrocreditSupport).catch());
-            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+            if (this.isError(blockchain_result) || blockchain_error) return null;
         }
         else if (_transaction.type === MicrocreditTransactionType.SpendFund) {
             [blockchain_error, blockchain_result] = await to(registrationService.registerSpentFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.tokens * (-1)).catch());
-            if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+            if (this.isError(blockchain_result) || blockchain_error) return null;
         }
 
-        if (blockchain_result) {
-            let error: Error, transaction: MicrocreditTransaction;
-            [error, transaction] = await to(transactionModel.updateOne({
-                "_id": _transaction._id
-            }, {
-                "$set": {
-                    ...blockchain_result,
-                    "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
-                }
-            }, { "new": true }).catch());
+        return await transactionModel.updateOne({
+            "_id": _transaction._id
+        }, {
+            "$set": {
+                ...blockchain_result,
+                "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+            }
+        }, { "new": true });
+        // if (blockchain_result) {
+        //     let error: Error, transaction: MicrocreditTransaction;
+        //     [error, transaction] = await to(transactionModel.updateOne({
+        //         "_id": _transaction._id
+        //     }, {
+        //         "$set": {
+        //             ...blockchain_result,
+        //             "status": (blockchain_result) ? TransactionStatus.COMPLETED : TransactionStatus.PENDING
+        //         }
+        //     }, { "new": true }).catch());
 
-            return transaction;
-        }
+        //     return transaction;
+        // }
 
-        return null;
+        // return null;
     }
 }
 export default MicrocreditTransactionsUtil;
