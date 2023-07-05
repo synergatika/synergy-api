@@ -59,7 +59,7 @@ class Schedule {
 
   private repeatEvery: string = '0 0 3 * * *'; // every day at 3am
   // private repeatEvery: string = '55 * * * * *'; // every minute at .55 seconds
-  private repeatEveryRegistration: string = '0 52 * * * *'; // every minute at .30 seconds
+  private repeatEveryRegistration: string = '0 31 * * * *'; // every minute at .30 seconds
   private repeatEveryBlockchainStatus: string = '0 20 * * * *'; //every hour at :30 minutes
 
   constructor() { }
@@ -185,7 +185,8 @@ class Schedule {
       .catch());
 
     let completed = 0;
-    transactions.forEach(async (item: RegistrationTransaction) => {
+    // transactions.forEach(async (item: RegistrationTransaction) => {
+    for (const item of transactions) {
       let transaction: RegistrationTransaction;
       [error, transaction] = await to(registrationTransactionsUtil.updateRegistrationTransaction(item).catch());
 
@@ -193,7 +194,8 @@ class Schedule {
       console.log(transaction);
 
       if (!error && transaction) completed++;
-    });
+    }
+    // });
 
     // for (let i = 0; i < transactions.length; i++) {
     //   let transaction: RegistrationTransaction;
@@ -222,7 +224,8 @@ class Schedule {
       .catch());
 
     let completed = 0;
-    transactions.forEach(async (item: LoyaltyTransaction) => {
+    // transactions.forEach(async (item: LoyaltyTransaction) => {
+    for (const item of transactions) {
       let transaction: LoyaltyTransaction;
       [error, transaction] = await to(loyaltyTransactionsUtil.updateLoyaltyTransaction(item).catch());
 
@@ -230,7 +233,8 @@ class Schedule {
       console.log(transaction);
 
       if (!error && transaction) completed++;
-    });
+    }
+    // });
 
     // for (let i = 0; i < transactions.length; i++) {
     //   let transaction: LoyaltyTransaction;
@@ -255,12 +259,14 @@ class Schedule {
       .catch());
 
     let completed = 0;
-    campaigns.forEach(async (item: MicrocreditCampaign) => {
+    // campaigns.forEach(async (item: MicrocreditCampaign) => {
+    for (const item of campaigns) {
       let campaign: MicrocreditCampaign;
       [error, campaign] = await to(this.updateRegisterMicrocreditCampaigns(item).catch());
 
       if (!error && campaign) completed++;
-    });
+    }
+    // });
 
     // for (let i = 0; i < campaigns.length; i++) {
     //   let campaign: MicrocreditCampaign;
@@ -296,7 +302,8 @@ class Schedule {
       .catch());
 
     let completed = 0;
-    transactions.forEach(async (item: MicrocreditTransaction) => {
+    // transactions.forEach(async (item: MicrocreditTransaction) => {
+    for (const item of transactions) {
       let transaction: MicrocreditTransaction;
       [error, transaction] = await to(microcreditTransactionsUtil.updateMicrocreditTransaction(item).catch());
 
@@ -304,7 +311,8 @@ class Schedule {
       console.log(transaction);
 
       if (!error && transaction) completed++;
-    });
+    }
+    // });
 
     // for (let i = 0; i < transactions.length; i++) {
     //   let transaction: MicrocreditTransaction;
@@ -340,7 +348,8 @@ class Schedule {
       .catch());
 
     let completed = 0;
-    transactions.forEach(async (item) => {
+    // transactions.forEach(async (item) => {
+    for (const item of transactions) {
       let transaction: MicrocreditTransaction;
       [error, transaction] = await to(microcreditTransactionsUtil.updateMicrocreditTransaction(item).catch());
 
@@ -348,7 +357,8 @@ class Schedule {
       console.log(transaction);
 
       if (!error && transaction) completed++;
-    });
+    }
+    // });
 
     console.log(`${completed} of ${transactions.length} <<Microcredit Transactions (Receive, Revert, Spend)>> registered in blockchain`);
   }
@@ -357,7 +367,7 @@ class Schedule {
 
     let blockchain_error: Error, blockchain_result: any;
     [blockchain_error, blockchain_result] = await to(registrationService.registerMicrocreditCampaign(_campaign.partner as Partner, _campaign).catch());
-    if (this.isError(blockchain_result) || blockchain_error) blockchain_result = null;
+    if (this.isError(blockchain_result) || blockchain_error) return null;
 
     return await microcreditCampaignModel.findOneAndUpdate({
       "_id": _campaign._id

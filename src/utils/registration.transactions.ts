@@ -78,7 +78,7 @@ export default class RegistrationTransactionsUtil {
             const newAccount: Account = serviceInstance.unlockWallet(user.account, (user.email) ? user.email : user.card);
 
             if (_transaction.type === RegistrationTransactionType.RegisterMember) {
-                [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(newAccount).catch());
+                [blockchain_error, blockchain_result] = await to(registrationService.registerMemberAccount(newAccount)).catch();
                 if (this.isError(blockchain_result) || blockchain_error) return null;
             } else if (_transaction.type === RegistrationTransactionType.RegisterPartner) {
                 [blockchain_error, blockchain_result] = await to(registrationService.registerPartnerAccount(newAccount).catch());

@@ -215,15 +215,13 @@ class MicrocreditTransactionsUtil {
             [blockchain_error, blockchain_result] = await to(registrationService.registerPromisedFund((_transaction.support as MicrocreditSupport).campaign as MicrocreditCampaign, (_transaction.support as MicrocreditSupport).member as Member, _transaction.tokens).catch());
             if (this.isError(blockchain_result) || blockchain_error) return null;
 
-            return await transactionModel.updateOne({
+            await supportModel.updateOne({
                 "_id": (_transaction.support as MicrocreditSupport)._id
             }, {
-                "$set": {
-                    "contractRef": blockchain_result?.logs[0].args.ref,
-                    "contractIndex": blockchain_result?.logs[0].args.index,
-                    "status": (!blockchain_result) ? TransactionStatus.PENDING : TransactionStatus.COMPLETED,
-                }
+                contractRef: blockchain_result?.logs[0]?.args.ref,
+                contractIndex: blockchain_result?.logs[0]?.args.index,
             });
+
             // if (blockchain_result) {
             //     let error: Error, support: MicrocreditSupport;
             //     [error, support] = await to(transactionModel.updateOne({
